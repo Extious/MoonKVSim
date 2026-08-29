@@ -650,15 +650,23 @@ def audit_wheel_elf_runtime(
             )
 
         ldd_stdout = ""
+        ldd_warnings: list[str] = []
         loader_rows: list[dict[str, str | None]] = []
         if needed:
             completed = run_capture([str(ldd), str(elf)], env=audit_environment)
             ldd_stdout = completed.stdout
             if "not found" in ldd_stdout.lower():
                 raise BuildError(f"{relative} has an unresolved dynamic dependency")
+            expected_non_executable_warning = (
+                "ldd: warning: you do not have execution permission for "
+                f"`{elf}'"
+            )
             for raw_line in ldd_stdout.splitlines():
                 line = raw_line.strip()
                 if not line:
+                    continue
+                if line == expected_non_executable_warning:
+                    ldd_warnings.append(line)
                     continue
                 soname: str
                 resolved_text: str | None
@@ -709,6 +717,7 @@ def audit_wheel_elf_runtime(
                 "sha256": sha256_file(elf),
                 "needed": needed,
                 "rpath_runpath": dynamic_paths,
+                "ldd_warnings": ldd_warnings,
                 "loader_rows": loader_rows,
                 "ldd_stdout": ldd_stdout,
             }

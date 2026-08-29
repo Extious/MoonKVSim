@@ -309,6 +309,7 @@ def test_final_elf_audit_accepts_system_closure_and_rejects_absolute_rpath(
     runtime.mkdir()
     elf = extract_root / "tool"
     shutil.copy2("/bin/true", elf)
+    elf.chmod(0o644)
 
     record = BUILD.audit_wheel_elf_runtime(
         extract_root,
@@ -317,6 +318,8 @@ def test_final_elf_audit_accepts_system_closure_and_rejects_absolute_rpath(
     )
     assert record["status"] == "PASS"
     assert record["elf_count"] == 1
+    assert len(record["records"][0]["ldd_warnings"]) == 1
+    assert "execution permission" in record["records"][0]["ldd_warnings"][0]
 
     bad_source = tmp_path / "bad.c"
     bad_source.write_text("int main(void) { return 0; }\n", encoding="utf-8")
