@@ -1,0 +1,50 @@
+{
+  "evidence_class": "scheduler_submission_only",
+  "formal_use_allowed": false,
+  "job": {
+    "command": "/home/comp/zhanzhao/MoonKVSim/scripts/physical/run_aiconfigurator_vllm_forward_calibration.sbatch",
+    "cpus": 16,
+    "dependency": "afterany:142290",
+    "gres": "gpu:l40s:1",
+    "job_id": "142291",
+    "job_name": "moonkv-aic-l40s-tp1",
+    "memory": "96G",
+    "node_constraint": "gpu20",
+    "partition": "short",
+    "reason": "Dependency",
+    "state": "PENDING",
+    "submitted_utc": "2026-08-29T20:48:59Z",
+    "time_limit": "04:00:00",
+    "work_dir": "/home/comp/zhanzhao/MoonKVSim"
+  },
+  "result_boundary": {
+    "calibrated_profile": false,
+    "forward_measurement_completed": false,
+    "paper_result": false,
+    "physical_result": false,
+    "scheduler_submission_is_measurement": false
+  },
+  "retry_rationale": {
+    "assigned_gpu_process_check_weakened": false,
+    "exclusive_directive_removed": true,
+    "job_142289_failure": "exclusive TP1 request expanded to two L40S GRES and failed exact-one-GPU preflight",
+    "whole_node_exclusivity_claimed": false
+  },
+  "schema": "moonkvsim.aiconfigurator-forward-submission.v1",
+  "sha256": {
+    "aiconfigurator-support.json": "3320c05f3db70f618ccb33299695e228b1ae0e601c281a58246a7b8a72321403",
+    "qwen3_8b_vllm_forward_calibration.py": "5e23332c00192771340eb95300c318b9fe6c4b148d0ecb79098acda1407f1fe1",
+    "residual-thresholds.json": "aa822bcc0b31aac3ea2c3dce3736dfb7c97a501de7a1dd0ea41bb2f7484efbc8",
+    "run_aiconfigurator_vllm_forward_calibration.sbatch": "ce943e71e7a8c01dfbc9fbd8c97bee6b730ee5e5e41192ff56bb8da475bc109d",
+    "shape-plan.json": "d43b95d2d99a0c484027a542256642d9945dd88a91ce3abeb5589d49bde1ddcc",
+    "source-lock.json": "d122c926c41071bb1cf6049a3ff9fada836038cee5047881399f946750a9eaf1"
+  },
+  "slurm_observation": {
+    "features": "l40s",
+    "job_oversubscribe": "YES",
+    "partition_oversubscribe": "FORCE:4",
+    "requested_exclusive_directive": false,
+    "tres": "cpu=16,mem=96G,node=1,billing=16,gres/gpu=1,gres/gpu:l40s=1",
+    "whole_node_exclusive_verified": false
+  }
+}

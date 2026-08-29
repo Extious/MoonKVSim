@@ -1,0 +1,192 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "schema": "moonkvsim.trace_manifest.v1",
+  "dataset": "semianalysisai/cc-traces-weka-062126",
+  "raw": {
+    "path": "/home/comp/zhanzhao/sglsim/AegisKV/doc/Archived/2026-08-06-pre-kvcache-centric/presentations/presentation/experiments/sglsim_large/traces/cc-traces-weka-062126/traces.materialized.jsonl",
+    "repository_url": "https://huggingface.co/datasets/semianalysisai/cc-traces-weka-062126",
+    "repository_revision": "23f152f6f0f9399a85901b89a6458def0ef16729",
+    "repository_file": "traces.jsonl",
+    "sha256": "29b6a19e751ff5230771519aab755f80a0f43a4ba9cf96b72d3a6a437ec99276",
+    "size_bytes": 1847151435,
+    "license_from_local_readme": "Apache-2.0",
+    "local_readme_sha256": "c5358865e47321e50b89e7c04168cb3e7601307c48541149462bc217853e9fcf",
+    "build_timestamp_from_local_readme": "2026-06-21T17:48:24Z",
+    "collection_interval": {
+      "status": "not_disclosed_by_reviewed_public_sources",
+      "value": null,
+      "reviewed_on": "2026-08-30",
+      "evidence_boundary": "The 2026-06-21 timestamp is the corpus build date, not the source proxy-trace capture interval.",
+      "sources": [
+        {
+          "kind": "pinned_dataset_card",
+          "url": "https://huggingface.co/datasets/semianalysisai/cc-traces-weka-062126/commit/23f152f6f0f9399a85901b89a6458def0ef16729",
+          "revision": "23f152f6f0f9399a85901b89a6458def0ef16729",
+          "discloses": "Corpus build timestamp, selection filters, source kind, license, row/request counts, and relative-timestamp preservation; no capture start or end."
+        },
+        {
+          "kind": "publisher_methodology",
+          "url": "https://inferencex.semianalysis.com/agentx/methodology",
+          "observed_on": "2026-08-30",
+          "discloses": "Opt-in Claude Code HTTP proxy collection fields, 393-session v1.0 corpus built on 2026-06-21, and preserved relative timing; no capture start or end."
+        }
+      ]
+    },
+    "access_level": "public_huggingface_download",
+    "access_restrictions": "No dataset-specific gate is disclosed; Apache-2.0 and hosting terms still apply.",
+    "remote_integrity_verified": {
+      "revision_contains_exact_lfs_sha256": true,
+      "revision_contains_exact_size_bytes": true
+    },
+    "content_availability": "source_hash_ids_only"
+  },
+  "normalizer": {
+    "version": "moonkvsim.weka.v1.1",
+    "source_sha256": "bd46fce58e86adb3ab010fc792b617fcf84ec5de564819b6cc2ea4e6a1f0aac4",
+    "implementation": [
+      "traces/scripts/_weka.py",
+      "traces/scripts/normalize_trace.py",
+      "traces/scripts/audit_128k_coverage.py"
+    ],
+    "streaming_unit": "one_workflow_jsonl_row",
+    "stable_span_id": "workflow_id plus raw top-level and inner indices",
+    "canonical_serialization": "utf8-canonical-jsonl-sort-keys",
+    "parent_edge_origin": "inferred",
+    "source_hash_id_scope_raw": "local",
+    "hash_id_scope": "within_workflow_only",
+    "hash_id_scope_mapping": {
+      "raw": "local",
+      "normalized": "within_workflow_only",
+      "semantics": "hash identities are comparable only within one workflow row",
+      "mapping_kind": "explicit_semantics_preserving_rename"
+    },
+    "lineage": {
+      "previous_version": "moonkvsim.weka.v1",
+      "change": "pin locked raw hash_id_scope=local and preserve it in normalized records",
+      "source_evidence": [
+        "locked raw workflow line 1 reports hash_id_scope=local",
+        "workflow_summary.json reports local for all 393 workflows",
+        "frozen sglsim_large_scale_v2 protocol defines reuse identity as workflow-local hash_ids",
+        "prepare_trace.py rejects any source scope set other than {local}"
+      ]
+    },
+    "token_count_mode": "source_hash_blocks_64",
+    "evidence_class": "real_trace_shape_replay",
+    "target_tokenizer_equivalence": false,
+    "selection_guard": "in + out <= 131072",
+    "overflow_action": "exclude_without_truncation",
+    "synthetic": false,
+    "truncated_count": 0
+  },
+  "preaudit_snapshot": {
+    "audited_on": "2026-08-29",
+    "raw_workflow_count": 393,
+    "raw_request_count": 98827,
+    "raw_main_request_count": 56798,
+    "raw_subagent_request_count": 42029,
+    "legacy_plan_input_only_guard": {
+      "expression": "in <= 131072",
+      "pass_count": 46401,
+      "overflow_count": 52426,
+      "near_128k_definition": "126976 <= in <= 131072",
+      "near_128k_request_count": 1164,
+      "near_128k_workflow_count": 249,
+      "near_128k_main_request_count": 663,
+      "near_128k_subagent_request_count": 501,
+      "status": "legacy_preaudit_only_not_formal_selection"
+    },
+    "strict_model_length_guard": {
+      "expression": "in + out <= 131072",
+      "pass_count": 46142,
+      "overflow_count": 52685,
+      "input_pass_but_output_reserve_fail_count": 259,
+      "max_prompt_tokens": 130944,
+      "near_128k_definition": "126976 <= in <= 131072 and in + out <= 131072",
+      "near_128k_request_count": 936,
+      "near_128k_workflow_count": 215,
+      "near_128k_main_request_count": 500,
+      "near_128k_subagent_request_count": 436,
+      "near_128k_input_only_false_positive_count": 228
+    },
+    "strict_context_buckets": [
+      {
+        "lower_exclusive": 0,
+        "upper_inclusive": 8192,
+        "request_count": 6189,
+        "workflow_count": 371
+      },
+      {
+        "lower_exclusive": 8192,
+        "upper_inclusive": 32768,
+        "request_count": 3746,
+        "workflow_count": 189
+      },
+      {
+        "lower_exclusive": 32768,
+        "upper_inclusive": 65536,
+        "request_count": 15099,
+        "workflow_count": 349
+      },
+      {
+        "lower_exclusive": 65536,
+        "upper_inclusive": 98304,
+        "request_count": 12168,
+        "workflow_count": 370
+      },
+      {
+        "lower_exclusive": 98304,
+        "upper_inclusive": 131072,
+        "request_count": 8940,
+        "workflow_count": 339
+      }
+    ]
+  },
+  "full_read_only_audit": {
+    "executed_on": "2026-08-30",
+    "status": "pass",
+    "raw_sha256_verified": true,
+    "raw_inode_size_mtime_unchanged": true,
+    "report_path": "traces/audits/weka-128k-coverage.json",
+    "report_sha256": "ee4a9262af1ec3f56fab6453bfc2ca705a5500cd14c1f3478f53b619b19f6124",
+    "workflow_count": 393,
+    "request_count": 98827,
+    "strict_pass_count": 46142,
+    "strict_near_128k_request_count": 936,
+    "strict_near_128k_workflow_count": 215,
+    "truncated_count": 0,
+    "synthetic": false,
+    "evidence_boundary": "real trace shape replay; not Qwen tokenizer equivalence or 128K vLLM execution"
+  },
+  "artifacts": {
+    "normalized_trace": {
+      "status": "generated_external_not_committed",
+      "path": null,
+      "sha256": "0a1c37deea32f2c393ba7d8d2d9a7c5629854b874b01ace8953140ad889f6d54",
+      "size_bytes": 310842484,
+      "record_count": 46142,
+      "workflow_count": 392,
+      "storage_policy": "large normalized data remains outside Git and is regenerated from the locked raw input",
+      "determinism_audit_path": "traces/audits/weka-normalization-determinism.json",
+      "determinism_audit_sha256": "31ceb3bc695e71848aa29f9c57abfa4c8ad72a62d7cfa01eae38e17607ce75b2"
+    },
+    "strict_near_128k_sample_ids": {
+      "status": "generated_and_frozen",
+      "path": "traces/audits/weka-128k-coverage.json",
+      "json_pointer": "/near_128k/strict_with_output_reserve/sample_ids",
+      "count": 936,
+      "report_sha256": "ee4a9262af1ec3f56fab6453bfc2ca705a5500cd14c1f3478f53b619b19f6124"
+    }
+  },
+  "formal_gate": {
+    "status": "incomplete",
+    "blocking_items": [
+      "the reviewed publisher sources do not disclose the source proxy-trace collection interval; the corpus build timestamp is not a substitute"
+    ],
+    "passed_items": [
+      "two full normalizations are byte-identical",
+      "normalized trace SHA256, size, and record count are frozen without committing the large artifact",
+      "all normalized records pass schema and cross-span DAG validation",
+      "public access mode, license, pinned repository revision, and exact remote file integrity are recorded"
+    ]
+  }
+}

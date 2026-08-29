@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://moonkvsim.local/schemas/aiconfigurator-phase-shape-database.schema.json",
+  "title": "MoonKVSim materialized phase-shape forward database",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "database_mode",
+    "backend",
+    "backend_version",
+    "campaign_profile_fingerprint",
+    "hardware_profile_id",
+    "hardware_profile_fingerprint",
+    "model",
+    "parallelism",
+    "forward_boundary",
+    "shape_axes",
+    "estimator",
+    "held_out_predictor",
+    "entries",
+    "mixed_observations_included",
+    "formal_use_allowed"
+  ],
+  "properties": {
+    "schema": {"const": "moonkvsim.aiconfigurator-phase-shape-database.v1"},
+    "database_mode": {"const": "MOONKVSIM_PHASE_SHAPE_PHYSICAL_V1"},
+    "backend": {"const": "vllm"},
+    "backend_version": {"type": "string", "minLength": 1},
+    "campaign_profile_fingerprint": {"$ref": "#/$defs/sha256"},
+    "hardware_profile_id": {"type": "string", "minLength": 1},
+    "hardware_profile_fingerprint": {"$ref": "#/$defs/sha256"},
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "revision"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "revision": {"type": "string", "minLength": 1}
+      }
+    },
+    "parallelism": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tensor_parallel_size", "pipeline_parallel_size"],
+      "properties": {
+        "tensor_parallel_size": {"type": "integer", "minimum": 1},
+        "pipeline_parallel_size": {"type": "integer", "minimum": 1}
+      }
+    },
+    "forward_boundary": {"const": "gpu_model_runner._model_forward_cuda_events"},
+    "shape_axes": {"const": ["batch_size", "extend_length", "past_kv_length"]},
+    "estimator": {"const": "integer_median_half_up"},
+    "held_out_predictor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["axis_normalization", "distance", "tie_breaker"],
+      "properties": {
+        "axis_normalization": {"const": "phase_plan_axis_range_with_unit_floor"},
+        "distance": {"const": "normalized_l1"},
+        "tie_breaker": {"const": "shape_id_lexicographic"}
+      }
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/entry"},
+      "allOf": [
+        {
+          "contains": {
+            "type": "object",
+            "required": ["phase"],
+            "properties": {"phase": {"const": "prefill"}}
+          },
+          "minContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": ["phase"],
+            "properties": {"phase": {"const": "decode"}}
+          },
+          "minContains": 1
+        }
+      ]
+    },
+    "mixed_observations_included": {"const": false},
+    "formal_use_allowed": {"const": false}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "positiveVector": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "integer", "minimum": 1}
+    },
+    "nonnegativeVector": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "integer", "minimum": 0}
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "shape_id",
+        "phase",
+        "batch_size",
+        "extend_lengths",
+        "past_kv_lengths",
+        "sample_count",
+        "estimated_forward_duration_ns",
+        "estimator",
+        "split"
+      ],
+      "properties": {
+        "shape_id": {"$ref": "#/$defs/sha256"},
+        "phase": {"enum": ["prefill", "decode"]},
+        "batch_size": {"type": "integer", "minimum": 1},
+        "extend_lengths": {"$ref": "#/$defs/positiveVector"},
+        "past_kv_lengths": {"$ref": "#/$defs/nonnegativeVector"},
+        "sample_count": {"type": "integer", "minimum": 1},
+        "estimated_forward_duration_ns": {"type": "integer", "minimum": 1},
+        "estimator": {"const": "integer_median_half_up"},
+        "split": {"const": "train"}
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": ["phase"],
+            "properties": {"phase": {"const": "prefill"}}
+          },
+          "then": {
+            "properties": {
+              "past_kv_lengths": {
+                "type": "array",
+                "items": {"const": 0}
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["phase"],
+            "properties": {"phase": {"const": "decode"}}
+          },
+          "then": {
+            "properties": {
+              "extend_lengths": {
+                "type": "array",
+                "items": {"const": 1}
+              },
+              "past_kv_lengths": {
+                "type": "array",
+                "items": {"type": "integer", "minimum": 1}
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

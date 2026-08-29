@@ -1,0 +1,227 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://moonkvsim.local/schemas/aiconfigurator-forward-reduction-report.schema.json",
+  "title": "MoonKVSim offline AIConfigurator forward reduction report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "status",
+    "evidence_class",
+    "formal_use_allowed",
+    "fixture_mode",
+    "profile_fingerprint",
+    "source_bundle_fingerprint",
+    "source_campaign_profile_fingerprint",
+    "hardware_profile_fingerprint",
+    "database",
+    "split_audit",
+    "phase_results",
+    "mixed_observations",
+    "threshold_rebinding",
+    "diagnostics"
+  ],
+  "properties": {
+    "schema": {"const": "moonkvsim.aiconfigurator-forward-reduction-report.v1"},
+    "status": {"enum": ["FORMAL_SELECTION_READY", "PRELIMINARY_ONLY"]},
+    "evidence_class": {
+      "enum": [
+        "E3_physical_forward_calibration",
+        "E1_E2_reducer_fixture_only",
+        "physical_forward_calibration_preliminary"
+      ]
+    },
+    "formal_use_allowed": {"type": "boolean"},
+    "fixture_mode": {"type": "boolean"},
+    "profile_fingerprint": {"$ref": "#/$defs/sha256"},
+    "source_bundle_fingerprint": {"$ref": "#/$defs/sha256"},
+    "source_campaign_profile_fingerprint": {"$ref": "#/$defs/sha256"},
+    "hardware_profile_fingerprint": {"$ref": "#/$defs/sha256"},
+    "database": {"$ref": "#/$defs/artifact"},
+    "split_audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["train_shape_ids", "held_out_shape_ids", "disjoint", "mixed_shape_ids"],
+      "properties": {
+        "train_shape_ids": {
+          "allOf": [{"$ref": "#/$defs/shaArray"}, {"minItems": 2}]
+        },
+        "held_out_shape_ids": {
+          "allOf": [{"$ref": "#/$defs/shaArray"}, {"minItems": 2}]
+        },
+        "mixed_shape_ids": {
+          "allOf": [{"$ref": "#/$defs/shaArray"}, {"minItems": 1}]
+        },
+        "disjoint": {"const": true}
+      }
+    },
+    "phase_results": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["prefill", "decode"],
+      "properties": {
+        "prefill": {"$ref": "#/$defs/phaseResult"},
+        "decode": {"$ref": "#/$defs/phaseResult"}
+      }
+    },
+    "mixed_observations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact", "used_for_phase_fit", "decomposed_into_phases"],
+      "properties": {
+        "artifact": {"$ref": "#/$defs/artifact"},
+        "used_for_phase_fit": {"const": false},
+        "decomposed_into_phases": {"const": false}
+      }
+    },
+    "threshold_rebinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "original_campaign_thresholds",
+        "selected_profile_thresholds",
+        "numeric_values_unchanged"
+      ],
+      "properties": {
+        "original_campaign_thresholds": {"$ref": "#/$defs/artifact"},
+        "selected_profile_thresholds": {"$ref": "#/$defs/artifact"},
+        "numeric_values_unchanged": {"const": true}
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "message"],
+        "properties": {
+          "code": {"type": "string", "minLength": 1},
+          "message": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": ["formal_use_allowed"],
+        "properties": {"formal_use_allowed": {"const": true}}
+      },
+      "then": {
+        "properties": {
+          "status": {"const": "FORMAL_SELECTION_READY"},
+          "evidence_class": {"const": "E3_physical_forward_calibration"},
+          "fixture_mode": {"const": false},
+          "diagnostics": {"maxItems": 0},
+          "phase_results": {
+            "properties": {
+              "prefill": {"properties": {"passed": {"const": true}}},
+              "decode": {"properties": {"passed": {"const": true}}}
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "status": {"const": "PRELIMINARY_ONLY"},
+          "evidence_class": {
+            "enum": [
+              "E1_E2_reducer_fixture_only",
+              "physical_forward_calibration_preliminary"
+            ]
+          },
+          "diagnostics": {"minItems": 1}
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["fixture_mode"],
+        "properties": {"fixture_mode": {"const": true}}
+      },
+      "then": {
+        "properties": {
+          "formal_use_allowed": {"const": false},
+          "status": {"const": "PRELIMINARY_ONLY"},
+          "evidence_class": {"const": "E1_E2_reducer_fixture_only"},
+          "diagnostics": {
+            "contains": {
+              "type": "object",
+              "required": ["code"],
+              "properties": {"code": {"const": "fixture_mode_forbids_formal_use"}}
+            },
+            "minContains": 1
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "evidence_class": {
+            "enum": [
+              "E3_physical_forward_calibration",
+              "physical_forward_calibration_preliminary"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "safeRelativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!\\./)(?!.*//).+$"
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "size_bytes"],
+      "properties": {
+        "path": {"$ref": "#/$defs/safeRelativePath"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "size_bytes": {"type": "integer", "minimum": 1}
+      }
+    },
+    "shaArray": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/sha256"},
+      "uniqueItems": true
+    },
+    "phaseResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "train_shape_count",
+        "held_out_shape_count",
+        "held_out_sample_count",
+        "residual_bucket_count",
+        "mean_absolute_percentage_error",
+        "p95_absolute_relative_error",
+        "thresholds",
+        "passed"
+      ],
+      "properties": {
+        "train_shape_count": {"type": "integer", "minimum": 1},
+        "held_out_shape_count": {"type": "integer", "minimum": 1},
+        "held_out_sample_count": {"type": "integer", "minimum": 1},
+        "residual_bucket_count": {"type": "integer", "minimum": 1},
+        "mean_absolute_percentage_error": {"type": "number", "minimum": 0},
+        "p95_absolute_relative_error": {"type": "number", "minimum": 0},
+        "thresholds": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "max_mean_absolute_percentage_error",
+            "max_p95_absolute_relative_error"
+          ],
+          "properties": {
+            "max_mean_absolute_percentage_error": {"type": "number", "minimum": 0},
+            "max_p95_absolute_relative_error": {"type": "number", "minimum": 0}
+          }
+        },
+        "passed": {"type": "boolean"}
+      }
+    }
+  }
+}

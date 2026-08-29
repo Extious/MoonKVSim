@@ -1,0 +1,61 @@
+{
+  "schema": "moonkvsim.trace_normalization_determinism.v1",
+  "executed_on": "2026-08-30",
+  "raw": {
+    "dataset": "semianalysisai/cc-traces-weka-062126",
+    "repository_revision": "23f152f6f0f9399a85901b89a6458def0ef16729",
+    "sha256": "29b6a19e751ff5230771519aab755f80a0f43a4ba9cf96b72d3a6a437ec99276",
+    "size_bytes": 1847151435
+  },
+  "normalizer": {
+    "version": "moonkvsim.weka.v1.1",
+    "source_sha256": "bd46fce58e86adb3ab010fc792b617fcf84ec5de564819b6cc2ea4e6a1f0aac4",
+    "serialization": "utf8-canonical-jsonl-sort-keys"
+  },
+  "runs": [
+    {
+      "run_id": "run1",
+      "output_location": "external_ephemeral_not_committed",
+      "normalized_sha256": "0a1c37deea32f2c393ba7d8d2d9a7c5629854b874b01ace8953140ad889f6d54",
+      "normalized_size_bytes": 310842484,
+      "record_count": 46142,
+      "run_manifest_sha256": "f3a364f8572c441029d0342e1d89324d2c57cee267c23932c7bb9284a87a8205"
+    },
+    {
+      "run_id": "run2",
+      "output_location": "external_ephemeral_not_committed",
+      "normalized_sha256": "0a1c37deea32f2c393ba7d8d2d9a7c5629854b874b01ace8953140ad889f6d54",
+      "normalized_size_bytes": 310842484,
+      "record_count": 46142,
+      "run_manifest_sha256": "404c66bdce776f6d0240d065f18fdbb984ec3eb0454b02a04daec8d4f717cb87"
+    }
+  ],
+  "comparison": {
+    "normalized_byte_identical": true,
+    "run_manifest_expected_difference": "/normalized/path",
+    "semantic_manifests_identical": true,
+    "semantic_manifest_sha256": "8aceaec3af948a9a0f400b11c07ea4fa6daf9d2915dcfb27362f148d0586decd"
+  },
+  "schema_and_dag_validation": {
+    "command": "moonkv-sim validate NORMALIZED.jsonl --jsonl-trace",
+    "status": "pass",
+    "record_count": 46142,
+    "workflow_count": 392
+  },
+  "causal_loader_validation": {
+    "loader": "moonkvsim.workload.causal_trace.load_normalized_trace_jsonl",
+    "status": "pass",
+    "record_count": 46142,
+    "workflow_count": 392,
+    "root_count": 392,
+    "edge_count": 46907
+  },
+  "selection": {
+    "guard": "prompt_tokens + output_tokens <= 131072",
+    "truncated_count": 0,
+    "synthetic": false,
+    "strict_near_128k_request_count": 936,
+    "strict_near_128k_workflow_count": 215
+  },
+  "evidence_boundary": "Real source-block trace shape and causal replay validation; not Qwen tokenizer equivalence, vLLM 128K execution, timing calibration, or paper evidence."
+}

@@ -1,0 +1,439 @@
+schema: moonkvsim.aegiskv.patent-contract.v1
+contract_id: aegiskv-patent-final-d80de557
+contract_status: machine_transcribed_pending_manual_review
+manual_review: pending
+evidence_boundary: >-
+  This file is a machine-auditable transcription of the immutable patent input. It does
+  not prove that an AegisKV runtime, test matrix, calibration, or experiment exists.
+
+authority:
+  kind: patent-final
+  precedence: highest
+  document_path: benchmark/AegisKV/docs/patent/AegisKV专利交底书-final-version.docx
+  sha256: d80de557e63edfc0d77a860a262470bf3dca666340724e9a6bfe7f34a507ecb9
+  provenance_manifest: benchmark/AegisKV/docs/provenance/SOURCE_MANIFEST.json
+  ooxml_contract:
+    paragraph_count: 215
+    table_count: 3
+    drawing_count: 4
+    native_subscript_count: 137
+    native_superscript_count: 65
+    tracked_insertions: 0
+    tracked_deletions: 0
+    compatibility_glyphs: []
+
+semantic_sets:
+  policy_pools:
+    - PEER_HBM
+    - STORE_DRAM
+  residency_states:
+    - HBM_ONLY
+    - DRAM_ONLY
+    - HBM_AND_DRAM
+    - BYPASS
+  path_commit_states:
+    - PENDING
+    - COMMITTED
+    - ABORTED
+  recovery_sources:
+    - PEER_HBM
+    - STORE_DRAM
+    - RECOMPUTE
+  forbidden_semantics:
+    - target_hbm_to_store_dram_writeback
+    - target_owned_background_destage
+    - dram_commit_prerequisite_for_hbm_admission
+    - one_tier_failure_aborts_the_other_tier
+    - second_reuse_or_protection_directory
+
+coverage:
+  required_categories:
+    - authority_and_directory
+    - rental_value
+    - lazy_refresh
+    - independent_admission
+    - commit_state
+    - hbm_quota_aimd
+    - failure_recovery
+  required_clause_ids:
+    - AUTHORITY-001
+    - DIRECTORY-001
+    - DIRECTORY-002
+    - RENTAL-001
+    - RENTAL-002
+    - RENTAL-003
+    - LAZY-001
+    - LAZY-002
+    - LAZY-003
+    - POOL-001
+    - ADMISSION-001
+    - ADMISSION-002
+    - TRANSFER-001
+    - TRANSFER-002
+    - TRANSFER-003
+    - COMMIT-001
+    - COMMIT-002
+    - COMMIT-003
+    - AIMD-001
+    - AIMD-002
+    - AIMD-003
+    - AIMD-004
+    - RECOVERY-001
+    - RECOVERY-002
+    - RECOVERY-003
+    - RECOVERY-004
+    - RECOVERY-005
+
+clauses:
+  - id: AUTHORITY-001
+    category: authority_and_directory
+    requirement: >-
+      The immutable DOCX identified by this contract is the highest AegisKV design
+      authority; implementation references may not replace or revise its semantics.
+    normative: MUST
+    authority_locator:
+      docx_section: 本发明的主要要点概述
+      anchor: 本发明包括三个相互配合的技术点
+    owner: python/moonkvsim/aegiskv/audit.py
+    test_id: AEGIS-PATENT-AUTHORITY-001
+    status: verified_design_input
+
+  - id: DIRECTORY-001
+    category: authority_and_directory
+    requirement: >-
+      One KV Directory/Store Master is the sole logical truth source for locations,
+      residency, commit state, reuse visibility, and failure-protection visibility.
+      A second reuse-only or protection-only directory is forbidden.
+    normative: MUST
+    authority_locator:
+      docx_section: 本发明可应用的系统架构或场景
+      anchor: 系统包括工作流运行时、Router、Aegis 控制器、KV Directory/Store Master
+    owner: python/moonkvsim/aegiskv/kv_directory.py
+    test_id: AEGIS-DIRECTORY-SINGLE-TRUTH-001
+    status: specified_unimplemented
+
+  - id: DIRECTORY-002
+    category: authority_and_directory
+    requirement: >-
+      Reuse value and failure-recovery value are roles of the same registered KV
+      replica; adding a role must not create or charge a duplicate physical replica.
+    normative: MUST
+    authority_locator:
+      docx_section: 保护点一——A：工作流感知的租值型 KV 优先级
+      anchor: 将 Slack 对应的故障恢复收益与命中率、复用代价和 LRU 时序信息融合
+    owner: python/moonkvsim/aegiskv/kv_directory.py
+    test_id: AEGIS-DIRECTORY-DUAL-ROLE-001
+    status: specified_unimplemented
+
+  - id: RENTAL-001
+    category: rental_value
+    requirement: >-
+      Pool-local priority must include Slack-dependent marginal failure-recovery
+      benefit; Slack must affect the decision rather than being logging-only metadata.
+    normative: MUST
+    authority_locator:
+      docx_section: 4.5.1 本发明实施例一
+      anchor: 把每轮请求的工作流 Slack 与命中率、复用收益和 LRU 时序融合
+    owner: python/moonkvsim/aegiskv/rental_value.py
+    test_id: AEGIS-RENTAL-SLACK-001
+    status: specified_unimplemented
+
+  - id: RENTAL-002
+    category: rental_value
+    requirement: >-
+      Pool-local priority must include hit probability multiplied by expected reuse
+      saving and an LRU-recency term together with recovery benefit.
+    normative: MUST
+    authority_locator:
+      docx_section: 中文伪代码 1：工作流感知的租值型 KV 优先级计算
+      anchor: 计算命中复用收益
+    owner: python/moonkvsim/aegiskv/rental_value.py
+    test_id: AEGIS-RENTAL-REUSE-LRU-001
+    status: specified_unimplemented
+
+  - id: RENTAL-003
+    category: rental_value
+    requirement: >-
+      Priority must be normalized by the chunk's actual bytes and combined with the
+      independent pool's accumulated rent; configured weights and monotonic direction
+      must be formula-bound, not replaced by an ad-hoc score.
+    normative: MUST
+    authority_locator:
+      docx_section: 中文伪代码 1：工作流感知的租值型 KV 优先级计算
+      anchor: 得到单位字节优先级
+    owner: python/moonkvsim/aegiskv/rental_value.py
+    test_id: AEGIS-RENTAL-BYTES-RENT-001
+    status: specified_unimplemented
+
+  - id: LAZY-001
+    category: lazy_refresh
+    requirement: >-
+      Slack, hit statistics, recency, or frontier changes update metadata versions only;
+      they must not scan the complete pool or trigger KV movement.
+    normative: MUST
+    authority_locator:
+      docx_section: 2.2 关键术语——惰性租值刷新（Lazy Refresh）
+      anchor: 相关信号变化时只更新版本
+    owner: python/moonkvsim/aegiskv/lazy_refresh.py
+    test_id: AEGIS-LAZY-VERSION-ONLY-001
+    status: specified_unimplemented
+
+  - id: LAZY-002
+    category: lazy_refresh
+    requirement: >-
+      A stale priority may be recomputed only when a candidate is newly exposed, reaches
+      heap top, or is being considered for eviction.
+    normative: MUST
+    authority_locator:
+      docx_section: 2.2 关键术语——惰性租值刷新（Lazy Refresh）
+      anchor: 分块成为本池堆顶或新暴露尾部时才重算租值键
+    owner: python/moonkvsim/aegiskv/lazy_refresh.py
+    test_id: AEGIS-LAZY-TRIGGER-001
+    status: specified_unimplemented
+
+  - id: LAZY-003
+    category: lazy_refresh
+    requirement: >-
+      Each pool maintains its own two-level candidate index and exposes only the current
+      safely releasable continuous suffix candidate for a request.
+    normative: MUST
+    authority_locator:
+      docx_section: 2.2 关键术语——两级淘汰候选索引
+      anchor: 每个资源池内为每个请求仅暴露当前可安全释放的连续尾部分块
+    owner: python/moonkvsim/aegiskv/slack_landlord.py
+    test_id: AEGIS-LAZY-TWO-LEVEL-INDEX-001
+    status: specified_unimplemented
+
+  - id: POOL-001
+    category: independent_admission
+    requirement: >-
+      Peer-HBM and global Store DRAM are the two policy pools. They maintain independent
+      capacity, rent, pending state, continuous frontier, and candidate index.
+    normative: MUST
+    authority_locator:
+      docx_section: 2.2 关键术语——独立分层管理
+      anchor: Peer-HBM 与 DRAM 分别维护容量、租金、连续前沿、PENDING 记录和两级淘汰索引
+    owner: python/moonkvsim/aegiskv/controller.py
+    test_id: AEGIS-POOL-INDEPENDENCE-001
+    status: specified_unimplemented
+
+  - id: ADMISSION-001
+    category: independent_admission
+    requirement: >-
+      The HBM and DRAM candidates for one sealed chunk must be admitted independently;
+      neither result nor an existing replica substitutes for the other pool's decision.
+    normative: MUST
+    authority_locator:
+      docx_section: 2.2 关键术语——独立分层管理
+      anchor: 任一层的结果和已有副本不替代另一层的本层判断
+    owner: python/moonkvsim/aegiskv/controller.py
+    test_id: AEGIS-ADMISSION-INDEPENDENT-001
+    status: specified_unimplemented
+
+  - id: ADMISSION-002
+    category: independent_admission
+    requirement: >-
+      Combining the two independent decisions must produce exactly HBM_ONLY, DRAM_ONLY,
+      HBM_AND_DRAM, or BYPASS.
+    normative: MUST
+    authority_locator:
+      docx_section: 2.2 关键术语——独立分层驻留结果
+      anchor: HBM_ONLY 表示只有目标 HBM 副本
+    owner: python/moonkvsim/aegiskv/controller.py
+    test_id: AEGIS-ADMISSION-FOUR-STATES-001
+    status: specified_unimplemented
+
+  - id: TRANSFER-001
+    category: independent_admission
+    requirement: >-
+      The source Worker must initiate HBM D2D/P2P and direct Store DRAM D2H transfers
+      from live production buffers; the two paths may proceed concurrently.
+    normative: MUST
+    authority_locator:
+      docx_section: 4.5.2 本发明实施例二
+      anchor: 源 Worker 从生产缓冲区对 HBM 发起 D2D/P2P、对 DRAM 发起直接 D2H
+    owner: python/moonkvsim/aegiskv/propagation.py
+    test_id: AEGIS-TRANSFER-SOURCE-DUAL-PATH-001
+    status: specified_unimplemented
+
+  - id: TRANSFER-002
+    category: independent_admission
+    requirement: >-
+      Peer-HBM to Store DRAM writeback, target-owned background destage, and any
+      cross-tier relay are forbidden.
+    normative: MUST_NOT
+    authority_locator:
+      docx_section: 4.5.2 本发明实施例二
+      anchor: 两条路径可并行或分别执行，互不作为中转
+    owner: python/moonkvsim/aegiskv/propagation.py
+    test_id: AEGIS-TRANSFER-NO-DESTAGE-001
+    status: specified_unimplemented
+
+  - id: TRANSFER-003
+    category: independent_admission
+    requirement: >-
+      Failure or abort of one transfer path affects only that pool and must not abort,
+      roll back, or suppress the other path.
+    normative: MUST
+    authority_locator:
+      docx_section: 4.5.2 本发明实施例二
+      anchor: 失败路径转为 ABORTED 并只释放本层空间，另一层记录保持不变
+    owner: python/moonkvsim/aegiskv/controller.py
+    test_id: AEGIS-TRANSFER-FAILURE-ISOLATION-001
+    status: specified_unimplemented
+
+  - id: COMMIT-001
+    category: commit_state
+    requirement: >-
+      Each pool allocates its own final space and creates its own PENDING record before
+      transfer; PENDING data is never eligible for recovery.
+    normative: MUST
+    authority_locator:
+      docx_section: 2.2 关键术语——分层提交状态
+      anchor: PENDING 表示已分配最终空间但物理传输或校验尚未完成
+    owner: python/moonkvsim/aegiskv/kv_directory.py
+    test_id: AEGIS-COMMIT-PENDING-INVISIBLE-001
+    status: specified_unimplemented
+
+  - id: COMMIT-002
+    category: commit_state
+    requirement: >-
+      A path becomes COMMITTED only after all required shards, route version, model
+      revision, KV ABI/layout, validation, and physical transfer have completed.
+    normative: MUST
+    authority_locator:
+      docx_section: 4.5.2 本发明实施例二
+      anchor: 本层全部必要分片、路由版本、模型版本、KV 格式和布局通过校验后
+    owner: python/moonkvsim/aegiskv/kv_directory.py
+    test_id: AEGIS-COMMIT-ALL-SHARDS-001
+    status: specified_unimplemented
+
+  - id: COMMIT-003
+    category: commit_state
+    requirement: >-
+      ABORTED terminates only its pool path and releases that pool's allocation. Only a
+      complete, continuous, compatible committed prefix may be published or recovered.
+    normative: MUST
+    authority_locator:
+      docx_section: 中文伪代码 2：动态租值驱动的独立分层 KV 管理
+      anchor: 恢复只使用 COMMITTED 连续前沿
+    owner: python/moonkvsim/aegiskv/kv_directory.py
+    test_id: AEGIS-COMMIT-ABORT-CONTINUITY-001
+    status: specified_unimplemented
+
+  - id: AIMD-001
+    category: hbm_quota_aimd
+    requirement: >-
+      HBMQuotaAIMD changes only each target Worker's Peer-HBM protection quota. It must
+      not select chunks, manage Store DRAM, or own transfer rate/path decisions.
+    normative: MUST
+    authority_locator:
+      docx_section: 保护点三——C：AIMD 资源平衡
+      anchor: HBMQuotaAIMD 在每个控制窗口只更新目标 Worker 的 Peer-HBM 保护额度
+    owner: python/moonkvsim/aegiskv/hbm_quota_aimd.py
+    test_id: AEGIS-AIMD-HBM-ONLY-001
+    status: specified_unimplemented
+
+  - id: AIMD-002
+    category: hbm_quota_aimd
+    requirement: >-
+      On quota contraction the local enforcer immediately blocks new HBM admission above
+      the new quota before storage control selects victims.
+    normative: MUST
+    authority_locator:
+      docx_section: 4.5.3 本发明实施例三
+      anchor: 本地执行器立即阻止超过新额度的 Peer-HBM 新接纳
+    owner: python/moonkvsim/aegiskv/hbm_quota_aimd.py
+    test_id: AEGIS-AIMD-CONTRACTION-GATE-001
+    status: specified_unimplemented
+
+  - id: AIMD-003
+    category: hbm_quota_aimd
+    requirement: >-
+      Storage control reclaims low-value safe HBM suffixes in rental order; both HBM_ONLY
+      and HBM_AND_DRAM may be victims, without requiring a DRAM replica.
+    normative: MUST
+    authority_locator:
+      docx_section: 4.5.3 本发明实施例三
+      anchor: HBM_ONLY 与 HBM_AND_DRAM 均可成为候选，不以 DRAM 副本存在为前提
+    owner: python/moonkvsim/aegiskv/peer_hbm_pool.py
+    test_id: AEGIS-AIMD-NO-DRAM-PREREQUISITE-001
+    status: specified_unimplemented
+
+  - id: AIMD-004
+    category: hbm_quota_aimd
+    requirement: >-
+      Recovery eligibility must be atomically revoked before HBM capacity is released;
+      a later failure recomputes any interval with no remaining committed replica.
+    normative: MUST
+    authority_locator:
+      docx_section: 4.5.3 本发明实施例三
+      anchor: 系统先原子撤销目录中的可恢复资格，再释放显存
+    owner: python/moonkvsim/aegiskv/peer_hbm_pool.py
+    test_id: AEGIS-AIMD-REVOKE-BEFORE-FREE-001
+    status: specified_unimplemented
+
+  - id: RECOVERY-001
+    category: failure_recovery
+    requirement: >-
+      On source failure the Router must fence the old executor and its output authority
+      before recovery or reroute begins.
+    normative: MUST
+    authority_locator:
+      docx_section: 4.5.2 本发明实施例二
+      anchor: 源故障时，Router 先隔离旧执行方和输出权限
+    owner: python/moonkvsim/aegiskv/failure_fence.py
+    test_id: AEGIS-RECOVERY-FENCE-001
+    status: specified_unimplemented
+
+  - id: RECOVERY-002
+    category: failure_recovery
+    requirement: >-
+      Recovery may use only accessible COMMITTED Peer-HBM or Store DRAM records that
+      match route, model, KV ABI/layout, shard, and continuous-prefix requirements.
+    normative: MUST
+    authority_locator:
+      docx_section: 4.5.2 本发明实施例二
+      anchor: 只从可访问的 COMMITTED HBM 或 DRAM 副本恢复
+    owner: python/moonkvsim/aegiskv/recovery_planner.py
+    test_id: AEGIS-RECOVERY-COMMITTED-PREFIX-001
+    status: specified_unimplemented
+
+  - id: RECOVERY-003
+    category: failure_recovery
+    requirement: >-
+      Recovery source selection must explicitly choose committed Peer-HBM, committed
+      Store DRAM, or recomputation; PENDING and failed-target HBM are ineligible.
+    normative: MUST
+    authority_locator:
+      docx_section: 中文伪代码 2：动态租值驱动的独立分层 KV 管理
+      anchor: 恢复只使用 COMMITTED 连续前沿
+    owner: python/moonkvsim/aegiskv/recovery_planner.py
+    test_id: AEGIS-RECOVERY-SOURCE-SELECTION-001
+    status: specified_unimplemented
+
+  - id: RECOVERY-004
+    category: failure_recovery
+    requirement: >-
+      Missing suffixes must be silently replayed through the last committed output
+      position; stale routes may not emit output and activation must be atomic.
+    normative: MUST
+    authority_locator:
+      docx_section: 4.5.2 本发明实施例二
+      anchor: 其余区间静默重算到已提交输出位置
+    owner: python/moonkvsim/aegiskv/recovery_planner.py
+    test_id: AEGIS-RECOVERY-SILENT-REPLAY-001
+    status: specified_unimplemented
+
+  - id: RECOVERY-005
+    category: failure_recovery
+    requirement: >-
+      The failed HBM path may be aborted without invalidating an independently committed
+      Store DRAM record; recovery completion must preserve this cross-pool isolation.
+    normative: MUST
+    authority_locator:
+      docx_section: 4.5.2 本发明实施例二
+      anchor: 失败路径转为 ABORTED 并只释放本层空间，另一层记录保持不变
+    owner: python/moonkvsim/aegiskv/recovery_planner.py
+    test_id: AEGIS-RECOVERY-POOL-ISOLATION-001
+    status: specified_unimplemented

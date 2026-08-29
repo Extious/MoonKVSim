@@ -1,0 +1,61 @@
+"""Composed vanilla MoonKVSim baseline runtime."""
+
+from moonkvsim.baseline.runtime import (
+    EVIDENCE_BOUNDARY,
+    BaselineCoordinator,
+    BaselineCoordinatorError,
+    BaselineReplicaRuntime,
+    DPRouterAuthorityAdapter,
+    ForwardBatchParticipant,
+    ForwardBatchTerminal,
+    TaskResourcePlanProvider,
+    TransferTaskResourcePlan,
+)
+from moonkvsim.baseline.trace_runner import (
+    EVIDENCE_BOUNDARY as TRACE_RUNNER_EVIDENCE_BOUNDARY,
+)
+from moonkvsim.baseline.trace_runner import (
+    STORE_PAYLOAD_BYTE_BASIS,
+    TraceFailureSpec,
+    TraceReplicaBinding,
+    TraceRunInput,
+    TraceRunnerConfig,
+    TraceRunnerError,
+    TraceRunnerGap,
+    TraceRunResult,
+    TraceRunStatus,
+    TraceSelection,
+    TraceSelectionError,
+    TraceSpanExecutionStatus,
+    TraceSpanInput,
+    VanillaBaselineTraceRunner,
+    load_trace_run_input,
+)
+
+__all__ = [
+    "EVIDENCE_BOUNDARY",
+    "STORE_PAYLOAD_BYTE_BASIS",
+    "TRACE_RUNNER_EVIDENCE_BOUNDARY",
+    "BaselineCoordinator",
+    "BaselineCoordinatorError",
+    "BaselineReplicaRuntime",
+    "DPRouterAuthorityAdapter",
+    "ForwardBatchParticipant",
+    "ForwardBatchTerminal",
+    "TaskResourcePlanProvider",
+    "TraceFailureSpec",
+    "TraceReplicaBinding",
+    "TraceRunInput",
+    "TraceRunResult",
+    "TraceRunStatus",
+    "TraceRunnerConfig",
+    "TraceRunnerError",
+    "TraceRunnerGap",
+    "TraceSelection",
+    "TraceSelectionError",
+    "TraceSpanExecutionStatus",
+    "TraceSpanInput",
+    "TransferTaskResourcePlan",
+    "VanillaBaselineTraceRunner",
+    "load_trace_run_input",
+]

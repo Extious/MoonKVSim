@@ -1,0 +1,20 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.coverage
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.venv/
+build/
+dist/
+
+# Raw traces are access-controlled inputs and are never committed.
+traces/raw/**
+!traces/raw/.gitkeep
+
+# Normalized traces and run outputs are reproducible, generated artifacts.
+traces/normalized/**
+!traces/normalized/.gitkeep
+benchmark/**/results/**
+benchmarks/results/**

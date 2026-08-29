@@ -1,0 +1,1 @@
+{"id":"002001296e8a8c38ad9d7cc436d691afc602","models":["claude-haiku-4-5-20251001","claude-opus-4-8"],"block_size":64,"hash_id_scope":"local","requests":[{"t":0.0,"model":"claude-opus-4-8","in":640,"out":20,"hash_ids":[0,1,2,3,4,5,6,7,8,9],"api_time":1.979,"type":"s","ttft":1.741}]}

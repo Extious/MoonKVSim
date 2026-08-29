@@ -1,0 +1,53 @@
+{
+  "artifacts": {
+    "scheduler_submission": {
+      "path": "142289-submission.json",
+      "sha256": "b430be2cda2abdf532fa7b51872733e50a5a30562ae7a85f0b1d1d83b851988a"
+    },
+    "wrapper_stderr": {
+      "path": "slurm-142289.wrapper.err",
+      "sha256": "696f8cd7a5332ec1f8588b4e5517446e034afcfef77d9fe73937b90168d4c314",
+      "size_bytes": 133
+    },
+    "wrapper_stdout": {
+      "path": "slurm-142289.wrapper.out",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    }
+  },
+  "evidence_boundary": {
+    "calibration_input": false,
+    "formal_use_allowed": false,
+    "forward_measurement_started": false,
+    "paper_result_allowed": false,
+    "physical_result": false,
+    "scheduler_or_preflight_state_is_measurement": false
+  },
+  "failure": {
+    "exit_code": "4:0",
+    "reason": "assigned_l40s_gres_binding_not_verified",
+    "root_cause": "The exclusive TP1 request expanded the Slurm allocation to both L40S GRES on a FORCE:4 partition, while the wrapper requires exactly one assigned and visible GPU. The harness and model forward were not started.",
+    "staging_directory": "/tmp/moonkvsim-aic-142289.awI70v",
+    "staging_directory_scope": "compute-node-local and not available from the submission host after job exit"
+  },
+  "job": {
+    "allocated_tres": "billing=128,cpu=128,gres/gpu:l40s=2,gres/gpu=2,node=1",
+    "elapsed": "00:00:01",
+    "end": "2026-08-30T04:25:41+08:00",
+    "job_id": "142289",
+    "node": "gpu20",
+    "partition": "short",
+    "requested_tres": "billing=16,cpu=16,gres/gpu:l40s=1,gres/gpu=1,mem=96G,node=1",
+    "start": "2026-08-30T04:24:44+08:00",
+    "state": "FAILED"
+  },
+  "remediation": {
+    "assigned_gpu_pre_and_post_foreign_process_rejection_retained": true,
+    "exclusive_directive_removed_for_tp1_retry": true,
+    "isolation_check_weakened": false,
+    "whole_node_exclusivity_claimed": false
+  },
+  "schema": "moonkvsim.aiconfigurator-forward-preflight-failure.v1",
+  "source_lock_sha256": "d122c926c41071bb1cf6049a3ff9fada836038cee5047881399f946750a9eaf1",
+  "status": "FAIL"
+}

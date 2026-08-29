@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://moonkvsim.local/schemas/predictor-residual-thresholds.schema.json",
+  "title": "MoonKVSim AIConfigurator predeclared residual thresholds",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "profile_fingerprint",
+    "calibration_method",
+    "shape_axes",
+    "phase_thresholds"
+  ],
+  "properties": {
+    "schema": {"const": "moonkvsim.aiconfigurator-residual-thresholds.v1"},
+    "profile_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "calibration_method": {"const": "phase_shape_residual_table"},
+    "shape_axes": {
+      "const": ["batch_size", "extend_length", "past_kv_length"]
+    },
+    "phase_thresholds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["prefill", "decode"],
+      "properties": {
+        "prefill": {"$ref": "#/$defs/phaseThresholds"},
+        "decode": {"$ref": "#/$defs/phaseThresholds"}
+      }
+    }
+  },
+  "$defs": {
+    "phaseThresholds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_mean_absolute_percentage_error",
+        "max_p95_absolute_relative_error"
+      ],
+      "properties": {
+        "max_mean_absolute_percentage_error": {"type": "number", "minimum": 0},
+        "max_p95_absolute_relative_error": {"type": "number", "minimum": 0}
+      }
+    }
+  }
+}

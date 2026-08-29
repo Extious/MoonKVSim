@@ -1,0 +1,23 @@
+{
+  "schema": "moonkvsim.aegiskv.source-manifest.v1",
+  "manifest_status": "active_design_input_only",
+  "scope": "MoonKVSim M0 immutable AegisKV patent input",
+  "source_count": 1,
+  "sources": [
+    {
+      "source_id": "aegiskv-patent-final-d80de557",
+      "source_path": "/home/comp/zhanzhao/sglsim/AegisKV/doc/patent/AegisKV专利交底书-final-version.docx",
+      "source_repository": "SGLSim",
+      "source_commit": "ca1fe76e88959a2bac0f6060e3042dc2c7d4f855",
+      "source_dirty": true,
+      "source_tracked": false,
+      "source_sha256": "d80de557e63edfc0d77a860a262470bf3dca666340724e9a6bfe7f34a507ecb9",
+      "destination_path": "benchmark/AegisKV/docs/patent/AegisKV专利交底书-final-version.docx",
+      "destination_sha256": "d80de557e63edfc0d77a860a262470bf3dca666340724e9a6bfe7f34a507ecb9",
+      "role": "design",
+      "evidence_class": "immutable_design_input",
+      "status": "active",
+      "authority": "patent-final"
+    }
+  ]
+}

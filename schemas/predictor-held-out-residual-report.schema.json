@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://moonkvsim.local/schemas/predictor-held-out-residual-report.schema.json",
+  "title": "MoonKVSim AIConfigurator held-out residual report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "profile_fingerprint",
+    "source_evidence_sha256",
+    "held_out_split_manifest_sha256",
+    "calibration_method",
+    "shape_axes",
+    "threshold_declaration",
+    "phase_results",
+    "formal_use_allowed"
+  ],
+  "properties": {
+    "schema": {"const": "moonkvsim.aiconfigurator-held-out-residual-report.v1"},
+    "profile_fingerprint": {"$ref": "#/$defs/sha256"},
+    "source_evidence_sha256": {"$ref": "#/$defs/sha256"},
+    "held_out_split_manifest_sha256": {"$ref": "#/$defs/sha256"},
+    "calibration_method": {"const": "phase_shape_residual_table"},
+    "shape_axes": {
+      "const": ["batch_size", "extend_length", "past_kv_length"]
+    },
+    "threshold_declaration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "size_bytes"],
+      "properties": {
+        "path": {"$ref": "#/$defs/safeRelativePath"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "size_bytes": {"type": "integer", "minimum": 1}
+      }
+    },
+    "phase_results": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["prefill", "decode"],
+      "properties": {
+        "prefill": {"$ref": "#/$defs/phaseResult"},
+        "decode": {"$ref": "#/$defs/phaseResult"}
+      }
+    },
+    "formal_use_allowed": {"const": true}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "safeRelativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!\\./)(?!.*//).+$"
+    },
+    "phaseResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sample_count",
+        "residual_bucket_count",
+        "mean_absolute_percentage_error",
+        "p95_absolute_relative_error",
+        "passed"
+      ],
+      "properties": {
+        "sample_count": {"type": "integer", "minimum": 1},
+        "residual_bucket_count": {"type": "integer", "minimum": 1},
+        "mean_absolute_percentage_error": {"type": "number", "minimum": 0},
+        "p95_absolute_relative_error": {"type": "number", "minimum": 0},
+        "passed": {"const": true}
+      }
+    }
+  }
+}

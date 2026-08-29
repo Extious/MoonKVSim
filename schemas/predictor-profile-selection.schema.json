@@ -1,0 +1,184 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://moonkvsim.local/schemas/predictor-profile-selection.schema.json",
+  "title": "MoonKVSim AIConfigurator profile selection",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "profile",
+    "support",
+    "target_backend_version",
+    "database_backend_version",
+    "database_files",
+    "calibration",
+    "formal_use_allowed"
+  ],
+  "properties": {
+    "schema": {"const": "moonkvsim.aiconfigurator-profile-selection.v1"},
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider_name",
+        "provider_version",
+        "provider_source_revision",
+        "database_mode",
+        "database_sha256",
+        "hardware_profile_id",
+        "hardware_profile_fingerprint",
+        "model_id",
+        "model_revision",
+        "tensor_parallel_size",
+        "pipeline_parallel_size",
+        "forward_boundary",
+        "fingerprint"
+      ],
+      "properties": {
+        "provider_name": {"const": "aiconfigurator"},
+        "provider_version": {"type": "string", "minLength": 1},
+        "provider_source_revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "database_mode": {"type": "string", "minLength": 1},
+        "database_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "hardware_profile_id": {"type": "string", "minLength": 1},
+        "hardware_profile_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "model_id": {"type": "string", "minLength": 1},
+        "model_revision": {"type": "string", "minLength": 1},
+        "tensor_parallel_size": {"type": "integer", "minimum": 1},
+        "pipeline_parallel_size": {"type": "integer", "minimum": 1},
+        "forward_boundary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "scope",
+            "included_components",
+            "includes_model_collectives",
+            "model_collective_scope",
+            "excluded_components"
+          ],
+          "properties": {
+            "scope": {"const": "gpu_forward_only"},
+            "included_components": {"type": "array", "items": {"type": "string"}},
+            "includes_model_collectives": {"type": "boolean"},
+            "model_collective_scope": {"type": ["string", "null"]},
+            "excluded_components": {"type": "array", "items": {"type": "string"}}
+          }
+        },
+        "fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "support": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider_version",
+        "provider_source_revision",
+        "profile_fingerprint",
+        "backend_name",
+        "database_mode",
+        "database_sha256",
+        "hardware_profile_id",
+        "hardware_profile_fingerprint",
+        "model_id",
+        "model_revision",
+        "tensor_parallel_size",
+        "pipeline_parallel_size",
+        "supported_phases"
+      ],
+      "properties": {
+        "provider_version": {"type": "string", "minLength": 1},
+        "provider_source_revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "profile_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "backend_name": {"const": "vllm"},
+        "database_mode": {"type": "string", "minLength": 1},
+        "database_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "hardware_profile_id": {"type": "string", "minLength": 1},
+        "hardware_profile_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "model_id": {"type": "string", "minLength": 1},
+        "model_revision": {"type": "string", "minLength": 1},
+        "tensor_parallel_size": {"type": "integer", "minimum": 1},
+        "pipeline_parallel_size": {"type": "integer", "minimum": 1},
+        "supported_phases": {
+          "type": "array",
+          "prefixItems": [{"const": "prefill"}, {"const": "decode"}],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        }
+      }
+    },
+    "target_backend_version": {"type": "string", "minLength": 1},
+    "database_backend_version": {"type": "string", "minLength": 1},
+    "database_files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256", "size_bytes"],
+        "properties": {
+          "path": {"$ref": "#/$defs/safeRelativePath"},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "size_bytes": {"type": "integer", "minimum": 1}
+        }
+      }
+    },
+    "calibration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "report_fingerprint",
+        "report_path",
+        "report_size_bytes",
+        "profile_fingerprint",
+        "source_evidence_sha256",
+        "source_evidence_path",
+        "source_evidence_size_bytes",
+        "held_out_split_manifest_sha256",
+        "held_out_split_manifest_path",
+        "held_out_split_manifest_size_bytes",
+        "calibration_method",
+        "shape_axes",
+        "phase_sample_counts",
+        "phase_residual_bucket_counts",
+        "formal_use_allowed"
+      ],
+      "properties": {
+        "report_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "report_path": {"$ref": "#/$defs/safeRelativePath"},
+        "report_size_bytes": {"type": "integer", "minimum": 1},
+        "profile_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "source_evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "source_evidence_path": {"$ref": "#/$defs/safeRelativePath"},
+        "source_evidence_size_bytes": {"type": "integer", "minimum": 1},
+        "held_out_split_manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "held_out_split_manifest_path": {"$ref": "#/$defs/safeRelativePath"},
+        "held_out_split_manifest_size_bytes": {"type": "integer", "minimum": 1},
+        "calibration_method": {"const": "phase_shape_residual_table"},
+        "shape_axes": {
+          "const": ["batch_size", "extend_length", "past_kv_length"]
+        },
+        "phase_sample_counts": {"$ref": "#/$defs/phaseCounts"},
+        "phase_residual_bucket_counts": {"$ref": "#/$defs/phaseCounts"},
+        "formal_use_allowed": {"const": true}
+      }
+    },
+    "formal_use_allowed": {"const": true}
+  },
+  "$defs": {
+    "safeRelativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!\\./)(?!.*//).+$"
+    },
+    "phaseCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["prefill", "decode"],
+      "properties": {
+        "prefill": {"type": "integer", "minimum": 1},
+        "decode": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}

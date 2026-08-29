@@ -1,0 +1,239 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://moonkvsim.local/schemas/run-manifest.schema.json",
+  "title": "MoonKVSim run manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "run_id",
+    "config_hashes",
+    "code",
+    "source_lock_sha256",
+    "predictor_database_sha256",
+    "trace",
+    "target_model",
+    "coverage",
+    "integrity",
+    "seed",
+    "virtual_time",
+    "validation",
+    "result_completeness"
+  ],
+  "properties": {
+    "schema": {"const": "moonkvsim.run_manifest.v1"},
+    "run_id": {"$ref": "#/$defs/nonEmptyString"},
+    "config_hashes": {"$ref": "#/$defs/configHashes"},
+    "code": {"$ref": "#/$defs/code"},
+    "source_lock_sha256": {"$ref": "#/$defs/sha256"},
+    "predictor_database_sha256": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{64}$",
+      "$comment": "Null is honest for E0-E2 when no database is selected. E3+ is rejected by the bundle integrity gate unless this is a concrete SHA-256."
+    },
+    "trace": {"$ref": "#/$defs/trace"},
+    "target_model": {"$ref": "#/$defs/targetModel"},
+    "coverage": {"$ref": "#/$defs/coverage"},
+    "integrity": {"$ref": "#/$defs/integrity"},
+    "seed": {"type": "integer", "minimum": 0},
+    "virtual_time": {"$ref": "#/$defs/virtualTime"},
+    "validation": {"$ref": "#/$defs/validation"},
+    "result_completeness": {"$ref": "#/$defs/completeness"}
+  },
+  "$defs": {
+    "nonEmptyString": {"type": "string", "minLength": 1},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "configHashes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requests", "failure", "deployment", "resolved_config"],
+      "properties": {
+        "requests": {"$ref": "#/$defs/sha256"},
+        "failure": {"$ref": "#/$defs/sha256"},
+        "deployment": {"$ref": "#/$defs/sha256"},
+        "resolved_config": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "code": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["commit", "dirty"],
+      "properties": {
+        "commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "dirty": {"type": "boolean"},
+        "dirty_patch_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "trace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dataset",
+        "raw_sha256",
+        "normalized_sha256",
+        "normalizer_sha256",
+        "provenance",
+        "workload_trace_sha256"
+      ],
+      "properties": {
+        "dataset": {"$ref": "#/$defs/nonEmptyString"},
+        "raw_sha256": {"$ref": "#/$defs/sha256"},
+        "normalized_sha256": {"$ref": "#/$defs/sha256"},
+        "normalizer_sha256": {"$ref": "#/$defs/sha256"},
+        "workload_trace_sha256": {"$ref": "#/$defs/sha256"},
+        "provenance": {"$ref": "#/$defs/provenance"}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "license",
+        "access_level",
+        "collection_interval",
+        "content_availability",
+        "evidence_class",
+        "token_count_mode"
+      ],
+      "properties": {
+        "license": {"$ref": "#/$defs/nonEmptyString"},
+        "access_level": {"enum": ["public", "restricted", "internal", "unknown"]},
+        "collection_interval": {"type": ["string", "null"]},
+        "content_availability": {
+          "enum": ["messages", "token_ids", "source_hash_ids_only"]
+        },
+        "evidence_class": {"const": "real_trace_shape_replay"},
+        "token_count_mode": {"const": "source_hash_blocks_64"}
+      }
+    },
+    "targetModel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model_id",
+        "model_revision",
+        "model_config_sha256",
+        "tokenizer_sha256",
+        "tokenizer_config_sha256",
+        "chat_template_sha256"
+      ],
+      "properties": {
+        "model_id": {"$ref": "#/$defs/nonEmptyString"},
+        "model_revision": {"$ref": "#/$defs/nonEmptyString"},
+        "model_config_sha256": {"$ref": "#/$defs/sha256"},
+        "tokenizer_sha256": {"$ref": "#/$defs/sha256"},
+        "tokenizer_config_sha256": {"$ref": "#/$defs/sha256"},
+        "chat_template_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workflow_count", "span_count", "sample_count", "context_buckets"],
+      "properties": {
+        "workflow_count": {"type": "integer", "minimum": 1},
+        "span_count": {"type": "integer", "minimum": 1},
+        "sample_count": {"type": "integer", "minimum": 1},
+        "context_buckets": {
+          "type": "array",
+          "prefixItems": [
+            {"$ref": "#/$defs/bucket8k"},
+            {"$ref": "#/$defs/bucket32k"},
+            {"$ref": "#/$defs/bucket64k"},
+            {"$ref": "#/$defs/bucket96k"},
+            {"$ref": "#/$defs/bucket128k"}
+          ],
+          "items": false,
+          "minItems": 5,
+          "maxItems": 5
+        }
+      }
+    },
+    "bucketBase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lower_exclusive", "upper_inclusive", "request_count", "workflow_count"],
+      "properties": {
+        "lower_exclusive": {"type": "integer", "minimum": 0},
+        "upper_inclusive": {"type": "integer", "minimum": 1},
+        "request_count": {"type": "integer", "minimum": 0},
+        "workflow_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "bucket8k": {
+      "$ref": "#/$defs/bucketBase",
+      "properties": {"lower_exclusive": {"const": 0}, "upper_inclusive": {"const": 8192}}
+    },
+    "bucket32k": {
+      "$ref": "#/$defs/bucketBase",
+      "properties": {"lower_exclusive": {"const": 8192}, "upper_inclusive": {"const": 32768}}
+    },
+    "bucket64k": {
+      "$ref": "#/$defs/bucketBase",
+      "properties": {"lower_exclusive": {"const": 32768}, "upper_inclusive": {"const": 65536}}
+    },
+    "bucket96k": {
+      "$ref": "#/$defs/bucketBase",
+      "properties": {"lower_exclusive": {"const": 65536}, "upper_inclusive": {"const": 98304}}
+    },
+    "bucket128k": {
+      "$ref": "#/$defs/bucketBase",
+      "properties": {"lower_exclusive": {"const": 98304}, "upper_inclusive": {"const": 131072}}
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["synthetic", "truncated_count", "overflow_count"],
+      "properties": {
+        "synthetic": {"const": false},
+        "truncated_count": {"const": 0},
+        "overflow_count": {"const": 0}
+      }
+    },
+    "virtualTime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start_ns", "end_ns"],
+      "properties": {
+        "start_ns": {"type": "integer", "minimum": 0},
+        "end_ns": {"type": "integer", "minimum": 0}
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_class", "schema_validation", "trace_audit", "calibration_status"],
+      "properties": {
+        "evidence_class": {
+          "enum": ["E0", "E1", "E2", "E3", "E4", "E5"]
+        },
+        "schema_validation": {"const": "pass"},
+        "trace_audit": {"const": "pass"},
+        "calibration_status": {"enum": ["not_required", "incomplete", "pass"]}
+      }
+    },
+    "completeness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "expected_artifacts", "present_artifacts", "missing_artifacts"],
+      "properties": {
+        "status": {"enum": ["complete", "incomplete", "blocked"]},
+        "expected_artifacts": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/nonEmptyString"},
+          "uniqueItems": true
+        },
+        "present_artifacts": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/nonEmptyString"},
+          "uniqueItems": true
+        },
+        "missing_artifacts": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/nonEmptyString"},
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,470 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://moonkvsim.local/schemas/deployment.schema.json",
+  "title": "MoonKVSim resolved deployment configuration v1",
+  "$comment": "STORE_SSD, SSD, NVMe, NVMe-oF, LOCAL_DISK, and persistence settings are forbidden in v1.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "model",
+    "engine",
+    "memory",
+    "store",
+    "network",
+    "predictor",
+    "policy"
+  ],
+  "properties": {
+    "schema": {
+      "const": "moonkvsim.deployment.v1"
+    },
+    "model": {
+      "$ref": "#/$defs/model"
+    },
+    "engine": {
+      "$ref": "#/$defs/engine"
+    },
+    "memory": {
+      "$ref": "#/$defs/memory"
+    },
+    "store": {
+      "$ref": "#/$defs/store"
+    },
+    "network": {
+      "$ref": "#/$defs/network"
+    },
+    "predictor": {
+      "$ref": "#/$defs/predictor"
+    },
+    "policy": {
+      "$ref": "#/$defs/policy"
+    }
+  },
+  "not": {
+    "anyOf": [
+      {"required": ["ssd_segments"]},
+      {"required": ["nvme_segments"]},
+      {"required": ["nvmeof_segments"]},
+      {"required": ["local_disk"]},
+      {"required": ["persistence"]}
+    ]
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "optionalSha256": {
+      "type": "string",
+      "pattern": "^(?:[0-9a-f]{64})?$"
+    },
+    "sourceClass": {
+      "enum": ["source_default", "measured", "fitted", "assumed", "sensitivity_only"]
+    },
+    "parameterSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["parameter", "source", "reference"],
+      "properties": {
+        "parameter": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "source": {
+          "$ref": "#/$defs/sourceClass"
+        },
+        "reference": {
+          "type": ["string", "null"]
+        },
+        "sha256": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "parameterSources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/parameterSource"
+      }
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "revision",
+        "dtype",
+        "kv_dtype",
+        "config_sha256",
+        "kv_layout_path"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "revision": {
+          "type": "string"
+        },
+        "dtype": {
+          "enum": ["bf16", "fp16", "fp32"]
+        },
+        "kv_dtype": {
+          "enum": ["bf16", "fp16", "fp8_e4m3", "fp8_e5m2"]
+        },
+        "config_sha256": {
+          "$ref": "#/$defs/optionalSha256"
+        },
+        "kv_layout_path": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "engine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "source_commit", "dp_size", "tp_size", "pp_size", "block_size"],
+      "properties": {
+        "kind": {
+          "const": "vllm"
+        },
+        "source_commit": {
+          "type": "string",
+          "pattern": "^(?:[0-9a-f]{40})?$"
+        },
+        "dp_size": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "tp_size": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "pp_size": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "block_size": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "memory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gpu_profiles",
+        "host_dram_profiles",
+        "allocation_alignment_bytes",
+        "allocator_granularity_bytes",
+        "account_fixed_runtime",
+        "account_fragmentation"
+      ],
+      "properties": {
+        "gpu_profiles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/gpuProfile"
+          }
+        },
+        "host_dram_profiles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/hostDramProfile"
+          }
+        },
+        "allocation_alignment_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "allocator_granularity_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "account_fixed_runtime": {
+          "const": true
+        },
+        "account_fragmentation": {
+          "const": true
+        },
+        "parameter_sources": {
+          "$ref": "#/$defs/parameterSources"
+        }
+      }
+    },
+    "gpuProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "resource_id",
+        "node_id",
+        "gpu_id",
+        "hbm_capacity_bytes",
+        "weights_bytes",
+        "runtime_reserve_bytes",
+        "block_allocator",
+        "copy_engines",
+        "bandwidth_profile",
+        "parameter_sources"
+      ],
+      "properties": {
+        "resource_id": {"$ref": "#/$defs/nonEmptyString"},
+        "node_id": {"$ref": "#/$defs/nonEmptyString"},
+        "gpu_id": {"type": "integer", "minimum": 0},
+        "location": {"const": "PRIMARY_HBM"},
+        "hbm_capacity_bytes": {"type": "integer", "minimum": 1},
+        "weights_bytes": {"type": "integer", "minimum": 0},
+        "runtime_reserve_bytes": {"type": "integer", "minimum": 0},
+        "block_allocator": {"$ref": "#/$defs/blockAllocator"},
+        "copy_engines": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/copyEngine"},
+          "minItems": 1
+        },
+        "bandwidth_profile": {"$ref": "#/$defs/bandwidthProfile"},
+        "parameter_sources": {"$ref": "#/$defs/parameterSources"}
+      }
+    },
+    "blockAllocator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "alignment_bytes", "granularity_bytes"],
+      "properties": {
+        "kind": {"enum": ["vllm_block_manager", "source_aligned"]},
+        "alignment_bytes": {"type": "integer", "minimum": 1},
+        "granularity_bytes": {"type": "integer", "minimum": 1}
+      }
+    },
+    "copyEngine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resource_id", "direction", "max_concurrency"],
+      "properties": {
+        "resource_id": {"$ref": "#/$defs/nonEmptyString"},
+        "direction": {"enum": ["H2D", "D2H", "P2P", "BIDIRECTIONAL"]},
+        "max_concurrency": {"type": "integer", "minimum": 1}
+      }
+    },
+    "bandwidthProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile_id", "source"],
+      "properties": {
+        "profile_id": {"$ref": "#/$defs/nonEmptyString"},
+        "source": {"$ref": "#/$defs/sourceClass"},
+        "artifact_path": {"type": ["string", "null"]},
+        "sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "hostDramProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "resource_id",
+        "node_id",
+        "capacity_bytes",
+        "reserved_bytes",
+        "alignment_bytes",
+        "allocator_granularity_bytes",
+        "staging_pool_bytes",
+        "read_lanes",
+        "write_lanes",
+        "parameter_sources"
+      ],
+      "properties": {
+        "resource_id": {"$ref": "#/$defs/nonEmptyString"},
+        "node_id": {"$ref": "#/$defs/nonEmptyString"},
+        "location": {"const": "HOST_DRAM"},
+        "capacity_bytes": {"type": "integer", "minimum": 1},
+        "reserved_bytes": {"type": "integer", "minimum": 0},
+        "alignment_bytes": {"type": "integer", "minimum": 1},
+        "allocator_granularity_bytes": {"type": "integer", "minimum": 1},
+        "staging_pool_bytes": {"type": "integer", "minimum": 0},
+        "read_lanes": {"type": "integer", "minimum": 1},
+        "write_lanes": {"type": "integer", "minimum": 1},
+        "parameter_sources": {"$ref": "#/$defs/parameterSources"}
+      }
+    },
+    "store": {
+      "type": "object",
+      "additionalProperties": false,
+      "$comment": "Only DRAM segments are accepted. Persistent and local disk fields fail closed.",
+      "required": ["kind", "dram_segments", "eviction_policy", "allocator"],
+      "properties": {
+        "kind": {"const": "mooncake"},
+        "dram_segments": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/dramSegment"}
+        },
+        "eviction_policy": {"const": "baseline"},
+        "allocator": {"$ref": "#/$defs/storeAllocator"}
+      },
+      "not": {
+        "anyOf": [
+          {"required": ["ssd_segments"]},
+          {"required": ["nvme_segments"]},
+          {"required": ["nvmeof_segments"]},
+          {"required": ["local_disk"]},
+          {"required": ["persistence"]}
+        ]
+      }
+    },
+    "dramSegment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "resource_id",
+        "node_id",
+        "location",
+        "capacity_bytes",
+        "reserved_bytes",
+        "read_lanes",
+        "write_lanes",
+        "parameter_sources"
+      ],
+      "properties": {
+        "resource_id": {"$ref": "#/$defs/nonEmptyString"},
+        "node_id": {"$ref": "#/$defs/nonEmptyString"},
+        "location": {"const": "STORE_DRAM"},
+        "capacity_bytes": {"type": "integer", "minimum": 1},
+        "reserved_bytes": {"type": "integer", "minimum": 0},
+        "read_lanes": {"type": "integer", "minimum": 1},
+        "write_lanes": {"type": "integer", "minimum": 1},
+        "parameter_sources": {"$ref": "#/$defs/parameterSources"}
+      }
+    },
+    "storeAllocator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "granularity_bytes", "metadata_bytes_per_allocation"],
+      "properties": {
+        "kind": {"const": "source_aligned"},
+        "granularity_bytes": {"type": ["integer", "null"], "minimum": 1},
+        "metadata_bytes_per_allocation": {"type": ["integer", "null"], "minimum": 0}
+      }
+    },
+    "network": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol",
+        "gdr",
+        "backend",
+        "slice_size_bytes",
+        "bandwidth_allocator",
+        "endpoint_pooling",
+        "retry_count",
+        "registration",
+        "topology_matrix",
+        "nodes",
+        "nics",
+        "links"
+      ],
+      "properties": {
+        "protocol": {"enum": ["rdma", "tcp"]},
+        "gdr": {"type": "boolean"},
+        "backend": {"const": "flow_contention"},
+        "slice_size_bytes": {"type": "integer", "minimum": 1},
+        "bandwidth_allocator": {"const": "max_min_fair"},
+        "endpoint_pooling": {"type": "boolean"},
+        "retry_count": {"const": 0},
+        "registration": {"$ref": "#/$defs/registration"},
+        "topology_matrix": {"$ref": "#/$defs/nonEmptyString"},
+        "nodes": {"type": "array", "items": {"$ref": "#/$defs/node"}},
+        "nics": {"type": "array", "items": {"$ref": "#/$defs/nic"}},
+        "links": {"type": "array", "items": {"$ref": "#/$defs/link"}},
+        "parameter_sources": {"$ref": "#/$defs/parameterSources"}
+      }
+    },
+    "registration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "workers_per_context"],
+      "properties": {
+        "mode": {
+          "enum": ["source_default", "modeled_uncalibrated", "calibrated"],
+          "$comment": "Evidence status for registration timing. E3+ still requires the independent run-manifest calibration gate."
+        },
+        "workers_per_context": {"type": "integer", "minimum": 1}
+      }
+    },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resource_id", "numa_node_ids"],
+      "properties": {
+        "resource_id": {"$ref": "#/$defs/nonEmptyString"},
+        "numa_node_ids": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/nonEmptyString"},
+          "uniqueItems": true
+        }
+      }
+    },
+    "nic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resource_id", "node_id", "numa_node_id", "ports", "queue_ids"],
+      "properties": {
+        "resource_id": {"$ref": "#/$defs/nonEmptyString"},
+        "node_id": {"$ref": "#/$defs/nonEmptyString"},
+        "numa_node_id": {"$ref": "#/$defs/nonEmptyString"},
+        "ports": {"type": "integer", "minimum": 1},
+        "queue_ids": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/nonEmptyString"},
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      }
+    },
+    "link": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "resource_id",
+        "source_resource_id",
+        "target_resource_id",
+        "direction",
+        "bandwidth_bytes_per_s",
+        "latency_ns",
+        "shared_domain_id",
+        "duplex",
+        "queue_id",
+        "parameter_sources"
+      ],
+      "properties": {
+        "resource_id": {"$ref": "#/$defs/nonEmptyString"},
+        "source_resource_id": {"$ref": "#/$defs/nonEmptyString"},
+        "target_resource_id": {"$ref": "#/$defs/nonEmptyString"},
+        "direction": {"enum": ["FORWARD", "REVERSE", "BIDIRECTIONAL"]},
+        "bandwidth_bytes_per_s": {"type": "number", "exclusiveMinimum": 0},
+        "latency_ns": {"type": "integer", "minimum": 0},
+        "shared_domain_id": {"$ref": "#/$defs/nonEmptyString"},
+        "duplex": {"enum": ["full", "half"]},
+        "queue_id": {"$ref": "#/$defs/nonEmptyString"},
+        "parameter_sources": {"$ref": "#/$defs/parameterSources"}
+      }
+    },
+    "predictor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "profile"],
+      "properties": {
+        "kind": {"const": "aiconfigurator"},
+        "profile": {"type": "string"},
+        "database_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "resource_accounting"],
+      "properties": {
+        "kind": {"const": "mooncake_default"},
+        "resource_accounting": {"const": "byte_exact"}
+      }
+    }
+  }
+}

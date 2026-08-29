@@ -1,0 +1,38 @@
+diff --git a/mooncake-store/src/client_service.cpp b/mooncake-store/src/client_service.cpp
+index ce3b8da8..61a78d22 100644
+--- a/mooncake-store/src/client_service.cpp
++++ b/mooncake-store/src/client_service.cpp
+@@ -3070,6 +3070,33 @@ tl::expected<UUID, ErrorCode> Client::MountSegmentAndGetId(
+ 
+         segment_id = segment.id;
+         mounted_segments_[segment_id] = segment;
++
++        // MountSegment starts the master's TTL tracking, but the client is
++        // intentionally considered alive only after ReMountSegment.  Do that
++        // registration synchronously for the first segment, before the caller
++        // can publish objects into it.  If the heartbeat thread wins this race
++        // after MountSegment returns, ReMountSegment can mistake those live
++        // objects for HA-restoration state and fail because no standby
++        // accounting exists for a newly mounted segment.
++        if (mounted_segments_.size() == 1) {
++            auto remount_result =
++                master_client_.ReMountSegment(std::vector<Segment>{segment});
++            if (!remount_result) {
++                ErrorCode err = remount_result.error();
++                LOG(ERROR) << "initial_remount_failed base=" << buffer
++                           << " size=" << size << ", error=" << err;
++                auto mounted = mounted_segments_.find(segment_id);
++                if (mounted != mounted_segments_.end()) {
++                    auto cleanup_result = UnmountSegmentImpl(mounted);
++                    if (!cleanup_result) {
++                        LOG(ERROR) << "initial_remount_cleanup_failed base="
++                                   << buffer << " size=" << size
++                                   << ", error=" << cleanup_result.error();
++                    }
++                }
++                return tl::unexpected(err);
++            }
++        }
+     }
+ 
+     EnsureStorageControlPlaneStarted();

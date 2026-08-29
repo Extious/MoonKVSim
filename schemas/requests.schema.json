@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://moonkvsim.local/schemas/requests.schema.json",
+  "title": "MoonKVSim request configuration v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "seed",
+    "arrival",
+    "workload",
+    "trace_token_count",
+    "target_model_tokenizer",
+    "context"
+  ],
+  "properties": {
+    "schema": {
+      "const": "moonkvsim.requests.v1"
+    },
+    "seed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "arrival": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "request_rate", "max_concurrency"],
+      "properties": {
+        "mode": {
+          "const": "causal_trace_replay"
+        },
+        "request_rate": {
+          "type": "null"
+        },
+        "max_concurrency": {
+          "type": "null"
+        }
+      }
+    },
+    "workload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "dataset",
+        "raw_trace_path",
+        "normalized_trace_path",
+        "trace_sha256",
+        "normalizer_commit",
+        "closed_loop",
+        "preserve_agent_dag",
+        "preserve_recorded_tool_delay",
+        "derive_prefix_sharing_from_source_hash_ids"
+      ],
+      "properties": {
+        "kind": {
+          "const": "real_multi_agent_trace"
+        },
+        "dataset": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "raw_trace_path": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "normalized_trace_path": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "trace_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "normalizer_commit": {
+          "type": "string",
+          "pattern": "^(?:[0-9a-f]{40,64})?$"
+        },
+        "closed_loop": {
+          "const": true
+        },
+        "preserve_agent_dag": {
+          "const": true
+        },
+        "preserve_recorded_tool_delay": {
+          "const": true
+        },
+        "derive_prefix_sharing_from_source_hash_ids": {
+          "const": true
+        },
+        "provenance": {
+          "$ref": "#/$defs/traceProvenance"
+        }
+      }
+    },
+    "trace_token_count": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "source_block_size_tokens", "hash_id_scope"],
+      "properties": {
+        "mode": {
+          "const": "source_hash_blocks_64"
+        },
+        "source_block_size_tokens": {
+          "const": 64
+        },
+        "hash_id_scope": {
+          "const": "within_workflow_only"
+        }
+      }
+    },
+    "target_model_tokenizer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model_id", "revision", "tokenizer_config_sha256"],
+      "properties": {
+        "model_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "revision": {
+          "type": "string"
+        },
+        "tokenizer_config_sha256": {
+          "type": "string",
+          "pattern": "^(?:[0-9a-f]{64})?$"
+        },
+        "chat_template_sha256": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_model_len_tokens",
+        "required_observed_context_buckets",
+        "require_real_128k_samples",
+        "overflow_policy",
+        "truncation_policy",
+        "synthetic_padding"
+      ],
+      "properties": {
+        "max_model_len_tokens": {
+          "const": 131072
+        },
+        "required_observed_context_buckets": {
+          "const": [8192, 32768, 65536, 98304, 131072]
+        },
+        "require_real_128k_samples": {
+          "const": true
+        },
+        "overflow_policy": {
+          "const": "fail"
+        },
+        "truncation_policy": {
+          "const": "forbid"
+        },
+        "synthetic_padding": {
+          "const": "forbid"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "traceProvenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "license",
+        "access_level",
+        "collection_interval",
+        "content_availability"
+      ],
+      "properties": {
+        "license": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "access_level": {
+          "enum": ["public", "restricted", "internal", "unknown"]
+        },
+        "collection_interval": {
+          "type": ["string", "null"]
+        },
+        "build_timestamp": {
+          "type": ["string", "null"]
+        },
+        "content_availability": {
+          "enum": ["messages", "token_ids", "source_hash_ids_only"]
+        }
+      }
+    }
+  }
+}

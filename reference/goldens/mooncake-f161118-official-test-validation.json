@@ -1,0 +1,102 @@
+{
+  "claim_exclusions": [
+    "MoonKVSim-versus-Mooncake differential parity",
+    "RPC or concurrency parity",
+    "real RDMA, TCP, CUDA, or storage data-plane execution",
+    "communication timing or calibration",
+    "physical validation",
+    "E3, E4, or E5 evidence",
+    "formal or paper-ready use"
+  ],
+  "evidence_class": "E2_external_official_unit_execution_subset",
+  "formal_use_allowed": false,
+  "provenance": {
+    "commit": "f161118c18dbea1b56dd5c7908b9eaa440353e2e",
+    "gitlinks": {
+      "extern/pybind11": "58c382a8e3d7081364d2f5c62e7f429f0412743b",
+      "extern/yalantinglibs": "7801bc9ad9021781f15217552214e325a1cf7373"
+    },
+    "repository": "/home/comp/zhanzhao/Mooncake",
+    "source_archive_policy": "git_commit_objects_only",
+    "source_golden": {
+      "path": "reference/goldens/mooncake-f161118-store-te-source-api.json",
+      "sha256": "2f118525d96b908abeb0c3feba2885fabeb90e87008aed00eb57af924cb806a1"
+    },
+    "tree": "a5de4c0a0ec90a526edcb72609f6b90e2dc2332a",
+    "worktree_files_copied": false
+  },
+  "schema": "moonkvsim.mooncake-official-test-validation.v1",
+  "validation": {
+    "artifacts": {
+      "CMakeCache.txt": "97928c59c878e67a91c655928371e0c87340b4ecefc49f95b792c1d4a03a3605",
+      "LastTest.log": "c4e6dc9c038a3c74e162794756180cbae70d4fe866ff39e0276a429d8157343e",
+      "allocation_strategy_test": "d16e8e35e451746a12f8202a85753c8d0feb48bb44c5fbab1482e8ebc8a758e4",
+      "eviction_strategy_test": "7777e0f95cd5ff9c8511e41f8cca009c035b0fa045a8d608a0d3e003229b7c48",
+      "libmooncake_store.a": "11e514916af398feeb87b6ff9d9790d98644b54bffd10a20e783c3d06488ffd9",
+      "libtransfer_engine.a": "713c0adda8577d632f5231e97aca9a1673f3ee16e212a91c8c85a566c002ba73",
+      "master_service_test": "8cab1c4588f70429b6410420d01a6eea71805eb1a5dcd444727df6358beecd5e",
+      "memory_location_test": "be879a3abc5a386cdd0eeefc43c510b9deadf7159eb35ed5f62169c4af55464d",
+      "segment_test": "08cb60e696a9759d3765299af05f07959c38dce6234c1e3939fe6ea04b864db4",
+      "topology_test": "623ae5fe43cfd4b51db2c53677ab26798cb71822b4f794f0d04b3d86a21ce7b8",
+      "transfer_task_test": "2b17867421c4a31716f0d70cf71bb01934c078d364ee0ddfc817e9153799c8ea"
+    },
+    "build": {
+      "build_type": "Release",
+      "cmake_version": "3.30.0",
+      "compiler": "gcc 11.2.0",
+      "dependency_prefix": "/home/comp/zhanzhao/Mooncake/.deps-sglang-profiler",
+      "dependency_prefix_hash_locked": false,
+      "host_kernel": "Linux 5.4.17-2136.355.3.4.el8uek.x86_64 x86_64",
+      "options": {
+        "BUILD_BENCHMARK": false,
+        "BUILD_EXAMPLES": false,
+        "BUILD_UNIT_TESTS": true,
+        "STORE_USE_ETCD": false,
+        "STORE_USE_REDIS": false,
+        "USE_3FS": false,
+        "USE_CUDA": false,
+        "USE_ETCD": false,
+        "USE_HTTP": true,
+        "USE_REDIS": false,
+        "USE_TCP": true,
+        "WITH_EP": false,
+        "WITH_STORE": true,
+        "WITH_STORE_GO": false,
+        "WITH_STORE_RUST": false,
+        "WITH_TE": true
+      },
+      "targets": {
+        "mooncake_store": "PASS",
+        "transfer_engine": "PASS"
+      }
+    },
+    "ended_at": "2026-08-30T03:59:58+08:00",
+    "initial_fail_closed_probe": {
+      "configuration": "USE_HTTP=OFF",
+      "first_error": "master_service.cpp HttpMetadataCleanupThreadFunc uses incomplete MetadataStoragePlugin",
+      "status": "EXPECTEDLY_RECORDED_BUILD_COMBINATION_FAILURE"
+    },
+    "runtime_boundaries": {
+      "gpu_or_cuda_kernel_executed": false,
+      "rdma_device_available": false,
+      "test_timing_is_performance_evidence": false
+    },
+    "selected_ctest": {
+      "ctest_targets": [
+        "topology_test",
+        "memory_location_test",
+        "allocation_strategy_test",
+        "eviction_strategy_test",
+        "master_service_test",
+        "transfer_task_test",
+        "segment_test"
+      ],
+      "failed": 0,
+      "gtest_cases_passed": 248,
+      "gtest_cases_skipped": 2,
+      "gtest_cases_total": 250,
+      "status": "PASS"
+    },
+    "started_at": "2026-08-30T03:55:40+08:00"
+  }
+}

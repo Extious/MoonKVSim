@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://moonkvsim.local/schemas/failure.schema.json",
+  "title": "MoonKVSim failure configuration v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "enabled", "events"],
+  "properties": {
+    "schema": {
+      "const": "moonkvsim.failure.v1"
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/gpuFailure"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "enabled": {
+            "const": false
+          }
+        },
+        "required": ["enabled"]
+      },
+      "then": {
+        "properties": {
+          "events": {
+            "maxItems": 0
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "gpuFailure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "failure_id",
+        "type",
+        "at_s",
+        "target",
+        "detection_delay_ms",
+        "repair_after_s",
+        "semantics"
+      ],
+      "properties": {
+        "failure_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "const": "GPU_FAILURE"
+        },
+        "at_s": {
+          "type": "number",
+          "minimum": 0
+        },
+        "target": {
+          "$ref": "#/$defs/exactGpuTarget"
+        },
+        "detection_delay_ms": {
+          "type": "number",
+          "minimum": 0
+        },
+        "repair_after_s": {
+          "type": ["number", "null"],
+          "exclusiveMinimum": 0
+        },
+        "semantics": {
+          "const": "fail_stop_hbm_lost"
+        },
+        "affected_resource_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "reroute": {
+          "$ref": "#/$defs/reroute"
+        }
+      }
+    },
+    "exactGpuTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["node_id", "gpu_id"],
+      "properties": {
+        "node_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "gpu_id": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "reroute": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rule", "on_no_healthy_target"],
+      "properties": {
+        "rule": {
+          "enum": ["healthy_dp_rank", "healthy_replica"]
+        },
+        "on_no_healthy_target": {
+          "const": "fail_request"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,514 @@
+{
+  "schema": "moonkvsim.vanilla-trace-e2-harness.v1",
+  "evidence": {
+    "class": "E2",
+    "boundary": "E2_real_trace_shape_vanilla_baseline_uncalibrated",
+    "formal_use_allowed": false,
+    "physical_timing_claim_allowed": false,
+    "calibration_status": "not_calibrated"
+  },
+  "trace": {
+    "path": "/tmp/moonkvsim-weka-normalized-run1.jsonl",
+    "sha256": "0a1c37deea32f2c393ba7d8d2d9a7c5629854b874b01ace8953140ad889f6d54",
+    "expected_total_valid_span_count": 46142,
+    "synthetic": false,
+    "token_count_mode": "source_hash_blocks_64",
+    "selection": {
+      "workflow_ids": [
+        "0e4206535a79f980e2b1091181202ea987fe"
+      ],
+      "whole_workflow_closure": true
+    }
+  },
+  "target": {
+    "model_id": "Qwen/Qwen3-8B",
+    "model_revision": "b968826d9c46dd6066d109eabc6255188de91218",
+    "kv_dtype": "bf16",
+    "kv_abi": "vllm-v1.2.2-ordinary-full-attention",
+    "kv_layout_id": "qwen3-8b-proposed-yarn-128k-tp1-pp1",
+    "kv_layout_path": "configs/resolved/qwen3-8b/proposed-yarn-128k-tp1-pp1/kv-layout.json",
+    "kv_layout_sha256": "3e1eb25dc9d21e06beb5bf1c0aaf6cceb47b9fe627e10c693927460b6f950a18",
+    "tensor_parallel_size": 1,
+    "pipeline_parallel_size": 1,
+    "context_configuration_status": "proposed_unvalidated"
+  },
+  "scheduler": {
+    "block_size_tokens": 16,
+    "max_num_scheduled_tokens": 8192,
+    "max_num_running_requests": 4,
+    "enable_prefix_caching": false
+  },
+  "predictor": {
+    "kind": "assumed_integer_shape_formula",
+    "provider_name": "moonkvsim-assumed-integer-shape-formula",
+    "provider_version": "e2-smoke-v1",
+    "parameter_source": "assumed",
+    "calibration_status": "not_calibrated",
+    "formal_use_allowed": false,
+    "predictor_database_sha256": null,
+    "profile_api_compatibility": {
+      "database_sha256_binding": "canonical_assumed_formula_parameter_artifact_not_predictor_database",
+      "provider_source_revision": "0000000000000000000000000000000000000000",
+      "provider_source_revision_status": "uncommitted_worktree_sentinel_not_source_provenance"
+    },
+    "hardware_profile_id": "assumed-two-l40s-shape-only-e2",
+    "hardware_profile_fingerprint": "02452cb1ff2d1635b236a0c4ddd8416b9313e3d8be86640423eb55c3ac7aff89",
+    "formula": {
+      "base_ns": {
+        "value": 10000,
+        "source": "assumed",
+        "note": "positive scheduling-time placeholder; not measured"
+      },
+      "prefill_ns_per_scheduled_token": {
+        "value": 100,
+        "source": "assumed",
+        "note": "integer shape driver only; not measured or fitted"
+      },
+      "decode_ns_per_request": {
+        "value": 50000,
+        "source": "assumed",
+        "note": "integer shape driver only; not measured or fitted"
+      },
+      "decode_ns_per_past_token": {
+        "value": 1,
+        "source": "assumed",
+        "note": "integer shape driver only; not measured or fitted"
+      },
+      "batch_request_overhead_ns": {
+        "value": 1000,
+        "source": "assumed",
+        "note": "integer shape driver only; not measured or fitted"
+      }
+    },
+    "mixed_phase_composition": {
+      "kind": "joint_assumed_integer_formula",
+      "formula_binding": "predictor.formula",
+      "parameter_source": "assumed",
+      "calibration_status": "not_calibrated",
+      "formal_use_allowed": false,
+      "base_application": "once_per_joint_scheduler_step",
+      "request_overhead_scope": "all_prefill_and_decode_requests",
+      "prefill_term": "scheduled_prefill_tokens",
+      "decode_request_term": "decode_request_count",
+      "decode_past_term": "sum_decode_past_kv_lengths",
+      "phase_provider_predictions_summed": false
+    }
+  },
+  "deployment": {
+    "seed": 20260830,
+    "route_policy": "round_robin",
+    "compatibility_fingerprint": "qwen3-8b-bf16-vllm-v1.2.2-tp1-pp1",
+    "gpus": [
+      {
+        "replica_id": "dp-0",
+        "dp_rank": 0,
+        "scheduler_id": "scheduler-dp-0",
+        "gpu_id": "gpu-0",
+        "node_id": "compute-0",
+        "numa_node_id": "numa-0",
+        "transport_endpoint": "rdma://compute-0/gpu-0",
+        "hbm_resource_id": "gpu-0.hbm",
+        "physical_capacity_bytes": {
+          "value": 51539607552,
+          "source": "assumed",
+          "note": "48 GiB shape-only GPU capacity; not a live allocation"
+        },
+        "fixed_weights_bytes": {
+          "value": 17179869184,
+          "source": "assumed",
+          "note": "16 GiB conservative Qwen3-8B weight account; not measured"
+        },
+        "fixed_runtime_bytes": {
+          "value": 4294967296,
+          "source": "assumed",
+          "note": "4 GiB runtime reserve; not measured"
+        }
+      },
+      {
+        "replica_id": "dp-1",
+        "dp_rank": 1,
+        "scheduler_id": "scheduler-dp-1",
+        "gpu_id": "gpu-1",
+        "node_id": "compute-1",
+        "numa_node_id": "numa-0",
+        "transport_endpoint": "rdma://compute-1/gpu-1",
+        "hbm_resource_id": "gpu-1.hbm",
+        "physical_capacity_bytes": {
+          "value": 51539607552,
+          "source": "assumed",
+          "note": "48 GiB shape-only GPU capacity; not a live allocation"
+        },
+        "fixed_weights_bytes": {
+          "value": 17179869184,
+          "source": "assumed",
+          "note": "16 GiB conservative Qwen3-8B weight account; not measured"
+        },
+        "fixed_runtime_bytes": {
+          "value": 4294967296,
+          "source": "assumed",
+          "note": "4 GiB runtime reserve; not measured"
+        }
+      }
+    ]
+  },
+  "failure": {
+    "enabled": false,
+    "reason": "GPU_failure_path_is_out_of_scope_for_this_E2_smoke"
+  },
+  "store": {
+    "segment_id": "store-dram-0",
+    "node_id": "store-0",
+    "numa_node_id": "numa-0",
+    "transport_endpoint": "rdma://store-0/store-dram-0",
+    "capacity_bytes": {
+      "value": 68719476736,
+      "source": "assumed",
+      "note": "64 GiB smoke capacity; not a physical Store measurement"
+    },
+    "allocation_alignment_bytes": {
+      "value": 256,
+      "source": "assumed",
+      "note": "smoke allocator alignment; not calibrated"
+    },
+    "allocator_metadata_bytes": {
+      "value": 0,
+      "source": "assumed",
+      "note": "metadata charging remains an explicit zero E2 assumption"
+    },
+    "payload_bytes_per_source_block": {
+      "value": 9437184,
+      "source": "source_derived",
+      "note": "four 16-token target KV blocks times 2359296 payload bytes"
+    }
+  },
+  "network": {
+    "transport": "RDMA_GDR",
+    "retry_count": 0,
+    "slice_size_bytes": {
+      "value": 9437184,
+      "source": "assumed",
+      "note": "one flow per 64-token source block bounds E2 smoke artifacts; not Mooncake default or physical calibration"
+    },
+    "hcas": [
+      {
+        "hca_id": "mlx5-compute-0-0",
+        "node_id": "compute-0",
+        "numa_node_id": "numa-0",
+        "enabled": true
+      },
+      {
+        "hca_id": "mlx5-compute-1-0",
+        "node_id": "compute-1",
+        "numa_node_id": "numa-0",
+        "enabled": true
+      },
+      {
+        "hca_id": "mlx5-store-0-0",
+        "node_id": "store-0",
+        "numa_node_id": "numa-0",
+        "enabled": true
+      }
+    ],
+    "endpoint_registration": {
+      "enabled": true,
+      "endpoint_pooling": true,
+      "worker_resource_id": "endpoint-registration-worker",
+      "worker_lanes": {
+        "value": 1,
+        "source": "assumed",
+        "note": "one deterministic Vanilla registration worker lane; not measured"
+      },
+      "cold_latency_ns": {
+        "value": 250000,
+        "source": "assumed",
+        "note": "uncalibrated endpoint registration and connection delay"
+      },
+      "warm_lookup_ns": {
+        "value": 1000,
+        "source": "assumed",
+        "note": "uncalibrated pooled endpoint lookup delay"
+      },
+      "parameter_source": "assumed",
+      "calibration_status": "not_calibrated",
+      "formal_use_allowed": false
+    },
+    "rate_resources": [
+      {
+        "resource_id": "gpu-0-read",
+        "capacity_bytes_per_second": {
+          "value": 25000000000,
+          "source": "assumed",
+          "note": "shape-only effective rate; not vendor peak or measurement"
+        }
+      },
+      {
+        "resource_id": "gpu-0-write",
+        "capacity_bytes_per_second": {
+          "value": 25000000000,
+          "source": "assumed",
+          "note": "shape-only effective rate; not vendor peak or measurement"
+        }
+      },
+      {
+        "resource_id": "gpu-1-read",
+        "capacity_bytes_per_second": {
+          "value": 25000000000,
+          "source": "assumed",
+          "note": "shape-only effective rate; not vendor peak or measurement"
+        }
+      },
+      {
+        "resource_id": "gpu-1-write",
+        "capacity_bytes_per_second": {
+          "value": 25000000000,
+          "source": "assumed",
+          "note": "shape-only effective rate; not vendor peak or measurement"
+        }
+      },
+      {
+        "resource_id": "store-read",
+        "capacity_bytes_per_second": {
+          "value": 50000000000,
+          "source": "assumed",
+          "note": "shape-only Store read rate; not measured"
+        }
+      },
+      {
+        "resource_id": "store-write",
+        "capacity_bytes_per_second": {
+          "value": 50000000000,
+          "source": "assumed",
+          "note": "shape-only Store write rate; not measured"
+        }
+      },
+      {
+        "resource_id": "shared-fabric",
+        "capacity_bytes_per_second": {
+          "value": 50000000000,
+          "source": "assumed",
+          "note": "shared-domain shape-only rate; not measured"
+        }
+      }
+    ],
+    "paths": [
+      {
+        "replica_id": "dp-0",
+        "put_path_id": "dp-0-rdma-gdr-put",
+        "get_path_id": "dp-0-rdma-gdr-get",
+        "put_rate_resource_ids": [
+          "gpu-0-read",
+          "shared-fabric",
+          "store-write"
+        ],
+        "get_rate_resource_ids": [
+          "store-read",
+          "shared-fabric",
+          "gpu-0-write"
+        ],
+        "put_source_endpoint": "rdma://compute-0/gpu-0",
+        "put_destination_endpoint": "rdma://store-0/store-dram-0",
+        "put_source_node_id": "compute-0",
+        "put_destination_node_id": "store-0",
+        "put_source_numa_node_id": "numa-0",
+        "put_destination_numa_node_id": "numa-0",
+        "put_source_hca_id": "mlx5-compute-0-0",
+        "put_destination_hca_id": "mlx5-store-0-0",
+        "put_preference": "PREFERRED",
+        "put_priority": 0,
+        "get_source_endpoint": "rdma://store-0/store-dram-0",
+        "get_destination_endpoint": "rdma://compute-0/gpu-0",
+        "get_source_node_id": "store-0",
+        "get_destination_node_id": "compute-0",
+        "get_source_numa_node_id": "numa-0",
+        "get_destination_numa_node_id": "numa-0",
+        "get_source_hca_id": "mlx5-store-0-0",
+        "get_destination_hca_id": "mlx5-compute-0-0",
+        "get_preference": "PREFERRED",
+        "get_priority": 0,
+        "put_source_copy_resource_id": "dp-0.gpu-copy",
+        "put_destination_copy_resource_id": "store.copy",
+        "put_endpoint_qp_resource_id": "dp-0.endpoint-qp",
+        "get_source_copy_resource_id": "store.copy",
+        "get_destination_copy_resource_id": "dp-0.gpu-copy",
+        "get_endpoint_qp_resource_id": "dp-0.endpoint-qp"
+      },
+      {
+        "replica_id": "dp-1",
+        "put_path_id": "dp-1-rdma-gdr-put",
+        "get_path_id": "dp-1-rdma-gdr-get",
+        "put_rate_resource_ids": [
+          "gpu-1-read",
+          "shared-fabric",
+          "store-write"
+        ],
+        "get_rate_resource_ids": [
+          "store-read",
+          "shared-fabric",
+          "gpu-1-write"
+        ],
+        "put_source_endpoint": "rdma://compute-1/gpu-1",
+        "put_destination_endpoint": "rdma://store-0/store-dram-0",
+        "put_source_node_id": "compute-1",
+        "put_destination_node_id": "store-0",
+        "put_source_numa_node_id": "numa-0",
+        "put_destination_numa_node_id": "numa-0",
+        "put_source_hca_id": "mlx5-compute-1-0",
+        "put_destination_hca_id": "mlx5-store-0-0",
+        "put_preference": "PREFERRED",
+        "put_priority": 0,
+        "get_source_endpoint": "rdma://store-0/store-dram-0",
+        "get_destination_endpoint": "rdma://compute-1/gpu-1",
+        "get_source_node_id": "store-0",
+        "get_destination_node_id": "compute-1",
+        "get_source_numa_node_id": "numa-0",
+        "get_destination_numa_node_id": "numa-0",
+        "get_source_hca_id": "mlx5-store-0-0",
+        "get_destination_hca_id": "mlx5-compute-1-0",
+        "get_preference": "PREFERRED",
+        "get_priority": 0,
+        "put_source_copy_resource_id": "dp-1.gpu-copy",
+        "put_destination_copy_resource_id": "store.copy",
+        "put_endpoint_qp_resource_id": "dp-1.endpoint-qp",
+        "get_source_copy_resource_id": "store.copy",
+        "get_destination_copy_resource_id": "dp-1.gpu-copy",
+        "get_endpoint_qp_resource_id": "dp-1.endpoint-qp"
+      }
+    ],
+    "concurrency_resources": [
+      {
+        "resource_id": "dp-0.gpu-copy",
+        "node_id": "compute-0",
+        "kind": "copy_engine_lane",
+        "lanes": {
+          "value": 1,
+          "source": "assumed",
+          "note": "one uncalibrated E2 GPU copy lane"
+        }
+      },
+      {
+        "resource_id": "dp-1.gpu-copy",
+        "node_id": "compute-1",
+        "kind": "copy_engine_lane",
+        "lanes": {
+          "value": 1,
+          "source": "assumed",
+          "note": "one uncalibrated E2 GPU copy lane"
+        }
+      },
+      {
+        "resource_id": "store.copy",
+        "node_id": "store-0",
+        "kind": "copy_engine_lane",
+        "lanes": {
+          "value": 1,
+          "source": "assumed",
+          "note": "one shared uncalibrated E2 Store copy lane"
+        }
+      },
+      {
+        "resource_id": "dp-0.endpoint-qp",
+        "node_id": "compute-0",
+        "kind": "endpoint_qp_lane",
+        "lanes": {
+          "value": 1,
+          "source": "assumed",
+          "note": "one uncalibrated E2 endpoint QP lane"
+        }
+      },
+      {
+        "resource_id": "dp-1.endpoint-qp",
+        "node_id": "compute-1",
+        "kind": "endpoint_qp_lane",
+        "lanes": {
+          "value": 1,
+          "source": "assumed",
+          "note": "one uncalibrated E2 endpoint QP lane"
+        }
+      }
+    ],
+    "host_staging_resources": [
+      {
+        "resource_id": "dp-0.host-staging",
+        "node_id": "compute-0",
+        "capacity_bytes": {
+          "value": 1073741824,
+          "source": "assumed",
+          "note": "declared Host pool for audit; RDMA_GDR paths do not bind or charge it"
+        }
+      },
+      {
+        "resource_id": "dp-1.host-staging",
+        "node_id": "compute-1",
+        "capacity_bytes": {
+          "value": 1073741824,
+          "source": "assumed",
+          "note": "declared Host pool for audit; RDMA_GDR paths do not bind or charge it"
+        }
+      },
+      {
+        "resource_id": "store.host-staging",
+        "node_id": "store-0",
+        "capacity_bytes": {
+          "value": 1073741824,
+          "source": "assumed",
+          "note": "declared Host pool for audit; RDMA_GDR paths do not bind or charge it"
+        }
+      }
+    ],
+    "transfer_resource_plan": {
+      "enabled": true,
+      "parameter_source": "assumed",
+      "calibration_status": "not_calibrated",
+      "formal_use_allowed": false,
+      "duration_ns": {
+        "value": 5000000,
+        "source": "assumed",
+        "note": "uncalibrated E2 copy/QP lease duration, not measured service time"
+      },
+      "latest_start_slack_ns": {
+        "value": 60000000000,
+        "source": "assumed",
+        "note": "explicit E2 queue deadline for the selected workflow"
+      },
+      "staging_alignment_bytes": {
+        "value": 256,
+        "source": "assumed",
+        "note": "unused by RDMA_GDR; required to fingerprint the complete plan provider"
+      },
+      "staging_allocator_metadata_bytes": {
+        "value": 0,
+        "source": "assumed",
+        "note": "unused by RDMA_GDR and explicitly zero"
+      }
+    }
+  },
+  "output": {
+    "required_path_prefix": "/tmp/",
+    "forbidden_filesystem_types": [
+      "nfs",
+      "nfs4"
+    ],
+    "existing_target_policy": "reject",
+    "artifact_set": [
+      "event-journal.jsonl",
+      "trace-audit.json",
+      "context-coverage.json",
+      "workflow-metrics.parquet",
+      "request-metrics.parquet",
+      "batch-events.parquet",
+      "kv-residency-events.parquet",
+      "kv-transfer-events.parquet",
+      "physical-allocation-events.parquet",
+      "resource-ledger-deltas.parquet",
+      "resource-ledger-snapshots.parquet",
+      "flow-rate-events.parquet",
+      "resource-utilization.parquet",
+      "store-directory-snapshots.parquet",
+      "failure-events.parquet",
+      "recovery-events.parquet",
+      "capacity-audit.json",
+      "run-audit.json",
+      "summary.json"
+    ]
+  }
+}

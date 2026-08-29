@@ -1,0 +1,146 @@
+diff --git a/python/sglang/srt/mem_cache/storage/mooncake_store/mooncake_store.py b/python/sglang/srt/mem_cache/storage/mooncake_store/mooncake_store.py
+index 245e0eb163..14f6e8df97 100644
+--- a/python/sglang/srt/mem_cache/storage/mooncake_store/mooncake_store.py
++++ b/python/sglang/srt/mem_cache/storage/mooncake_store/mooncake_store.py
+@@ -2,9 +2,11 @@ import ctypes
+ import json
+ import logging
+ import os
++import threading
+ import time
+ import uuid
+ from collections.abc import Sequence
++from contextlib import contextmanager
+ from dataclasses import dataclass
+ from typing import Any, List, Optional, Tuple
+ 
+@@ -24,6 +26,7 @@ from sglang.srt.mem_cache.hicache_storage import (
+ from sglang.srt.mem_cache.pool_host import HostKVCache, HostTensorAllocator
+ from sglang.srt.mem_cache.pool_host.mla import MLATokenToKVPoolHost
+ from sglang.srt.observability.metrics_collector import StorageMetrics
++from sglang.srt.utils.nvtx_utils import profile_range
+ 
+ DEFAULT_LOCAL_BUFFER_SIZE = 16 * 1024 * 1024  # 16 MB
+ SETUP_TIMEOUT = 600  # 10min
+@@ -31,6 +34,76 @@ SETUP_TIMEOUT = 600  # 10min
+ logger = logging.getLogger(__name__)
+ 
+ 
++def _sum_buffer_sizes(buffer_sizes: Sequence[Any]) -> int:
++    """Return the total number of bytes described by a Mooncake I/O call."""
++
++    total = 0
++    for size in buffer_sizes:
++        if isinstance(size, Sequence) and not isinstance(
++            size, (str, bytes, bytearray)
++        ):
++            total += _sum_buffer_sizes(size)
++        else:
++            total += int(size)
++    return total
++
++
++def _io_profile_name(operation: str, object_count: int, buffer_sizes) -> str:
++    """Build a machine-parseable torch-profiler span name for L3 I/O."""
++
++    return (
++        f"sglang.hicache.mooncake.{operation}"
++        f"|objects={object_count}|bytes={_sum_buffer_sizes(buffer_sizes)}"
++    )
++
++
++@contextmanager
++def _profile_mooncake_io(operation: str, object_count: int, buffer_sizes):
++    """Profile Mooncake I/O from HiCache's background storage threads.
++
++    PyTorch's profiler enable flag is thread-local, so ``record_function`` spans
++    created by the prefetch/backup worker threads are not exported by the
++    scheduler thread's profiler.  Keep the torch span for synchronous callers
++    and also emit one atomic JSONL event per real Mooncake call when the
++    profiling directory is configured.
++    """
++
++    num_bytes = _sum_buffer_sizes(buffer_sizes)
++    profile_name = _io_profile_name(operation, object_count, buffer_sizes)
++    start_unix_ns = time.time_ns()
++    start_ns = time.perf_counter_ns()
++    status = "ok"
++    with profile_range(profile_name):
++        try:
++            yield
++        except Exception:
++            status = "error"
++            raise
++        finally:
++            end_ns = time.perf_counter_ns()
++            profile_dir = os.environ.get("SGLANG_HICACHE_IO_PROFILE_DIR")
++            if profile_dir:
++                os.makedirs(profile_dir, exist_ok=True)
++                event = {
++                    "operation": operation,
++                    "objects": object_count,
++                    "bytes": num_bytes,
++                    "duration_us": (end_ns - start_ns) / 1_000,
++                    "start_unix_ns": start_unix_ns,
++                    "end_unix_ns": time.time_ns(),
++                    "pid": os.getpid(),
++                    "thread": threading.current_thread().name,
++                    "status": status,
++                }
++                path = os.path.join(profile_dir, f"hicache-io-{os.getpid()}.jsonl")
++                payload = (json.dumps(event, sort_keys=True) + "\n").encode("utf-8")
++                fd = os.open(path, os.O_APPEND | os.O_CREAT | os.O_WRONLY, 0o644)
++                try:
++                    os.write(fd, payload)
++                finally:
++                    os.close(fd)
++
++
+ class MooncakeHostTensorAllocator(HostTensorAllocator):
+     def __init__(self):
+         super().__init__()
+@@ -1259,26 +1332,28 @@ class MooncakeStore(HiCacheStorage, MooncakeBaseStore):
+             config = self._replicate_config_cls()
+             config.group_ids = group_ids
+ 
+-        if self._uses_multi_buffer(buffer_ptrs):
+-            config = config or self._replicate_config_cls()
+-            return self.store.batch_put_from_multi_buffers(
+-                key_strs, buffer_ptrs, buffer_sizes, config
+-            )
+-        elif config is not None:
+-            return self.store.batch_put_from(
+-                key_strs, buffer_ptrs, buffer_sizes, config
+-            )
+-        else:
+-            return self.store.batch_put_from(key_strs, buffer_ptrs, buffer_sizes)
++        with _profile_mooncake_io("backup", len(key_strs), buffer_sizes):
++            if self._uses_multi_buffer(buffer_ptrs):
++                config = config or self._replicate_config_cls()
++                return self.store.batch_put_from_multi_buffers(
++                    key_strs, buffer_ptrs, buffer_sizes, config
++                )
++            elif config is not None:
++                return self.store.batch_put_from(
++                    key_strs, buffer_ptrs, buffer_sizes, config
++                )
++            else:
++                return self.store.batch_put_from(key_strs, buffer_ptrs, buffer_sizes)
+ 
+     def _get_batch_zero_copy_impl(
+         self, key_strs: List[str], buffer_ptrs: List[Any], buffer_sizes: List[Any]
+     ) -> List[int]:
+-        if self._uses_multi_buffer(buffer_ptrs):
+-            return self.store.batch_get_into_multi_buffers(
+-                key_strs, buffer_ptrs, buffer_sizes
+-            )
+-        return self.store.batch_get_into(key_strs, buffer_ptrs, buffer_sizes)
++        with _profile_mooncake_io("prefetch", len(key_strs), buffer_sizes):
++            if self._uses_multi_buffer(buffer_ptrs):
++                return self.store.batch_get_into_multi_buffers(
++                    key_strs, buffer_ptrs, buffer_sizes
++                )
++            return self.store.batch_get_into(key_strs, buffer_ptrs, buffer_sizes)
+ 
+     def _batch_exist(self, key_strs: List[str]) -> List[int]:
+         return self.store.batch_is_exist(key_strs)
