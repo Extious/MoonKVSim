@@ -18,8 +18,9 @@ uv run python scripts/generate_aegiskv_e2_figures.py \
   --output-dir benchmark/AegisKV/experiments/figures/generated
 ```
 
-The CLI uses `generated/` as its default; the initial release is frozen under
-`e2-initial-v1/`. Keeping this README in the
+The CLI uses `generated/` as its default; the current Qwen3-8B DP-only release
+is frozen under `e2-qwen3-8b-dp-all-v1/`. The superseded initial release remains
+under `e2-initial-v1/`. Keeping this README in the
 parent directory lets the strict artifact auditor require an exact generated
 bundle without treating documentation as an untracked result.
 

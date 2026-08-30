@@ -1,5 +1,11 @@
 # AegisKV GlobalDES initial E2 report
 
+> Legacy bundle: this report is retained for history. The current Qwen3-8B
+> DP-only full matrix is `e2-qwen3-8b-dp-all-v1` and its report is
+> `QWEN3_8B_DP_ALL_V1_REPORT.md`. The current strict auditor intentionally
+> rejects this legacy bundle because its rows predate the explicit
+> `model_deployment` contract.
+
 This is the first complete, auditable simulation-only result bundle for the
 MoonKVSim AegisKV branch. Every run uses a single nanosecond global virtual
 clock over CPU metadata. No CUDA, physical inference, network I/O, RDMA, or
@@ -75,5 +81,6 @@ Run the fail-closed offline audit from the repository root:
   --figure-dir benchmark/AegisKV/experiments/figures/e2-initial-v1
 ```
 
-The expected status is `PASS`, with `physical_execution=false` and
-`slurm_used=false`.
+That command describes the historical audit used at publication time. Use the
+current bundle and command in `QWEN3_8B_DP_ALL_V1_REPORT.md` for a present-day
+`PASS` audit.

@@ -12,7 +12,12 @@ from typing import Any
 import pytest
 
 import moonkvsim.aegiskv.experiment_suite as suite
-from moonkvsim.aegiskv.experiment import CellSpec, FailureSchedule, StudyRunResult
+from moonkvsim.aegiskv.experiment import (
+    CellSpec,
+    FailureSchedule,
+    StudyRunResult,
+    qwen3_8b_dp_deployment,
+)
 from moonkvsim.aegiskv.experiment_suite import (
     ImplementationBinding,
     WorkloadBinding,
@@ -96,11 +101,25 @@ def _payload(spec: CellSpec) -> dict[str, Any]:
             "cuda_used": False,
             "network_io_used": False,
         },
+        "model_deployment": qwen3_8b_dp_deployment(spec.variant.parameters.dp_count),
         "resource_model": {
             "peer_hbm_resources": ["gpu-0"],
             "store_dram_segments": ["store-0:segment-0"],
+            "store_node_count": 1,
+            "host_dram_staging_resources": ["gpu-0.host-staging"],
+            "store_transport": "RDMA_GDR",
+            "host_staging_capacity_transactions": True,
+            "source_pin_overlay_without_double_charge": True,
+            "communication_backend": "flow_contention",
+            "fairness": "weighted_max_min_work_conserving",
+            "flow_clock": "shared_global_des_now_ns",
+            "slice_size_policy_chunks": 8,
             "copy_engines": ["copy-0"],
             "fabric_resources": ["fabric-0"],
+            "rate_resources": {"fabric-0": 100.0},
+            "gpu_hbm_capacity_bytes_per_gpu": 80 * 1024**3,
+            "gpu_hbm_account_stack": ["FREE"],
+            "gpu_hbm_event_boundary_snapshots": True,
             "per_gpu_peer_hbm_quota_enforced": True,
             "failed_gpu_hbm_becomes_unavailable_not_free": True,
         },
@@ -640,6 +659,17 @@ def test_rejects_payload_and_result_binding_tampering(bundle: Bundle) -> None:
     _write_jsonl(results_path, rows)
     _refresh_matrix_artifact(bundle.matrix, "results.jsonl")
     _assert_fail(bundle, "execution_scope")
+
+
+def test_rejects_model_deployment_scope_drift_after_outer_hash_is_rebound(
+    bundle: Bundle,
+) -> None:
+    results_path = bundle.matrix / "results.jsonl"
+    rows = _read_jsonl(results_path)
+    rows[0]["model_deployment"]["model"]["id"] = "Other/Model"
+    _write_jsonl(results_path, rows)
+    _refresh_matrix_artifact(bundle.matrix, "results.jsonl")
+    _assert_fail(bundle, "model_deployment")
 
 
 def test_rejects_duplicate_run_id_after_outer_hashes_are_rebound(bundle: Bundle) -> None:

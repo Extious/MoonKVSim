@@ -162,7 +162,7 @@ validation remain higher-evidence limitations outside the E2-only DoD.
 Status: initial E2 simulation release completed on `aegiskv`; broader plan
 closure and paper-ready evidence remain open.
 
-Current repository gate: `757 passed, 1 skipped`; Ruff PASS; strict mypy PASS
+Current repository gate: `760 passed, 1 skipped`; Ruff PASS; strict mypy PASS
 for 94 source files. These are implementation and artifact-integrity gates, not
 calibration or physical-performance evidence.
 
@@ -182,6 +182,14 @@ calibration or physical-performance evidence.
   report conservative two-sided 95% Student-t intervals. Fourteen preliminary
   SVGs (F1--F11 and F13--F15) pass provenance audit; F12 is explicitly excluded
   because physical calibration is outside the requested simulation-only scope.
+- M9 current Qwen3-8B DP-only release: the complete 46-variant matrix was rerun
+  on the latest fluid-contention, per-GPU HBM-ledger, Host-staging, and
+  multi-Store-capable implementation. It again contains 2,760 rows and 1,380
+  exact A/B pairs, now with a machine-audited `Qwen/Qwen3-8B` model revision,
+  TP=1, PP=1, and DP-only sensitivity over {2, 4, 8} in every protocol,
+  provenance document, row, parameter object, and payload. Fourteen regenerated
+  SVGs and their point bindings pass the upgraded offline audit; F12 remains
+  excluded.
 - M9 fluid-core follow-up: seven core systems over the same five buckets and
   two scenarios, two seeds, and exact A/B repetitions produced 280 rows and
   140 pairs. Transfers now use sliced work-conserving weighted max-min fluid
@@ -198,10 +206,12 @@ calibration or physical-performance evidence.
   rows and 60 exact A/B pairs. F18 exposes WCT delta, modeled network byte-time,
   and 128K recovery composition without claiming a physical scale-out result.
 
-The canonical matrix is
-`benchmark/AegisKV/experiments/e2-initial-v1/`; the figure set is
-`benchmark/AegisKV/experiments/figures/e2-initial-v1/`; and the bounded initial
-interpretation is in `benchmark/AegisKV/experiments/INITIAL_REPORT.md`.
+The current canonical matrix is
+`benchmark/AegisKV/experiments/e2-qwen3-8b-dp-all-v1/`; the figure set is
+`benchmark/AegisKV/experiments/figures/e2-qwen3-8b-dp-all-v1/`; and the bounded
+interpretation is in
+`benchmark/AegisKV/experiments/QWEN3_8B_DP_ALL_V1_REPORT.md`.
+`e2-initial-v1` is retained as a superseded legacy release.
 
 The fluid-core matrix is
 `benchmark/AegisKV/experiments/e2-fluid-core-v2/`; its focused figures are in
@@ -219,9 +229,11 @@ The multi-Store-node matrix is
 interpretation is in
 `benchmark/AegisKV/experiments/STORE_NODE_V1_REPORT.md`.
 
-This initial release is not paper-ready. The current experiment harness still
-does not model TP/PP sensitivity and does not establish physical timing
-accuracy. The branch-local harness now supports explicit GDR and Host-staged
-Store paths with Host DRAM staging/source-pin transactions, plus sharded
+This initial release is not paper-ready. By current scope, the experiment
+harness intentionally fixes TP=1 and PP=1, varies only DP, and uses only
+Qwen3-8B; TP/PP sensitivity is no longer a completion requirement. It does not
+establish physical timing accuracy. The branch-local harness supports explicit
+GDR and Host-staged Store paths with Host DRAM staging/source-pin transactions,
+plus sharded
 multi-node Store placement and ledgers. The focused transport and Store-node
-matrices are complete; TP/PP sensitivity remains open.
+matrices remain E2-only supplements.

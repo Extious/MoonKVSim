@@ -1,0 +1,456 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img">
+  <title>Runtime recovery-ready delay empirical CDF</title>
+  <style>text{font-family:DejaVu Sans,Arial,sans-serif;fill:#111827}.title{font-size:26px;font-weight:700}.subtitle{font-size:14px;fill:#4b5563}.axis{stroke:#374151;stroke-width:1}.grid{stroke:#e5e7eb;stroke-width:1}.tick{font-size:12px;fill:#4b5563}.label{font-size:14px;font-weight:600}.small{font-size:11px}.footer{font-size:13px;font-weight:700;fill:#991b1b}</style>
+  <rect x="0" y="0" width="1200" height="720" rx="0" fill="#ffffff" stroke="none" opacity="1" />
+  <text x="55" y="46" class="title" text-anchor="start">Runtime recovery-ready delay empirical CDF</text>
+  <text x="55" y="74" class="subtitle" text-anchor="start">Core repeat-A means: failure to SILENT_REPLAY_COMPLETE (runtime recovery_ready)</text>
+  <line x1="105" y1="118" x2="105" y2="620" stroke="#374151" stroke-width="1.4" />
+  <line x1="105" y1="620" x2="1145" y2="620" stroke="#374151" stroke-width="1.4" />
+  <line x1="105" y1="620" x2="1145" y2="620" stroke="#e5e7eb" stroke-width="1" />
+  <text x="93" y="624" class="tick" text-anchor="end">0</text>
+  <line x1="105" y1="519.6" x2="1145" y2="519.6" stroke="#e5e7eb" stroke-width="1" />
+  <text x="93" y="523.6" class="tick" text-anchor="end">0.2</text>
+  <line x1="105" y1="419.2" x2="1145" y2="419.2" stroke="#e5e7eb" stroke-width="1" />
+  <text x="93" y="423.2" class="tick" text-anchor="end">0.4</text>
+  <line x1="105" y1="318.8" x2="1145" y2="318.8" stroke="#e5e7eb" stroke-width="1" />
+  <text x="93" y="322.8" class="tick" text-anchor="end">0.6</text>
+  <line x1="105" y1="218.4" x2="1145" y2="218.4" stroke="#e5e7eb" stroke-width="1" />
+  <text x="93" y="222.4" class="tick" text-anchor="end">0.8</text>
+  <line x1="105" y1="118" x2="1145" y2="118" stroke="#e5e7eb" stroke-width="1" />
+  <text x="93" y="122" class="tick" text-anchor="end">1</text>
+  <text x="625" y="658" class="label" text-anchor="middle">runtime recovery_ready mean: failure → silent replay complete (ms)</text>
+  <text x="22" y="369" class="label" text-anchor="start" transform="rotate(-90 22 369)">empirical CDF</text>
+  <g data-point-id="f7-point-00000" data-run-id="core:static_peer_hbm:32k:gpu_failure:seed-1:repeat-A" data-result-hash="6de3ba2d19dfde627115606d32069151eb4a08f5c9d826561d8f579a6c6733bf">
+    <title>f7-point-00000 | core:static_peer_hbm:32k:gpu_failure:seed-1:repeat-A | 6de3ba2d19dfde627115606d32069151eb4a08f5c9d826561d8f579a6c6733bf | {"cdf":0.5,"recovery_mean_ms":16376.112721,"recovery_source_group":"Peer-HBM dominant"}</title>
+    <circle cx="245.408" cy="369" r="4" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00001" data-run-id="core:static_peer_hbm:32k:gpu_failure:seed-0:repeat-A" data-result-hash="17767e510a89b6f8b7e1eeaa8713b11441e85a378906fa622f726d658a22110f">
+    <title>f7-point-00001 | core:static_peer_hbm:32k:gpu_failure:seed-0:repeat-A | 17767e510a89b6f8b7e1eeaa8713b11441e85a378906fa622f726d658a22110f | {"cdf":1.0,"recovery_mean_ms":40103.456128,"recovery_source_group":"Peer-HBM dominant"}</title>
+    <circle cx="448.846" cy="118" r="4" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <polyline points="245.408,620 245.408,369 448.846,369 448.846,118" fill="none" stroke="#2563eb" stroke-width="2" stroke-linejoin="round" />
+  <rect x="130" y="92" width="14" height="8" rx="0" fill="#2563eb" stroke="none" opacity="1" />
+  <text x="150" y="101" class="tick" text-anchor="start">Peer-HBM dominant</text>
+  <g data-point-id="f7-point-00002" data-run-id="core:aegiskv_dram_only:64k:gpu_failure:seed-2:repeat-A" data-result-hash="89ab7f68a3f837ffc76c7012be2339472bff6376ad12925af504269fdaddfc9f">
+    <title>f7-point-00002 | core:aegiskv_dram_only:64k:gpu_failure:seed-2:repeat-A | 89ab7f68a3f837ffc76c7012be2339472bff6376ad12925af504269fdaddfc9f | {"cdf":0.01098901098901099,"recovery_mean_ms":1524.314043,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="118.069" cy="614.484" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00003" data-run-id="core:aegiskv_hbm_dram:64k:gpu_failure:seed-2:repeat-A" data-result-hash="35d28cecedbfc57ea3a6ba2084c6264938ac11e9ce271f7044fe6cf9fc857689">
+    <title>f7-point-00003 | core:aegiskv_hbm_dram:64k:gpu_failure:seed-2:repeat-A | 35d28cecedbfc57ea3a6ba2084c6264938ac11e9ce271f7044fe6cf9fc857689 | {"cdf":0.02197802197802198,"recovery_mean_ms":1524.314043,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="118.069" cy="608.967" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00004" data-run-id="core:aegiskv_peer_only:64k:gpu_failure:seed-2:repeat-A" data-result-hash="671bc00bd8647a0299ea6e32c1c26277190caa4bf55383199e77218c42db8e50">
+    <title>f7-point-00004 | core:aegiskv_peer_only:64k:gpu_failure:seed-2:repeat-A | 671bc00bd8647a0299ea6e32c1c26277190caa4bf55383199e77218c42db8e50 | {"cdf":0.03296703296703297,"recovery_mean_ms":1524.314043,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="118.069" cy="603.451" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00005" data-run-id="core:aegiskv_unified:64k:gpu_failure:seed-2:repeat-A" data-result-hash="2d3889e6a77d35f296454a08bce3d5f19da9a77b62d0dc4c455c6c656a737bcf">
+    <title>f7-point-00005 | core:aegiskv_unified:64k:gpu_failure:seed-2:repeat-A | 2d3889e6a77d35f296454a08bce3d5f19da9a77b62d0dc4c455c6c656a737bcf | {"cdf":0.04395604395604396,"recovery_mean_ms":1524.314043,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="118.069" cy="597.934" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00006" data-run-id="core:recompute_only:64k:gpu_failure:seed-2:repeat-A" data-result-hash="c73862aebf01ab373d0c60c425dd2fe5b92db636ce24126601b3e79984984745">
+    <title>f7-point-00006 | core:recompute_only:64k:gpu_failure:seed-2:repeat-A | c73862aebf01ab373d0c60c425dd2fe5b92db636ce24126601b3e79984984745 | {"cdf":0.054945054945054944,"recovery_mean_ms":1524.314043,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="118.069" cy="592.418" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00007" data-run-id="core:vanilla_mooncake_dram:64k:gpu_failure:seed-2:repeat-A" data-result-hash="639c92e3fec40ab7df7641d2a767dd4ddfd5dd747c8a3feb7ecd8519a1e16d35">
+    <title>f7-point-00007 | core:vanilla_mooncake_dram:64k:gpu_failure:seed-2:repeat-A | 639c92e3fec40ab7df7641d2a767dd4ddfd5dd747c8a3feb7ecd8519a1e16d35 | {"cdf":0.06593406593406594,"recovery_mean_ms":1524.314043,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="118.069" cy="586.901" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00008" data-run-id="core:aegiskv_dram_only:8k:gpu_failure:seed-2:repeat-A" data-result-hash="22dc8d2968ee07a7ffab9dac78c1b83d6a420a50b6cbcff9869467630b8c1eb4">
+    <title>f7-point-00008 | core:aegiskv_dram_only:8k:gpu_failure:seed-2:repeat-A | 22dc8d2968ee07a7ffab9dac78c1b83d6a420a50b6cbcff9869467630b8c1eb4 | {"cdf":0.07692307692307693,"recovery_mean_ms":1628.78,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="118.965" cy="581.385" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00009" data-run-id="core:aegiskv_hbm_dram:8k:gpu_failure:seed-2:repeat-A" data-result-hash="c091babb7e9266d7d077fe1bb68b40c37a31d8c201fd280713a5385d319ccb4d">
+    <title>f7-point-00009 | core:aegiskv_hbm_dram:8k:gpu_failure:seed-2:repeat-A | c091babb7e9266d7d077fe1bb68b40c37a31d8c201fd280713a5385d319ccb4d | {"cdf":0.08791208791208792,"recovery_mean_ms":1628.78,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="118.965" cy="575.868" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00010" data-run-id="core:aegiskv_peer_only:8k:gpu_failure:seed-2:repeat-A" data-result-hash="d7712e7f29c8f4042de5734964161b07434d5ebf93952d45cb280901a35a69a0">
+    <title>f7-point-00010 | core:aegiskv_peer_only:8k:gpu_failure:seed-2:repeat-A | d7712e7f29c8f4042de5734964161b07434d5ebf93952d45cb280901a35a69a0 | {"cdf":0.0989010989010989,"recovery_mean_ms":1628.78,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="118.965" cy="570.352" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00011" data-run-id="core:aegiskv_unified:8k:gpu_failure:seed-2:repeat-A" data-result-hash="380989a04102e6c66af0879098fd9ecc815ea2624178324940455ae91fe339b1">
+    <title>f7-point-00011 | core:aegiskv_unified:8k:gpu_failure:seed-2:repeat-A | 380989a04102e6c66af0879098fd9ecc815ea2624178324940455ae91fe339b1 | {"cdf":0.10989010989010989,"recovery_mean_ms":1628.78,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="118.965" cy="564.835" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00012" data-run-id="core:recompute_only:8k:gpu_failure:seed-2:repeat-A" data-result-hash="f26c331e68ea91836a56904ea892d08578396b1f68c31e3a99af8764a1d0ca1f">
+    <title>f7-point-00012 | core:recompute_only:8k:gpu_failure:seed-2:repeat-A | f26c331e68ea91836a56904ea892d08578396b1f68c31e3a99af8764a1d0ca1f | {"cdf":0.12087912087912088,"recovery_mean_ms":1628.78,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="118.965" cy="559.319" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00013" data-run-id="core:static_peer_hbm:8k:gpu_failure:seed-2:repeat-A" data-result-hash="f0e9b2cdaad7824d3ce453158484c4f63db87473940807648e2cf2f6a1a2c889">
+    <title>f7-point-00013 | core:static_peer_hbm:8k:gpu_failure:seed-2:repeat-A | f0e9b2cdaad7824d3ce453158484c4f63db87473940807648e2cf2f6a1a2c889 | {"cdf":0.13186813186813187,"recovery_mean_ms":1628.78,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="118.965" cy="553.802" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00014" data-run-id="core:vanilla_mooncake_dram:8k:gpu_failure:seed-2:repeat-A" data-result-hash="6705abc3ed1b23b9f5231427702f20389da3e32e8517b5bd9e4217703a4146a8">
+    <title>f7-point-00014 | core:vanilla_mooncake_dram:8k:gpu_failure:seed-2:repeat-A | 6705abc3ed1b23b9f5231427702f20389da3e32e8517b5bd9e4217703a4146a8 | {"cdf":0.14285714285714285,"recovery_mean_ms":1628.78,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="118.965" cy="548.286" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00015" data-run-id="core:aegiskv_dram_only:8k:gpu_failure:seed-1:repeat-A" data-result-hash="6b6e985dbd329ffc56af63df7e3ddd6190a41428a048b260efda962a1c6000da">
+    <title>f7-point-00015 | core:aegiskv_dram_only:8k:gpu_failure:seed-1:repeat-A | 6b6e985dbd329ffc56af63df7e3ddd6190a41428a048b260efda962a1c6000da | {"cdf":0.15384615384615385,"recovery_mean_ms":1730.439999,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="119.837" cy="542.769" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00016" data-run-id="core:aegiskv_hbm_dram:8k:gpu_failure:seed-1:repeat-A" data-result-hash="67b76a0c5005d5a0b0b5694fe270e4294989afa6267a8f2a3e242428efbab8b5">
+    <title>f7-point-00016 | core:aegiskv_hbm_dram:8k:gpu_failure:seed-1:repeat-A | 67b76a0c5005d5a0b0b5694fe270e4294989afa6267a8f2a3e242428efbab8b5 | {"cdf":0.16483516483516483,"recovery_mean_ms":1730.439999,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="119.837" cy="537.253" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00017" data-run-id="core:aegiskv_peer_only:8k:gpu_failure:seed-1:repeat-A" data-result-hash="56702dce045b410683a5de34adf45dddb6f1a49781d00898cabc58b4bbeba525">
+    <title>f7-point-00017 | core:aegiskv_peer_only:8k:gpu_failure:seed-1:repeat-A | 56702dce045b410683a5de34adf45dddb6f1a49781d00898cabc58b4bbeba525 | {"cdf":0.17582417582417584,"recovery_mean_ms":1730.439999,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="119.837" cy="531.736" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00018" data-run-id="core:aegiskv_unified:8k:gpu_failure:seed-1:repeat-A" data-result-hash="c1fdd9afcffff865903d03f7a34d17668748ac058d19885665ab4ca75f77d456">
+    <title>f7-point-00018 | core:aegiskv_unified:8k:gpu_failure:seed-1:repeat-A | c1fdd9afcffff865903d03f7a34d17668748ac058d19885665ab4ca75f77d456 | {"cdf":0.18681318681318682,"recovery_mean_ms":1730.439999,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="119.837" cy="526.22" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00019" data-run-id="core:recompute_only:8k:gpu_failure:seed-1:repeat-A" data-result-hash="f7ef47571000f26958a1b50809037dd0df46384b01f65e5298801847bc750aeb">
+    <title>f7-point-00019 | core:recompute_only:8k:gpu_failure:seed-1:repeat-A | f7ef47571000f26958a1b50809037dd0df46384b01f65e5298801847bc750aeb | {"cdf":0.1978021978021978,"recovery_mean_ms":1730.439999,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="119.837" cy="520.703" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00020" data-run-id="core:static_peer_hbm:8k:gpu_failure:seed-1:repeat-A" data-result-hash="5df296a0bd0fa1b8a01163e36890a8500242c2d9a6437c76c2631e4a6e483a43">
+    <title>f7-point-00020 | core:static_peer_hbm:8k:gpu_failure:seed-1:repeat-A | 5df296a0bd0fa1b8a01163e36890a8500242c2d9a6437c76c2631e4a6e483a43 | {"cdf":0.2087912087912088,"recovery_mean_ms":1730.439999,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="119.837" cy="515.187" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00021" data-run-id="core:vanilla_mooncake_dram:8k:gpu_failure:seed-1:repeat-A" data-result-hash="8ec92d35ba879ee1c8c88d1e2d56c9ba0119c22e9de67d123fabfe07c3b482b9">
+    <title>f7-point-00021 | core:vanilla_mooncake_dram:8k:gpu_failure:seed-1:repeat-A | 8ec92d35ba879ee1c8c88d1e2d56c9ba0119c22e9de67d123fabfe07c3b482b9 | {"cdf":0.21978021978021978,"recovery_mean_ms":1730.439999,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="119.837" cy="509.67" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00022" data-run-id="core:aegiskv_dram_only:128k:gpu_failure:seed-1:repeat-A" data-result-hash="521d9b88f60cfcaca9fe1788cf90ab60cfeeec32df76371114105d493f08ab3c">
+    <title>f7-point-00022 | core:aegiskv_dram_only:128k:gpu_failure:seed-1:repeat-A | 521d9b88f60cfcaca9fe1788cf90ab60cfeeec32df76371114105d493f08ab3c | {"cdf":0.23076923076923078,"recovery_mean_ms":2952.900472,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="130.318" cy="504.154" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00023" data-run-id="core:aegiskv_dram_only:128k:gpu_failure:seed-2:repeat-A" data-result-hash="45b803a8949e7d59b4ee8a557da373161bad9d05b618d09a96eb28d6cd3af9e4">
+    <title>f7-point-00023 | core:aegiskv_dram_only:128k:gpu_failure:seed-2:repeat-A | 45b803a8949e7d59b4ee8a557da373161bad9d05b618d09a96eb28d6cd3af9e4 | {"cdf":0.24175824175824176,"recovery_mean_ms":2952.900472,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="130.318" cy="498.637" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00024" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-1:repeat-A" data-result-hash="bf4bf6238a8641f9666077eb65af6e1da1694b52bfe2b7695a756973a81f7b02">
+    <title>f7-point-00024 | core:aegiskv_unified:128k:gpu_failure:seed-1:repeat-A | bf4bf6238a8641f9666077eb65af6e1da1694b52bfe2b7695a756973a81f7b02 | {"cdf":0.25274725274725274,"recovery_mean_ms":3329.401754,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="133.546" cy="493.121" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00025" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-2:repeat-A" data-result-hash="750c2d216a6a477d78432240ad10c52f7ad034da28528038a0ed812a25daa824">
+    <title>f7-point-00025 | core:aegiskv_unified:128k:gpu_failure:seed-2:repeat-A | 750c2d216a6a477d78432240ad10c52f7ad034da28528038a0ed812a25daa824 | {"cdf":0.26373626373626374,"recovery_mean_ms":3329.401754,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="133.546" cy="487.604" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00026" data-run-id="core:aegiskv_dram_only:8k:gpu_failure:seed-0:repeat-A" data-result-hash="f057f3b04f2b7efcd424285aebd49ec24f9f7a8e90409775cd4d0e7b29527764">
+    <title>f7-point-00026 | core:aegiskv_dram_only:8k:gpu_failure:seed-0:repeat-A | f057f3b04f2b7efcd424285aebd49ec24f9f7a8e90409775cd4d0e7b29527764 | {"cdf":0.27472527472527475,"recovery_mean_ms":3916.421052,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="138.579" cy="482.088" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00027" data-run-id="core:aegiskv_hbm_dram:8k:gpu_failure:seed-0:repeat-A" data-result-hash="564e43b63d07f12e9e422b27e0183ee5b1626a88f707986704ea2ef7a3d3bcdd">
+    <title>f7-point-00027 | core:aegiskv_hbm_dram:8k:gpu_failure:seed-0:repeat-A | 564e43b63d07f12e9e422b27e0183ee5b1626a88f707986704ea2ef7a3d3bcdd | {"cdf":0.2857142857142857,"recovery_mean_ms":3916.421052,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="138.579" cy="476.571" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00028" data-run-id="core:aegiskv_peer_only:8k:gpu_failure:seed-0:repeat-A" data-result-hash="06fada97c1389701a34fe979d1c25413fc3e0131f444c85c2c2d9554d9c05a1d">
+    <title>f7-point-00028 | core:aegiskv_peer_only:8k:gpu_failure:seed-0:repeat-A | 06fada97c1389701a34fe979d1c25413fc3e0131f444c85c2c2d9554d9c05a1d | {"cdf":0.2967032967032967,"recovery_mean_ms":3916.421052,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="138.579" cy="471.055" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00029" data-run-id="core:aegiskv_unified:8k:gpu_failure:seed-0:repeat-A" data-result-hash="a4f2463470fee4b9a13ed93a8d42ddeea6208f9233670892008260ad669ff693">
+    <title>f7-point-00029 | core:aegiskv_unified:8k:gpu_failure:seed-0:repeat-A | a4f2463470fee4b9a13ed93a8d42ddeea6208f9233670892008260ad669ff693 | {"cdf":0.3076923076923077,"recovery_mean_ms":3916.421052,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="138.579" cy="465.538" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00030" data-run-id="core:recompute_only:8k:gpu_failure:seed-0:repeat-A" data-result-hash="ce8e4394320415810a45fab5dddd1b25c5de526afdebdac18619da9a1f74ca46">
+    <title>f7-point-00030 | core:recompute_only:8k:gpu_failure:seed-0:repeat-A | ce8e4394320415810a45fab5dddd1b25c5de526afdebdac18619da9a1f74ca46 | {"cdf":0.31868131868131866,"recovery_mean_ms":3916.421052,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="138.579" cy="460.022" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00031" data-run-id="core:static_peer_hbm:8k:gpu_failure:seed-0:repeat-A" data-result-hash="ee20d75cca1b201a50bd1c9f0612f003a0dea92d6a8fc1c8b9065dc16f982302">
+    <title>f7-point-00031 | core:static_peer_hbm:8k:gpu_failure:seed-0:repeat-A | ee20d75cca1b201a50bd1c9f0612f003a0dea92d6a8fc1c8b9065dc16f982302 | {"cdf":0.32967032967032966,"recovery_mean_ms":3916.421052,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="138.579" cy="454.505" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00032" data-run-id="core:vanilla_mooncake_dram:8k:gpu_failure:seed-0:repeat-A" data-result-hash="a907c56ded02f4e920c6d446406ef313122ef8b7f73c6a0f8f0abe0980f39ca9">
+    <title>f7-point-00032 | core:vanilla_mooncake_dram:8k:gpu_failure:seed-0:repeat-A | a907c56ded02f4e920c6d446406ef313122ef8b7f73c6a0f8f0abe0980f39ca9 | {"cdf":0.34065934065934067,"recovery_mean_ms":3916.421052,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="138.579" cy="448.989" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00033" data-run-id="core:aegiskv_peer_only:128k:gpu_failure:seed-1:repeat-A" data-result-hash="ae144ef10c288c026d8eadb4dc75bbab8cb0383c94e28bda66f02a2a56fccd17">
+    <title>f7-point-00033 | core:aegiskv_peer_only:128k:gpu_failure:seed-1:repeat-A | ae144ef10c288c026d8eadb4dc75bbab8cb0383c94e28bda66f02a2a56fccd17 | {"cdf":0.3516483516483517,"recovery_mean_ms":4741.031563,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="145.649" cy="443.473" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00034" data-run-id="core:aegiskv_peer_only:128k:gpu_failure:seed-2:repeat-A" data-result-hash="594fac45df81da77a4c0ff2077d104dbc8588569a54028dcff70cfe8cf4cdc32">
+    <title>f7-point-00034 | core:aegiskv_peer_only:128k:gpu_failure:seed-2:repeat-A | 594fac45df81da77a4c0ff2077d104dbc8588569a54028dcff70cfe8cf4cdc32 | {"cdf":0.3626373626373626,"recovery_mean_ms":4741.031563,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="145.649" cy="437.956" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00035" data-run-id="core:recompute_only:128k:gpu_failure:seed-1:repeat-A" data-result-hash="e6a07201f50d9da0a0e7a60ffc5cebcac524cdfd3194df289d68115852d1495b">
+    <title>f7-point-00035 | core:recompute_only:128k:gpu_failure:seed-1:repeat-A | e6a07201f50d9da0a0e7a60ffc5cebcac524cdfd3194df289d68115852d1495b | {"cdf":0.37362637362637363,"recovery_mean_ms":4741.031563,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="145.649" cy="432.44" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00036" data-run-id="core:recompute_only:128k:gpu_failure:seed-2:repeat-A" data-result-hash="4d6d419a422874a3edd689bb42f1dd26ae348efd8078f900194f89ff3a87d319">
+    <title>f7-point-00036 | core:recompute_only:128k:gpu_failure:seed-2:repeat-A | 4d6d419a422874a3edd689bb42f1dd26ae348efd8078f900194f89ff3a87d319 | {"cdf":0.38461538461538464,"recovery_mean_ms":4741.031563,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="145.649" cy="426.923" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00037" data-run-id="core:static_peer_hbm:128k:gpu_failure:seed-1:repeat-A" data-result-hash="86d3270d05cfce3f6aeb9cd4a51e19949a8593988598dd81b4e49fa0f2619d45">
+    <title>f7-point-00037 | core:static_peer_hbm:128k:gpu_failure:seed-1:repeat-A | 86d3270d05cfce3f6aeb9cd4a51e19949a8593988598dd81b4e49fa0f2619d45 | {"cdf":0.3956043956043956,"recovery_mean_ms":4741.031563,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="145.649" cy="421.407" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00038" data-run-id="core:static_peer_hbm:64k:gpu_failure:seed-2:repeat-A" data-result-hash="55c22071b6b4a320120f2fafebbb1f042d8045b1dc2ed4f8c57c95300edc1cdc">
+    <title>f7-point-00038 | core:static_peer_hbm:64k:gpu_failure:seed-2:repeat-A | 55c22071b6b4a320120f2fafebbb1f042d8045b1dc2ed4f8c57c95300edc1cdc | {"cdf":0.4065934065934066,"recovery_mean_ms":7649.064932,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="170.583" cy="415.89" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00039" data-run-id="core:static_peer_hbm:128k:gpu_failure:seed-2:repeat-A" data-result-hash="5218b06a079acdb1b7a4dcde90fb1f795dfca163a8792332ac1985149c0a1d2d">
+    <title>f7-point-00039 | core:static_peer_hbm:128k:gpu_failure:seed-2:repeat-A | 5218b06a079acdb1b7a4dcde90fb1f795dfca163a8792332ac1985149c0a1d2d | {"cdf":0.4175824175824176,"recovery_mean_ms":8590.047282,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="178.651" cy="410.374" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00040" data-run-id="core:aegiskv_dram_only:64k:gpu_failure:seed-0:repeat-A" data-result-hash="d4275277d547387f3df230d5493cf28f4319ea9a94fdef9b46cb4a1092d058ee">
+    <title>f7-point-00040 | core:aegiskv_dram_only:64k:gpu_failure:seed-0:repeat-A | d4275277d547387f3df230d5493cf28f4319ea9a94fdef9b46cb4a1092d058ee | {"cdf":0.42857142857142855,"recovery_mean_ms":8907.241061,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="181.37" cy="404.857" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00041" data-run-id="core:aegiskv_dram_only:64k:gpu_failure:seed-1:repeat-A" data-result-hash="55e9a02354a5e0e045dfeacf546d40869227e4fedaa5222cceedf69e91a0116b">
+    <title>f7-point-00041 | core:aegiskv_dram_only:64k:gpu_failure:seed-1:repeat-A | 55e9a02354a5e0e045dfeacf546d40869227e4fedaa5222cceedf69e91a0116b | {"cdf":0.43956043956043955,"recovery_mean_ms":8907.241061,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="181.37" cy="399.341" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00042" data-run-id="core:aegiskv_hbm_dram:64k:gpu_failure:seed-0:repeat-A" data-result-hash="61d9250b84afd8c9e146b9bd21f19ebb264603207d2bb39d6dd43bb158e0687f">
+    <title>f7-point-00042 | core:aegiskv_hbm_dram:64k:gpu_failure:seed-0:repeat-A | 61d9250b84afd8c9e146b9bd21f19ebb264603207d2bb39d6dd43bb158e0687f | {"cdf":0.45054945054945056,"recovery_mean_ms":8907.241061,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="181.37" cy="393.824" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00043" data-run-id="core:aegiskv_hbm_dram:64k:gpu_failure:seed-1:repeat-A" data-result-hash="8bc8a18f3be8e0ab168cff59f2bd60752116392b79c97ee77bab0932c4efdc91">
+    <title>f7-point-00043 | core:aegiskv_hbm_dram:64k:gpu_failure:seed-1:repeat-A | 8bc8a18f3be8e0ab168cff59f2bd60752116392b79c97ee77bab0932c4efdc91 | {"cdf":0.46153846153846156,"recovery_mean_ms":8907.241061,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="181.37" cy="388.308" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00044" data-run-id="core:aegiskv_peer_only:64k:gpu_failure:seed-0:repeat-A" data-result-hash="345a2c02b584d1110e2fc31df9b8556336090625141c550e176588d59f281eb5">
+    <title>f7-point-00044 | core:aegiskv_peer_only:64k:gpu_failure:seed-0:repeat-A | 345a2c02b584d1110e2fc31df9b8556336090625141c550e176588d59f281eb5 | {"cdf":0.4725274725274725,"recovery_mean_ms":8907.241061,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="181.37" cy="382.791" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00045" data-run-id="core:aegiskv_peer_only:64k:gpu_failure:seed-1:repeat-A" data-result-hash="63227325ea98a9c3bdc91b9be01e2c1cb4369b52e3cd8cc5b82212b20ead21a6">
+    <title>f7-point-00045 | core:aegiskv_peer_only:64k:gpu_failure:seed-1:repeat-A | 63227325ea98a9c3bdc91b9be01e2c1cb4369b52e3cd8cc5b82212b20ead21a6 | {"cdf":0.4835164835164835,"recovery_mean_ms":8907.241061,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="181.37" cy="377.275" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00046" data-run-id="core:aegiskv_unified:64k:gpu_failure:seed-0:repeat-A" data-result-hash="9887acd68f374de5b6cf6da126fd53d016b121c164971d63338a2e30d686cfa9">
+    <title>f7-point-00046 | core:aegiskv_unified:64k:gpu_failure:seed-0:repeat-A | 9887acd68f374de5b6cf6da126fd53d016b121c164971d63338a2e30d686cfa9 | {"cdf":0.4945054945054945,"recovery_mean_ms":8907.241061,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="181.37" cy="371.758" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00047" data-run-id="core:aegiskv_unified:64k:gpu_failure:seed-1:repeat-A" data-result-hash="68c49f36a955b4ff8fc85b9d157888b3afcf400da2caa441275370c095cc149f">
+    <title>f7-point-00047 | core:aegiskv_unified:64k:gpu_failure:seed-1:repeat-A | 68c49f36a955b4ff8fc85b9d157888b3afcf400da2caa441275370c095cc149f | {"cdf":0.5054945054945055,"recovery_mean_ms":8907.241061,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="181.37" cy="366.242" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00048" data-run-id="core:recompute_only:64k:gpu_failure:seed-0:repeat-A" data-result-hash="d4d951c3ffe0e27fd7cd12eb6a1a1f95cf715b983636871324103d331b205428">
+    <title>f7-point-00048 | core:recompute_only:64k:gpu_failure:seed-0:repeat-A | d4d951c3ffe0e27fd7cd12eb6a1a1f95cf715b983636871324103d331b205428 | {"cdf":0.5164835164835165,"recovery_mean_ms":8907.241061,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="181.37" cy="360.725" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00049" data-run-id="core:recompute_only:64k:gpu_failure:seed-1:repeat-A" data-result-hash="17ca13dc8798f6b62f95ce430e40d18ab4b506bc67f4b71a633e57753c9dd80f">
+    <title>f7-point-00049 | core:recompute_only:64k:gpu_failure:seed-1:repeat-A | 17ca13dc8798f6b62f95ce430e40d18ab4b506bc67f4b71a633e57753c9dd80f | {"cdf":0.5274725274725275,"recovery_mean_ms":8907.241061,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="181.37" cy="355.209" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00050" data-run-id="core:static_peer_hbm:64k:gpu_failure:seed-0:repeat-A" data-result-hash="9fd29b1e670f80f6fdd026cc378ae52963f432ca2bd8243ee8f6daae44496a3d">
+    <title>f7-point-00050 | core:static_peer_hbm:64k:gpu_failure:seed-0:repeat-A | 9fd29b1e670f80f6fdd026cc378ae52963f432ca2bd8243ee8f6daae44496a3d | {"cdf":0.5384615384615384,"recovery_mean_ms":8907.241061,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="181.37" cy="349.692" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00051" data-run-id="core:static_peer_hbm:64k:gpu_failure:seed-1:repeat-A" data-result-hash="e6dd316313e55a1ef611032cd26e21c68e967260ab30b6a6ddebf75145dc12f4">
+    <title>f7-point-00051 | core:static_peer_hbm:64k:gpu_failure:seed-1:repeat-A | e6dd316313e55a1ef611032cd26e21c68e967260ab30b6a6ddebf75145dc12f4 | {"cdf":0.5494505494505495,"recovery_mean_ms":8907.241061,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="181.37" cy="344.176" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00052" data-run-id="core:vanilla_mooncake_dram:64k:gpu_failure:seed-0:repeat-A" data-result-hash="eb02bc902adeff7c48c83e636f419f0b8a056e9756136fcd1dcfbd89109ab60e">
+    <title>f7-point-00052 | core:vanilla_mooncake_dram:64k:gpu_failure:seed-0:repeat-A | eb02bc902adeff7c48c83e636f419f0b8a056e9756136fcd1dcfbd89109ab60e | {"cdf":0.5604395604395604,"recovery_mean_ms":8907.241061,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="181.37" cy="338.659" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00053" data-run-id="core:vanilla_mooncake_dram:64k:gpu_failure:seed-1:repeat-A" data-result-hash="6ac50eb95e157eb389b78f8ddd8a21a3f24b2b100a4a860f6215b346760cf152">
+    <title>f7-point-00053 | core:vanilla_mooncake_dram:64k:gpu_failure:seed-1:repeat-A | 6ac50eb95e157eb389b78f8ddd8a21a3f24b2b100a4a860f6215b346760cf152 | {"cdf":0.5714285714285714,"recovery_mean_ms":8907.241061,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="181.37" cy="333.143" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00054" data-run-id="core:aegiskv_dram_only:128k:gpu_failure:seed-0:repeat-A" data-result-hash="ea7ed00da234192b9d68fe225f4b9cd66ee54d66c30725bd9a0f3ff3757b48ea">
+    <title>f7-point-00054 | core:aegiskv_dram_only:128k:gpu_failure:seed-0:repeat-A | ea7ed00da234192b9d68fe225f4b9cd66ee54d66c30725bd9a0f3ff3757b48ea | {"cdf":0.5824175824175825,"recovery_mean_ms":12386.697697,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="211.203" cy="327.626" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00055" data-run-id="core:aegiskv_hbm_dram:128k:gpu_failure:seed-0:repeat-A" data-result-hash="eca0114552c6cec5ba07b661c2508be11f0214b44cbe4392fd96be69bd57c557">
+    <title>f7-point-00055 | core:aegiskv_hbm_dram:128k:gpu_failure:seed-0:repeat-A | eca0114552c6cec5ba07b661c2508be11f0214b44cbe4392fd96be69bd57c557 | {"cdf":0.5934065934065934,"recovery_mean_ms":12386.697697,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="211.203" cy="322.11" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00056" data-run-id="core:aegiskv_peer_only:128k:gpu_failure:seed-0:repeat-A" data-result-hash="d1b9594c577ede0e9b4122a60a1e3fff5d1d2e9ae26e23d44aef63cb71f6381f">
+    <title>f7-point-00056 | core:aegiskv_peer_only:128k:gpu_failure:seed-0:repeat-A | d1b9594c577ede0e9b4122a60a1e3fff5d1d2e9ae26e23d44aef63cb71f6381f | {"cdf":0.6043956043956044,"recovery_mean_ms":12386.697697,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="211.203" cy="316.593" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00057" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="8ec4a3ecf3db6cf4cc99c2116ce1bd3a7d0643b5faba1119156e543b138d71e3">
+    <title>f7-point-00057 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 8ec4a3ecf3db6cf4cc99c2116ce1bd3a7d0643b5faba1119156e543b138d71e3 | {"cdf":0.6153846153846154,"recovery_mean_ms":12386.697697,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="211.203" cy="311.077" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00058" data-run-id="core:recompute_only:128k:gpu_failure:seed-0:repeat-A" data-result-hash="c126c4a62a082199564e6c14d863d56de71fd61883315e0adb466d604fa694ed">
+    <title>f7-point-00058 | core:recompute_only:128k:gpu_failure:seed-0:repeat-A | c126c4a62a082199564e6c14d863d56de71fd61883315e0adb466d604fa694ed | {"cdf":0.6263736263736264,"recovery_mean_ms":12386.697697,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="211.203" cy="305.56" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00059" data-run-id="core:static_peer_hbm:128k:gpu_failure:seed-0:repeat-A" data-result-hash="dd596896bf57b29f8395423867b88dd3893c79a002ab866dbd2894510035533c">
+    <title>f7-point-00059 | core:static_peer_hbm:128k:gpu_failure:seed-0:repeat-A | dd596896bf57b29f8395423867b88dd3893c79a002ab866dbd2894510035533c | {"cdf":0.6373626373626373,"recovery_mean_ms":12386.697697,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="211.203" cy="300.044" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00060" data-run-id="core:vanilla_mooncake_dram:128k:gpu_failure:seed-0:repeat-A" data-result-hash="7f15991bb905efa7009b9665d595307c232aff89071fdf1afe666f274eb8b85c">
+    <title>f7-point-00060 | core:vanilla_mooncake_dram:128k:gpu_failure:seed-0:repeat-A | 7f15991bb905efa7009b9665d595307c232aff89071fdf1afe666f274eb8b85c | {"cdf":0.6483516483516484,"recovery_mean_ms":12386.697697,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="211.203" cy="294.527" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00061" data-run-id="core:aegiskv_peer_only:32k:gpu_failure:seed-1:repeat-A" data-result-hash="fce965fc720abb01b3359ac8c08c9acc91a4db7c24e0e7053893c93a159f928e">
+    <title>f7-point-00061 | core:aegiskv_peer_only:32k:gpu_failure:seed-1:repeat-A | fce965fc720abb01b3359ac8c08c9acc91a4db7c24e0e7053893c93a159f928e | {"cdf":0.6593406593406593,"recovery_mean_ms":32785.671497,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="386.104" cy="289.011" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00062" data-run-id="core:recompute_only:32k:gpu_failure:seed-1:repeat-A" data-result-hash="a11079baeeb3fecc25b6c7fed59d1789f2ae71b93d35eadb01e12c4ab5261229">
+    <title>f7-point-00062 | core:recompute_only:32k:gpu_failure:seed-1:repeat-A | a11079baeeb3fecc25b6c7fed59d1789f2ae71b93d35eadb01e12c4ab5261229 | {"cdf":0.6703296703296703,"recovery_mean_ms":32785.671497,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="386.104" cy="283.495" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00063" data-run-id="core:recompute_only:32k:gpu_failure:seed-2:repeat-A" data-result-hash="5ecfd70f41b41664ad6e394caf6a2e3e2ddd36ee3d51f66d902e1cdec29d272f">
+    <title>f7-point-00063 | core:recompute_only:32k:gpu_failure:seed-2:repeat-A | 5ecfd70f41b41664ad6e394caf6a2e3e2ddd36ee3d51f66d902e1cdec29d272f | {"cdf":0.6813186813186813,"recovery_mean_ms":38965.175587,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="439.087" cy="277.978" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00064" data-run-id="core:static_peer_hbm:32k:gpu_failure:seed-2:repeat-A" data-result-hash="ab682c39e9c8b765d3343e34ee1a21cfd78058fcd615c6686d2f7853f1a3c5e4">
+    <title>f7-point-00064 | core:static_peer_hbm:32k:gpu_failure:seed-2:repeat-A | ab682c39e9c8b765d3343e34ee1a21cfd78058fcd615c6686d2f7853f1a3c5e4 | {"cdf":0.6923076923076923,"recovery_mean_ms":38965.175587,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="439.087" cy="272.462" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00065" data-run-id="core:aegiskv_dram_only:32k:gpu_failure:seed-2:repeat-A" data-result-hash="6c1150cd79e3d73c27349f3bcf20ca2530eeb835418a0e5d36339f67341b96da">
+    <title>f7-point-00065 | core:aegiskv_dram_only:32k:gpu_failure:seed-2:repeat-A | 6c1150cd79e3d73c27349f3bcf20ca2530eeb835418a0e5d36339f67341b96da | {"cdf":0.7032967032967034,"recovery_mean_ms":39593.511088,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="444.474" cy="266.945" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00066" data-run-id="core:vanilla_mooncake_dram:32k:gpu_failure:seed-2:repeat-A" data-result-hash="05f8b1682ec95f89cb29d20b9fbf04c2aa07f65a1342e34a3635d505a6e0100e">
+    <title>f7-point-00066 | core:vanilla_mooncake_dram:32k:gpu_failure:seed-2:repeat-A | 05f8b1682ec95f89cb29d20b9fbf04c2aa07f65a1342e34a3635d505a6e0100e | {"cdf":0.7142857142857143,"recovery_mean_ms":39890.189956,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="447.018" cy="261.429" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00067" data-run-id="core:aegiskv_unified:32k:gpu_failure:seed-2:repeat-A" data-result-hash="7c1e400e4b8ade4a817a589651123194b56a528320eb5cd3b2e70e58542977e0">
+    <title>f7-point-00067 | core:aegiskv_unified:32k:gpu_failure:seed-2:repeat-A | 7c1e400e4b8ade4a817a589651123194b56a528320eb5cd3b2e70e58542977e0 | {"cdf":0.7252747252747253,"recovery_mean_ms":46009.211521,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="499.482" cy="255.912" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00068" data-run-id="core:aegiskv_peer_only:32k:gpu_failure:seed-2:repeat-A" data-result-hash="a520c1793d92ff203b1aff6527113908af51260354f27fba690057ceca4b96a9">
+    <title>f7-point-00068 | core:aegiskv_peer_only:32k:gpu_failure:seed-2:repeat-A | a520c1793d92ff203b1aff6527113908af51260354f27fba690057ceca4b96a9 | {"cdf":0.7362637362637363,"recovery_mean_ms":46698.925163,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="505.396" cy="250.396" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00069" data-run-id="core:aegiskv_hbm_dram:32k:gpu_failure:seed-2:repeat-A" data-result-hash="c2d3c6042b619e59dae3bf5d7a7ea06510de878741170046443f1c95958f3d57">
+    <title>f7-point-00069 | core:aegiskv_hbm_dram:32k:gpu_failure:seed-2:repeat-A | c2d3c6042b619e59dae3bf5d7a7ea06510de878741170046443f1c95958f3d57 | {"cdf":0.7472527472527473,"recovery_mean_ms":47012.431363,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="508.083" cy="244.879" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00070" data-run-id="core:aegiskv_hbm_dram:96k:gpu_failure:seed-1:repeat-A" data-result-hash="68d754fa2656508feb23a9e7baaa8364d2be11257326426f3364167c2f41a789">
+    <title>f7-point-00070 | core:aegiskv_hbm_dram:96k:gpu_failure:seed-1:repeat-A | 68d754fa2656508feb23a9e7baaa8364d2be11257326426f3364167c2f41a789 | {"cdf":0.7582417582417582,"recovery_mean_ms":68718.250498,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="694.189" cy="239.363" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00071" data-run-id="core:aegiskv_peer_only:96k:gpu_failure:seed-1:repeat-A" data-result-hash="7e14159f0fff86d4398d9e69543a963bdc91331a23764c350077bfa59963e6d6">
+    <title>f7-point-00071 | core:aegiskv_peer_only:96k:gpu_failure:seed-1:repeat-A | 7e14159f0fff86d4398d9e69543a963bdc91331a23764c350077bfa59963e6d6 | {"cdf":0.7692307692307693,"recovery_mean_ms":68718.250498,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="694.189" cy="233.846" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00072" data-run-id="core:aegiskv_unified:96k:gpu_failure:seed-1:repeat-A" data-result-hash="4a4ee55d083d1333090db3865c81b82415be4e1ad095e2a8a4a21ae17a5c38bc">
+    <title>f7-point-00072 | core:aegiskv_unified:96k:gpu_failure:seed-1:repeat-A | 4a4ee55d083d1333090db3865c81b82415be4e1ad095e2a8a4a21ae17a5c38bc | {"cdf":0.7802197802197802,"recovery_mean_ms":68718.250498,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="694.189" cy="228.33" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00073" data-run-id="core:aegiskv_unified:96k:gpu_failure:seed-2:repeat-A" data-result-hash="cd32cf374ba9c8f884b4765d700fe35b483877467f463c1014eb0b7489c4cc72">
+    <title>f7-point-00073 | core:aegiskv_unified:96k:gpu_failure:seed-2:repeat-A | cd32cf374ba9c8f884b4765d700fe35b483877467f463c1014eb0b7489c4cc72 | {"cdf":0.7912087912087912,"recovery_mean_ms":69225.580435,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="698.539" cy="222.813" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00074" data-run-id="core:aegiskv_dram_only:96k:gpu_failure:seed-2:repeat-A" data-result-hash="4169a5207e81f32abff9f49c50f4b9d05ab807670e2037c9e9427459cf12a19b">
+    <title>f7-point-00074 | core:aegiskv_dram_only:96k:gpu_failure:seed-2:repeat-A | 4169a5207e81f32abff9f49c50f4b9d05ab807670e2037c9e9427459cf12a19b | {"cdf":0.8021978021978022,"recovery_mean_ms":69280.358041,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="699.008" cy="217.297" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00075" data-run-id="core:vanilla_mooncake_dram:96k:gpu_failure:seed-2:repeat-A" data-result-hash="6a3727582e2c2a7e3f26db8ca6ecbca80b4db392c163a80976641b9cbecc4e1a">
+    <title>f7-point-00075 | core:vanilla_mooncake_dram:96k:gpu_failure:seed-2:repeat-A | 6a3727582e2c2a7e3f26db8ca6ecbca80b4db392c163a80976641b9cbecc4e1a | {"cdf":0.8131868131868132,"recovery_mean_ms":69659.290316,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="702.257" cy="211.78" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00076" data-run-id="core:aegiskv_peer_only:96k:gpu_failure:seed-2:repeat-A" data-result-hash="d8ecc5d1601182b41f26019cee2144e04acec16b36c94aae4f6feb41c4f2969a">
+    <title>f7-point-00076 | core:aegiskv_peer_only:96k:gpu_failure:seed-2:repeat-A | d8ecc5d1601182b41f26019cee2144e04acec16b36c94aae4f6feb41c4f2969a | {"cdf":0.8241758241758241,"recovery_mean_ms":69786.712054,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="703.35" cy="206.264" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00077" data-run-id="core:aegiskv_hbm_dram:96k:gpu_failure:seed-2:repeat-A" data-result-hash="0481479947c9cfb387dd19d5d8381c7aae7f7e308d31cfc6fea3fa16579fa9c9">
+    <title>f7-point-00077 | core:aegiskv_hbm_dram:96k:gpu_failure:seed-2:repeat-A | 0481479947c9cfb387dd19d5d8381c7aae7f7e308d31cfc6fea3fa16579fa9c9 | {"cdf":0.8351648351648352,"recovery_mean_ms":69939.74795,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="704.662" cy="200.747" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00078" data-run-id="core:recompute_only:96k:gpu_failure:seed-2:repeat-A" data-result-hash="1124c5f25293951350eb9e41a64e62590adc543fba789f24446d06a4d63c5df5">
+    <title>f7-point-00078 | core:recompute_only:96k:gpu_failure:seed-2:repeat-A | 1124c5f25293951350eb9e41a64e62590adc543fba789f24446d06a4d63c5df5 | {"cdf":0.8461538461538461,"recovery_mean_ms":71980.250498,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="722.157" cy="195.231" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00079" data-run-id="core:static_peer_hbm:96k:gpu_failure:seed-2:repeat-A" data-result-hash="801106896cd7e77051e85324b45f7a1200ef2a76d6cdc014aa1e43c8e9015911">
+    <title>f7-point-00079 | core:static_peer_hbm:96k:gpu_failure:seed-2:repeat-A | 801106896cd7e77051e85324b45f7a1200ef2a76d6cdc014aa1e43c8e9015911 | {"cdf":0.8571428571428571,"recovery_mean_ms":71980.250498,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="722.157" cy="189.714" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00080" data-run-id="core:aegiskv_unified:96k:gpu_failure:seed-0:repeat-A" data-result-hash="7680776bb9ce3778d958fe322a287712b9ab13b9d5b4dbab0095b3a0a6770de1">
+    <title>f7-point-00080 | core:aegiskv_unified:96k:gpu_failure:seed-0:repeat-A | 7680776bb9ce3778d958fe322a287712b9ab13b9d5b4dbab0095b3a0a6770de1 | {"cdf":0.8681318681318682,"recovery_mean_ms":72375.212143,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="725.543" cy="184.198" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00081" data-run-id="core:aegiskv_dram_only:96k:gpu_failure:seed-0:repeat-A" data-result-hash="5e8fefcaf4c0ed858651d84ada45479da562928b1f0f01a2e9316d82ba776924">
+    <title>f7-point-00081 | core:aegiskv_dram_only:96k:gpu_failure:seed-0:repeat-A | 5e8fefcaf4c0ed858651d84ada45479da562928b1f0f01a2e9316d82ba776924 | {"cdf":0.8791208791208791,"recovery_mean_ms":72408.782991,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="725.831" cy="178.681" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00082" data-run-id="core:vanilla_mooncake_dram:96k:gpu_failure:seed-0:repeat-A" data-result-hash="eaf7924f0f9ef11cd0b67ad30c5bd9bec1ac0bec15c4157dbb934f15f790b235">
+    <title>f7-point-00082 | core:vanilla_mooncake_dram:96k:gpu_failure:seed-0:repeat-A | eaf7924f0f9ef11cd0b67ad30c5bd9bec1ac0bec15c4157dbb934f15f790b235 | {"cdf":0.8901098901098901,"recovery_mean_ms":72677.349778,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="728.134" cy="173.165" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00083" data-run-id="core:aegiskv_peer_only:96k:gpu_failure:seed-0:repeat-A" data-result-hash="8ccba6a7826872fbc3181b76aa11c74232f969ab9e449cbd120174d874313a0e">
+    <title>f7-point-00083 | core:aegiskv_peer_only:96k:gpu_failure:seed-0:repeat-A | 8ccba6a7826872fbc3181b76aa11c74232f969ab9e449cbd120174d874313a0e | {"cdf":0.9010989010989011,"recovery_mean_ms":72778.062323,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="728.997" cy="167.648" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00084" data-run-id="core:aegiskv_hbm_dram:96k:gpu_failure:seed-0:repeat-A" data-result-hash="38199ae659f05361de4128ceb474407df5b0158bca47d12ffc6b7bb8196e2e14">
+    <title>f7-point-00084 | core:aegiskv_hbm_dram:96k:gpu_failure:seed-0:repeat-A | 38199ae659f05361de4128ceb474407df5b0158bca47d12ffc6b7bb8196e2e14 | {"cdf":0.9120879120879121,"recovery_mean_ms":72878.774868,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="729.861" cy="162.132" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00085" data-run-id="core:recompute_only:96k:gpu_failure:seed-0:repeat-A" data-result-hash="b7b5609fa45ff87364a67ac16f0741a45c3d8f266cb254835a0a43e17988790d">
+    <title>f7-point-00085 | core:recompute_only:96k:gpu_failure:seed-0:repeat-A | b7b5609fa45ff87364a67ac16f0741a45c3d8f266cb254835a0a43e17988790d | {"cdf":0.9230769230769231,"recovery_mean_ms":74288.750498,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="741.95" cy="156.615" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00086" data-run-id="core:static_peer_hbm:96k:gpu_failure:seed-0:repeat-A" data-result-hash="f7217fb61b45cc583ecc804e81dd722c3c629a9a2fe096b72dae0b2f5e3b4cce">
+    <title>f7-point-00086 | core:static_peer_hbm:96k:gpu_failure:seed-0:repeat-A | f7217fb61b45cc583ecc804e81dd722c3c629a9a2fe096b72dae0b2f5e3b4cce | {"cdf":0.9340659340659341,"recovery_mean_ms":74288.750498,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="741.95" cy="151.099" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00087" data-run-id="core:aegiskv_peer_only:32k:gpu_failure:seed-0:repeat-A" data-result-hash="6e2ed0b588367830a2529d08e6fce1fd67a683ee1391886f545c40bbae05256f">
+    <title>f7-point-00087 | core:aegiskv_peer_only:32k:gpu_failure:seed-0:repeat-A | 6e2ed0b588367830a2529d08e6fce1fd67a683ee1391886f545c40bbae05256f | {"cdf":0.945054945054945,"recovery_mean_ms":74504.701715,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="743.802" cy="145.582" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00088" data-run-id="core:aegiskv_dram_only:96k:gpu_failure:seed-1:repeat-A" data-result-hash="fd611e5643ef848f8114413bcf264095d803630fb580d63dc627b9010b36aeaf">
+    <title>f7-point-00088 | core:aegiskv_dram_only:96k:gpu_failure:seed-1:repeat-A | fd611e5643ef848f8114413bcf264095d803630fb580d63dc627b9010b36aeaf | {"cdf":0.9560439560439561,"recovery_mean_ms":75410.639538,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="751.569" cy="140.066" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00089" data-run-id="core:vanilla_mooncake_dram:96k:gpu_failure:seed-1:repeat-A" data-result-hash="4dc0a6073696899a3c02e5fe5223f9ba2061b46586cee67adc176bcc5a4ef67c">
+    <title>f7-point-00089 | core:vanilla_mooncake_dram:96k:gpu_failure:seed-1:repeat-A | 4dc0a6073696899a3c02e5fe5223f9ba2061b46586cee67adc176bcc5a4ef67c | {"cdf":0.967032967032967,"recovery_mean_ms":76786.131452,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="763.363" cy="134.549" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00090" data-run-id="core:recompute_only:96k:gpu_failure:seed-1:repeat-A" data-result-hash="b0cb3b37de42714d233f314e37c7a2cf8a67e0fe499750469530a3fba9664899">
+    <title>f7-point-00090 | core:recompute_only:96k:gpu_failure:seed-1:repeat-A | b0cb3b37de42714d233f314e37c7a2cf8a67e0fe499750469530a3fba9664899 | {"cdf":0.978021978021978,"recovery_mean_ms":84886.250498,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="832.813" cy="129.033" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00091" data-run-id="core:static_peer_hbm:96k:gpu_failure:seed-1:repeat-A" data-result-hash="3408493d4b97bba86d1580b2f4226d74dc57ea63247adcb8c94da1c5a460eb94">
+    <title>f7-point-00091 | core:static_peer_hbm:96k:gpu_failure:seed-1:repeat-A | 3408493d4b97bba86d1580b2f4226d74dc57ea63247adcb8c94da1c5a460eb94 | {"cdf":0.989010989010989,"recovery_mean_ms":84886.250498,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="832.813" cy="123.516" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00092" data-run-id="core:recompute_only:32k:gpu_failure:seed-0:repeat-A" data-result-hash="13ffb001a5c6c720d3ddf7fb009e5a79df1c5dc9673b24616996895ad2f0b6a9">
+    <title>f7-point-00092 | core:recompute_only:32k:gpu_failure:seed-0:repeat-A | 13ffb001a5c6c720d3ddf7fb009e5a79df1c5dc9673b24616996895ad2f0b6a9 | {"cdf":1.0,"recovery_mean_ms":121297.271497,"recovery_source_group":"Recompute dominant"}</title>
+    <circle cx="1145" cy="118" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <polyline points="118.069,620 118.069,614.484 118.069,614.484 118.069,608.967 118.069,608.967 118.069,603.451 118.069,603.451 118.069,597.934 118.069,597.934 118.069,592.418 118.069,592.418 118.069,586.901 118.965,586.901 118.965,581.385 118.965,581.385 118.965,575.868 118.965,575.868 118.965,570.352 118.965,570.352 118.965,564.835 118.965,564.835 118.965,559.319 118.965,559.319 118.965,553.802 118.965,553.802 118.965,548.286 119.837,548.286 119.837,542.769 119.837,542.769 119.837,537.253 119.837,537.253 119.837,531.736 119.837,531.736 119.837,526.22 119.837,526.22 119.837,520.703 119.837,520.703 119.837,515.187 119.837,515.187 119.837,509.67 130.318,509.67 130.318,504.154 130.318,504.154 130.318,498.637 133.546,498.637 133.546,493.121 133.546,493.121 133.546,487.604 138.579,487.604 138.579,482.088 138.579,482.088 138.579,476.571 138.579,476.571 138.579,471.055 138.579,471.055 138.579,465.538 138.579,465.538 138.579,460.022 138.579,460.022 138.579,454.505 138.579,454.505 138.579,448.989 145.649,448.989 145.649,443.473 145.649,443.473 145.649,437.956 145.649,437.956 145.649,432.44 145.649,432.44 145.649,426.923 145.649,426.923 145.649,421.407 170.583,421.407 170.583,415.89 178.651,415.89 178.651,410.374 181.37,410.374 181.37,404.857 181.37,404.857 181.37,399.341 181.37,399.341 181.37,393.824 181.37,393.824 181.37,388.308 181.37,388.308 181.37,382.791 181.37,382.791 181.37,377.275 181.37,377.275 181.37,371.758 181.37,371.758 181.37,366.242 181.37,366.242 181.37,360.725 181.37,360.725 181.37,355.209 181.37,355.209 181.37,349.692 181.37,349.692 181.37,344.176 181.37,344.176 181.37,338.659 181.37,338.659 181.37,333.143 211.203,333.143 211.203,327.626 211.203,327.626 211.203,322.11 211.203,322.11 211.203,316.593 211.203,316.593 211.203,311.077 211.203,311.077 211.203,305.56 211.203,305.56 211.203,300.044 211.203,300.044 211.203,294.527 386.104,294.527 386.104,289.011 386.104,289.011 386.104,283.495 439.087,283.495 439.087,277.978 439.087,277.978 439.087,272.462 444.474,272.462 444.474,266.945 447.018,266.945 447.018,261.429 499.482,261.429 499.482,255.912 505.396,255.912 505.396,250.396 508.083,250.396 508.083,244.879 694.189,244.879 694.189,239.363 694.189,239.363 694.189,233.846 694.189,233.846 694.189,228.33 698.539,228.33 698.539,222.813 699.008,222.813 699.008,217.297 702.257,217.297 702.257,211.78 703.35,211.78 703.35,206.264 704.662,206.264 704.662,200.747 722.157,200.747 722.157,195.231 722.157,195.231 722.157,189.714 725.543,189.714 725.543,184.198 725.831,184.198 725.831,178.681 728.134,178.681 728.134,173.165 728.997,173.165 728.997,167.648 729.861,167.648 729.861,162.132 741.95,162.132 741.95,156.615 741.95,156.615 741.95,151.099 743.802,151.099 743.802,145.582 751.569,145.582 751.569,140.066 763.363,140.066 763.363,134.549 832.813,134.549 832.813,129.033 832.813,129.033 832.813,123.516 1145,123.516 1145,118" fill="none" stroke="#dc2626" stroke-width="2" stroke-linejoin="round" />
+  <rect x="380" y="92" width="14" height="8" rx="0" fill="#dc2626" stroke="none" opacity="1" />
+  <text x="400" y="101" class="tick" text-anchor="start">Recompute dominant</text>
+  <g data-point-id="f7-point-00093" data-run-id="core:vanilla_mooncake_dram:128k:gpu_failure:seed-1:repeat-A" data-result-hash="d157b3d3dc3c410158a749a2d0830a601fcbd98addc42c56f28156f557ab9026">
+    <title>f7-point-00093 | core:vanilla_mooncake_dram:128k:gpu_failure:seed-1:repeat-A | d157b3d3dc3c410158a749a2d0830a601fcbd98addc42c56f28156f557ab9026 | {"cdf":0.08333333333333333,"recovery_mean_ms":2011.647266,"recovery_source_group":"Store DRAM dominant"}</title>
+    <circle cx="122.248" cy="578.167" r="4" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00094" data-run-id="core:vanilla_mooncake_dram:128k:gpu_failure:seed-2:repeat-A" data-result-hash="05bf2d534603d5cc1edf62763e109426b7cf984087882e2d50393030cbaa9d8d">
+    <title>f7-point-00094 | core:vanilla_mooncake_dram:128k:gpu_failure:seed-2:repeat-A | 05bf2d534603d5cc1edf62763e109426b7cf984087882e2d50393030cbaa9d8d | {"cdf":0.16666666666666666,"recovery_mean_ms":2011.647266,"recovery_source_group":"Store DRAM dominant"}</title>
+    <circle cx="122.248" cy="536.333" r="4" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00095" data-run-id="core:aegiskv_hbm_dram:128k:gpu_failure:seed-1:repeat-A" data-result-hash="fcd5be21c76e1e630729264b0f5cb0ef119c05f405aa385f510d22abb1bf9104">
+    <title>f7-point-00095 | core:aegiskv_hbm_dram:128k:gpu_failure:seed-1:repeat-A | fcd5be21c76e1e630729264b0f5cb0ef119c05f405aa385f510d22abb1bf9104 | {"cdf":0.25,"recovery_mean_ms":2294.023227,"recovery_source_group":"Store DRAM dominant"}</title>
+    <circle cx="124.669" cy="494.5" r="4" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00096" data-run-id="core:aegiskv_hbm_dram:128k:gpu_failure:seed-2:repeat-A" data-result-hash="2eeedad60e0565d599006da0aa1ca668bc58ecf1e99a3bf5c03a9e7ac6321aa7">
+    <title>f7-point-00096 | core:aegiskv_hbm_dram:128k:gpu_failure:seed-2:repeat-A | 2eeedad60e0565d599006da0aa1ca668bc58ecf1e99a3bf5c03a9e7ac6321aa7 | {"cdf":0.3333333333333333,"recovery_mean_ms":2294.023227,"recovery_source_group":"Store DRAM dominant"}</title>
+    <circle cx="124.669" cy="452.667" r="4" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00097" data-run-id="core:aegiskv_unified:32k:gpu_failure:seed-0:repeat-A" data-result-hash="bd02774bd893b80a3194be79c29e6bc1a2bffbaf668e3b7c631c0c4f36d90474">
+    <title>f7-point-00097 | core:aegiskv_unified:32k:gpu_failure:seed-0:repeat-A | bd02774bd893b80a3194be79c29e6bc1a2bffbaf668e3b7c631c0c4f36d90474 | {"cdf":0.4166666666666667,"recovery_mean_ms":11873.511326,"recovery_source_group":"Store DRAM dominant"}</title>
+    <circle cx="206.803" cy="410.833" r="4" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00098" data-run-id="core:aegiskv_dram_only:32k:gpu_failure:seed-0:repeat-A" data-result-hash="389dab4aa50a3eb9076d55e93aae4a007599ab2c62b36e268630cadcd8465e88">
+    <title>f7-point-00098 | core:aegiskv_dram_only:32k:gpu_failure:seed-0:repeat-A | 389dab4aa50a3eb9076d55e93aae4a007599ab2c62b36e268630cadcd8465e88 | {"cdf":0.5,"recovery_mean_ms":15727.49684,"recovery_source_group":"Store DRAM dominant"}</title>
+    <circle cx="239.847" cy="369" r="4" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00099" data-run-id="core:vanilla_mooncake_dram:32k:gpu_failure:seed-0:repeat-A" data-result-hash="31839035beb8edad92dbc755826152b3faee3693f4480c60a7aa53cc49ac4d57">
+    <title>f7-point-00099 | core:vanilla_mooncake_dram:32k:gpu_failure:seed-0:repeat-A | 31839035beb8edad92dbc755826152b3faee3693f4480c60a7aa53cc49ac4d57 | {"cdf":0.5833333333333334,"recovery_mean_ms":23681.323127,"recovery_source_group":"Store DRAM dominant"}</title>
+    <circle cx="308.043" cy="327.167" r="4" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00100" data-run-id="core:aegiskv_unified:32k:gpu_failure:seed-1:repeat-A" data-result-hash="b84b7eb61b48b321775e7b1b5f5703d36e049d32793ee293edf7864d7f5ac3ad">
+    <title>f7-point-00100 | core:aegiskv_unified:32k:gpu_failure:seed-1:repeat-A | b84b7eb61b48b321775e7b1b5f5703d36e049d32793ee293edf7864d7f5ac3ad | {"cdf":0.6666666666666666,"recovery_mean_ms":27438.832483,"recovery_source_group":"Store DRAM dominant"}</title>
+    <circle cx="340.26" cy="285.333" r="4" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00101" data-run-id="core:aegiskv_dram_only:32k:gpu_failure:seed-1:repeat-A" data-result-hash="6c435e4e7b564c663092f2b7d767810929776a4dc89b968500e78643a11fb082">
+    <title>f7-point-00101 | core:aegiskv_dram_only:32k:gpu_failure:seed-1:repeat-A | 6c435e4e7b564c663092f2b7d767810929776a4dc89b968500e78643a11fb082 | {"cdf":0.75,"recovery_mean_ms":33391.649016,"recovery_source_group":"Store DRAM dominant"}</title>
+    <circle cx="391.299" cy="243.5" r="4" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00102" data-run-id="core:vanilla_mooncake_dram:32k:gpu_failure:seed-1:repeat-A" data-result-hash="770731fb4ea600310003d71d2fd1123461bb66888c3ef41d9f4939f93c956a8a">
+    <title>f7-point-00102 | core:vanilla_mooncake_dram:32k:gpu_failure:seed-1:repeat-A | 770731fb4ea600310003d71d2fd1123461bb66888c3ef41d9f4939f93c956a8a | {"cdf":0.8333333333333334,"recovery_mean_ms":39774.103992,"recovery_source_group":"Store DRAM dominant"}</title>
+    <circle cx="446.022" cy="201.667" r="4" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00103" data-run-id="core:aegiskv_hbm_dram:32k:gpu_failure:seed-1:repeat-A" data-result-hash="e5f564e8ea19c1a213e55d6dacbc2b2025fa53e67eef7bd04da3739ea000ed0d">
+    <title>f7-point-00103 | core:aegiskv_hbm_dram:32k:gpu_failure:seed-1:repeat-A | e5f564e8ea19c1a213e55d6dacbc2b2025fa53e67eef7bd04da3739ea000ed0d | {"cdf":0.9166666666666666,"recovery_mean_ms":54845.306989,"recovery_source_group":"Store DRAM dominant"}</title>
+    <circle cx="575.242" cy="159.833" r="4" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f7-point-00104" data-run-id="core:aegiskv_hbm_dram:32k:gpu_failure:seed-0:repeat-A" data-result-hash="c8d112f995631d1fa5204c7f03878f1d0e7f30fb6d8df4ea359e701cc5d8cb77">
+    <title>f7-point-00104 | core:aegiskv_hbm_dram:32k:gpu_failure:seed-0:repeat-A | c8d112f995631d1fa5204c7f03878f1d0e7f30fb6d8df4ea359e701cc5d8cb77 | {"cdf":1.0,"recovery_mean_ms":57036.279868,"recovery_source_group":"Store DRAM dominant"}</title>
+    <circle cx="594.028" cy="118" r="4" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <polyline points="122.248,620 122.248,578.167 122.248,578.167 122.248,536.333 124.669,536.333 124.669,494.5 124.669,494.5 124.669,452.667 206.803,452.667 206.803,410.833 239.847,410.833 239.847,369 308.043,369 308.043,327.167 340.26,327.167 340.26,285.333 391.299,285.333 391.299,243.5 446.022,243.5 446.022,201.667 575.242,201.667 575.242,159.833 594.028,159.833 594.028,118" fill="none" stroke="#059669" stroke-width="2" stroke-linejoin="round" />
+  <rect x="630" y="92" width="14" height="8" rx="0" fill="#059669" stroke="none" opacity="1" />
+  <text x="650" y="101" class="tick" text-anchor="start">Store DRAM dominant</text>
+  <text x="1120" y="102" class="tick" text-anchor="end">max=121297.271 ms · n=105</text>
+  <line x1="55" y1="676" x2="1145" y2="676" stroke="#fecaca" stroke-width="1" />
+  <text x="600" y="704" class="footer" text-anchor="middle">E2 modeled/preliminary · not calibrated · no physical experiment</text>
+</svg>

@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import re
 import sys
 import xml.etree.ElementTree as ET
@@ -61,6 +62,35 @@ PAYLOAD_EVIDENCE: Final[dict[str, Any]] = {
 FIGURE_EVIDENCE: Final[dict[str, Any]] = dict(MATRIX_EVIDENCE)
 EVIDENCE_FOOTER: Final = "E2 modeled/preliminary · not calibrated · no physical experiment"
 GENERATOR: Final = "moonkvsim.aegiskv.figures.v1"
+MODEL_DEPLOYMENT_CONTRACT: Final[dict[str, Any]] = {
+    "scope_id": "qwen3-8b-dp-only-tp1-pp1-v1",
+    "model": {
+        "id": "Qwen/Qwen3-8B",
+        "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+        "config_sha256": (
+            "f7c4eadfbbf522470667b797a3c89be2524832d2d599797248dc304fff447c30"
+        ),
+        "other_models_allowed": False,
+    },
+    "kv_layout": {
+        "bytes_per_64_source_tokens": 9_437_184,
+        "native_tp1_pp1_fingerprint": (
+            "616330f7a5e168edfad90d6e53dc8b754ef3f4c78925e80a49516e4f3f3d8d4f"
+        ),
+        "proposed_yarn_128k_tp1_pp1_fingerprint": (
+            "d9863189bf94c967e18d4926ecb1fc88cc26e7dcb1553eb69972afaff7dc7d4d"
+        ),
+        "evidence": "source_derived_not_physically_calibrated",
+    },
+    "parallelism": {
+        "only_varied_dimension": "data_parallel_size",
+        "allowed_data_parallel_sizes": [2, 4, 8],
+        "tensor_parallel_size": 1,
+        "pipeline_parallel_size": 1,
+        "tensor_parallel_sensitivity_allowed": False,
+        "pipeline_parallel_sensitivity_allowed": False,
+    },
+}
 FIGURE_STEMS: Final[dict[str, str]] = {
     "F1": "f1-system-architecture",
     "F2": "f2-failure-recovery-timeline",
@@ -336,6 +366,19 @@ def _verify_fingerprint(document: dict[str, Any], location: str) -> str:
     return fingerprint
 
 
+def _expected_model_deployment(dp_count: int) -> dict[str, Any]:
+    return {
+        **MODEL_DEPLOYMENT_CONTRACT,
+        "parallelism": {
+            **_object(
+                MODEL_DEPLOYMENT_CONTRACT["parallelism"],
+                "auditor model deployment contract.parallelism",
+            ),
+            "data_parallel_size": dp_count,
+        },
+    }
+
+
 def _validate_payload(row: dict[str, Any], location: str) -> None:
     payload = _object(row.get("payload"), f"{location}.payload")
     _exact_keys(
@@ -346,6 +389,7 @@ def _validate_payload(row: dict[str, Any], location: str) -> None:
             "evidence",
             "global_clock",
             "execution_scope",
+            "model_deployment",
             "resource_model",
             "recovery_model",
             "variant_fingerprint",
@@ -386,14 +430,32 @@ def _validate_payload(row: dict[str, Any], location: str) -> None:
         },
         f"{location}.payload.execution_scope",
     )
+    _equal(
+        payload.get("model_deployment"),
+        row.get("model_deployment"),
+        f"{location}.payload.model_deployment",
+    )
     resources = _object(payload.get("resource_model"), f"{location}.payload.resource_model")
     _exact_keys(
         resources,
         {
             "peer_hbm_resources",
             "store_dram_segments",
+            "store_node_count",
+            "host_dram_staging_resources",
+            "store_transport",
+            "host_staging_capacity_transactions",
+            "source_pin_overlay_without_double_charge",
+            "communication_backend",
+            "fairness",
+            "flow_clock",
+            "slice_size_policy_chunks",
             "copy_engines",
             "fabric_resources",
+            "rate_resources",
+            "gpu_hbm_capacity_bytes_per_gpu",
+            "gpu_hbm_account_stack",
+            "gpu_hbm_event_boundary_snapshots",
             "per_gpu_peer_hbm_quota_enforced",
             "failed_gpu_hbm_becomes_unavailable_not_free",
         },
@@ -402,10 +464,68 @@ def _validate_payload(row: dict[str, Any], location: str) -> None:
     for field in (
         "peer_hbm_resources",
         "store_dram_segments",
+        "host_dram_staging_resources",
         "copy_engines",
         "fabric_resources",
+        "gpu_hbm_account_stack",
     ):
         _array(resources.get(field), f"{location}.payload.resource_model.{field}")
+    _integer(
+        resources.get("store_node_count"),
+        f"{location}.payload.resource_model.store_node_count",
+        minimum=1,
+    )
+    _integer(
+        resources.get("slice_size_policy_chunks"),
+        f"{location}.payload.resource_model.slice_size_policy_chunks",
+        minimum=1,
+    )
+    _integer(
+        resources.get("gpu_hbm_capacity_bytes_per_gpu"),
+        f"{location}.payload.resource_model.gpu_hbm_capacity_bytes_per_gpu",
+        minimum=1,
+    )
+    _equal(
+        resources.get("communication_backend"),
+        "flow_contention",
+        f"{location}.payload.resource_model.communication_backend",
+    )
+    _equal(
+        resources.get("fairness"),
+        "weighted_max_min_work_conserving",
+        f"{location}.payload.resource_model.fairness",
+    )
+    _equal(
+        resources.get("flow_clock"),
+        "shared_global_des_now_ns",
+        f"{location}.payload.resource_model.flow_clock",
+    )
+    if resources.get("store_transport") not in {
+        "RDMA_GDR",
+        "RDMA_HOST_STAGED",
+        "TCP_HOST_STAGED",
+    }:
+        raise AuditFailure(f"{location}.payload.resource_model.store_transport: invalid")
+    rate_resources = _object(
+        resources.get("rate_resources"),
+        f"{location}.payload.resource_model.rate_resources",
+    )
+    if not rate_resources or any(
+        isinstance(rate, bool)
+        or not isinstance(rate, (int, float))
+        or not math.isfinite(rate)
+        or rate <= 0
+        for rate in rate_resources.values()
+    ):
+        raise AuditFailure(
+            f"{location}.payload.resource_model.rate_resources: expected positive finite rates"
+        )
+    for field in (
+        "host_staging_capacity_transactions",
+        "source_pin_overlay_without_double_charge",
+        "gpu_hbm_event_boundary_snapshots",
+    ):
+        _equal(resources.get(field), True, f"{location}.payload.resource_model.{field}")
     _equal(
         resources.get("per_gpu_peer_hbm_quota_enforced"),
         True,
@@ -526,6 +646,7 @@ def _validate_result_row(row: dict[str, Any], index: int) -> None:
             "repetition",
             "fresh_global_des_instance",
             "evidence",
+            "model_deployment",
             "bindings",
             "payload_sha256",
             "journal_sha256",
@@ -585,6 +706,20 @@ def _validate_result_row(row: dict[str, Any], index: int) -> None:
         f"{location}.bindings.variant_fingerprint",
     )
     parameters = _object(variant.get("parameters"), f"{location}.variant_config.parameters")
+    dp_count = _integer(
+        parameters.get("dp_count"),
+        f"{location}.variant_config.parameters.dp_count",
+        minimum=1,
+    )
+    if dp_count not in {2, 4, 8}:
+        raise AuditFailure(f"{location}: data-parallel size is outside the locked scope")
+    expected_deployment = _expected_model_deployment(dp_count)
+    _equal(row.get("model_deployment"), expected_deployment, f"{location}.model_deployment")
+    _equal(
+        parameters.get("model_deployment"),
+        expected_deployment,
+        f"{location}.variant_config.parameters.model_deployment",
+    )
     _equal(
         bindings.get("parameters_fingerprint"),
         _sha256_json(parameters),
@@ -796,6 +931,7 @@ def _expected_run_ids(protocol: dict[str, Any]) -> set[str]:
             "schema",
             "status",
             "evidence",
+            "model_deployment_contract",
             "global_clock",
             "failure_types",
             "physical_or_slurm_path",
@@ -805,6 +941,11 @@ def _expected_run_ids(protocol: dict[str, Any]) -> set[str]:
             "fingerprint",
         },
         "protocol",
+    )
+    _equal(
+        protocol.get("model_deployment_contract"),
+        MODEL_DEPLOYMENT_CONTRACT,
+        "protocol.model_deployment_contract",
     )
     catalog = _object(protocol.get("suite_catalog"), "protocol.suite_catalog")
     _equal(set(catalog), set(VARIANTS), "protocol.suite_catalog suites")
@@ -1166,6 +1307,7 @@ def _validate_matrix(matrix_dir: Path) -> MatrixState:
             "schema",
             "status",
             "evidence",
+            "model_deployment_contract",
             "implementation",
             "implementation_fingerprint",
             "workload",
@@ -1181,6 +1323,11 @@ def _validate_matrix(matrix_dir: Path) -> MatrixState:
     _equal(provenance.get("schema"), f"{MATRIX_SCHEMA}.provenance", "provenance.schema")
     _equal(provenance.get("status"), "PASS", "provenance.status")
     _equal(provenance.get("evidence"), MATRIX_EVIDENCE, "provenance.evidence")
+    _equal(
+        provenance.get("model_deployment_contract"),
+        MODEL_DEPLOYMENT_CONTRACT,
+        "provenance.model_deployment_contract",
+    )
     provenance_fp = _verify_fingerprint(provenance, "provenance")
     _equal(
         manifest["provenance_fingerprint"], provenance_fp, "matrix manifest.provenance_fingerprint"

@@ -15,12 +15,15 @@ All current runtime and experiment evidence is CPU metadata-only GlobalDES,
 GPU/CUDA/RDMA/Slurm experiment and is not a paper-ready claim. The patent
 contract remains machine-transcribed with manual review pending.
 
-The first complete E2 simulation bundle is available at
-`experiments/e2-initial-v1/`, with preliminary SVG paper figures at
-`experiments/figures/e2-initial-v1/` and an evidence-bounded interpretation in
-`experiments/INITIAL_REPORT.md`. It contains 2,760 rows and 1,380 exact A/B
-pairs across three seeds. The offline matrix/figure audit passes; F12 is
-explicitly excluded because no physical calibration experiment was requested.
+The current complete E2 simulation bundle is available at
+`experiments/e2-qwen3-8b-dp-all-v1/`, with preliminary SVG paper figures at
+`experiments/figures/e2-qwen3-8b-dp-all-v1/` and an evidence-bounded
+interpretation in `experiments/QWEN3_8B_DP_ALL_V1_REPORT.md`. It contains 2,760
+rows and 1,380 exact A/B pairs across three seeds. It machine-locks
+`Qwen/Qwen3-8B`, fixes TP=1 and PP=1, and varies only DP in {2, 4, 8}. The
+offline matrix/figure audit passes; F12 is explicitly excluded because no
+physical calibration experiment was requested. `e2-initial-v1` is retained as
+a superseded legacy bundle.
 
 The follow-up fluid-core preview is available at
 `experiments/e2-fluid-core-v2/`, with three focused resource/recovery figures at
@@ -51,12 +54,12 @@ uv run python benchmark/AegisKV/docs/audit_patent_contract.py
 sha256sum --strict -c benchmark/AegisKV/docs/provenance/SHA256SUMS
 ```
 
-Audit the initial GlobalDES results and figures:
+Audit the current GlobalDES results and figures:
 
 ```bash
 .venv/bin/python scripts/audit_aegiskv_e2_artifacts.py \
-  --matrix-dir benchmark/AegisKV/experiments/e2-initial-v1 \
-  --figure-dir benchmark/AegisKV/experiments/figures/e2-initial-v1
+  --matrix-dir benchmark/AegisKV/experiments/e2-qwen3-8b-dp-all-v1 \
+  --figure-dir benchmark/AegisKV/experiments/figures/e2-qwen3-8b-dp-all-v1
 
 .venv/bin/python scripts/audit_aegiskv_fluid_preview.py \
   --matrix-dir benchmark/AegisKV/experiments/e2-fluid-core-v2 \

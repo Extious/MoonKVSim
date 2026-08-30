@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img">
+  <title>GPU failure recovery timeline</title>
+  <style>text{font-family:DejaVu Sans,Arial,sans-serif;fill:#111827}.title{font-size:26px;font-weight:700}.subtitle{font-size:14px;fill:#4b5563}.axis{stroke:#374151;stroke-width:1}.grid{stroke:#e5e7eb;stroke-width:1}.tick{font-size:12px;fill:#4b5563}.label{font-size:14px;font-weight:600}.small{font-size:11px}.footer{font-size:13px;font-weight:700;fill:#991b1b}</style>
+  <rect x="0" y="0" width="1200" height="720" rx="0" fill="#ffffff" stroke="none" opacity="1" />
+  <text x="55" y="46" class="title" text-anchor="start">GPU failure recovery timeline</text>
+  <text x="55" y="74" class="subtitle" text-anchor="start">Diagnostic aggregate recovery bounds with explicit resume on virtual time</text>
+  <line x1="100" y1="360" x2="1110" y2="360" stroke="#334155" stroke-width="3" />
+  <g data-point-id="f2-point-00000" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="8ec4a3ecf3db6cf4cc99c2116ce1bd3a7d0643b5faba1119156e543b138d71e3">
+    <title>f2-point-00000 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 8ec4a3ecf3db6cf4cc99c2116ce1bd3a7d0643b5faba1119156e543b138d71e3 | {"event":"failure","timestamp_ns":1622581493438}</title>
+    <circle cx="130" cy="360" r="9" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+    <line x1="130" y1="350" x2="125" y2="260" stroke="#dc2626" stroke-width="1" />
+    <text x="125" y="242" class="label" text-anchor="start">failure</text>
+    <text x="125" y="263" class="tick" text-anchor="start">0.000 ms</text>
+  </g>
+  <g data-point-id="f2-point-00001" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="8ec4a3ecf3db6cf4cc99c2116ce1bd3a7d0643b5faba1119156e543b138d71e3">
+    <title>f2-point-00001 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 8ec4a3ecf3db6cf4cc99c2116ce1bd3a7d0643b5faba1119156e543b138d71e3 | {"event":"execution/data-path fence (immediate)","timestamp_ns":1622581493438}</title>
+    <circle cx="130" cy="360" r="9" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+    <line x1="130" y1="370" x2="243.75" y2="460" stroke="#dc2626" stroke-width="1" />
+    <text x="243.75" y="486" class="label" text-anchor="middle">immediate fail-stop fence</text>
+    <text x="243.75" y="507" class="tick" text-anchor="middle">0.000 ms</text>
+  </g>
+  <g data-point-id="f2-point-00002" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="8ec4a3ecf3db6cf4cc99c2116ce1bd3a7d0643b5faba1119156e543b138d71e3">
+    <title>f2-point-00002 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 8ec4a3ecf3db6cf4cc99c2116ce1bd3a7d0643b5faba1119156e543b138d71e3 | {"event":"detection (schedule-derived)","timestamp_ns":1622586493438}</title>
+    <circle cx="130.383" cy="360" r="9" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+    <line x1="130.383" y1="350" x2="362.5" y2="260" stroke="#2563eb" stroke-width="1" />
+    <text x="362.5" y="242" class="label" text-anchor="middle">detection</text>
+    <text x="362.5" y="263" class="tick" text-anchor="middle">5.000 ms</text>
+  </g>
+  <g data-point-id="f2-point-00003" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="8ec4a3ecf3db6cf4cc99c2116ce1bd3a7d0643b5faba1119156e543b138d71e3">
+    <title>f2-point-00003 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 8ec4a3ecf3db6cf4cc99c2116ce1bd3a7d0643b5faba1119156e543b138d71e3 | {"event":"reroute / recovery plan","timestamp_ns":1622586493438}</title>
+    <circle cx="130.383" cy="360" r="9" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+    <line x1="130.383" y1="370" x2="481.25" y2="460" stroke="#2563eb" stroke-width="1" />
+    <text x="481.25" y="486" class="label" text-anchor="middle">reroute + recovery plan</text>
+    <text x="481.25" y="507" class="tick" text-anchor="middle">5.000 ms</text>
+  </g>
+  <g data-point-id="f2-point-00004" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="8ec4a3ecf3db6cf4cc99c2116ce1bd3a7d0643b5faba1119156e543b138d71e3">
+    <title>f2-point-00004 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 8ec4a3ecf3db6cf4cc99c2116ce1bd3a7d0643b5faba1119156e543b138d71e3 | {"event":"prompt suffix recompute start","timestamp_ns":1622587493438}</title>
+    <circle cx="130.46" cy="360" r="9" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+    <line x1="130.46" y1="350" x2="600" y2="260" stroke="#2563eb" stroke-width="1" />
+    <text x="600" y="242" class="label" text-anchor="middle">recompute start</text>
+    <text x="600" y="263" class="tick" text-anchor="middle">6.000 ms</text>
+  </g>
+  <g data-point-id="f2-point-00005" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="8ec4a3ecf3db6cf4cc99c2116ce1bd3a7d0643b5faba1119156e543b138d71e3">
+    <title>f2-point-00005 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 8ec4a3ecf3db6cf4cc99c2116ce1bd3a7d0643b5faba1119156e543b138d71e3 | {"event":"prompt suffix recompute complete","timestamp_ns":1634895635102}</title>
+    <circle cx="1074.435" cy="360" r="9" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+    <line x1="1074.435" y1="370" x2="718.75" y2="460" stroke="#2563eb" stroke-width="1" />
+    <text x="718.75" y="486" class="label" text-anchor="middle">recompute complete</text>
+    <text x="718.75" y="507" class="tick" text-anchor="middle">12314.142 ms</text>
+  </g>
+  <g data-point-id="f2-point-00006" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="8ec4a3ecf3db6cf4cc99c2116ce1bd3a7d0643b5faba1119156e543b138d71e3">
+    <title>f2-point-00006 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 8ec4a3ecf3db6cf4cc99c2116ce1bd3a7d0643b5faba1119156e543b138d71e3 | {"event":"silent replay start","timestamp_ns":1634895635102}</title>
+    <circle cx="1074.435" cy="360" r="9" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+    <line x1="1074.435" y1="350" x2="837.5" y2="260" stroke="#2563eb" stroke-width="1" />
+    <text x="837.5" y="242" class="label" text-anchor="middle">silent replay start</text>
+    <text x="837.5" y="263" class="tick" text-anchor="middle">12314.142 ms</text>
+  </g>
+  <g data-point-id="f2-point-00007" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="8ec4a3ecf3db6cf4cc99c2116ce1bd3a7d0643b5faba1119156e543b138d71e3">
+    <title>f2-point-00007 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 8ec4a3ecf3db6cf4cc99c2116ce1bd3a7d0643b5faba1119156e543b138d71e3 | {"event":"silent replay complete","timestamp_ns":1634968191135}</title>
+    <circle cx="1080" cy="360" r="9" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+    <line x1="1080" y1="370" x2="956.25" y2="460" stroke="#2563eb" stroke-width="1" />
+    <text x="956.25" y="486" class="label" text-anchor="middle">silent replay complete</text>
+    <text x="956.25" y="507" class="tick" text-anchor="middle">12386.698 ms</text>
+  </g>
+  <g data-point-id="f2-point-00008" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="8ec4a3ecf3db6cf4cc99c2116ce1bd3a7d0643b5faba1119156e543b138d71e3">
+    <title>f2-point-00008 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 8ec4a3ecf3db6cf4cc99c2116ce1bd3a7d0643b5faba1119156e543b138d71e3 | {"event":"atomic activation / resume","timestamp_ns":1634968191135}</title>
+    <circle cx="1080" cy="360" r="9" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+    <line x1="1080" y1="350" x2="1075" y2="260" stroke="#2563eb" stroke-width="1" />
+    <text x="1075" y="242" class="label" text-anchor="end">atomic activation</text>
+    <text x="1075" y="263" class="tick" text-anchor="end">12386.698 ms</text>
+  </g>
+  <line x1="55" y1="676" x2="1145" y2="676" stroke="#fecaca" stroke-width="1" />
+  <text x="600" y="704" class="footer" text-anchor="middle">E2 modeled/preliminary · not calibrated · no physical experiment</text>
+</svg>

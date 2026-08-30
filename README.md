@@ -6,10 +6,11 @@ one monotonic global virtual clock.
 
 The implementation contract is [MOONKVSIM_PLAN.md](MOONKVSIM_PLAN.md). The
 tagged Vanilla M0--M5 baseline and the first AegisKV M6--M9 simulation release
-are present. The AegisKV release contains a 2,760-row matched matrix, an
-additional 280-row fluid-contention core preview, a 120-row Store-transport
-sweep, a 120-row fixed-capacity multi-Store-node sweep, and preliminary SVG
-paper figures. The current delivery scope
+are present. The current AegisKV release contains a Qwen3-8B-only, DP-only
+2,760-row matched matrix on the latest fluid-contention/HBM-ledger model, plus
+the earlier focused Store-transport and fixed-capacity multi-Store-node sweeps
+and preliminary SVG paper figures. TP and PP are fixed at one and are not
+experimental dimensions. The current delivery scope
 intentionally stops at E2 modeled simulation; E3 physical calibration, E4
 real-system matching, and E5/paper-ready claims are out of scope.
 
