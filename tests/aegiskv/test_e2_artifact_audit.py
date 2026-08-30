@@ -139,8 +139,8 @@ def _payload(spec: CellSpec) -> dict[str, Any]:
             "resource_cost": {
                 "peer_hbm_peak_bytes": 50,
                 "store_dram_peak_bytes": 60,
-                "network_byte_ns": 70,
-                "copy_engine_busy_ns": 80,
+                "network_byte_ns": {"FAKE_TRANSFER": 70},
+                "copy_engine_busy_ns": {"FAKE_TRANSFER": 80},
                 "transfer_state_counts": (
                     {"ABORTED": 1, "COMMITTED": 1}
                     if spec.failure_schedule is not None

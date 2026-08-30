@@ -101,11 +101,13 @@ METRIC_DEFINITIONS: Final[dict[str, dict[str, Any]]] = {
         "payload_path": ["metrics", "resource_cost", "network_byte_ns"],
         "unit": "byte_ns",
         "preferred_direction": "lower",
+        "reduction": "sum_non_negative_integer_mapping_values",
     },
     "copy_engine_busy_ns": {
         "payload_path": ["metrics", "resource_cost", "copy_engine_busy_ns"],
         "unit": "ns",
         "preferred_direction": "lower",
+        "reduction": "sum_non_negative_integer_mapping_values",
     },
 }
 
@@ -213,6 +215,18 @@ def _metric_value(row: Mapping[str, Any], metric_id: str) -> int:
                 f"{_required_string(row, 'run_id')} lacks metric path for {metric_id}"
             )
         current = current[key]
+    reduction = definition.get("reduction")
+    if reduction == "sum_non_negative_integer_mapping_values":
+        if not isinstance(current, Mapping) or not all(
+            isinstance(key, str) and type(value) is int and value >= 0
+            for key, value in current.items()
+        ):
+            raise StatisticsError(
+                f"{_required_string(row, 'run_id')} has malformed cause mapping for {metric_id}"
+            )
+        return sum(int(value) for value in current.values())
+    if reduction is not None:
+        raise StatisticsError(f"unsupported metric reduction for {metric_id}: {reduction}")
     if type(current) is not int or current < 0:
         raise StatisticsError(
             f"{_required_string(row, 'run_id')} has non-integer/non-negative {metric_id}"

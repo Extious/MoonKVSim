@@ -84,8 +84,8 @@ def _payload(spec: CellSpec) -> dict[str, Any]:
             "resource_cost": {
                 "peer_hbm_peak_bytes": 50,
                 "store_dram_peak_bytes": 60,
-                "network_byte_ns": 70,
-                "copy_engine_busy_ns": 80,
+                "network_byte_ns": {"FAKE_TRANSFER": 70},
+                "copy_engine_busy_ns": {"FAKE_TRANSFER": 80},
             },
         },
         "output_audit": {
@@ -252,6 +252,12 @@ def test_core_publication_has_420_rows_and_rejects_existing_target(
     assert statistics["audit"]["excluded_repeat_b_row_count"] == 210
     assert statistics["audit"]["descriptive_group_count"] == 700
     assert statistics["audit"]["paired_effect_group_count"] == 600
+    network_group = next(
+        group
+        for group in statistics["descriptive"]
+        if group["metric_id"] == "network_byte_ns"
+    )
+    assert [sample["value"] for sample in network_group["samples"]] == [70, 70, 70]
     assert manifest["statistics_fingerprint"] == statistics["fingerprint"]
     assert "statistics.json" in manifest["artifact_hashes"]
     assert (output / "manifest.json").is_file()
