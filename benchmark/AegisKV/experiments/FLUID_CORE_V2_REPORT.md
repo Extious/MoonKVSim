@@ -119,8 +119,9 @@ result, not a missing series.
 - only two v2 seeds; intervals are too wide for stable general conclusions;
 - v2 ablation and sensitivity matrices have not yet been rerun;
 - no physical calibration or external network-simulator cross-validation;
-- no TP/PP topology, multiple Store-node placement, RDMA/TCP/GDR transport matrix,
-  Host-DRAM staging pool, registration worker, or discrete copy-engine lane model;
+- no TP/PP topology, multiple Store-node placement, registration worker, or
+  discrete copy-engine lane model; the later focused `e2-transport-v1` bundle
+  now covers modeled RDMA/TCP/GDR paths and Host-DRAM staging transactions;
 - primary-KV bytes use the declared source-derived Qwen3-8B TP1/PP1 layout;
 - source hash-block coverage is not tokenizer-equivalent 128K token evidence;
 - F12 simulator-accuracy evidence remains intentionally unavailable;

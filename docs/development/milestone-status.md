@@ -184,6 +184,10 @@ closure and paper-ready evidence remain open.
   contention; every GPU exposes a closed event-boundary HBM account stack.
   Three focused SVGs expose HBM occupancy, fluid resource utilization, and
   recovery reserve/staging without upgrading the E2 evidence class.
+- M9 transport follow-up: GDR, RDMA Host-staged, and TCP Host-staged paths now
+  have a separate five-bucket, two-scenario, two-seed matrix with 120 rows and
+  60 exact A/B pairs. Host staging/source-pin lifecycles are ledger-audited and
+  F17 exposes WCT, network byte-time, and Host staging without a physical claim.
 
 The canonical matrix is
 `benchmark/AegisKV/experiments/e2-initial-v1/`; the figure set is
@@ -195,9 +199,14 @@ The fluid-core matrix is
 `benchmark/AegisKV/experiments/figures/e2-fluid-core-v2/`; and its bounded
 interpretation is in `benchmark/AegisKV/experiments/FLUID_CORE_V2_REPORT.md`.
 
+The Store-transport matrix is
+`benchmark/AegisKV/experiments/e2-transport-v1/`; F17 is in
+`benchmark/AegisKV/experiments/figures/e2-transport-v1/`; and its bounded
+interpretation is in `benchmark/AegisKV/experiments/TRANSPORT_V1_REPORT.md`.
+
 This initial release is not paper-ready. The current experiment harness still
 does not model every TP/PP/Store-node sensitivity dimension and does not
 establish physical timing accuracy. The branch-local harness now supports
 explicit GDR and Host-staged Store paths with Host DRAM staging/source-pin
-transactions, but those new transport modes still require a separately frozen
-matched matrix before they may be interpreted as results.
+transactions. The focused matched transport matrix is complete; TP/PP and
+multiple Store-node sensitivities remain open.

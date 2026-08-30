@@ -1,0 +1,169 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="800" viewBox="0 0 1320 800" role="img">
+  <title>Store transport sensitivity under modeled GlobalDES contention</title>
+  <style>text{font-family:DejaVu Sans,Arial,sans-serif;fill:#111827}.title{font-size:26px;font-weight:700}.sub{font-size:13px;fill:#475569}.panel{font-size:15px;font-weight:700}.tick{font-size:11px;fill:#475569}.label{font-size:12px;font-weight:650}.footer{font-size:13px;font-weight:700;fill:#991b1b}</style>
+  <rect x="0" y="0" width="1320" height="800" fill="#ffffff" />
+  <text x="44" y="40" class="title">Store transport sensitivity under modeled GlobalDES contention</text>
+  <text x="44" y="66" class="sub">Matched Weka-shape workload · GPU_FAILURE · seeds 0/1 · A/B exact</text>
+  <rect x="44" y="105" width="390" height="560" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+  <rect x="465" y="105" width="390" height="560" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+  <rect x="886" y="105" width="390" height="560" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+  <text x="62" y="136" class="panel">A  Whole-workload WCT delta vs GDR (%)</text>
+  <text x="483" y="136" class="panel">B  Network byte-time multiplier vs GDR</text>
+  <text x="904" y="136" class="panel">C  Peak Host DRAM staging (GiB)</text>
+  <line x1="82" y1="585.0" x2="402" y2="585.0" stroke="#e2e8f0" stroke-width="1" />
+  <text x="47" y="589.0" class="tick">-0.02</text>
+  <line x1="82" y1="503.0" x2="402" y2="503.0" stroke="#94a3b8" stroke-width="1.5" />
+  <text x="47" y="507.0" class="tick">0.00</text>
+  <line x1="82" y1="421.0" x2="402" y2="421.0" stroke="#e2e8f0" stroke-width="1" />
+  <text x="47" y="425.0" class="tick">0.02</text>
+  <line x1="82" y1="339.0" x2="402" y2="339.0" stroke="#e2e8f0" stroke-width="1" />
+  <text x="47" y="343.0" class="tick">0.04</text>
+  <line x1="82" y1="257.0" x2="402" y2="257.0" stroke="#e2e8f0" stroke-width="1" />
+  <text x="47" y="261.0" class="tick">0.06</text>
+  <line x1="82" y1="175.0" x2="402" y2="175.0" stroke="#e2e8f0" stroke-width="1" />
+  <text x="47" y="179.0" class="tick">0.08</text>
+  <text x="72.0" y="607" class="tick">8k</text>
+  <line x1="82.0" y1="411.0938184847014" x2="82.0" y2="410.90438418608545" stroke="#7c3aed" stroke-width="2" />
+  <g data-point-id="wct:store_transport=RDMA_HOST_STAGED:8k" data-run-ids="transport_sensitivity:store_transport=RDMA_HOST_STAGED:8k:gpu_failure:seed-0:repeat-A;transport_sensitivity:store_transport=RDMA_HOST_STAGED:8k:gpu_failure:seed-1:repeat-A" data-result-hashes="3b535840d2fb5f69e7bff8bc868d5df5bc39edde33f47f9ee7eb960d968946d1;296e4b05bc7bf848b657f7082a2624616c6a79c191fc9ff274d4980a79f17894">
+    <circle cx="82.0" cy="410.99910133539345" r="4.5" fill="#7c3aed" />
+  </g>
+  <line x1="503.0" y1="497.9411454099676" x2="503.0" y2="495.8360328806302" stroke="#7c3aed" stroke-width="2" />
+  <g data-point-id="network:store_transport=RDMA_HOST_STAGED:8k" data-run-ids="transport_sensitivity:store_transport=RDMA_HOST_STAGED:8k:gpu_failure:seed-0:repeat-A;transport_sensitivity:store_transport=RDMA_HOST_STAGED:8k:gpu_failure:seed-1:repeat-A" data-result-hashes="3b535840d2fb5f69e7bff8bc868d5df5bc39edde33f47f9ee7eb960d968946d1;296e4b05bc7bf848b657f7082a2624616c6a79c191fc9ff274d4980a79f17894">
+    <circle cx="503.0" cy="496.88858914529897" r="4.5" fill="#7c3aed" />
+  </g>
+  <line x1="82.0" y1="357.0255523518937" x2="82.0" y2="204.7974831249693" stroke="#dc2626" stroke-width="2" />
+  <g data-point-id="wct:store_transport=TCP_HOST_STAGED:8k" data-run-ids="transport_sensitivity:store_transport=TCP_HOST_STAGED:8k:gpu_failure:seed-0:repeat-A;transport_sensitivity:store_transport=TCP_HOST_STAGED:8k:gpu_failure:seed-1:repeat-A" data-result-hashes="2013f7a1a95c2b46aa67e35420212b5e6d8fc8be45553f861912d3d1ce475d3d;2ac152f3027b73d277d0255a2d08ef1fdade8e03d724116d7d9b82eb3cb37c07">
+    <circle cx="82.0" cy="280.9115177384315" r="4.5" fill="#dc2626" />
+  </g>
+  <line x1="503.0" y1="254.30991682761527" x2="503.0" y2="248.06630314442305" stroke="#dc2626" stroke-width="2" />
+  <g data-point-id="network:store_transport=TCP_HOST_STAGED:8k" data-run-ids="transport_sensitivity:store_transport=TCP_HOST_STAGED:8k:gpu_failure:seed-0:repeat-A;transport_sensitivity:store_transport=TCP_HOST_STAGED:8k:gpu_failure:seed-1:repeat-A" data-result-hashes="2013f7a1a95c2b46aa67e35420212b5e6d8fc8be45553f861912d3d1ce475d3d;2ac152f3027b73d277d0255a2d08ef1fdade8e03d724116d7d9b82eb3cb37c07">
+    <circle cx="503.0" cy="251.18810998601919" r="4.5" fill="#dc2626" />
+  </g>
+  <text x="152.0" y="607" class="tick">32k</text>
+  <line x1="162.0" y1="411.09051630320255" x2="162.0" y2="410.8228463510274" stroke="#7c3aed" stroke-width="2" />
+  <g data-point-id="wct:store_transport=RDMA_HOST_STAGED:32k" data-run-ids="transport_sensitivity:store_transport=RDMA_HOST_STAGED:32k:gpu_failure:seed-0:repeat-A;transport_sensitivity:store_transport=RDMA_HOST_STAGED:32k:gpu_failure:seed-1:repeat-A" data-result-hashes="fe379087a5e3a1af9c46ceaca13807115e886210607b5049f3353ce68686f110;6a2688186fd912cc885b6e87cc0efc360002c78ba99bc7f60ffa3cf4f375d0b6">
+    <circle cx="162.0" cy="410.956681327115" r="4.5" fill="#7c3aed" />
+  </g>
+  <line x1="583.0" y1="495.3445868732498" x2="583.0" y2="494.87940845342825" stroke="#7c3aed" stroke-width="2" />
+  <g data-point-id="network:store_transport=RDMA_HOST_STAGED:32k" data-run-ids="transport_sensitivity:store_transport=RDMA_HOST_STAGED:32k:gpu_failure:seed-0:repeat-A;transport_sensitivity:store_transport=RDMA_HOST_STAGED:32k:gpu_failure:seed-1:repeat-A" data-result-hashes="fe379087a5e3a1af9c46ceaca13807115e886210607b5049f3353ce68686f110;6a2688186fd912cc885b6e87cc0efc360002c78ba99bc7f60ffa3cf4f375d0b6">
+    <circle cx="583.0" cy="495.111997663339" r="4.5" fill="#7c3aed" />
+  </g>
+  <line x1="162.0" y1="563.0325559168838" x2="162.0" y2="227.9547377082539" stroke="#dc2626" stroke-width="2" />
+  <g data-point-id="wct:store_transport=TCP_HOST_STAGED:32k" data-run-ids="transport_sensitivity:store_transport=TCP_HOST_STAGED:32k:gpu_failure:seed-0:repeat-A;transport_sensitivity:store_transport=TCP_HOST_STAGED:32k:gpu_failure:seed-1:repeat-A" data-result-hashes="a249493fb81090de048a9f9388b1151e919e22d50ed8fd2a1919f8fbe1d4dfd7;8273c58a35f94bc19a6f1ba49c1509ffa710b2ef034861c9934a0bb5239bcca0">
+    <circle cx="162.0" cy="395.49364681256884" r="4.5" fill="#dc2626" />
+  </g>
+  <line x1="583.0" y1="245.20370657151489" x2="583.0" y2="244.49125069151364" stroke="#dc2626" stroke-width="2" />
+  <g data-point-id="network:store_transport=TCP_HOST_STAGED:32k" data-run-ids="transport_sensitivity:store_transport=TCP_HOST_STAGED:32k:gpu_failure:seed-0:repeat-A;transport_sensitivity:store_transport=TCP_HOST_STAGED:32k:gpu_failure:seed-1:repeat-A" data-result-hashes="a249493fb81090de048a9f9388b1151e919e22d50ed8fd2a1919f8fbe1d4dfd7;8273c58a35f94bc19a6f1ba49c1509ffa710b2ef034861c9934a0bb5239bcca0">
+    <circle cx="583.0" cy="244.84747863151432" r="4.5" fill="#dc2626" />
+  </g>
+  <text x="232.0" y="607" class="tick">64k</text>
+  <line x1="242.0" y1="411.28292761747184" x2="242.0" y2="402.686515641247" stroke="#7c3aed" stroke-width="2" />
+  <g data-point-id="wct:store_transport=RDMA_HOST_STAGED:64k" data-run-ids="transport_sensitivity:store_transport=RDMA_HOST_STAGED:64k:gpu_failure:seed-0:repeat-A;transport_sensitivity:store_transport=RDMA_HOST_STAGED:64k:gpu_failure:seed-1:repeat-A" data-result-hashes="586fcf3ddd30c6a69fe6d80e46d043d83a91f967450a9c56b732a8970000c838;595ad5891440fd33a80dfd36e3e3aa4be05dab9aad17c9ca82a34ff3374fd9aa">
+    <circle cx="242.0" cy="406.98472162935946" r="4.5" fill="#7c3aed" />
+  </g>
+  <line x1="663.0" y1="502.6241399087746" x2="663.0" y2="492.4234709221647" stroke="#7c3aed" stroke-width="2" />
+  <g data-point-id="network:store_transport=RDMA_HOST_STAGED:64k" data-run-ids="transport_sensitivity:store_transport=RDMA_HOST_STAGED:64k:gpu_failure:seed-0:repeat-A;transport_sensitivity:store_transport=RDMA_HOST_STAGED:64k:gpu_failure:seed-1:repeat-A" data-result-hashes="586fcf3ddd30c6a69fe6d80e46d043d83a91f967450a9c56b732a8970000c838;595ad5891440fd33a80dfd36e3e3aa4be05dab9aad17c9ca82a34ff3374fd9aa">
+    <circle cx="663.0" cy="497.52380541546967" r="4.5" fill="#7c3aed" />
+  </g>
+  <line x1="242.0" y1="252.34819138980566" x2="242.0" y2="219.1896651250592" stroke="#dc2626" stroke-width="2" />
+  <g data-point-id="wct:store_transport=TCP_HOST_STAGED:64k" data-run-ids="transport_sensitivity:store_transport=TCP_HOST_STAGED:64k:gpu_failure:seed-0:repeat-A;transport_sensitivity:store_transport=TCP_HOST_STAGED:64k:gpu_failure:seed-1:repeat-A" data-result-hashes="7fdb95e147b38d09cddbf84bbbe89f6c5f5197889c58c7f81eecc075e5f76ff7;b349fd2c3ecd9a638a8f0430a7c49d19d24232040fd59e0ec32fdfa8ceabd72c">
+    <circle cx="242.0" cy="235.76892825743238" r="4.5" fill="#dc2626" />
+  </g>
+  <line x1="663.0" y1="273.80230414529404" x2="663.0" y2="235.2664433043352" stroke="#dc2626" stroke-width="2" />
+  <g data-point-id="network:store_transport=TCP_HOST_STAGED:64k" data-run-ids="transport_sensitivity:store_transport=TCP_HOST_STAGED:64k:gpu_failure:seed-0:repeat-A;transport_sensitivity:store_transport=TCP_HOST_STAGED:64k:gpu_failure:seed-1:repeat-A" data-result-hashes="7fdb95e147b38d09cddbf84bbbe89f6c5f5197889c58c7f81eecc075e5f76ff7;b349fd2c3ecd9a638a8f0430a7c49d19d24232040fd59e0ec32fdfa8ceabd72c">
+    <circle cx="663.0" cy="254.53437372481466" r="4.5" fill="#dc2626" />
+  </g>
+  <text x="312.0" y="607" class="tick">96k</text>
+  <line x1="322.0" y1="411.11585670090847" x2="322.0" y2="391.1643616822008" stroke="#7c3aed" stroke-width="2" />
+  <g data-point-id="wct:store_transport=RDMA_HOST_STAGED:96k" data-run-ids="transport_sensitivity:store_transport=RDMA_HOST_STAGED:96k:gpu_failure:seed-0:repeat-A;transport_sensitivity:store_transport=RDMA_HOST_STAGED:96k:gpu_failure:seed-1:repeat-A" data-result-hashes="9271f772ada942fc1d0547ecce117b229f0676b0e30fe60e0358cc09352b4ac1;3c44453737c8bd0ee45957b0ec5106f07af612937885bc7ff89daeaa8c465a0e">
+    <circle cx="322.0" cy="401.14010919155464" r="4.5" fill="#7c3aed" />
+  </g>
+  <line x1="743.0" y1="497.1078428834461" x2="743.0" y2="494.01400505861443" stroke="#7c3aed" stroke-width="2" />
+  <g data-point-id="network:store_transport=RDMA_HOST_STAGED:96k" data-run-ids="transport_sensitivity:store_transport=RDMA_HOST_STAGED:96k:gpu_failure:seed-0:repeat-A;transport_sensitivity:store_transport=RDMA_HOST_STAGED:96k:gpu_failure:seed-1:repeat-A" data-result-hashes="9271f772ada942fc1d0547ecce117b229f0676b0e30fe60e0358cc09352b4ac1;3c44453737c8bd0ee45957b0ec5106f07af612937885bc7ff89daeaa8c465a0e">
+    <circle cx="743.0" cy="495.56092397103026" r="4.5" fill="#7c3aed" />
+  </g>
+  <line x1="322.0" y1="384.4009763654702" x2="322.0" y2="228.0305704102288" stroke="#dc2626" stroke-width="2" />
+  <g data-point-id="wct:store_transport=TCP_HOST_STAGED:96k" data-run-ids="transport_sensitivity:store_transport=TCP_HOST_STAGED:96k:gpu_failure:seed-0:repeat-A;transport_sensitivity:store_transport=TCP_HOST_STAGED:96k:gpu_failure:seed-1:repeat-A" data-result-hashes="86b1fee99a909e635b085879e3774031085dd3fe87323df02cb156d8cd532235;09793325e56997c500f868b878f52800eb44a9be872adf543a8b1065c782710c">
+    <circle cx="322.0" cy="306.21577338784954" r="4.5" fill="#dc2626" />
+  </g>
+  <line x1="743.0" y1="243.4499639544669" x2="743.0" y2="241.2751274257086" stroke="#dc2626" stroke-width="2" />
+  <g data-point-id="network:store_transport=TCP_HOST_STAGED:96k" data-run-ids="transport_sensitivity:store_transport=TCP_HOST_STAGED:96k:gpu_failure:seed-0:repeat-A;transport_sensitivity:store_transport=TCP_HOST_STAGED:96k:gpu_failure:seed-1:repeat-A" data-result-hashes="86b1fee99a909e635b085879e3774031085dd3fe87323df02cb156d8cd532235;09793325e56997c500f868b878f52800eb44a9be872adf543a8b1065c782710c">
+    <circle cx="743.0" cy="242.3625456900878" r="4.5" fill="#dc2626" />
+  </g>
+  <text x="392.0" y="607" class="tick">128k</text>
+  <line x1="402.0" y1="410.9183836231346" x2="402.0" y2="406.51893015805456" stroke="#7c3aed" stroke-width="2" />
+  <g data-point-id="wct:store_transport=RDMA_HOST_STAGED:128k" data-run-ids="transport_sensitivity:store_transport=RDMA_HOST_STAGED:128k:gpu_failure:seed-0:repeat-A;transport_sensitivity:store_transport=RDMA_HOST_STAGED:128k:gpu_failure:seed-1:repeat-A" data-result-hashes="fae7e651af05ead7e8a404210a56f59cce79b847e7cbfd12cd087420db2e3df5;dffacd9d59f63712b79bbd94cab97e35eca07347d0f0e22eed3d09d9e620047b">
+    <circle cx="402.0" cy="408.71865689059456" r="4.5" fill="#7c3aed" />
+  </g>
+  <line x1="823.0" y1="494.02607785910345" x2="823.0" y2="492.85667794685855" stroke="#7c3aed" stroke-width="2" />
+  <g data-point-id="network:store_transport=RDMA_HOST_STAGED:128k" data-run-ids="transport_sensitivity:store_transport=RDMA_HOST_STAGED:128k:gpu_failure:seed-0:repeat-A;transport_sensitivity:store_transport=RDMA_HOST_STAGED:128k:gpu_failure:seed-1:repeat-A" data-result-hashes="fae7e651af05ead7e8a404210a56f59cce79b847e7cbfd12cd087420db2e3df5;dffacd9d59f63712b79bbd94cab97e35eca07347d0f0e22eed3d09d9e620047b">
+    <circle cx="823.0" cy="493.441377902981" r="4.5" fill="#7c3aed" />
+  </g>
+  <line x1="402.0" y1="224.0284594840761" x2="402.0" y2="204.12221448826028" stroke="#dc2626" stroke-width="2" />
+  <g data-point-id="wct:store_transport=TCP_HOST_STAGED:128k" data-run-ids="transport_sensitivity:store_transport=TCP_HOST_STAGED:128k:gpu_failure:seed-0:repeat-A;transport_sensitivity:store_transport=TCP_HOST_STAGED:128k:gpu_failure:seed-1:repeat-A" data-result-hashes="0289b08e76dbf47b934a6722f826a1b01d6ef81ae59173d3d21c9536a4a87641;c87f22953e7aa7049d7ae4063e81e28249fbe6747d043b853be35bdf0c66ba4e">
+    <circle cx="402.0" cy="214.07533698616822" r="4.5" fill="#dc2626" />
+  </g>
+  <line x1="823.0" y1="240.68788596880506" x2="823.0" y2="236.90300348050818" stroke="#dc2626" stroke-width="2" />
+  <g data-point-id="network:store_transport=TCP_HOST_STAGED:128k" data-run-ids="transport_sensitivity:store_transport=TCP_HOST_STAGED:128k:gpu_failure:seed-0:repeat-A;transport_sensitivity:store_transport=TCP_HOST_STAGED:128k:gpu_failure:seed-1:repeat-A" data-result-hashes="0289b08e76dbf47b934a6722f826a1b01d6ef81ae59173d3d21c9536a4a87641;c87f22953e7aa7049d7ae4063e81e28249fbe6747d043b853be35bdf0c66ba4e">
+    <circle cx="823.0" cy="238.7954447246566" r="4.5" fill="#dc2626" />
+  </g>
+  <line x1="82.0" y1="410.99910133539345" x2="162.0" y2="410.956681327115" stroke="#7c3aed" stroke-width="2" />
+  <line x1="162.0" y1="410.956681327115" x2="242.0" y2="406.98472162935946" stroke="#7c3aed" stroke-width="2" />
+  <line x1="242.0" y1="406.98472162935946" x2="322.0" y2="401.14010919155464" stroke="#7c3aed" stroke-width="2" />
+  <line x1="322.0" y1="401.14010919155464" x2="402.0" y2="408.71865689059456" stroke="#7c3aed" stroke-width="2" />
+  <line x1="503.0" y1="496.88858914529897" x2="583.0" y2="495.111997663339" stroke="#7c3aed" stroke-width="2" />
+  <line x1="583.0" y1="495.111997663339" x2="663.0" y2="497.52380541546967" stroke="#7c3aed" stroke-width="2" />
+  <line x1="663.0" y1="497.52380541546967" x2="743.0" y2="495.56092397103026" stroke="#7c3aed" stroke-width="2" />
+  <line x1="743.0" y1="495.56092397103026" x2="823.0" y2="493.441377902981" stroke="#7c3aed" stroke-width="2" />
+  <line x1="82.0" y1="280.9115177384315" x2="162.0" y2="395.49364681256884" stroke="#dc2626" stroke-width="2" />
+  <line x1="162.0" y1="395.49364681256884" x2="242.0" y2="235.76892825743238" stroke="#dc2626" stroke-width="2" />
+  <line x1="242.0" y1="235.76892825743238" x2="322.0" y2="306.21577338784954" stroke="#dc2626" stroke-width="2" />
+  <line x1="322.0" y1="306.21577338784954" x2="402.0" y2="214.07533698616822" stroke="#dc2626" stroke-width="2" />
+  <line x1="503.0" y1="251.18810998601919" x2="583.0" y2="244.84747863151432" stroke="#dc2626" stroke-width="2" />
+  <line x1="583.0" y1="244.84747863151432" x2="663.0" y2="254.53437372481466" stroke="#dc2626" stroke-width="2" />
+  <line x1="663.0" y1="254.53437372481466" x2="743.0" y2="242.3625456900878" stroke="#dc2626" stroke-width="2" />
+  <line x1="743.0" y1="242.3625456900878" x2="823.0" y2="238.7954447246566" stroke="#dc2626" stroke-width="2" />
+  <line x1="503" y1="585.0" x2="823" y2="585.0" stroke="#e2e8f0" stroke-width="1" />
+  <text x="468" y="589.0" class="tick">1.0x</text>
+  <line x1="503" y1="491.8181818181818" x2="823" y2="491.8181818181818" stroke="#e2e8f0" stroke-width="1" />
+  <text x="468" y="495.8181818181818" class="tick">1.5x</text>
+  <line x1="503" y1="398.6363636363636" x2="823" y2="398.6363636363636" stroke="#e2e8f0" stroke-width="1" />
+  <text x="468" y="402.6363636363636" class="tick">2.0x</text>
+  <line x1="503" y1="305.4545454545455" x2="823" y2="305.4545454545455" stroke="#e2e8f0" stroke-width="1" />
+  <text x="468" y="309.4545454545455" class="tick">2.5x</text>
+  <line x1="503" y1="212.2727272727273" x2="823" y2="212.2727272727273" stroke="#e2e8f0" stroke-width="1" />
+  <text x="468" y="216.2727272727273" class="tick">3.0x</text>
+  <text x="493.0" y="607" class="tick">8k</text>
+  <text x="573.0" y="607" class="tick">32k</text>
+  <text x="653.0" y="607" class="tick">64k</text>
+  <text x="733.0" y="607" class="tick">96k</text>
+  <text x="813.0" y="607" class="tick">128k</text>
+  <line x1="930" y1="585.0" x2="1230" y2="585.0" stroke="#e2e8f0" stroke-width="1" />
+  <text x="895" y="589.0" class="tick">0.0</text>
+  <line x1="930" y1="482.5" x2="1230" y2="482.5" stroke="#e2e8f0" stroke-width="1" />
+  <text x="895" y="486.5" class="tick">0.3</text>
+  <line x1="930" y1="380.0" x2="1230" y2="380.0" stroke="#e2e8f0" stroke-width="1" />
+  <text x="895" y="384.0" class="tick">0.6</text>
+  <line x1="930" y1="277.5" x2="1230" y2="277.5" stroke="#e2e8f0" stroke-width="1" />
+  <text x="895" y="281.5" class="tick">0.9</text>
+  <line x1="930" y1="175.0" x2="1230" y2="175.0" stroke="#e2e8f0" stroke-width="1" />
+  <text x="895" y="179.0" class="tick">1.2</text>
+  <rect x="958" y="585.0" width="56" height="0.0" fill="#2563eb" rx="4" />
+  <text x="953" y="607" class="tick">RDMA GDR</text>
+  <text x="966" y="577.0" class="label">0.000</text>
+  <rect x="1054" y="200.625" width="56" height="384.375" fill="#7c3aed" rx="4" />
+  <text x="1049" y="607" class="tick">RDMA staged</text>
+  <text x="1062" y="192.625" class="label">1.125</text>
+  <rect x="1150" y="200.625" width="56" height="384.375" fill="#dc2626" rx="4" />
+  <text x="1145" y="607" class="tick">TCP staged</text>
+  <text x="1158" y="192.625" class="label">1.125</text>
+  <rect x="78" y="620" width="16" height="8" fill="#7c3aed" />
+  <text x="101" y="630" class="tick">RDMA staged</text>
+  <rect x="268" y="620" width="16" height="8" fill="#dc2626" />
+  <text x="291" y="630" class="tick">TCP staged</text>
+  <text x="902" y="620" class="sub">Modeled rates (assumed):</text>
+  <text x="902" y="642" class="sub">RDMA Store 25 · Host 16 · TCP Store 8 GB/s</text>
+  <text x="44" y="732" class="footer">E2 modeled/preliminary · GlobalDES only · not calibrated · no physical experiment</text>
+  <text x="44" y="758" class="sub">Whiskers show the seed-0/1 range; repeat B is determinism replay, not a sample.</text>
+</svg>

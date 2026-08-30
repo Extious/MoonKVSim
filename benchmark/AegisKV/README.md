@@ -29,6 +29,13 @@ The follow-up fluid-core preview is available at
 fluid contention and event-boundary per-GPU HBM account stacks. It remains E2,
 modeled/preliminary, and not calibrated.
 
+The focused Store-transport matrix is available at
+`experiments/e2-transport-v1/`, with audited figure F17 at
+`experiments/figures/e2-transport-v1/` and interpretation in
+`experiments/TRANSPORT_V1_REPORT.md`. It compares GDR, RDMA Host-staged, and TCP
+Host-staged paths over all five context buckets without invoking a physical
+network.
+
 Verify the current design bundle from the repository root:
 
 ```bash
@@ -46,4 +53,8 @@ Audit the initial GlobalDES results and figures:
 .venv/bin/python scripts/audit_aegiskv_fluid_preview.py \
   --matrix-dir benchmark/AegisKV/experiments/e2-fluid-core-v2 \
   --figure-dir benchmark/AegisKV/experiments/figures/e2-fluid-core-v2
+
+.venv/bin/python scripts/audit_aegiskv_transport_preview.py \
+  --matrix-dir benchmark/AegisKV/experiments/e2-transport-v1 \
+  --figure-dir benchmark/AegisKV/experiments/figures/e2-transport-v1
 ```
