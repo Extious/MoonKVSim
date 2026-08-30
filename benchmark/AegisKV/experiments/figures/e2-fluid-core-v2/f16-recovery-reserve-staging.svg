@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="820" viewBox="0 0 1280 820" role="img">
+  <title>Recovery destination reserve and KV materialization</title>
+  <style>text{font-family:DejaVu Sans,Arial,sans-serif;fill:#111827}.title{font-size:27px;font-weight:700}.subtitle{font-size:14px;fill:#475569}.label{font-size:14px;font-weight:650}.tick{font-size:11px;fill:#475569}.small{font-size:10px;fill:#475569}.footer{font-size:13px;font-weight:700;fill:#991b1b}.panel{font-size:15px;font-weight:700}</style>
+  <rect x="0" y="0" width="1280" height="820" fill="#ffffff" stroke="none" opacity="1" />
+  <text x="48" y="42" class="title" text-anchor="start">Recovery destination reserve and KV materialization</text>
+  <text x="48" y="68" class="subtitle" text-anchor="start">gpu-2; relative to GPU failure; staging is zero when no replica is restorable</text>
+  <g data-point-id="recovery-hbm" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="e8a84947f97265549fb398e85d8a2db0fc36d573240e8ed49666cb21cc97bb65">
+    <title>recovery-hbm | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | e8a84947f97265549fb398e85d8a2db0fc36d573240e8ed49666cb21cc97bb65</title>
+    <line x1="110" y1="690" x2="1220" y2="690" stroke="#e2e8f0" stroke-width="1" />
+    <text x="98" y="694" class="tick" text-anchor="end">0.0</text>
+    <line x1="110" y1="583" x2="1220" y2="583" stroke="#e2e8f0" stroke-width="1" />
+    <text x="98" y="587" class="tick" text-anchor="end">3.3</text>
+    <line x1="110" y1="476" x2="1220" y2="476" stroke="#e2e8f0" stroke-width="1" />
+    <text x="98" y="480" class="tick" text-anchor="end">6.6</text>
+    <line x1="110" y1="369" x2="1220" y2="369" stroke="#e2e8f0" stroke-width="1" />
+    <text x="98" y="373" class="tick" text-anchor="end">9.8</text>
+    <line x1="110" y1="262" x2="1220" y2="262" stroke="#e2e8f0" stroke-width="1" />
+    <text x="98" y="266" class="tick" text-anchor="end">13.1</text>
+    <line x1="110" y1="155" x2="1220" y2="155" stroke="#e2e8f0" stroke-width="1" />
+    <text x="98" y="159" class="tick" text-anchor="end">16.4</text>
+    <polyline points="110,690 110.4481,690 110.4481,155 1213.4981,155 1213.4981,690 1220,690" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linejoin="round" />
+    <line x1="145" y1="95" x2="173" y2="95" stroke="#f59e0b" stroke-width="3" />
+    <text x="181" y="100" class="small" text-anchor="start">RECOVERY_DEST_RESERVED</text>
+    <polyline points="110,690 110.4481,690 110.4481,690 1213.4981,690 1213.4981,690 1220,690" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linejoin="round" />
+    <line x1="415" y1="95" x2="443" y2="95" stroke="#dc2626" stroke-width="3" />
+    <text x="451" y="100" class="small" text-anchor="start">TRANSFER_STAGING</text>
+    <polyline points="110,690 110.4481,690 110.4481,690 1213.4981,690 1213.4981,155 1220,155" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linejoin="round" />
+    <line x1="685" y1="95" x2="713" y2="95" stroke="#16a34a" stroke-width="3" />
+    <text x="721" y="100" class="small" text-anchor="start">ACTIVE_PRIMARY_KV</text>
+    <polyline points="110,456.045 110.4481,456.045 110.4481,456.045 1213.4981,456.045 1213.4981,456.045 1220,456.045" fill="none" stroke="#7c3aed" stroke-width="2.5" stroke-linejoin="round" />
+    <line x1="955" y1="95" x2="983" y2="95" stroke="#7c3aed" stroke-width="3" />
+    <text x="991" y="100" class="small" text-anchor="start">PEER_PROTECTION_KV</text>
+    <text x="110" y="137" class="small" text-anchor="start">1 FAILURE · 2 RECOVERY PLAN · 3 PROMPT SUFFIX RECOMPUTE START · 4 PROMPT SUFFIX RECOMPUTE COMPLETE · 5 RECOVERY ATOMIC ACTIVATION</text>
+    <line x1="110" y1="155" x2="110" y2="690" stroke="#64748b" stroke-width="1" stroke-dasharray="4 3" />
+    <text x="110" y="148" class="small" text-anchor="middle">1</text>
+    <line x1="110.4481" y1="155" x2="110.4481" y2="690" stroke="#64748b" stroke-width="1" stroke-dasharray="4 3" />
+    <text x="110.4481" y="136" class="small" text-anchor="middle">2</text>
+    <line x1="110.5377" y1="155" x2="110.5377" y2="690" stroke="#64748b" stroke-width="1" stroke-dasharray="4 3" />
+    <text x="110.5377" y="148" class="small" text-anchor="middle">3</text>
+    <line x1="1213.4981" y1="155" x2="1213.4981" y2="690" stroke="#64748b" stroke-width="1" stroke-dasharray="4 3" />
+    <text x="1213.4981" y="136" class="small" text-anchor="middle">4</text>
+    <line x1="1220" y1="155" x2="1220" y2="690" stroke="#64748b" stroke-width="1" stroke-dasharray="4 3" />
+    <text x="1220" y="148" class="small" text-anchor="middle">5</text>
+    <line x1="110" y1="155" x2="110" y2="690" stroke="#334155" stroke-width="1.4" />
+    <line x1="110" y1="690" x2="1220" y2="690" stroke="#334155" stroke-width="1.4" />
+  </g>
+  <text x="24" y="422.5" class="label" text-anchor="start" transform="rotate(-90 24 422.5)">GiB</text>
+  <text x="665" y="732" class="label" text-anchor="middle">virtual time since failure (window 12.387 s)</text>
+  <line x1="48" y1="776" x2="1232" y2="776" stroke="#fecaca" stroke-width="1" />
+  <text x="640" y="806" class="footer" text-anchor="middle">E2 modeled/preliminary · GlobalDES only · not calibrated · no physical experiment</text>
+</svg>
