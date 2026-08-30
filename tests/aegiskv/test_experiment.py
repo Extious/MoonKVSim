@@ -98,9 +98,33 @@ def test_failure_cell_is_fresh_run_byte_identical_and_scope_limited() -> None:
     assert all(value == 0 for value in first.payload["forbidden_semantics"].values())
     assert first.payload["metrics"]["pool_audit"]["unattributed_reserve_bytes"] == 0
     assert first.payload["metrics"]["pool_audit"]["pending_destination_bytes_final"] == 0
+    resource_model = first.payload["resource_model"]
+    assert resource_model["communication_backend"] == "flow_contention"
+    assert resource_model["fairness"] == "weighted_max_min_work_conserving"
+    assert resource_model["flow_clock"] == "shared_global_des_now_ns"
     resource_cost = first.payload["metrics"]["resource_cost"]
     assert resource_cost["transfer_byte_conservation_valid"] is True
     assert resource_cost["transfer_state_counts"].get("PENDING", 0) == 0
+    assert resource_cost["gpu_hbm_recovery_reserve_peak_bytes"] > 0
+    hbm_stacks = resource_cost["gpu_hbm_account_stack_by_gpu"]
+    assert all(item["valid"] for item in hbm_stacks.values())
+    for item in hbm_stacks.values():
+        final = item["final_accounts"]
+        assert sum(final.values()) == item["capacity_bytes"]
+        assert final["ACTIVE_PRIMARY_KV"] == 0
+        assert final["RECOVERY_DEST_RESERVED"] == 0
+        assert final["TRANSFER_STAGING"] == 0
+        assert final["UNATTRIBUTED_RESERVE"] == 0
+    failed_hbm = [
+        item
+        for item in hbm_stacks.values()
+        if item["final_accounts"]["UNAVAILABLE_CAPACITY"] > 0
+    ]
+    assert len(failed_hbm) == 1
+    assert (
+        failed_hbm[0]["final_accounts"]["UNAVAILABLE_CAPACITY"]
+        == failed_hbm[0]["capacity_bytes"]
+    )
     assert first.payload["metrics"]["policy_effects"]["protection_path_bypasses"]
     failed_pools = [
         value
@@ -129,6 +153,39 @@ def test_failure_cell_is_fresh_run_byte_identical_and_scope_limited() -> None:
         assert transfer["bytes"] == (
             transfer["transferred_bytes"] + transfer["aborted_bytes"]
         )
+    assert any(
+        transfer["flow_slice_count"] > 1
+        for transfer in first.representative["transfers"]
+    )
+    remote_recovery = [
+        transfer
+        for transfer in first.representative["transfers"]
+        if transfer["communication_backend"] == "flow_contention"
+        and transfer["cause"].startswith("AEGIS_RECOVERY_")
+    ]
+    if remote_recovery:
+        assert resource_cost["gpu_hbm_staging_peak_bytes"] > 0
+
+    rate_capacities = resource_model["rate_resources"]
+    rates_by_interval_resource: dict[tuple[int, int, str], list[float]] = {}
+    for interval in first.representative["flow_rate_intervals"]:
+        for resource_id in interval["path_resource_ids"]:
+            key = (interval["start_ns"], interval["end_ns"], resource_id)
+            rates_by_interval_resource.setdefault(key, []).append(
+                interval["allocated_rate_bytes_per_second"]
+            )
+    shared = [
+        (key, rates)
+        for key, rates in rates_by_interval_resource.items()
+        if len(rates) > 1
+    ]
+    assert shared
+    for (_, _, resource_id), rates in rates_by_interval_resource.items():
+        assert sum(rates) <= rate_capacities[resource_id] + 1e-5
+    assert any(
+        abs(sum(rates) - rate_capacities[key[2]]) <= 1e-5
+        for key, rates in shared
+    )
 
     recovered = [
         item

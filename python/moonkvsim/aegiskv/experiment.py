@@ -11,7 +11,7 @@ from __future__ import annotations
 import hashlib
 import heapq
 import math
-from collections import Counter
+from collections import Counter, defaultdict
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from decimal import Decimal
@@ -39,8 +39,28 @@ from moonkvsim.aegiskv.types import (
 )
 from moonkvsim.common.hash import sha256_json
 from moonkvsim.simulation.event import EventHandle, EventKind, ScheduledEvent
+from moonkvsim.simulation.flow_des import FlowDESController
 from moonkvsim.simulation.global_des import GlobalDES
-from moonkvsim.simulation.resource import ConcurrencyResource, Reservation
+from moonkvsim.simulation.ledger import (
+    FREE_ACCOUNT,
+    UNAVAILABLE_CAPACITY_ACCOUNT,
+    CapacityLedger,
+    CapacityResourceKind,
+)
+from moonkvsim.simulation.network import FlowContentionModel, FlowRateInterval
+from moonkvsim.simulation.resource import ConcurrencyResource, RateResource
+from moonkvsim.simulation.transaction import AllocationDelta, ResourceTransaction
+from moonkvsim.store.transfer_engine import (
+    MemoryKind,
+    MemoryLocation,
+    TopologyPath,
+    TransferMetadata,
+    TransferOpcode,
+    TransferStatus,
+    TransferTask,
+    TransportKind,
+)
+from moonkvsim.store.transfer_runtime import TransferRuntime
 from moonkvsim.workload.causal_replay import CausalReleaseEngine
 from moonkvsim.workload.causal_trace import (
     NormalizedSpanMetadata,
@@ -50,6 +70,18 @@ from moonkvsim.workload.causal_trace import (
 SOURCE_BLOCK_TOKENS: Final = 64
 KV_BYTES_PER_SOURCE_BLOCK: Final = 9_437_184
 GIB: Final = 1024**3
+FLOW_SLICE_POLICY_CHUNKS: Final = 8
+HBM_MODEL_WEIGHTS_ACCOUNT: Final = "MODEL_WEIGHTS"
+HBM_RUNTIME_FIXED_ACCOUNT: Final = "RUNTIME_FIXED"
+HBM_RUNTIME_DYNAMIC_ACCOUNT: Final = "RUNTIME_DYNAMIC"
+HBM_ACTIVE_PRIMARY_ACCOUNT: Final = "ACTIVE_PRIMARY_KV"
+HBM_INACTIVE_REUSABLE_ACCOUNT: Final = "INACTIVE_REUSABLE_KV"
+HBM_PEER_PROTECTION_ACCOUNT: Final = "PEER_PROTECTION_KV"
+HBM_PEER_PENDING_ACCOUNT: Final = "PEER_PROTECTION_PENDING"
+HBM_RECOVERY_RESERVED_ACCOUNT: Final = "RECOVERY_DEST_RESERVED"
+HBM_TRANSFER_STAGING_ACCOUNT: Final = "TRANSFER_STAGING"
+HBM_FRAGMENTATION_ACCOUNT: Final = "ALLOCATOR_FRAGMENTATION"
+HBM_UNATTRIBUTED_ACCOUNT: Final = "UNATTRIBUTED_RESERVE"
 AIMD_PARAMETERS: Final = AIMDParameters(
     minimum_fraction=Decimal("0.25"),
     maximum_fraction=Decimal("0.90"),
@@ -220,6 +252,9 @@ SYSTEM_PROFILES: Final[dict[SystemId, SystemProfile]] = {
 @dataclass(frozen=True, slots=True)
 class ModelParameters:
     dp_count: int = 4
+    physical_hbm_bytes_per_gpu: int = 80 * GIB
+    model_weights_bytes_per_gpu: int = 16 * GIB
+    runtime_fixed_bytes_per_gpu: int = 8 * GIB
     peer_budget_bytes_per_gpu: int = 8 * GIB
     store_budget_bytes: int = 64 * GIB
     peer_bandwidth_bytes_per_second: int = 100_000_000_000
@@ -233,6 +268,9 @@ class ModelParameters:
     def __post_init__(self) -> None:
         positive = (
             self.dp_count,
+            self.physical_hbm_bytes_per_gpu,
+            self.model_weights_bytes_per_gpu,
+            self.runtime_fixed_bytes_per_gpu,
             self.peer_budget_bytes_per_gpu,
             self.store_budget_bytes,
             self.peer_bandwidth_bytes_per_second,
@@ -243,6 +281,13 @@ class ModelParameters:
         )
         if any(type(item) is not int or item <= 0 for item in positive):
             raise ValueError("modeled parameters must be positive integers")
+        if (
+            self.model_weights_bytes_per_gpu
+            + self.runtime_fixed_bytes_per_gpu
+            + self.peer_budget_bytes_per_gpu
+            > self.physical_hbm_bytes_per_gpu
+        ):
+            raise ValueError("fixed HBM accounts and Peer budget exceed physical HBM")
         if self.reroute_ns < 0:
             raise ValueError("reroute_ns must be non-negative")
         if self.policy_chunk_tokens % SOURCE_BLOCK_TOKENS:
@@ -253,6 +298,9 @@ class ModelParameters:
     def to_dict(self) -> dict[str, Any]:
         return {
             "dp_count": self.dp_count,
+            "physical_hbm_bytes_per_gpu": self.physical_hbm_bytes_per_gpu,
+            "model_weights_bytes_per_gpu": self.model_weights_bytes_per_gpu,
+            "runtime_fixed_bytes_per_gpu": self.runtime_fixed_bytes_per_gpu,
             "peer_budget_bytes_per_gpu": self.peer_budget_bytes_per_gpu,
             "store_budget_bytes": self.store_budget_bytes,
             "peer_bandwidth_bytes_per_second": self.peer_bandwidth_bytes_per_second,
@@ -884,6 +932,11 @@ class _SpanExecution:
     planned_complete_ns: int | None = None
     completed_ns: int | None = None
     completion_handle: EventHandle | None = None
+    hbm_allocation_handle: EventHandle | None = None
+    hbm_allocated_bytes: int = 0
+    hbm_allocation_gpu_id: str | None = None
+    hbm_recovery_reserved_bytes: int = 0
+    hbm_staging_bytes: int = 0
     reservation_id: str | None = None
     base_duration_ns: int = 0
     scheduled_duration_ns: int = 0
@@ -924,10 +977,24 @@ class _PendingPut:
     target_gpu_id: str | None
     chunks: tuple[_Chunk, ...]
     scores: tuple[Fraction, ...]
-    handle: EventHandle
-    reservation_ids: tuple[tuple[str, str], ...]
+    task: TransferTask
+    handle: EventHandle | None
+    started: bool
     pool_reservation_id: str
     bytes: int
+
+
+@dataclass(slots=True)
+class _PendingRecoveryTransfer:
+    transfer_id: str
+    span_id: str
+    source: str
+    source_gpu_id: str
+    target_gpu_id: str
+    task: TransferTask
+    handle: EventHandle
+    bytes: int
+    staging_bytes: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -973,16 +1040,85 @@ class _StudyRuntime:
         }
         self.gpu_ids = tuple(f"gpu-{index}" for index in range(self.parameters.dp_count))
         self.failed_gpu_ids: set[str] = set()
+        hbm_initial_accounts = {
+            HBM_MODEL_WEIGHTS_ACCOUNT: self.parameters.model_weights_bytes_per_gpu,
+            HBM_RUNTIME_FIXED_ACCOUNT: self.parameters.runtime_fixed_bytes_per_gpu,
+            HBM_RUNTIME_DYNAMIC_ACCOUNT: 0,
+            HBM_ACTIVE_PRIMARY_ACCOUNT: 0,
+            HBM_INACTIVE_REUSABLE_ACCOUNT: 0,
+            HBM_PEER_PROTECTION_ACCOUNT: 0,
+            HBM_PEER_PENDING_ACCOUNT: 0,
+            HBM_RECOVERY_RESERVED_ACCOUNT: 0,
+            HBM_TRANSFER_STAGING_ACCOUNT: 0,
+            HBM_FRAGMENTATION_ACCOUNT: 0,
+            HBM_UNATTRIBUTED_ACCOUNT: 0,
+            UNAVAILABLE_CAPACITY_ACCOUNT: 0,
+        }
+        self.hbm_ledgers = {
+            gpu_id: CapacityLedger(
+                resource_id=f"hbm:{gpu_id}",
+                resource_kind=CapacityResourceKind.GPU_HBM,
+                capacity_bytes=self.parameters.physical_hbm_bytes_per_gpu,
+                initial_accounts=hbm_initial_accounts,
+            )
+            for gpu_id in self.gpu_ids
+        }
+        self.hbm_timelines = {
+            gpu_id: [
+                _capacity_ledger_snapshot(
+                    ledger,
+                    timestamp_ns=0,
+                    cause="INITIAL_HBM_ACCOUNTS",
+                )
+            ]
+            for gpu_id, ledger in sorted(self.hbm_ledgers.items())
+        }
         self.compute = {
             gpu_id: ConcurrencyResource(resource_id=f"{gpu_id}.compute", lanes=1)
             for gpu_id in self.gpu_ids
         }
-        self.copy = {
-            gpu_id: ConcurrencyResource(resource_id=f"{gpu_id}.copy", lanes=1)
-            for gpu_id in self.gpu_ids
+        hbm_path_rate = float(
+            max(
+                self.parameters.peer_bandwidth_bytes_per_second,
+                self.parameters.store_bandwidth_bytes_per_second,
+            )
+        )
+        self.transfer_rate_resources = {
+            **{
+                f"{gpu_id}.hbm-rate": RateResource(
+                    resource_id=f"{gpu_id}.hbm-rate",
+                    capacity_bytes_per_second=hbm_path_rate,
+                )
+                for gpu_id in self.gpu_ids
+            },
+            "peer-fabric-rate": RateResource(
+                resource_id="peer-fabric-rate",
+                capacity_bytes_per_second=float(
+                    self.parameters.peer_bandwidth_bytes_per_second
+                ),
+            ),
+            "store-fabric-rate": RateResource(
+                resource_id="store-fabric-rate",
+                capacity_bytes_per_second=float(
+                    self.parameters.store_bandwidth_bytes_per_second
+                ),
+            ),
+            "store-0.dram-rate": RateResource(
+                resource_id="store-0.dram-rate",
+                capacity_bytes_per_second=float(
+                    self.parameters.store_bandwidth_bytes_per_second
+                ),
+            ),
         }
-        self.peer_fabric = ConcurrencyResource(resource_id="peer-fabric", lanes=2)
-        self.store_fabric = ConcurrencyResource(resource_id="store-fabric", lanes=1)
+        self.flow_model = FlowContentionModel(
+            [
+                resource
+                for _, resource in sorted(self.transfer_rate_resources.items())
+            ]
+        )
+        self.transfer_runtime = TransferRuntime(
+            controller=FlowDESController(des=self.des, model=self.flow_model)
+        )
         initial_peer_quota = _fraction_count(
             self.parameters.peer_budget_bytes_per_gpu,
             self.profile.peer_fraction,
@@ -1022,6 +1158,8 @@ class _StudyRuntime:
         self.causal = CausalReleaseEngine(self.trace, self.des, on_release=self._on_release)
         self.pending_put_starts: dict[str, _PendingPutStart] = {}
         self.pending_puts: dict[str, _PendingPut] = {}
+        self.pending_recovery_transfers: dict[str, _PendingRecoveryTransfer] = {}
+        self.recovery_transfer_ids_by_span: dict[str, set[str]] = {}
         self.transfers: list[dict[str, Any]] = []
         self._transfer_by_id: dict[str, dict[str, Any]] = {}
         self.failure_events: list[dict[str, Any]] = []
@@ -1033,11 +1171,14 @@ class _StudyRuntime:
         self._register_handlers()
 
     def _register_handlers(self) -> None:
+        self.des.register_handler(EventKind.KV_BLOCK_ALLOCATE, self._on_hbm_primary_allocate)
         self.des.register_handler(EventKind.REQUEST_COMPLETE, self._on_request_complete)
         self.des.register_handler(EventKind.PUT_START, self._on_put_start)
+        self.des.register_handler(EventKind.TRANSFER_START, self._on_transfer_start)
         self.des.register_handler(EventKind.PUT_COMMIT, self._on_put_commit)
         self.des.register_handler(EventKind.FAILURE_INJECT, self._on_failure_inject)
         self.des.register_handler(EventKind.FAILURE_DETECT, self._on_failure_detect)
+        self.des.register_handler(EventKind.RECOVERY_START, self._on_recovery_start)
         self.des.register_handler(EventKind.RECOVERY_COMPLETE, self._on_recovery_complete)
         self.des.register_handler(
             EventKind.RECOVERY_RECOMPUTE_COMPLETE,
@@ -1064,10 +1205,19 @@ class _StudyRuntime:
         if len(self._completed_span_ids) != len(self.executions):
             missing = sorted(set(self.executions) - self._completed_span_ids)
             raise ExperimentError(f"study left spans incomplete: {missing[:5]}")
-        if self.pending_put_starts or self.pending_puts or any(
-            record.get("status") == "PENDING" for record in self.transfers
+        if (
+            self.pending_put_starts
+            or self.pending_puts
+            or self.pending_recovery_transfers
+            or self.recovery_transfer_ids_by_span
+            or any(
+                record.get("status") == "PENDING" for record in self.transfers
+            )
         ):
             raise ExperimentError("study ended with a non-terminal transfer")
+        self.transfer_runtime.audit()
+        if self.flow_model.flows or self.transfer_runtime.active_flow_ids:
+            raise ExperimentError("study ended with an active fluid flow")
         if any(
             pool.pending or pool.pending_bytes
             for pool in (*self.peer_pools.values(), self.store_pool)
@@ -1082,6 +1232,13 @@ class _StudyRuntime:
             "failure_events": self.failure_events,
             "recovery_events": self.recovery_events,
             "transfers": self.transfers,
+            "flow_rate_intervals": [
+                _flow_interval_to_dict(item) for item in self.flow_model.intervals
+            ],
+            "gpu_hbm_timelines": {
+                gpu_id: timeline
+                for gpu_id, timeline in sorted(self.hbm_timelines.items())
+            },
             "peer_hbm_timeline": _aggregate_pool_timeline(self.peer_pools),
             "peer_hbm_timelines": {
                 gpu_id: pool.timeline for gpu_id, pool in sorted(self.peer_pools.items())
@@ -1107,6 +1264,64 @@ class _StudyRuntime:
         )
 
     def _check_invariants(self, _des: GlobalDES) -> None:
+        expected_hbm_accounts = {
+            HBM_MODEL_WEIGHTS_ACCOUNT,
+            HBM_RUNTIME_FIXED_ACCOUNT,
+            HBM_RUNTIME_DYNAMIC_ACCOUNT,
+            HBM_ACTIVE_PRIMARY_ACCOUNT,
+            HBM_INACTIVE_REUSABLE_ACCOUNT,
+            HBM_PEER_PROTECTION_ACCOUNT,
+            HBM_PEER_PENDING_ACCOUNT,
+            HBM_RECOVERY_RESERVED_ACCOUNT,
+            HBM_TRANSFER_STAGING_ACCOUNT,
+            HBM_FRAGMENTATION_ACCOUNT,
+            HBM_UNATTRIBUTED_ACCOUNT,
+            FREE_ACCOUNT,
+            UNAVAILABLE_CAPACITY_ACCOUNT,
+        }
+        for gpu_id, ledger in self.hbm_ledgers.items():
+            accounts = ledger.accounts
+            if set(accounts) != expected_hbm_accounts:
+                raise ExperimentError(f"HBM account stack is incomplete on {gpu_id}")
+            if sum(accounts.values()) != ledger.capacity_bytes:
+                raise ExperimentError(f"HBM account stack does not conserve on {gpu_id}")
+            if accounts[HBM_UNATTRIBUTED_ACCOUNT] != 0:
+                raise ExperimentError(f"HBM unattributed reserve is nonzero on {gpu_id}")
+            if gpu_id in self.failed_gpu_ids:
+                if accounts[UNAVAILABLE_CAPACITY_ACCOUNT] != ledger.capacity_bytes:
+                    raise ExperimentError(f"failed GPU HBM is not unavailable on {gpu_id}")
+            else:
+                if accounts[UNAVAILABLE_CAPACITY_ACCOUNT] != 0:
+                    raise ExperimentError(f"healthy GPU HBM is unavailable on {gpu_id}")
+                pool = self.peer_pools[gpu_id]
+                if (
+                    accounts[HBM_PEER_PROTECTION_ACCOUNT] != pool.occupied_bytes
+                    or accounts[HBM_PEER_PENDING_ACCOUNT] != pool.pending_bytes
+                ):
+                    raise ExperimentError(f"Peer-HBM pool and ledger diverged on {gpu_id}")
+            active_primary = sum(
+                item.hbm_allocated_bytes
+                for item in self.executions.values()
+                if item.hbm_allocation_gpu_id == gpu_id
+            )
+            recovery_reserved = sum(
+                item.hbm_recovery_reserved_bytes
+                for item in self.executions.values()
+                if item.hbm_allocation_gpu_id == gpu_id
+            )
+            staging = sum(
+                item.hbm_staging_bytes
+                for item in self.executions.values()
+                if item.hbm_allocation_gpu_id == gpu_id
+            )
+            if accounts[HBM_ACTIVE_PRIMARY_ACCOUNT] != active_primary:
+                raise ExperimentError(f"active primary-HBM ownership diverged on {gpu_id}")
+            if accounts[HBM_RECOVERY_RESERVED_ACCOUNT] != recovery_reserved:
+                raise ExperimentError(f"recovery reserve ownership diverged on {gpu_id}")
+            if accounts[HBM_TRANSFER_STAGING_ACCOUNT] != staging:
+                raise ExperimentError(f"transfer staging ownership diverged on {gpu_id}")
+            if self.hbm_timelines[gpu_id][-1]["accounts"] != accounts:
+                raise ExperimentError(f"HBM event-boundary timeline is stale on {gpu_id}")
         for gpu_id, pool in self.peer_pools.items():
             if pool.occupied_bytes + pool.pending_bytes > pool.capacity_bytes:
                 raise ExperimentError(f"Peer-HBM capacity invariant failed on {gpu_id}")
@@ -1295,7 +1510,115 @@ class _StudyRuntime:
             now_ns=self.des.now_ns,
             cause=f"AEGIS_AIMD_{decision.action.value}",
         )
+        self._sync_peer_hbm_ledger(
+            target_gpu_id,
+            cause=f"AEGIS_AIMD_{decision.action.value}",
+        )
         self.aimd_events.append(decision.to_dict())
+
+    def _commit_hbm_moves(
+        self,
+        gpu_id: str,
+        moves: Sequence[tuple[str, str, int]],
+        *,
+        cause: str,
+        transfer_id: str | None = None,
+    ) -> None:
+        nonzero = tuple(item for item in moves if item[2] > 0)
+        if not nonzero:
+            return
+        ledger = self.hbm_ledgers[gpu_id]
+        transaction_id = self._next_id(f"hbm-transaction:{gpu_id}:{cause}")
+        try:
+            ResourceTransaction(
+                event_id=transaction_id,
+                timestamp_ns=self.des.now_ns,
+                cause=cause,
+                allocation_deltas=[
+                    AllocationDelta(
+                        resource_id=ledger.resource_id,
+                        account_from=account_from,
+                        account_to=account_to,
+                        delta_bytes=delta_bytes,
+                        allocation_id=f"{transaction_id}:delta-{index}",
+                        transfer_id=transfer_id,
+                    )
+                    for index, (account_from, account_to, delta_bytes) in enumerate(
+                        nonzero
+                    )
+                ],
+            ).commit({ledger.resource_id: ledger}, journal=self.des.journal)
+        except (KeyError, ValueError, RuntimeError) as error:
+            raise ExperimentError(
+                f"HBM transaction failed on {gpu_id}: {cause}"
+            ) from error
+        self.hbm_timelines[gpu_id].append(
+            _capacity_ledger_snapshot(
+                ledger,
+                timestamp_ns=self.des.now_ns,
+                cause=cause,
+            )
+        )
+
+    def _sync_peer_hbm_ledger(self, gpu_id: str, *, cause: str) -> None:
+        if gpu_id in self.failed_gpu_ids:
+            raise ExperimentError("failed GPU Peer-HBM account cannot be synchronized")
+        pool = self.peer_pools[gpu_id]
+        ledger = self.hbm_ledgers[gpu_id]
+        desired = {
+            HBM_PEER_PROTECTION_ACCOUNT: pool.occupied_bytes,
+            HBM_PEER_PENDING_ACCOUNT: pool.pending_bytes,
+        }
+        moves: list[tuple[str, str, int]] = []
+        for account, target_bytes in desired.items():
+            current_bytes = ledger.bytes_in(account)
+            if current_bytes > target_bytes:
+                moves.append((account, FREE_ACCOUNT, current_bytes - target_bytes))
+        for account, target_bytes in desired.items():
+            current_bytes = ledger.bytes_in(account)
+            if current_bytes < target_bytes:
+                moves.append((FREE_ACCOUNT, account, target_bytes - current_bytes))
+        self._commit_hbm_moves(gpu_id, moves, cause=cause)
+
+    def _fail_hbm_ledger(self, gpu_id: str) -> None:
+        ledger = self.hbm_ledgers[gpu_id]
+        moves = [
+            (account, UNAVAILABLE_CAPACITY_ACCOUNT, value)
+            for account, value in ledger.accounts.items()
+            if account != UNAVAILABLE_CAPACITY_ACCOUNT and value > 0
+        ]
+        self._commit_hbm_moves(
+            gpu_id,
+            moves,
+            cause="GPU_FAILURE_ALL_HBM_UNAVAILABLE",
+        )
+        if ledger.bytes_in(UNAVAILABLE_CAPACITY_ACCOUNT) != ledger.capacity_bytes:
+            raise ExperimentError("failed GPU HBM ledger is not fully unavailable")
+
+    def _on_hbm_primary_allocate(
+        self, event: ScheduledEvent, _des: GlobalDES
+    ) -> None:
+        span_id = _required_str(event.payload, "span_id")
+        gpu_id = _required_str(event.payload, "gpu_id")
+        execution = self.executions[span_id]
+        if execution.hbm_allocation_handle != EventHandle(event.event_id):
+            raise ExperimentError("stale primary-HBM allocation event executed")
+        if (
+            _required_int(event.payload, "route_version") != execution.route_version
+            or execution.gpu_id != gpu_id
+            or gpu_id in self.failed_gpu_ids
+            or execution.hbm_allocated_bytes != 0
+        ):
+            raise ExperimentError("primary-HBM allocation owner is invalid")
+        allocated_bytes = _tokens_to_allocated_bytes(execution.metadata.prompt_tokens)
+        self._commit_hbm_moves(
+            gpu_id,
+            [(FREE_ACCOUNT, HBM_ACTIVE_PRIMARY_ACCOUNT, allocated_bytes)],
+            cause="REQUEST_PRIMARY_KV_ALLOCATE",
+        )
+        execution.hbm_allocated_bytes = allocated_bytes
+        execution.hbm_allocation_gpu_id = gpu_id
+        execution.status = _ExecutionStatus.RUNNING
 
     def _schedule_compute(
         self,
@@ -1324,6 +1647,17 @@ class _StudyRuntime:
             if reservation.start_ns <= self.des.now_ns
             else _ExecutionStatus.QUEUED
         )
+        hbm_handle = self.des.schedule_at(
+            reservation.start_ns,
+            EventKind.KV_BLOCK_ALLOCATE,
+            event_id=self._next_id(f"hbm-allocate:{execution.metadata.span_id}"),
+            payload={
+                "span_id": execution.metadata.span_id,
+                "route_version": execution.route_version,
+                "gpu_id": gpu_id,
+            },
+        )
+        execution.hbm_allocation_handle = hbm_handle
         handle = self.des.schedule_at(
             reservation.end_ns,
             EventKind.REQUEST_COMPLETE,
@@ -1399,8 +1733,29 @@ class _StudyRuntime:
             raise ExperimentError("stale route attempted output completion")
         if execution.status in {_ExecutionStatus.FENCED, _ExecutionStatus.COMPLETED}:
             raise ExperimentError("fenced or completed execution attempted output")
-        if execution.gpu_id in self.failed_gpu_ids:
+        gpu_id = execution.gpu_id
+        if gpu_id is None:
+            raise ExperimentError("request completion lacks a physical GPU")
+        if gpu_id in self.failed_gpu_ids:
             raise ExperimentError("failed GPU attempted request completion")
+        if (
+            execution.hbm_allocated_bytes <= 0
+            or execution.hbm_allocation_gpu_id != gpu_id
+        ):
+            raise ExperimentError("request completion lacks active primary-HBM ownership")
+        self._commit_hbm_moves(
+            gpu_id,
+            [
+                (
+                    HBM_ACTIVE_PRIMARY_ACCOUNT,
+                    FREE_ACCOUNT,
+                    execution.hbm_allocated_bytes,
+                )
+            ],
+            cause="REQUEST_PRIMARY_KV_RELEASE",
+        )
+        execution.hbm_allocated_bytes = 0
+        execution.hbm_allocation_gpu_id = None
         execution.status = _ExecutionStatus.COMPLETED
         execution.completed_ns = self.des.now_ns
         execution.external_output_emissions = execution.metadata.output_tokens
@@ -1510,6 +1865,112 @@ class _StudyRuntime:
                     produced_ns=produced_ns,
                 )
 
+    def _make_transfer_task(
+        self,
+        *,
+        transfer_id: str,
+        span_id: str,
+        source_id: str,
+        target_id: str,
+        cause: str,
+        route_version: int,
+        ready_ns: int,
+        total_bytes: int,
+    ) -> TransferTask:
+        store_id = "store-0:segment-0"
+        source_is_store = source_id == store_id
+        target_is_store = target_id == store_id
+        if source_is_store == target_is_store:
+            if source_is_store:
+                raise ExperimentError("Store-to-Store flow is outside the experiment scope")
+            source = _experiment_gpu_location(source_id)
+            target = _experiment_gpu_location(target_id)
+            colocated = source_id == target_id
+            path = TopologyPath(
+                path_id=f"path:{transfer_id}",
+                source_kind=MemoryKind.GPU_HBM,
+                destination_kind=MemoryKind.GPU_HBM,
+                transport=(
+                    TransportKind.LOCAL_COPY if colocated else TransportKind.NVLINK
+                ),
+                rate_resource_ids=(
+                    (f"{source_id}.hbm-rate",)
+                    if colocated
+                    else (
+                        f"{source_id}.hbm-rate",
+                        "peer-fabric-rate",
+                        f"{target_id}.hbm-rate",
+                    )
+                ),
+                concurrency_resource_ids=(),
+                source_endpoint=source.endpoint,
+                destination_endpoint=target.endpoint,
+                source_node_id=source.node_id,
+                destination_node_id=target.node_id,
+                source_numa_node_id=source.numa_node_id,
+                destination_numa_node_id=target.numa_node_id,
+                source_hca_id=None,
+                destination_hca_id=None,
+            )
+            opcode = TransferOpcode.WRITE
+        else:
+            source = (
+                _experiment_store_location()
+                if source_is_store
+                else _experiment_gpu_location(source_id)
+            )
+            target = (
+                _experiment_store_location()
+                if target_is_store
+                else _experiment_gpu_location(target_id)
+            )
+            path = TopologyPath(
+                path_id=f"path:{transfer_id}",
+                source_kind=source.kind,
+                destination_kind=target.kind,
+                transport=TransportKind.RDMA_GDR,
+                rate_resource_ids=(
+                    (
+                        "store-0.dram-rate"
+                        if source_is_store
+                        else f"{source_id}.hbm-rate"
+                    ),
+                    "store-fabric-rate",
+                    (
+                        "store-0.dram-rate"
+                        if target_is_store
+                        else f"{target_id}.hbm-rate"
+                    ),
+                ),
+                concurrency_resource_ids=(),
+                source_endpoint=source.endpoint,
+                destination_endpoint=target.endpoint,
+                source_node_id=source.node_id,
+                destination_node_id=target.node_id,
+                source_numa_node_id=source.numa_node_id,
+                destination_numa_node_id=target.numa_node_id,
+                source_hca_id=f"hca:{source.node_id}",
+                destination_hca_id=f"hca:{target.node_id}",
+            )
+            opcode = TransferOpcode.READ if source_is_store else TransferOpcode.WRITE
+        metadata = TransferMetadata(
+            transfer_id=transfer_id,
+            object_id=f"span:{span_id}",
+            replica_id=f"replica:{transfer_id}",
+            source=source,
+            destination=target,
+            opcode=opcode,
+            total_bytes=total_bytes,
+            cause=cause,
+            route_version=route_version,
+            ready_ns=ready_ns,
+            path=path,
+        )
+        slice_size_bytes = _tokens_to_allocated_bytes(
+            self.parameters.policy_chunk_tokens * FLOW_SLICE_POLICY_CHUNKS
+        )
+        return TransferTask.create(metadata, slice_size_bytes=slice_size_bytes)
+
     def _on_put_start(self, event: ScheduledEvent, _des: GlobalDES) -> None:
         plan_id = _required_str(event.payload, "plan_id")
         plan = self.pending_put_starts.pop(plan_id, None)
@@ -1539,6 +2000,11 @@ class _StudyRuntime:
             now_ns=self.des.now_ns,
             cause=f"AEGIS_{plan.path}_PROTECTION",
         )
+        if plan.path == "PEER_HBM" and plan.target_gpu_id is not None:
+            self._sync_peer_hbm_ledger(
+                plan.target_gpu_id,
+                cause="AEGIS_PEER_HBM_DESTINATION_RESERVE",
+            )
         if pool_reservation is None:
             self.protection_path_bypasses[f"{plan.path}_POOL_ADMISSION"] += 1
             self.des.journal.append(
@@ -1554,41 +2020,27 @@ class _StudyRuntime:
             )
             return
         transfer_bytes = pool_reservation.bytes
-        bandwidth = (
-            self.parameters.peer_bandwidth_bytes_per_second
-            if plan.path == "PEER_HBM"
-            else self.parameters.store_bandwidth_bytes_per_second
+        cause = f"AEGIS_{plan.path}_PROTECTION"
+        transfer_start_ns = self.des.now_ns + self.parameters.transfer_setup_ns
+        task = self._make_transfer_task(
+            transfer_id=transfer_id,
+            span_id=plan.span_id,
+            source_id=plan.source_gpu_id,
+            target_id=(
+                plan.target_gpu_id
+                if plan.target_gpu_id is not None
+                else "store-0:segment-0"
+            ),
+            cause=cause,
+            route_version=self.executions[plan.span_id].route_version,
+            ready_ns=transfer_start_ns,
+            total_bytes=transfer_bytes,
         )
-        duration_ns = _transfer_duration_ns(
-            transfer_bytes,
-            bandwidth,
-            self.parameters.transfer_setup_ns,
-        )
-        fabric = self.peer_fabric if plan.path == "PEER_HBM" else self.store_fabric
-        resources = [self.copy[plan.source_gpu_id], fabric]
-        if plan.target_gpu_id is not None and plan.target_gpu_id != plan.source_gpu_id:
-            resources.append(self.copy[plan.target_gpu_id])
-        try:
-            reservations = _reserve_joint_concurrency(
-                resources,
-                ready_ns=self.des.now_ns,
-                duration_ns=duration_ns,
-                reservation_id_prefix=transfer_id,
-                cause=f"AEGIS_{plan.path}_PROTECTION",
-            )
-        except Exception:
-            pool.abort_reservation(
-                pool_reservation.reservation_id,
-                now_ns=self.des.now_ns,
-                cause="TRANSFER_RESOURCE_RESERVE_FAILED",
-            )
-            raise
-        end_ns = reservations[0].end_ns
-        handle = self.des.schedule_at(
-            end_ns,
-            EventKind.PUT_COMMIT,
-            event_id=f"commit:{transfer_id}",
-            payload={"transfer_id": transfer_id, "path": plan.path},
+        start_handle = self.des.schedule_at(
+            transfer_start_ns,
+            EventKind.TRANSFER_START,
+            event_id=f"flow-start:{transfer_id}",
+            payload={"transfer_id": transfer_id},
         )
         self.pending_puts[transfer_id] = _PendingPut(
             transfer_id=transfer_id,
@@ -1597,42 +2049,128 @@ class _StudyRuntime:
             target_gpu_id=plan.target_gpu_id,
             chunks=pool_reservation.chunks,
             scores=pool_reservation.scores,
-            handle=handle,
-            reservation_ids=tuple(
-                (item.resource_id, item.reservation_id) for item in reservations
-            ),
+            task=task,
+            handle=start_handle,
+            started=False,
             pool_reservation_id=pool_reservation.reservation_id,
             bytes=transfer_bytes,
         )
-        cause = f"AEGIS_{plan.path}_PROTECTION"
-        self._record_transfer(
-            _transfer_record(
-                transfer_id=transfer_id,
-                path=(
-                    "D2D_P2P" if plan.path == "PEER_HBM" else "SOURCE_D2H_STORE"
-                ),
-                cause=cause,
-                start_ns=reservations[0].start_ns,
-                end_ns=end_ns,
-                bytes=transfer_bytes,
-                source_gpu_id=plan.source_gpu_id,
-                target_gpu_id=(
-                    plan.target_gpu_id
-                    if plan.target_gpu_id is not None
-                    else "store-0:segment-0"
-                ),
-                ready_ns=self.des.now_ns,
-                status="PENDING",
-                resource_reservations=reservations,
-                span_id=plan.span_id,
-            )
+        bandwidth = min(
+            self.transfer_rate_resources[resource_id].capacity_bytes_per_second
+            for resource_id in task.metadata.path.rate_resource_ids
         )
+        initial_service_ns = math.ceil(transfer_bytes * 1_000_000_000 / bandwidth)
+        try:
+            self._record_transfer(
+                _transfer_record(
+                    transfer_id=transfer_id,
+                    path=(
+                        "D2D_P2P" if plan.path == "PEER_HBM" else "SOURCE_D2H_STORE"
+                    ),
+                    cause=cause,
+                    start_ns=transfer_start_ns,
+                    end_ns=transfer_start_ns + max(1, initial_service_ns),
+                    bytes=transfer_bytes,
+                    source_gpu_id=plan.source_gpu_id,
+                    target_gpu_id=(
+                        plan.target_gpu_id
+                        if plan.target_gpu_id is not None
+                        else "store-0:segment-0"
+                    ),
+                    ready_ns=self.des.now_ns,
+                    status="PENDING",
+                    span_id=plan.span_id,
+                    flow_slice_count=len(task.slices),
+                )
+            )
+        except Exception:
+            self.des.cancel(start_handle, reason="TRANSFER_RECORD_CREATE_FAILED")
+            del self.pending_puts[transfer_id]
+            pool.abort_reservation(
+                pool_reservation.reservation_id,
+                now_ns=self.des.now_ns,
+                cause="TRANSFER_RECORD_CREATE_FAILED",
+            )
+            if plan.path == "PEER_HBM" and plan.target_gpu_id is not None:
+                self._sync_peer_hbm_ledger(
+                    plan.target_gpu_id,
+                    cause="AEGIS_PEER_HBM_RECORD_ROLLBACK",
+                )
+            raise
+
+    def _on_transfer_start(self, event: ScheduledEvent, _des: GlobalDES) -> None:
+        transfer_id = _required_str(event.payload, "transfer_id")
+        pending = self.pending_puts.get(transfer_id)
+        if pending is None or pending.started or pending.handle != EventHandle(event.event_id):
+            raise ExperimentError("unknown, duplicate, or stale protection flow start")
+        if pending.source_gpu_id in self.failed_gpu_ids or (
+            pending.target_gpu_id is not None
+            and pending.target_gpu_id in self.failed_gpu_ids
+        ):
+            raise ExperimentError("failed GPU reached a protection flow start")
+        pending.handle = None
+        pending.started = True
+        try:
+            self.transfer_runtime.start_task(
+                pending.task,
+                on_terminal=self._on_protection_task_terminal,
+            )
+        except Exception:
+            pool = (
+                self.peer_pools[pending.target_gpu_id]
+                if pending.target_gpu_id is not None
+                else self.store_pool
+            )
+            pool.abort_reservation(
+                pending.pool_reservation_id,
+                now_ns=self.des.now_ns,
+                cause="FLOW_START_FAILED",
+            )
+            if pending.target_gpu_id is not None:
+                self._sync_peer_hbm_ledger(
+                    pending.target_gpu_id,
+                    cause="AEGIS_PEER_HBM_FLOW_START_ROLLBACK",
+                )
+            self._abort_transfer_from_task(
+                transfer_id,
+                task=pending.task,
+                reason="FLOW_START_FAILED",
+            )
+            del self.pending_puts[transfer_id]
+            raise
+        record = self._transfer_by_id[transfer_id]
+        record["start_ns"] = self.des.now_ns
+        predicted_end_ns = self._predicted_task_completion_ns(pending.task)
+        record["planned_end_ns"] = predicted_end_ns
+        record["end_ns"] = predicted_end_ns
+
+    def _on_protection_task_terminal(
+        self, task: TransferTask, _des: GlobalDES
+    ) -> None:
+        transfer_id = task.metadata.transfer_id
+        pending = self.pending_puts.get(transfer_id)
+        if pending is None or pending.task is not task:
+            raise ExperimentError("protection flow terminal callback lost its owner")
+        if task.status is TransferStatus.COMPLETED:
+            self._finish_fluid_service_record(transfer_id, task=task)
+            pending.handle = self.des.schedule_at(
+                self.des.now_ns,
+                EventKind.PUT_COMMIT,
+                event_id=f"commit:{transfer_id}",
+                payload={"transfer_id": transfer_id, "path": pending.path},
+            )
+        elif task.status is not TransferStatus.CANCELED:
+            raise ExperimentError("protection flow reached an unsupported terminal state")
 
     def _on_put_commit(self, event: ScheduledEvent, _des: GlobalDES) -> None:
         transfer_id = _required_str(event.payload, "transfer_id")
         pending = self.pending_puts.pop(transfer_id, None)
         if pending is None:
             raise ExperimentError("unknown or canceled protection commit executed")
+        if pending.task.status is not TransferStatus.COMPLETED:
+            raise ExperimentError("protection commit preceded fluid task completion")
+        if pending.handle != EventHandle(event.event_id):
+            raise ExperimentError("protection commit handle diverged from its owner")
         if pending.source_gpu_id in self.failed_gpu_ids:
             raise ExperimentError("failed source attempted protection commit")
         if pending.path == "PEER_HBM":
@@ -1648,6 +2186,11 @@ class _StudyRuntime:
             now_ns=self.des.now_ns,
             cause=f"{pending.path}_COMMIT",
         )
+        if pending.path == "PEER_HBM" and pending.target_gpu_id is not None:
+            self._sync_peer_hbm_ledger(
+                pending.target_gpu_id,
+                cause="AEGIS_PEER_HBM_PENDING_TO_COMMITTED",
+            )
         if committed.bytes != pending.bytes:
             raise ExperimentError("pool commit bytes diverged from transfer bytes")
         self._commit_transfer(transfer_id)
@@ -1694,6 +2237,16 @@ class _StudyRuntime:
             if execution.completion_handle is None or execution.reservation_id is None:
                 raise ExperimentError("scheduled execution lacks cancellation handles")
             self.des.cancel(execution.completion_handle, reason="GPU_FAILURE_ROUTE_FENCE")
+            if execution.hbm_allocated_bytes == 0:
+                if execution.hbm_allocation_handle is None or not self.des.cancel(
+                    execution.hbm_allocation_handle,
+                    reason="GPU_FAILURE_BEFORE_PRIMARY_HBM_ALLOCATE",
+                ):
+                    raise ExperimentError(
+                        "queued primary-HBM allocation could not be canceled"
+                    )
+            elif execution.hbm_allocation_gpu_id != target_gpu:
+                raise ExperimentError("active primary-HBM owner diverged from failed GPU")
             if (
                 self.compute[target_gpu].cancel_from(
                     execution.reservation_id,
@@ -1736,11 +2289,18 @@ class _StudyRuntime:
             )
             if pending.source_gpu_id != target_gpu and not target_dependency:
                 continue
-            self.des.cancel(pending.handle, reason="GPU_FAILURE_SOURCE_PATH_DEPENDENCY")
-            canceled_reservations = tuple(
-                self._cancel_reservation(resource_id, reservation_id)
-                for resource_id, reservation_id in pending.reservation_ids
-            )
+            if pending.handle is not None and not self.des.cancel(
+                pending.handle,
+                reason="GPU_FAILURE_SOURCE_PATH_DEPENDENCY",
+            ):
+                raise ExperimentError("pending transfer event could not be canceled")
+            if pending.started:
+                if pending.task.status is not TransferStatus.PENDING:
+                    raise ExperimentError("active protection owner has a terminal task")
+                self.transfer_runtime.abort_task(
+                    transfer_id,
+                    reason="GPU_FAILURE_SOURCE_OR_DESTINATION_DEPENDENCY",
+                )
             destination_pool = (
                 self.peer_pools[pending.target_gpu_id]
                 if pending.target_gpu_id is not None
@@ -1753,10 +2313,18 @@ class _StudyRuntime:
             )
             if released.bytes != pending.bytes:
                 raise ExperimentError("aborted destination reserve bytes diverged")
-            self._abort_transfer(
+            if (
+                pending.target_gpu_id is not None
+                and pending.target_gpu_id not in self.failed_gpu_ids
+            ):
+                self._sync_peer_hbm_ledger(
+                    pending.target_gpu_id,
+                    cause="GPU_FAILURE_PEER_DESTINATION_ABORT",
+                )
+            self._abort_transfer_from_task(
                 transfer_id,
+                task=pending.task,
                 reason="GPU_FAILURE_SOURCE_OR_DESTINATION_DEPENDENCY",
-                reservations=canceled_reservations,
             )
             canceled_paths.append(pending.path)
             del self.pending_puts[transfer_id]
@@ -1766,6 +2334,11 @@ class _StudyRuntime:
             now_ns=self.des.now_ns,
             cause="GPU_FAILURE_UNAVAILABLE_CAPACITY",
         )
+        self._fail_hbm_ledger(target_gpu)
+        for execution in self.executions.values():
+            if execution.hbm_allocation_gpu_id == target_gpu:
+                execution.hbm_allocated_bytes = 0
+                execution.hbm_allocation_gpu_id = None
 
         failure_record = {
             "timestamp_ns": self.des.now_ns,
@@ -1806,24 +2379,6 @@ class _StudyRuntime:
             },
         )
 
-    def _cancel_reservation(
-        self, resource_id: str, reservation_id: str
-    ) -> Reservation:
-        resources: dict[str, ConcurrencyResource] = {
-            resource.resource_id: resource for resource in self.copy.values()
-        }
-        resources[self.peer_fabric.resource_id] = self.peer_fabric
-        resources[self.store_fabric.resource_id] = self.store_fabric
-        resource = resources.get(resource_id)
-        reservation = (
-            None
-            if resource is None
-            else resource.cancel_from(reservation_id, timestamp_ns=self.des.now_ns)
-        )
-        if reservation is None:
-            raise ExperimentError("pending transfer reservation could not be canceled")
-        return reservation
-
     def _record_transfer(self, record: dict[str, Any]) -> None:
         transfer_id = _required_str(record, "transfer_id")
         if transfer_id in self._transfer_by_id:
@@ -1847,41 +2402,67 @@ class _StudyRuntime:
         for interval in record["resource_intervals"]:
             interval["actual_end_ns"] = int(interval["planned_end_ns"])
 
-    def _abort_transfer(
+    def _finish_fluid_service_record(
         self,
         transfer_id: str,
         *,
-        reason: str,
-        reservations: Sequence[Reservation],
+        task: TransferTask,
     ) -> None:
         try:
             record = self._transfer_by_id[transfer_id]
         except KeyError as error:
-            raise ExperimentError("aborted transfer lacks a ledger record") from error
+            raise ExperimentError("completed flow lacks a transfer ledger record") from error
+        if record.get("status") != "PENDING":
+            raise ExperimentError("only a pending transfer can finish fluid service")
+        if task.status is not TransferStatus.COMPLETED:
+            raise ExperimentError("fluid service completion requires a completed task")
+        record["end_ns"] = self.des.now_ns
+        record["planned_end_ns"] = max(
+            int(record["planned_end_ns"]), self.des.now_ns
+        )
+        record["resource_intervals"] = self._flow_resource_intervals(transfer_id)
+
+    def _abort_transfer_from_task(
+        self,
+        transfer_id: str,
+        *,
+        task: TransferTask,
+        reason: str,
+    ) -> None:
+        try:
+            record = self._transfer_by_id[transfer_id]
+        except KeyError as error:
+            raise ExperimentError("aborted flow lacks a transfer ledger record") from error
         if record.get("status") != "PENDING":
             raise ExperimentError("only a pending transfer can abort")
-        start_ns = int(record["start_ns"])
-        planned_end_ns = int(record["planned_end_ns"])
-        elapsed_ns = max(0, min(self.des.now_ns, planned_end_ns) - start_ns)
-        planned_service_ns = max(1, planned_end_ns - start_ns)
+        if task.metadata.transfer_id != transfer_id or task.status not in {
+            TransferStatus.WAITING,
+            TransferStatus.CANCELED,
+        }:
+            raise ExperimentError("aborted transfer task state diverged from its owner")
         submitted_bytes = int(record["bytes"])
-        transferred_bytes = submitted_bytes * elapsed_ns // planned_service_ns
+        intervals = self._flow_intervals_for_transfer(transfer_id)
+        transferred_bytes = min(
+            submitted_bytes,
+            max(
+                0,
+                math.floor(
+                    math.fsum(item.transferred_bytes for item in intervals) + 1e-6
+                ),
+            ),
+        )
         record["status"] = "ABORTED"
-        record["end_ns"] = max(start_ns, self.des.now_ns)
+        if self.des.now_ns < int(record["start_ns"]):
+            record["start_ns"] = self.des.now_ns
+        record["end_ns"] = self.des.now_ns
+        record["planned_end_ns"] = max(
+            int(record["planned_end_ns"]), self.des.now_ns
+        )
         record["terminal_ns"] = self.des.now_ns
         record["transferred_bytes"] = transferred_bytes
         record["aborted_bytes"] = submitted_bytes - transferred_bytes
         record["terminal_reason"] = reason
-        original_by_id = {item.reservation_id: item for item in reservations}
-        for interval in record["resource_intervals"]:
-            reservation_id = str(interval["reservation_id"])
-            original = original_by_id.get(reservation_id)
-            if original is None:
-                raise ExperimentError("aborted transfer lost a resource reservation")
-            interval["actual_end_ns"] = max(
-                original.start_ns,
-                min(self.des.now_ns, original.end_ns),
-            )
+        record["resource_intervals"] = self._flow_resource_intervals(transfer_id)
         self.des.journal.append(
             self.des.now_ns,
             "AEGIS_TRANSFER_ABORTED",
@@ -1892,6 +2473,61 @@ class _StudyRuntime:
                 "aborted_bytes": submitted_bytes - transferred_bytes,
             },
         )
+
+    def _predicted_task_completion_ns(self, task: TransferTask) -> int:
+        completion_ns = self.des.now_ns
+        active_count = 0
+        for item in task.slices:
+            flow_id = f"transfer-flow:{item.slice_id}"
+            flow = self.flow_model.flows.get(flow_id)
+            if flow is None:
+                continue
+            active_count += 1
+            if flow.allocated_rate_bytes_per_second <= 0:
+                raise ExperimentError("active transfer slice has no fluid rate")
+            duration_ns = math.ceil(
+                flow.remaining_bytes
+                * 1_000_000_000
+                / flow.allocated_rate_bytes_per_second
+            )
+            completion_ns = max(completion_ns, self.des.now_ns + max(1, duration_ns))
+        if active_count == 0 and task.status is TransferStatus.PENDING:
+            raise ExperimentError("pending task has no active slice flow")
+        return completion_ns
+
+    def _flow_intervals_for_transfer(
+        self, transfer_id: str
+    ) -> tuple[FlowRateInterval, ...]:
+        return tuple(
+            item for item in self.flow_model.intervals if item.transfer_id == transfer_id
+        )
+
+    def _flow_resource_intervals(self, transfer_id: str) -> list[dict[str, Any]]:
+        result: list[dict[str, Any]] = []
+        intervals = self._flow_intervals_for_transfer(transfer_id)
+        for interval_index, item in enumerate(intervals):
+            for resource_index, resource_id in enumerate(item.path_resource_ids):
+                result.append(
+                    {
+                        "reservation_id": (
+                            f"{item.flow_id}:rate-{interval_index:06d}-"
+                            f"resource-{resource_index:02d}"
+                        ),
+                        "resource_id": resource_id,
+                        "lane": 0,
+                        "start_ns": item.start_ns,
+                        "planned_end_ns": item.end_ns,
+                        "actual_end_ns": item.end_ns,
+                        "cause": item.cause,
+                        "flow_id": item.flow_id,
+                        "slice_id": item.slice_id,
+                        "allocated_rate_bytes_per_second": (
+                            item.allocated_rate_bytes_per_second
+                        ),
+                        "transferred_bytes": item.transferred_bytes,
+                    }
+                )
+        return result
 
     def _on_failure_detect(self, event: ScheduledEvent, _des: GlobalDES) -> None:
         active_ids = _required_str_list(event.payload, "active_span_ids")
@@ -1958,8 +2594,25 @@ class _StudyRuntime:
             execution.metadata.output_tokens * progress
         )
 
+        recovery_reserve_bytes = _tokens_to_allocated_bytes(
+            execution.metadata.prompt_tokens
+        )
+        self._commit_hbm_moves(
+            target_gpu,
+            [
+                (
+                    FREE_ACCOUNT,
+                    HBM_RECOVERY_RESERVED_ACCOUNT,
+                    recovery_reserve_bytes,
+                )
+            ],
+            cause="AEGIS_RECOVERY_DESTINATION_RESERVE",
+        )
+        execution.hbm_recovery_reserved_bytes = recovery_reserve_bytes
+        execution.hbm_allocation_gpu_id = target_gpu
+
         ready_ns = self.des.now_ns + self.parameters.reroute_ns
-        recovery_end = ready_ns
+        recovery_transfer_ids: set[str] = set()
         source_breakdown = (
             ("PEER_HBM", execution.restored_peer_tokens),
             ("STORE_DRAM", execution.restored_store_tokens),
@@ -1988,70 +2641,73 @@ class _StudyRuntime:
                     )
                 )
                 continue
-            bandwidth = (
-                self.parameters.peer_bandwidth_bytes_per_second
-                if source == "PEER_HBM"
-                else self.parameters.store_bandwidth_bytes_per_second
-            )
-            transfer_ns = _transfer_duration_ns(
-                transfer_bytes,
-                bandwidth,
-                self.parameters.transfer_setup_ns,
-            )
-            fabric = self.peer_fabric if source == "PEER_HBM" else self.store_fabric
-            resources = [self.copy[target_gpu], fabric]
-            if source == "PEER_HBM":
-                if peer_source_gpu is None:
-                    raise ExperimentError("Peer-HBM recovery lost its committed source")
-                if peer_source_gpu != target_gpu:
-                    resources.append(self.copy[peer_source_gpu])
             transfer_id = self._next_id(
                 f"recovery:{source}:{execution.metadata.span_id}"
             )
-            reservations = _reserve_joint_concurrency(
-                resources,
-                ready_ns=ready_ns,
-                duration_ns=transfer_ns,
-                reservation_id_prefix=transfer_id,
-                cause=f"AEGIS_RECOVERY_{source}",
-            )
-            transfer_end_ns = reservations[0].end_ns
-            recovery_end = max(recovery_end, transfer_end_ns)
             cause = f"AEGIS_RECOVERY_{source}"
             transfer_source = "store-0:segment-0"
             if source == "PEER_HBM":
-                assert peer_source_gpu is not None
+                if peer_source_gpu is None:
+                    raise ExperimentError("Peer-HBM recovery lost its committed source")
                 transfer_source = peer_source_gpu
+            transfer_start_ns = ready_ns + self.parameters.transfer_setup_ns
+            task = self._make_transfer_task(
+                transfer_id=transfer_id,
+                span_id=execution.metadata.span_id,
+                source_id=transfer_source,
+                target_id=target_gpu,
+                cause=cause,
+                route_version=execution.route_version,
+                ready_ns=transfer_start_ns,
+                total_bytes=transfer_bytes,
+            )
+            start_handle = self.des.schedule_at(
+                transfer_start_ns,
+                EventKind.RECOVERY_START,
+                event_id=f"flow-start:{transfer_id}",
+                payload={"transfer_id": transfer_id},
+            )
+            self.pending_recovery_transfers[transfer_id] = _PendingRecoveryTransfer(
+                transfer_id=transfer_id,
+                span_id=execution.metadata.span_id,
+                source=source,
+                source_gpu_id=transfer_source,
+                target_gpu_id=target_gpu,
+                task=task,
+                handle=start_handle,
+                bytes=transfer_bytes,
+                staging_bytes=max(item.length_bytes for item in task.slices),
+            )
+            recovery_transfer_ids.add(transfer_id)
+            bandwidth = min(
+                self.transfer_rate_resources[resource_id].capacity_bytes_per_second
+                for resource_id in task.metadata.path.rate_resource_ids
+            )
+            initial_service_ns = math.ceil(
+                transfer_bytes * 1_000_000_000 / bandwidth
+            )
             self._record_transfer(
                 _transfer_record(
                     transfer_id=transfer_id,
                     path="D2D_P2P" if source == "PEER_HBM" else "STORE_H2D",
                     cause=cause,
-                    start_ns=reservations[0].start_ns,
-                    end_ns=transfer_end_ns,
+                    start_ns=transfer_start_ns,
+                    end_ns=transfer_start_ns + max(1, initial_service_ns),
                     bytes=transfer_bytes,
                     source_gpu_id=transfer_source,
                     target_gpu_id=target_gpu,
                     ready_ns=ready_ns,
-                    status="COMMITTED",
-                    resource_reservations=reservations,
+                    status="PENDING",
                     span_id=execution.metadata.span_id,
+                    flow_slice_count=len(task.slices),
                 )
             )
-            ready_ns = transfer_end_ns
-        self.des.schedule_at(
-            recovery_end,
-            EventKind.RECOVERY_COMPLETE,
-            event_id=self._next_id(f"recovery-ready:{execution.metadata.span_id}"),
-            payload={
-                "span_id": execution.metadata.span_id,
-                "route_version": execution.route_version,
-                "target_gpu_id": target_gpu,
-                "restored_peer_tokens": execution.restored_peer_tokens,
-                "restored_store_tokens": execution.restored_store_tokens,
-                "recompute_tokens": execution.recompute_tokens,
-            },
-        )
+        if recovery_transfer_ids:
+            self.recovery_transfer_ids_by_span[execution.metadata.span_id] = (
+                recovery_transfer_ids
+            )
+        else:
+            self._schedule_recovery_materialized(execution, at_ns=ready_ns)
         self.recovery_events.append(
             {
                 "timestamp_ns": self.des.now_ns,
@@ -2072,6 +2728,112 @@ class _StudyRuntime:
             }
         )
 
+    def _on_recovery_start(self, event: ScheduledEvent, _des: GlobalDES) -> None:
+        transfer_id = _required_str(event.payload, "transfer_id")
+        pending = self.pending_recovery_transfers.get(transfer_id)
+        if pending is None or pending.handle != EventHandle(event.event_id):
+            raise ExperimentError("unknown or stale recovery flow start")
+        if pending.target_gpu_id in self.failed_gpu_ids or (
+            pending.source != "STORE_DRAM"
+            and pending.source_gpu_id in self.failed_gpu_ids
+        ):
+            raise ExperimentError("failed GPU reached a recovery flow start")
+        execution = self.executions[pending.span_id]
+        self._commit_hbm_moves(
+            pending.target_gpu_id,
+            [
+                (
+                    FREE_ACCOUNT,
+                    HBM_TRANSFER_STAGING_ACCOUNT,
+                    pending.staging_bytes,
+                )
+            ],
+            cause=f"AEGIS_RECOVERY_{pending.source}_STAGING_ACQUIRE",
+            transfer_id=transfer_id,
+        )
+        execution.hbm_staging_bytes += pending.staging_bytes
+        try:
+            self.transfer_runtime.start_task(
+                pending.task,
+                on_terminal=self._on_recovery_task_terminal,
+            )
+        except Exception:
+            self._commit_hbm_moves(
+                pending.target_gpu_id,
+                [
+                    (
+                        HBM_TRANSFER_STAGING_ACCOUNT,
+                        FREE_ACCOUNT,
+                        pending.staging_bytes,
+                    )
+                ],
+                cause=f"AEGIS_RECOVERY_{pending.source}_STAGING_ROLLBACK",
+                transfer_id=transfer_id,
+            )
+            execution.hbm_staging_bytes -= pending.staging_bytes
+            raise
+        record = self._transfer_by_id[transfer_id]
+        record["start_ns"] = self.des.now_ns
+        predicted_end_ns = self._predicted_task_completion_ns(pending.task)
+        record["planned_end_ns"] = predicted_end_ns
+        record["end_ns"] = predicted_end_ns
+
+    def _on_recovery_task_terminal(
+        self, task: TransferTask, _des: GlobalDES
+    ) -> None:
+        transfer_id = task.metadata.transfer_id
+        pending = self.pending_recovery_transfers.pop(transfer_id, None)
+        if pending is None or pending.task is not task:
+            raise ExperimentError("recovery flow terminal callback lost its owner")
+        if task.status is not TransferStatus.COMPLETED:
+            raise ExperimentError("recovery flow did not complete successfully")
+        self._finish_fluid_service_record(transfer_id, task=task)
+        self._commit_transfer(transfer_id)
+        execution = self.executions[pending.span_id]
+        self._commit_hbm_moves(
+            pending.target_gpu_id,
+            [
+                (
+                    HBM_TRANSFER_STAGING_ACCOUNT,
+                    FREE_ACCOUNT,
+                    pending.staging_bytes,
+                )
+            ],
+            cause=f"AEGIS_RECOVERY_{pending.source}_STAGING_RELEASE",
+            transfer_id=transfer_id,
+        )
+        execution.hbm_staging_bytes -= pending.staging_bytes
+        if execution.hbm_staging_bytes < 0:
+            raise ExperimentError("recovery staging accounting became negative")
+        remaining = self.recovery_transfer_ids_by_span.get(pending.span_id)
+        if remaining is None or transfer_id not in remaining:
+            raise ExperimentError("recovery flow group lost a transfer")
+        remaining.remove(transfer_id)
+        if not remaining:
+            del self.recovery_transfer_ids_by_span[pending.span_id]
+            self._schedule_recovery_materialized(
+                self.executions[pending.span_id], at_ns=self.des.now_ns
+            )
+
+    def _schedule_recovery_materialized(
+        self, execution: _SpanExecution, *, at_ns: int
+    ) -> None:
+        if execution.gpu_id is None:
+            raise ExperimentError("recovery destination GPU is absent")
+        self.des.schedule_at(
+            at_ns,
+            EventKind.RECOVERY_COMPLETE,
+            event_id=self._next_id(f"recovery-ready:{execution.metadata.span_id}"),
+            payload={
+                "span_id": execution.metadata.span_id,
+                "route_version": execution.route_version,
+                "target_gpu_id": execution.gpu_id,
+                "restored_peer_tokens": execution.restored_peer_tokens,
+                "restored_store_tokens": execution.restored_store_tokens,
+                "recompute_tokens": execution.recompute_tokens,
+            },
+        )
+
     def _on_recovery_complete(self, event: ScheduledEvent, _des: GlobalDES) -> None:
         """Materialize restored KV, then recompute the missing prompt suffix.
 
@@ -2087,6 +2849,27 @@ class _StudyRuntime:
         target_gpu = _required_str(event.payload, "target_gpu_id")
         if target_gpu in self.failed_gpu_ids:
             raise ExperimentError("recovery selected a failed target")
+        if execution.hbm_staging_bytes != 0:
+            raise ExperimentError("recovery materialized with live transfer staging")
+        restored_tokens = execution.restored_peer_tokens + execution.restored_store_tokens
+        restored_bytes = min(
+            execution.hbm_recovery_reserved_bytes,
+            _tokens_to_allocated_bytes(restored_tokens) if restored_tokens > 0 else 0,
+        )
+        if restored_bytes > 0:
+            self._commit_hbm_moves(
+                target_gpu,
+                [
+                    (
+                        HBM_RECOVERY_RESERVED_ACCOUNT,
+                        HBM_ACTIVE_PRIMARY_ACCOUNT,
+                        restored_bytes,
+                    )
+                ],
+                cause="AEGIS_RECOVERY_RESTORED_KV_MATERIALIZE",
+            )
+            execution.hbm_recovery_reserved_bytes -= restored_bytes
+            execution.hbm_allocated_bytes += restored_bytes
         execution.status = _ExecutionStatus.RECOVERING
         execution.gpu_id = target_gpu
         prompt_recompute_ns, _silent_ns, _remaining_decode_ns = (
@@ -2144,6 +2927,21 @@ class _StudyRuntime:
         target_gpu = _required_str(event.payload, "target_gpu_id")
         if target_gpu in self.failed_gpu_ids:
             raise ExperimentError("failed recovery target finished prompt recompute")
+        if execution.hbm_recovery_reserved_bytes > 0:
+            recomputed_bytes = execution.hbm_recovery_reserved_bytes
+            self._commit_hbm_moves(
+                target_gpu,
+                [
+                    (
+                        HBM_RECOVERY_RESERVED_ACCOUNT,
+                        HBM_ACTIVE_PRIMARY_ACCOUNT,
+                        recomputed_bytes,
+                    )
+                ],
+                cause="AEGIS_RECOVERY_RECOMPUTED_KV_MATERIALIZE",
+            )
+            execution.hbm_recovery_reserved_bytes = 0
+            execution.hbm_allocated_bytes += recomputed_bytes
         execution.prompt_recompute_complete_ns = self.des.now_ns
         self.recovery_events.append(
             {
@@ -2468,6 +3266,10 @@ class _StudyRuntime:
             }
             for gpu_id, pool in sorted(self.peer_pools.items())
         }
+        hbm_by_gpu = {
+            gpu_id: _summarize_hbm_timeline(self.hbm_ledgers[gpu_id], timeline)
+            for gpu_id, timeline in sorted(self.hbm_timelines.items())
+        }
         transfer_accounting = _aggregate_transfer_accounting(self.transfers)
         metrics = {
             "virtual_end_ns": end_ns,
@@ -2515,6 +3317,15 @@ class _StudyRuntime:
                 "store_dram_peak_bytes": self.store_pool.peak_bytes,
                 "store_dram_byte_ns": self.store_pool.byte_ns,
                 "peer_hbm_by_gpu": peer_by_gpu,
+                "gpu_hbm_account_stack_by_gpu": hbm_by_gpu,
+                "gpu_hbm_recovery_reserve_peak_bytes": max(
+                    item["peak_account_bytes"][HBM_RECOVERY_RESERVED_ACCOUNT]
+                    for item in hbm_by_gpu.values()
+                ),
+                "gpu_hbm_staging_peak_bytes": max(
+                    item["peak_account_bytes"][HBM_TRANSFER_STAGING_ACCOUNT]
+                    for item in hbm_by_gpu.values()
+                ),
                 "store_dram_by_segment": {
                     "store-0:segment-0": {
                         "capacity_bytes": self.store_pool.capacity_bytes,
@@ -2645,11 +3456,30 @@ class _StudyRuntime:
             "resource_model": {
                 "peer_hbm_resources": list(sorted(self.peer_pools)),
                 "store_dram_segments": ["store-0:segment-0"],
-                "copy_engines": [item.resource_id for item in self.copy.values()],
-                "fabric_resources": [
-                    self.peer_fabric.resource_id,
-                    self.store_fabric.resource_id,
+                "communication_backend": "flow_contention",
+                "fairness": "weighted_max_min_work_conserving",
+                "flow_clock": "shared_global_des_now_ns",
+                "slice_size_policy_chunks": FLOW_SLICE_POLICY_CHUNKS,
+                "copy_engines": [
+                    f"{gpu_id}.hbm-rate" for gpu_id in self.gpu_ids
                 ],
+                "fabric_resources": [
+                    "peer-fabric-rate",
+                    "store-fabric-rate",
+                ],
+                "rate_resources": {
+                    resource_id: resource.capacity_bytes_per_second
+                    for resource_id, resource in sorted(
+                        self.transfer_rate_resources.items()
+                    )
+                },
+                "gpu_hbm_capacity_bytes_per_gpu": (
+                    self.parameters.physical_hbm_bytes_per_gpu
+                ),
+                "gpu_hbm_account_stack": sorted(
+                    next(iter(self.hbm_ledgers.values())).accounts
+                ),
+                "gpu_hbm_event_boundary_snapshots": True,
                 "per_gpu_peer_hbm_quota_enforced": True,
                 "failed_gpu_hbm_becomes_unavailable_not_free": True,
             },
@@ -3193,6 +4023,97 @@ def _required_str_list(payload: Mapping[str, Any], key: str) -> list[str]:
     return value
 
 
+def _experiment_gpu_location(gpu_id: str) -> MemoryLocation:
+    if not gpu_id.startswith("gpu-"):
+        raise ExperimentError("experiment GPU location requires a physical gpu-* ID")
+    return MemoryLocation(
+        resource_id=f"hbm:{gpu_id}",
+        node_id="node-inference-0",
+        numa_node_id="numa:node-inference-0:0",
+        kind=MemoryKind.GPU_HBM,
+        endpoint=f"gpu://{gpu_id}",
+        gpu_id=gpu_id,
+    )
+
+
+def _experiment_store_location() -> MemoryLocation:
+    return MemoryLocation(
+        resource_id="store-0:segment-0",
+        node_id="node-store-0",
+        numa_node_id="numa:node-store-0:0",
+        kind=MemoryKind.STORE_DRAM,
+        endpoint="rdma://store-0/segment-0",
+    )
+
+
+def _capacity_ledger_snapshot(
+    ledger: CapacityLedger, *, timestamp_ns: int, cause: str
+) -> dict[str, Any]:
+    accounts = dict(sorted(ledger.accounts.items()))
+    if sum(accounts.values()) != ledger.capacity_bytes:
+        raise ExperimentError("capacity ledger snapshot does not conserve")
+    return {
+        "timestamp_ns": timestamp_ns,
+        "resource_id": ledger.resource_id,
+        "capacity_bytes": ledger.capacity_bytes,
+        "accounts": accounts,
+        "cause": cause,
+    }
+
+
+def _summarize_hbm_timeline(
+    ledger: CapacityLedger, timeline: Sequence[Mapping[str, Any]]
+) -> dict[str, Any]:
+    account_names = tuple(sorted(ledger.accounts))
+    peak_account_bytes = {account: 0 for account in account_names}
+    previous_timestamp = -1
+    valid = bool(timeline)
+    for snapshot in timeline:
+        timestamp = snapshot.get("timestamp_ns")
+        raw_accounts = snapshot.get("accounts")
+        if (
+            type(timestamp) is not int
+            or timestamp < previous_timestamp
+            or not isinstance(raw_accounts, Mapping)
+            or set(raw_accounts) != set(account_names)
+            or any(type(value) is not int or value < 0 for value in raw_accounts.values())
+            or sum(cast(int, value) for value in raw_accounts.values())
+            != ledger.capacity_bytes
+        ):
+            valid = False
+            continue
+        previous_timestamp = timestamp
+        for account in account_names:
+            peak_account_bytes[account] = max(
+                peak_account_bytes[account], cast(int, raw_accounts[account])
+            )
+    return {
+        "resource_id": ledger.resource_id,
+        "capacity_bytes": ledger.capacity_bytes,
+        "final_accounts": dict(sorted(ledger.accounts.items())),
+        "peak_account_bytes": peak_account_bytes,
+        "event_boundary_snapshot_count": len(timeline),
+        "valid": valid,
+    }
+
+
+def _flow_interval_to_dict(item: FlowRateInterval) -> dict[str, Any]:
+    return {
+        "start_ns": item.start_ns,
+        "end_ns": item.end_ns,
+        "flow_id": item.flow_id,
+        "transfer_id": item.transfer_id,
+        "slice_id": item.slice_id,
+        "cause": item.cause,
+        "path_resource_ids": list(item.path_resource_ids),
+        "payload_bytes": item.payload_bytes,
+        "remaining_bytes_at_start": item.remaining_bytes_at_start,
+        "allocated_rate_bytes_per_second": item.allocated_rate_bytes_per_second,
+        "transferred_bytes": item.transferred_bytes,
+        "remaining_bytes_at_end": item.remaining_bytes_at_end,
+    }
+
+
 def _integer_mean(values: Sequence[int]) -> int:
     return 0 if not values else sum(values) // len(values)
 
@@ -3203,6 +4124,25 @@ def _nearest_rank(values: Sequence[int], percentile: int) -> int:
     ordered = sorted(values)
     rank = max(1, math.ceil(percentile * len(ordered) / 100))
     return ordered[rank - 1]
+
+
+def _interval_union_duration_ns(intervals: Sequence[tuple[int, int]]) -> int:
+    if not intervals:
+        return 0
+    ordered = sorted(intervals)
+    start_ns, end_ns = ordered[0]
+    if start_ns < 0 or end_ns < start_ns:
+        raise ExperimentError("resource busy interval is malformed")
+    total_ns = 0
+    for next_start_ns, next_end_ns in ordered[1:]:
+        if next_start_ns < 0 or next_end_ns < next_start_ns:
+            raise ExperimentError("resource busy interval is malformed")
+        if next_start_ns <= end_ns:
+            end_ns = max(end_ns, next_end_ns)
+        else:
+            total_ns += end_ns - start_ns
+            start_ns, end_ns = next_start_ns, next_end_ns
+    return total_ns + end_ns - start_ns
 
 
 def _aggregate_transfer_accounting(
@@ -3216,6 +4156,9 @@ def _aggregate_transfer_accounting(
     network_byte_ns: Counter[str] = Counter()
     copy_busy_ns: Counter[str] = Counter()
     fabric_busy_ns: Counter[str] = Counter()
+    resource_busy_intervals: dict[tuple[str, str], list[tuple[int, int]]] = defaultdict(
+        list
+    )
     queue_wait_ns: Counter[str] = Counter()
     service_time_ns: Counter[str] = Counter()
     states: Counter[str] = Counter()
@@ -3276,10 +4219,16 @@ def _aggregate_transfer_accounting(
             ):
                 raise ExperimentError("terminal resource interval is malformed")
             busy_ns = actual_end - interval_start
-            if resource_id.endswith(".copy"):
-                copy_busy_ns[cause] += busy_ns
-            elif resource_id.endswith("-fabric"):
-                fabric_busy_ns[cause] += busy_ns
+            if busy_ns > 0:
+                resource_busy_intervals[(cause, resource_id)].append(
+                    (interval_start, actual_end)
+                )
+    for (cause, resource_id), intervals in sorted(resource_busy_intervals.items()):
+        busy_ns = _interval_union_duration_ns(intervals)
+        if resource_id.endswith(".hbm-rate"):
+            copy_busy_ns[cause] += busy_ns
+        elif resource_id.endswith("-fabric-rate"):
+            fabric_busy_ns[cause] += busy_ns
     return {
         "submitted_bytes_by_cause": dict(sorted(submitted.items())),
         "transferred_bytes_by_cause": dict(sorted(transferred.items())),
@@ -3294,47 +4243,6 @@ def _aggregate_transfer_accounting(
     }
 
 
-def _reserve_joint_concurrency(
-    resources: Sequence[ConcurrencyResource],
-    *,
-    ready_ns: int,
-    duration_ns: int,
-    reservation_id_prefix: str,
-    cause: str,
-) -> tuple[Reservation, ...]:
-    """Reserve one common interval across every end-to-end path resource."""
-
-    if not resources or len({item.resource_id for item in resources}) != len(resources):
-        raise ExperimentError("joint transfer resources must be non-empty and unique")
-    candidate_ns = ready_ns
-    while True:
-        starts = tuple(
-            resource.earliest_start(ready_ns=candidate_ns, duration_ns=duration_ns)
-            for resource in resources
-        )
-        next_candidate_ns = max(starts)
-        if next_candidate_ns == candidate_ns and all(
-            start_ns == candidate_ns for start_ns in starts
-        ):
-            break
-        candidate_ns = next_candidate_ns
-    reservations = tuple(
-        resource.reserve(
-            ready_ns=candidate_ns,
-            duration_ns=duration_ns,
-            reservation_id=f"{reservation_id_prefix}:resource-{index}",
-            cause=cause,
-        )
-        for index, resource in enumerate(resources)
-    )
-    if any(
-        item.start_ns != candidate_ns or item.end_ns != candidate_ns + duration_ns
-        for item in reservations
-    ):
-        raise ExperimentError("joint transfer reservation lost interval alignment")
-    return reservations
-
-
 def _transfer_record(
     *,
     transfer_id: str,
@@ -3347,13 +4255,15 @@ def _transfer_record(
     target_gpu_id: str,
     ready_ns: int | None = None,
     status: str = "COMMITTED",
-    resource_reservations: Sequence[Reservation] = (),
     span_id: str | None = None,
+    flow_slice_count: int = 0,
 ) -> dict[str, Any]:
     if status not in {"PENDING", "COMMITTED"}:
         raise ValueError("new transfer record must be pending or committed")
     if end_ns < start_ns:
         raise ValueError("transfer end cannot precede start")
+    if type(flow_slice_count) is not int or flow_slice_count < 0:
+        raise ValueError("flow_slice_count must be a non-negative integer")
     resolved_ready_ns = start_ns if ready_ns is None else ready_ns
     if resolved_ready_ns > start_ns:
         raise ValueError("transfer ready time cannot follow service start")
@@ -3375,16 +4285,9 @@ def _transfer_record(
         "terminal_reason": "ALL_REQUIRED_RESOURCES_COMPLETE" if committed else None,
         "source": source_gpu_id,
         "target": target_gpu_id,
-        "resource_intervals": [
-            {
-                "reservation_id": reservation.reservation_id,
-                "resource_id": reservation.resource_id,
-                "lane": reservation.lane,
-                "start_ns": reservation.start_ns,
-                "planned_end_ns": reservation.end_ns,
-                "actual_end_ns": reservation.end_ns if committed else None,
-                "cause": reservation.cause,
-            }
-            for reservation in resource_reservations
-        ],
+        "communication_backend": (
+            "local_activation" if path == "PEER_HBM_LOCAL_ACTIVATION" else "flow_contention"
+        ),
+        "flow_slice_count": flow_slice_count,
+        "resource_intervals": [],
     }
