@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img">
+  <title>AegisKV modeled system architecture</title>
+  <style>text{font-family:DejaVu Sans,Arial,sans-serif;fill:#111827}.title{font-size:26px;font-weight:700}.subtitle{font-size:14px;fill:#4b5563}.axis{stroke:#374151;stroke-width:1}.grid{stroke:#e5e7eb;stroke-width:1}.tick{font-size:12px;fill:#4b5563}.label{font-size:14px;font-weight:600}.small{font-size:11px}.footer{font-size:13px;font-weight:700;fill:#991b1b}</style>
+  <rect x="0" y="0" width="1200" height="720" rx="0" fill="#ffffff" stroke="none" opacity="1" />
+  <text x="55" y="46" class="title" text-anchor="start">AegisKV modeled system architecture</text>
+  <text x="55" y="74" class="subtitle" text-anchor="start">Design schematic only; not runtime-component execution proof</text>
+  <g data-point-id="f1-point-00000" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f1-point-00000 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"diagram":"architecture"}</title>
+    <rect x="70" y="210" width="170" height="90" rx="10" fill="#dbeafe" stroke="#475569" opacity="1" />
+    <text x="155" y="250" class="label" text-anchor="middle">Router</text>
+    <rect x="265" y="145" width="170" height="90" rx="10" fill="#e0e7ff" stroke="#475569" opacity="1" />
+    <text x="350" y="185" class="label" text-anchor="middle">vLLM Source Workers</text>
+    <text x="350" y="204" class="tick" text-anchor="middle">production HBM</text>
+    <rect x="505" y="210" width="170" height="90" rx="10" fill="#f3e8ff" stroke="#475569" opacity="1" />
+    <text x="590" y="250" class="label" text-anchor="middle">Global KV directory</text>
+    <text x="590" y="269" class="tick" text-anchor="middle">(single authority)</text>
+    <rect x="760" y="125" width="170" height="90" rx="10" fill="#dcfce7" stroke="#475569" opacity="1" />
+    <text x="845" y="165" class="label" text-anchor="middle">Peer-HBM pools</text>
+    <text x="845" y="184" class="tick" text-anchor="middle">D2D/P2P</text>
+    <rect x="760" y="285" width="170" height="90" rx="10" fill="#ffedd5" stroke="#475569" opacity="1" />
+    <text x="845" y="325" class="label" text-anchor="middle">Store Master</text>
+    <rect x="970" y="285" width="170" height="90" rx="10" fill="#fef3c7" stroke="#475569" opacity="1" />
+    <text x="1055" y="325" class="label" text-anchor="middle">Store DRAM nodes</text>
+    <text x="1055" y="344" class="tick" text-anchor="middle">source D2H</text>
+    <line x1="240" y1="255" x2="265" y2="190" stroke="#334155" stroke-width="2" />
+    <circle cx="265" cy="190" r="4" fill="#334155" stroke="#ffffff" stroke-width="1" />
+    <text x="250" y="210" class="tick" text-anchor="middle">route</text>
+    <line x1="435" y1="190" x2="505" y2="235" stroke="#334155" stroke-width="2" />
+    <circle cx="505" cy="235" r="4" fill="#334155" stroke="#ffffff" stroke-width="1" />
+    <text x="470" y="205" class="tick" text-anchor="middle">lookup / commit</text>
+    <line x1="675" y1="235" x2="760" y2="170" stroke="#334155" stroke-width="2" />
+    <circle cx="760" cy="170" r="4" fill="#334155" stroke="#ffffff" stroke-width="1" />
+    <text x="715" y="194" class="tick" text-anchor="middle">Peer decision</text>
+    <line x1="675" y1="255" x2="760" y2="330" stroke="#334155" stroke-width="2" />
+    <circle cx="760" cy="330" r="4" fill="#334155" stroke="#ffffff" stroke-width="1" />
+    <text x="714" y="278" class="tick" text-anchor="middle">Store candidate</text>
+    <line x1="930" y1="330" x2="970" y2="330" stroke="#334155" stroke-width="2" />
+    <circle cx="970" cy="330" r="4" fill="#334155" stroke="#ffffff" stroke-width="1" />
+    <text x="950" y="276" class="tick" text-anchor="middle">metadata + placement</text>
+    <rect x="255" y="440" width="700" height="92" rx="8" fill="#f8fafc" stroke="#94a3b8" opacity="1" />
+    <text x="605" y="474" class="label" text-anchor="middle">Source Worker owns direct production-HBM→Peer D2D and →Store D2H bytes</text>
+    <text x="605" y="502" class="tick" text-anchor="middle">Directory/Store Master make metadata decisions; bytes do not traverse them</text>
+  </g>
+  <line x1="55" y1="676" x2="1145" y2="676" stroke="#fecaca" stroke-width="1" />
+  <text x="600" y="704" class="footer" text-anchor="middle">E2 modeled/preliminary · not calibrated · no physical experiment</text>
+</svg>

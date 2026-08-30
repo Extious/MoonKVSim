@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img">
+  <title>Policy ablations</title>
+  <style>text{font-family:DejaVu Sans,Arial,sans-serif;fill:#111827}.title{font-size:26px;font-weight:700}.subtitle{font-size:14px;fill:#4b5563}.axis{stroke:#374151;stroke-width:1}.grid{stroke:#e5e7eb;stroke-width:1}.tick{font-size:12px;fill:#4b5563}.label{font-size:14px;font-weight:600}.small{font-size:11px}.footer{font-size:13px;font-weight:700;fill:#991b1b}</style>
+  <rect x="0" y="0" width="1200" height="720" rx="0" fill="#ffffff" stroke="none" opacity="1" />
+  <text x="55" y="46" class="title" text-anchor="start">Policy ablations</text>
+  <text x="55" y="74" class="subtitle" text-anchor="start">Minimum-seed repeat-A WCT diagnostic across policy variants; modeled only</text>
+  <line x1="105" y1="118" x2="105" y2="620" stroke="#374151" stroke-width="1.4" />
+  <line x1="105" y1="620" x2="1145" y2="620" stroke="#374151" stroke-width="1.4" />
+  <line x1="105" y1="620" x2="1145" y2="620" stroke="#e5e7eb" stroke-width="1" />
+  <text x="93" y="624" class="tick" text-anchor="end">0</text>
+  <line x1="105" y1="519.6" x2="1145" y2="519.6" stroke="#e5e7eb" stroke-width="1" />
+  <text x="93" y="523.6" class="tick" text-anchor="end">1.3M</text>
+  <line x1="105" y1="419.2" x2="1145" y2="419.2" stroke="#e5e7eb" stroke-width="1" />
+  <text x="93" y="423.2" class="tick" text-anchor="end">2.6M</text>
+  <line x1="105" y1="318.8" x2="1145" y2="318.8" stroke="#e5e7eb" stroke-width="1" />
+  <text x="93" y="322.8" class="tick" text-anchor="end">3.9M</text>
+  <line x1="105" y1="218.4" x2="1145" y2="218.4" stroke="#e5e7eb" stroke-width="1" />
+  <text x="93" y="222.4" class="tick" text-anchor="end">5.2M</text>
+  <line x1="105" y1="118" x2="1145" y2="118" stroke="#e5e7eb" stroke-width="1" />
+  <text x="93" y="122" class="tick" text-anchor="end">6.5M</text>
+  <text x="625" y="658" class="label" text-anchor="middle">canonical matrix row (stable order)</text>
+  <text x="22" y="369" class="label" text-anchor="start" transform="rotate(-90 22 369)">mean workflow WCT (ms)</text>
+  <g data-point-id="f9-point-00000" data-run-id="ablation:full:8k:gpu_failure:seed-0:repeat-A" data-result-hash="3433d1ee24c9fc7ca9432f8b4d582007e3028f369c4e7ef504034c5e1657a792">
+    <title>f9-point-00000 | ablation:full:8k:gpu_failure:seed-0:repeat-A | 3433d1ee24c9fc7ca9432f8b4d582007e3028f369c4e7ef504034c5e1657a792 | {"label":"full/8k/gpu_failure/s0A","value":6322992.985536}</title>
+    <rect x="107.08" y="128.07" width="13.173" height="491.93" rx="0" fill="#2563eb" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00001" data-run-id="ablation:full:32k:gpu_failure:seed-0:repeat-A" data-result-hash="d4e4461900e8316b72638641ad34a5077fa4643dbcbe3ee5f491f8d97f4d934f">
+    <title>f9-point-00001 | ablation:full:32k:gpu_failure:seed-0:repeat-A | d4e4461900e8316b72638641ad34a5077fa4643dbcbe3ee5f491f8d97f4d934f | {"label":"full/32k/gpu_failure/s0A","value":6317399.808282}</title>
+    <rect x="124.413" y="128.506" width="13.173" height="491.494" rx="0" fill="#dc2626" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00002" data-run-id="ablation:full:64k:gpu_failure:seed-0:repeat-A" data-result-hash="a130283c0473dc2f2a3cdb9fc5d98156bd0ffdd827eeb78829ddf3e0511ce729">
+    <title>f9-point-00002 | ablation:full:64k:gpu_failure:seed-0:repeat-A | a130283c0473dc2f2a3cdb9fc5d98156bd0ffdd827eeb78829ddf3e0511ce729 | {"label":"full/64k/gpu_failure/s0A","value":6323330.982717}</title>
+    <rect x="141.747" y="128.044" width="13.173" height="491.956" rx="0" fill="#059669" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00003" data-run-id="ablation:full:96k:gpu_failure:seed-0:repeat-A" data-result-hash="ead73c4232806101895806eacc4611fde8b6ccef60e7810ac3d67ec47847e51c">
+    <title>f9-point-00003 | ablation:full:96k:gpu_failure:seed-0:repeat-A | ead73c4232806101895806eacc4611fde8b6ccef60e7810ac3d67ec47847e51c | {"label":"full/96k/gpu_failure/s0A","value":6337545.43365}</title>
+    <rect x="159.08" y="126.938" width="13.173" height="493.062" rx="0" fill="#7c3aed" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00004" data-run-id="ablation:full:128k:gpu_failure:seed-0:repeat-A" data-result-hash="cedc003117fee0ff2f66683a30fc996288730305f33c4cafd4c07e8f8cf0e876">
+    <title>f9-point-00004 | ablation:full:128k:gpu_failure:seed-0:repeat-A | cedc003117fee0ff2f66683a30fc996288730305f33c4cafd4c07e8f8cf0e876 | {"label":"full/128k/gpu_failure/s0A","value":6323954.288625}</title>
+    <rect x="176.413" y="127.996" width="13.173" height="492.004" rx="0" fill="#d97706" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00005" data-run-id="ablation:lfu_eviction:8k:gpu_failure:seed-0:repeat-A" data-result-hash="092cdeb26a07b2d5d0ee61c7d48d8ae7f7a8dcdb5b40831df81757d952ca1d85">
+    <title>f9-point-00005 | ablation:lfu_eviction:8k:gpu_failure:seed-0:repeat-A | 092cdeb26a07b2d5d0ee61c7d48d8ae7f7a8dcdb5b40831df81757d952ca1d85 | {"label":"lfu_eviction/8k/gpu_failure/s0A","value":6350577.48082}</title>
+    <rect x="193.747" y="125.924" width="13.173" height="494.076" rx="0" fill="#2563eb" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00006" data-run-id="ablation:lfu_eviction:32k:gpu_failure:seed-0:repeat-A" data-result-hash="8e55d13e777fe8cc5801b2cb1f15171d2dd3f12e5ac1ef0b6c0471898ac86a76">
+    <title>f9-point-00006 | ablation:lfu_eviction:32k:gpu_failure:seed-0:repeat-A | 8e55d13e777fe8cc5801b2cb1f15171d2dd3f12e5ac1ef0b6c0471898ac86a76 | {"label":"lfu_eviction/32k/gpu_failure/s0A","value":6360676.856505}</title>
+    <rect x="211.08" y="125.139" width="13.173" height="494.861" rx="0" fill="#dc2626" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00007" data-run-id="ablation:lfu_eviction:64k:gpu_failure:seed-0:repeat-A" data-result-hash="9e7941500425d4e574097999f27b44bad5a08bc3a09f53f3e0ccc92a000e5fb7">
+    <title>f9-point-00007 | ablation:lfu_eviction:64k:gpu_failure:seed-0:repeat-A | 9e7941500425d4e574097999f27b44bad5a08bc3a09f53f3e0ccc92a000e5fb7 | {"label":"lfu_eviction/64k/gpu_failure/s0A","value":6365188.316646}</title>
+    <rect x="228.413" y="124.788" width="13.173" height="495.212" rx="0" fill="#059669" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00008" data-run-id="ablation:lfu_eviction:96k:gpu_failure:seed-0:repeat-A" data-result-hash="b70b5777603152d5b65efa2183ae2ec084055db7a04eb016fb0559281e6df730">
+    <title>f9-point-00008 | ablation:lfu_eviction:96k:gpu_failure:seed-0:repeat-A | b70b5777603152d5b65efa2183ae2ec084055db7a04eb016fb0559281e6df730 | {"label":"lfu_eviction/96k/gpu_failure/s0A","value":6376031.047466}</title>
+    <rect x="245.747" y="123.944" width="13.173" height="496.056" rx="0" fill="#7c3aed" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00009" data-run-id="ablation:lfu_eviction:128k:gpu_failure:seed-0:repeat-A" data-result-hash="d116ee08ced2421008342bd56c7322f4731a8f759a085f49482f611013cb4fba">
+    <title>f9-point-00009 | ablation:lfu_eviction:128k:gpu_failure:seed-0:repeat-A | d116ee08ced2421008342bd56c7322f4731a8f759a085f49482f611013cb4fba | {"label":"lfu_eviction/128k/gpu_failure/s0A","value":6356408.839328}</title>
+    <rect x="263.08" y="125.471" width="13.173" height="494.529" rx="0" fill="#d97706" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00010" data-run-id="ablation:lru_eviction:8k:gpu_failure:seed-0:repeat-A" data-result-hash="b38c2738b5321eb4e2a685fe6c45e4466b5f427bbae1c039d8a6de455391aa2b">
+    <title>f9-point-00010 | ablation:lru_eviction:8k:gpu_failure:seed-0:repeat-A | b38c2738b5321eb4e2a685fe6c45e4466b5f427bbae1c039d8a6de455391aa2b | {"label":"lru_eviction/8k/gpu_failure/s0A","value":6316984.55902}</title>
+    <rect x="280.413" y="128.538" width="13.173" height="491.462" rx="0" fill="#2563eb" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00011" data-run-id="ablation:lru_eviction:32k:gpu_failure:seed-0:repeat-A" data-result-hash="21ad4e46c029d1f636dde7458d48549e4d5657878939979ecda3175e75f06498">
+    <title>f9-point-00011 | ablation:lru_eviction:32k:gpu_failure:seed-0:repeat-A | 21ad4e46c029d1f636dde7458d48549e4d5657878939979ecda3175e75f06498 | {"label":"lru_eviction/32k/gpu_failure/s0A","value":6320236.732492}</title>
+    <rect x="297.747" y="128.285" width="13.173" height="491.715" rx="0" fill="#dc2626" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00012" data-run-id="ablation:lru_eviction:64k:gpu_failure:seed-0:repeat-A" data-result-hash="2addf633a72a21907c4779d3270f1338b0862acf770de91ef5f8ca055c622d4c">
+    <title>f9-point-00012 | ablation:lru_eviction:64k:gpu_failure:seed-0:repeat-A | 2addf633a72a21907c4779d3270f1338b0862acf770de91ef5f8ca055c622d4c | {"label":"lru_eviction/64k/gpu_failure/s0A","value":6331864.383274}</title>
+    <rect x="315.08" y="127.38" width="13.173" height="492.62" rx="0" fill="#059669" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00013" data-run-id="ablation:lru_eviction:96k:gpu_failure:seed-0:repeat-A" data-result-hash="0231e796244652316dc9858ee0dd20ff68029133fbe1b835e6f04c092c308f7f">
+    <title>f9-point-00013 | ablation:lru_eviction:96k:gpu_failure:seed-0:repeat-A | 0231e796244652316dc9858ee0dd20ff68029133fbe1b835e6f04c092c308f7f | {"label":"lru_eviction/96k/gpu_failure/s0A","value":6342707.114094}</title>
+    <rect x="332.413" y="126.537" width="13.173" height="493.463" rx="0" fill="#7c3aed" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00014" data-run-id="ablation:lru_eviction:128k:gpu_failure:seed-0:repeat-A" data-result-hash="bc6200756e5f8df40e574c9f8fbeb2d8aa8b1f09a35c304a19dba95239bfb2b1">
+    <title>f9-point-00014 | ablation:lru_eviction:128k:gpu_failure:seed-0:repeat-A | bc6200756e5f8df40e574c9f8fbeb2d8aa8b1f09a35c304a19dba95239bfb2b1 | {"label":"lru_eviction/128k/gpu_failure/s0A","value":6319344.491514}</title>
+    <rect x="349.747" y="128.354" width="13.173" height="491.646" rx="0" fill="#d97706" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00015" data-run-id="ablation:no_aimd:8k:gpu_failure:seed-0:repeat-A" data-result-hash="f10c51995c4f90cba1eeb17689c86f635b40fc1ead476c4ddaac679b2e42d48f">
+    <title>f9-point-00015 | ablation:no_aimd:8k:gpu_failure:seed-0:repeat-A | f10c51995c4f90cba1eeb17689c86f635b40fc1ead476c4ddaac679b2e42d48f | {"label":"no_aimd/8k/gpu_failure/s0A","value":6324128.996168}</title>
+    <rect x="367.08" y="127.982" width="13.173" height="492.018" rx="0" fill="#2563eb" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00016" data-run-id="ablation:no_aimd:32k:gpu_failure:seed-0:repeat-A" data-result-hash="9620c9b1cb71099133a2a8a959712df17ba941f59702a5254b1f87b54875ea14">
+    <title>f9-point-00016 | ablation:no_aimd:32k:gpu_failure:seed-0:repeat-A | 9620c9b1cb71099133a2a8a959712df17ba941f59702a5254b1f87b54875ea14 | {"label":"no_aimd/32k/gpu_failure/s0A","value":6325410.695427}</title>
+    <rect x="384.413" y="127.882" width="13.173" height="492.118" rx="0" fill="#dc2626" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00017" data-run-id="ablation:no_aimd:64k:gpu_failure:seed-0:repeat-A" data-result-hash="2d5d089bb39382628124fc0423af5e7e3666ea506495bf6cae591658c8b9375d">
+    <title>f9-point-00017 | ablation:no_aimd:64k:gpu_failure:seed-0:repeat-A | 2d5d089bb39382628124fc0423af5e7e3666ea506495bf6cae591658c8b9375d | {"label":"no_aimd/64k/gpu_failure/s0A","value":6319793.840447}</title>
+    <rect x="401.747" y="128.319" width="13.173" height="491.681" rx="0" fill="#059669" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00018" data-run-id="ablation:no_aimd:96k:gpu_failure:seed-0:repeat-A" data-result-hash="7c1196cf1e7fbbdd78b7a11ba6859e81130e1a05cee08129cffe2e1465423c9c">
+    <title>f9-point-00018 | ablation:no_aimd:96k:gpu_failure:seed-0:repeat-A | 7c1196cf1e7fbbdd78b7a11ba6859e81130e1a05cee08129cffe2e1465423c9c | {"label":"no_aimd/96k/gpu_failure/s0A","value":6335831.076737}</title>
+    <rect x="419.08" y="127.072" width="13.173" height="492.928" rx="0" fill="#7c3aed" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00019" data-run-id="ablation:no_aimd:128k:gpu_failure:seed-0:repeat-A" data-result-hash="de3bc8cc4e0e286df90140aa1cba72a55106d1f9ba3810f3f0f472a56ad91f8f">
+    <title>f9-point-00019 | ablation:no_aimd:128k:gpu_failure:seed-0:repeat-A | de3bc8cc4e0e286df90140aa1cba72a55106d1f9ba3810f3f0f472a56ad91f8f | {"label":"no_aimd/128k/gpu_failure/s0A","value":6324707.337322}</title>
+    <rect x="436.413" y="127.937" width="13.173" height="492.063" rx="0" fill="#d97706" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00020" data-run-id="ablation:no_anti_colocation:8k:gpu_failure:seed-0:repeat-A" data-result-hash="4c9b7f488d424be33432bfbf247b62bd39feb58364115e9e0f488f84511e43ba">
+    <title>f9-point-00020 | ablation:no_anti_colocation:8k:gpu_failure:seed-0:repeat-A | 4c9b7f488d424be33432bfbf247b62bd39feb58364115e9e0f488f84511e43ba | {"label":"no_anti_colocation/8k/gpu_failure/s0A","value":6295500.077866}</title>
+    <rect x="453.747" y="130.209" width="13.173" height="489.791" rx="0" fill="#2563eb" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00021" data-run-id="ablation:no_anti_colocation:32k:gpu_failure:seed-0:repeat-A" data-result-hash="a0865d925f6828bfe4c999fa26b389fb7ec0e24ae13ab3d8a5a52637a525c75a">
+    <title>f9-point-00021 | ablation:no_anti_colocation:32k:gpu_failure:seed-0:repeat-A | a0865d925f6828bfe4c999fa26b389fb7ec0e24ae13ab3d8a5a52637a525c75a | {"label":"no_anti_colocation/32k/gpu_failure/s0A","value":6297200.066925}</title>
+    <rect x="471.08" y="130.077" width="13.173" height="489.923" rx="0" fill="#dc2626" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00022" data-run-id="ablation:no_anti_colocation:64k:gpu_failure:seed-0:repeat-A" data-result-hash="83fd9bb5cf38471839d3b3760f68aff0173a6936c20edc9899c80b24ee56eb39">
+    <title>f9-point-00022 | ablation:no_anti_colocation:64k:gpu_failure:seed-0:repeat-A | 83fd9bb5cf38471839d3b3760f68aff0173a6936c20edc9899c80b24ee56eb39 | {"label":"no_anti_colocation/64k/gpu_failure/s0A","value":6285385.510965}</title>
+    <rect x="488.413" y="130.996" width="13.173" height="489.004" rx="0" fill="#059669" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00023" data-run-id="ablation:no_anti_colocation:96k:gpu_failure:seed-0:repeat-A" data-result-hash="84add986450ae6c53fcba48059aefe3734aecc718d6ceb418fc82c1a85a95229">
+    <title>f9-point-00023 | ablation:no_anti_colocation:96k:gpu_failure:seed-0:repeat-A | 84add986450ae6c53fcba48059aefe3734aecc718d6ceb418fc82c1a85a95229 | {"label":"no_anti_colocation/96k/gpu_failure/s0A","value":6367202.678764}</title>
+    <rect x="505.747" y="124.631" width="13.173" height="495.369" rx="0" fill="#7c3aed" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00024" data-run-id="ablation:no_anti_colocation:128k:gpu_failure:seed-0:repeat-A" data-result-hash="e11c2ed3d3b4a14f3f11149ca7e270e9b6b880f64e6f8f75cb296f59975ed90d">
+    <title>f9-point-00024 | ablation:no_anti_colocation:128k:gpu_failure:seed-0:repeat-A | e11c2ed3d3b4a14f3f11149ca7e270e9b6b880f64e6f8f75cb296f59975ed90d | {"label":"no_anti_colocation/128k/gpu_failure/s0A","value":6299517.304185}</title>
+    <rect x="523.08" y="129.897" width="13.173" height="490.103" rx="0" fill="#d97706" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00025" data-run-id="ablation:no_cache_aware_routing:8k:gpu_failure:seed-0:repeat-A" data-result-hash="6c5fd6f68055bda08cd01fe790e6d3b65f31d2ee068dd32f70a4486a22af9d67">
+    <title>f9-point-00025 | ablation:no_cache_aware_routing:8k:gpu_failure:seed-0:repeat-A | 6c5fd6f68055bda08cd01fe790e6d3b65f31d2ee068dd32f70a4486a22af9d67 | {"label":"no_cache_aware_routing/8k/gpu_failure/s0A","value":6309077.744357}</title>
+    <rect x="540.413" y="129.153" width="13.173" height="490.847" rx="0" fill="#2563eb" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00026" data-run-id="ablation:no_cache_aware_routing:32k:gpu_failure:seed-0:repeat-A" data-result-hash="99898a2707d7d09994295309f94d1fb01493d3328613cc8cff9d9f2356aa1426">
+    <title>f9-point-00026 | ablation:no_cache_aware_routing:32k:gpu_failure:seed-0:repeat-A | 99898a2707d7d09994295309f94d1fb01493d3328613cc8cff9d9f2356aa1426 | {"label":"no_cache_aware_routing/32k/gpu_failure/s0A","value":6298872.353412}</title>
+    <rect x="557.747" y="129.947" width="13.173" height="490.053" rx="0" fill="#dc2626" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00027" data-run-id="ablation:no_cache_aware_routing:64k:gpu_failure:seed-0:repeat-A" data-result-hash="a89be71808425d96bd180bb4f0e48e21791df002a42480070819a065f226fe53">
+    <title>f9-point-00027 | ablation:no_cache_aware_routing:64k:gpu_failure:seed-0:repeat-A | a89be71808425d96bd180bb4f0e48e21791df002a42480070819a065f226fe53 | {"label":"no_cache_aware_routing/64k/gpu_failure/s0A","value":6319304.409667}</title>
+    <rect x="575.08" y="128.357" width="13.173" height="491.643" rx="0" fill="#059669" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00028" data-run-id="ablation:no_cache_aware_routing:96k:gpu_failure:seed-0:repeat-A" data-result-hash="cffadebeac4d42e4fc7937eeb5c4bd810d69e8ce45bf168ae047479f8499e1be">
+    <title>f9-point-00028 | ablation:no_cache_aware_routing:96k:gpu_failure:seed-0:repeat-A | cffadebeac4d42e4fc7937eeb5c4bd810d69e8ce45bf168ae047479f8499e1be | {"label":"no_cache_aware_routing/96k/gpu_failure/s0A","value":6335341.645958}</title>
+    <rect x="592.413" y="127.11" width="13.173" height="492.89" rx="0" fill="#7c3aed" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00029" data-run-id="ablation:no_cache_aware_routing:128k:gpu_failure:seed-0:repeat-A" data-result-hash="891c77df9800ea38e7b44e8cad371beb978ad8c8a207495bacf66ddb79d082da">
+    <title>f9-point-00029 | ablation:no_cache_aware_routing:128k:gpu_failure:seed-0:repeat-A | 891c77df9800ea38e7b44e8cad371beb978ad8c8a207495bacf66ddb79d082da | {"label":"no_cache_aware_routing/128k/gpu_failure/s0A","value":6310315.229711}</title>
+    <rect x="609.747" y="129.057" width="13.173" height="490.943" rx="0" fill="#d97706" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00030" data-run-id="ablation:no_recovery_value:8k:gpu_failure:seed-0:repeat-A" data-result-hash="33f7c6c4d7675c5cfec3541da3e6de205c5b34dbf75622d1b3f9b95250b8d357">
+    <title>f9-point-00030 | ablation:no_recovery_value:8k:gpu_failure:seed-0:repeat-A | 33f7c6c4d7675c5cfec3541da3e6de205c5b34dbf75622d1b3f9b95250b8d357 | {"label":"no_recovery_value/8k/gpu_failure/s0A","value":6315814.352103}</title>
+    <rect x="627.08" y="128.629" width="13.173" height="491.371" rx="0" fill="#2563eb" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00031" data-run-id="ablation:no_recovery_value:32k:gpu_failure:seed-0:repeat-A" data-result-hash="b3a808d6d257cd0d93b6fdbadc099d0fb6aff45bd8545b78aabdf20313344ab9">
+    <title>f9-point-00031 | ablation:no_recovery_value:32k:gpu_failure:seed-0:repeat-A | b3a808d6d257cd0d93b6fdbadc099d0fb6aff45bd8545b78aabdf20313344ab9 | {"label":"no_recovery_value/32k/gpu_failure/s0A","value":6326194.693287}</title>
+    <rect x="644.413" y="127.821" width="13.173" height="492.179" rx="0" fill="#dc2626" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00032" data-run-id="ablation:no_recovery_value:64k:gpu_failure:seed-0:repeat-A" data-result-hash="4aec64ebddfe4821d639dd935e5586f829df33f707636a89dd7aa441325464cd">
+    <title>f9-point-00032 | ablation:no_recovery_value:64k:gpu_failure:seed-0:repeat-A | 4aec64ebddfe4821d639dd935e5586f829df33f707636a89dd7aa441325464cd | {"label":"no_recovery_value/64k/gpu_failure/s0A","value":6334978.11528}</title>
+    <rect x="661.747" y="127.138" width="13.173" height="492.862" rx="0" fill="#059669" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00033" data-run-id="ablation:no_recovery_value:96k:gpu_failure:seed-0:repeat-A" data-result-hash="efd9acb77a32ace688888618dffed0b077dd750c9ead615c41f67b78414f7478">
+    <title>f9-point-00033 | ablation:no_recovery_value:96k:gpu_failure:seed-0:repeat-A | efd9acb77a32ace688888618dffed0b077dd750c9ead615c41f67b78414f7478 | {"label":"no_recovery_value/96k/gpu_failure/s0A","value":6341512.568412}</title>
+    <rect x="679.08" y="126.63" width="13.173" height="493.37" rx="0" fill="#7c3aed" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00034" data-run-id="ablation:no_recovery_value:128k:gpu_failure:seed-0:repeat-A" data-result-hash="aef60ecb0778bdb7be0fc81f11d2310efce46ec24aed7e95318a52dc47335621">
+    <title>f9-point-00034 | ablation:no_recovery_value:128k:gpu_failure:seed-0:repeat-A | aef60ecb0778bdb7be0fc81f11d2310efce46ec24aed7e95318a52dc47335621 | {"label":"no_recovery_value/128k/gpu_failure/s0A","value":6315418.229613}</title>
+    <rect x="696.413" y="128.66" width="13.173" height="491.34" rx="0" fill="#d97706" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00035" data-run-id="ablation:no_reuse_value:8k:gpu_failure:seed-0:repeat-A" data-result-hash="8b6be3792f36f81483171badb88c0c06795eaa98d993a8fe650ae2d1adc756d5">
+    <title>f9-point-00035 | ablation:no_reuse_value:8k:gpu_failure:seed-0:repeat-A | 8b6be3792f36f81483171badb88c0c06795eaa98d993a8fe650ae2d1adc756d5 | {"label":"no_reuse_value/8k/gpu_failure/s0A","value":6322295.194101}</title>
+    <rect x="713.747" y="128.125" width="13.173" height="491.875" rx="0" fill="#2563eb" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00036" data-run-id="ablation:no_reuse_value:32k:gpu_failure:seed-0:repeat-A" data-result-hash="d675a395fb15579dafffafc14bb3adbe69a81a6e963b53defbd1272074c97dea">
+    <title>f9-point-00036 | ablation:no_reuse_value:32k:gpu_failure:seed-0:repeat-A | d675a395fb15579dafffafc14bb3adbe69a81a6e963b53defbd1272074c97dea | {"label":"no_reuse_value/32k/gpu_failure/s0A","value":6312089.803156}</title>
+    <rect x="731.08" y="128.919" width="13.173" height="491.081" rx="0" fill="#dc2626" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00037" data-run-id="ablation:no_reuse_value:64k:gpu_failure:seed-0:repeat-A" data-result-hash="fa3f225f5da73c5a6c90b158e621be2189cec2bbcb9cf3ec6168ffb74cfd24e3">
+    <title>f9-point-00037 | ablation:no_reuse_value:64k:gpu_failure:seed-0:repeat-A | fa3f225f5da73c5a6c90b158e621be2189cec2bbcb9cf3ec6168ffb74cfd24e3 | {"label":"no_reuse_value/64k/gpu_failure/s0A","value":6323069.104267}</title>
+    <rect x="748.413" y="128.065" width="13.173" height="491.935" rx="0" fill="#059669" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00038" data-run-id="ablation:no_reuse_value:96k:gpu_failure:seed-0:repeat-A" data-result-hash="2cf06c6a54a49246160703442ed278f1389be117aa0d7226d0ca06029617a977">
+    <title>f9-point-00038 | ablation:no_reuse_value:96k:gpu_failure:seed-0:repeat-A | 2cf06c6a54a49246160703442ed278f1389be117aa0d7226d0ca06029617a977 | {"label":"no_reuse_value/96k/gpu_failure/s0A","value":6326357.004153}</title>
+    <rect x="765.747" y="127.809" width="13.173" height="492.191" rx="0" fill="#7c3aed" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00039" data-run-id="ablation:no_reuse_value:128k:gpu_failure:seed-0:repeat-A" data-result-hash="34858955dbafd1eace863025e815ac6532ef070a6b9e3ceeb167d761011ec529">
+    <title>f9-point-00039 | ablation:no_reuse_value:128k:gpu_failure:seed-0:repeat-A | 34858955dbafd1eace863025e815ac6532ef070a6b9e3ceeb167d761011ec529 | {"label":"no_reuse_value/128k/gpu_failure/s0A","value":6323532.679456}</title>
+    <rect x="783.08" y="128.028" width="13.173" height="491.972" rx="0" fill="#d97706" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00040" data-run-id="ablation:no_slack:8k:gpu_failure:seed-0:repeat-A" data-result-hash="b77707f1a714f835890924ff4e78ec38180c530a1fe6cbb5414936ca109ce4ff">
+    <title>f9-point-00040 | ablation:no_slack:8k:gpu_failure:seed-0:repeat-A | b77707f1a714f835890924ff4e78ec38180c530a1fe6cbb5414936ca109ce4ff | {"label":"no_slack/8k/gpu_failure/s0A","value":6321687.65049}</title>
+    <rect x="800.413" y="128.172" width="13.173" height="491.828" rx="0" fill="#2563eb" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00041" data-run-id="ablation:no_slack:32k:gpu_failure:seed-0:repeat-A" data-result-hash="9e19c5768702165581081679bbe7d9240d839e636a61a292026912f8f5ebcbb8">
+    <title>f9-point-00041 | ablation:no_slack:32k:gpu_failure:seed-0:repeat-A | 9e19c5768702165581081679bbe7d9240d839e636a61a292026912f8f5ebcbb8 | {"label":"no_slack/32k/gpu_failure/s0A","value":6325095.8386}</title>
+    <rect x="817.747" y="127.907" width="13.173" height="492.093" rx="0" fill="#dc2626" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00042" data-run-id="ablation:no_slack:64k:gpu_failure:seed-0:repeat-A" data-result-hash="bcfbdb9927ed530ceaf63bd339512698c8d4047b2c57f2cc2632535b2e5c2014">
+    <title>f9-point-00042 | ablation:no_slack:64k:gpu_failure:seed-0:repeat-A | bcfbdb9927ed530ceaf63bd339512698c8d4047b2c57f2cc2632535b2e5c2014 | {"label":"no_slack/64k/gpu_failure/s0A","value":6326110.436921}</title>
+    <rect x="835.08" y="127.828" width="13.173" height="492.172" rx="0" fill="#059669" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00043" data-run-id="ablation:no_slack:96k:gpu_failure:seed-0:repeat-A" data-result-hash="a50364f18740061ff02c0937a0a1672d401db0a639f885ddf0ed6ec222e3e086">
+    <title>f9-point-00043 | ablation:no_slack:96k:gpu_failure:seed-0:repeat-A | a50364f18740061ff02c0937a0a1672d401db0a639f885ddf0ed6ec222e3e086 | {"label":"no_slack/96k/gpu_failure/s0A","value":6324993.352395}</title>
+    <rect x="852.413" y="127.915" width="13.173" height="492.085" rx="0" fill="#7c3aed" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00044" data-run-id="ablation:no_slack:128k:gpu_failure:seed-0:repeat-A" data-result-hash="83764d03eef76567136d8da006a39e67d9972fde310616d4389b3d96cd12d50e">
+    <title>f9-point-00044 | ablation:no_slack:128k:gpu_failure:seed-0:repeat-A | 83764d03eef76567136d8da006a39e67d9972fde310616d4389b3d96cd12d50e | {"label":"no_slack/128k/gpu_failure/s0A","value":6316629.358428}</title>
+    <rect x="869.747" y="128.566" width="13.173" height="491.434" rx="0" fill="#d97706" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00045" data-run-id="ablation:random_eviction:8k:gpu_failure:seed-0:repeat-A" data-result-hash="8c3c332d51f4ab71276ee0128462dfcc370153599cc2984dfd788f940860b748">
+    <title>f9-point-00045 | ablation:random_eviction:8k:gpu_failure:seed-0:repeat-A | 8c3c332d51f4ab71276ee0128462dfcc370153599cc2984dfd788f940860b748 | {"label":"random_eviction/8k/gpu_failure/s0A","value":6448600.227526}</title>
+    <rect x="887.08" y="118.298" width="13.173" height="501.702" rx="0" fill="#2563eb" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00046" data-run-id="ablation:random_eviction:32k:gpu_failure:seed-0:repeat-A" data-result-hash="e69d5a450ee129ddac9c4cd7c593ad8aeec344d9a4e3f3464cefb009d39e4e37">
+    <title>f9-point-00046 | ablation:random_eviction:32k:gpu_failure:seed-0:repeat-A | e69d5a450ee129ddac9c4cd7c593ad8aeec344d9a4e3f3464cefb009d39e4e37 | {"label":"random_eviction/32k/gpu_failure/s0A","value":6452432.674622}</title>
+    <rect x="904.413" y="118" width="13.173" height="502" rx="0" fill="#dc2626" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00047" data-run-id="ablation:random_eviction:64k:gpu_failure:seed-0:repeat-A" data-result-hash="18d472d2d329e0f38a5439cab636fe78d5944162339ba111f0d2de166a2882d6">
+    <title>f9-point-00047 | ablation:random_eviction:64k:gpu_failure:seed-0:repeat-A | 18d472d2d329e0f38a5439cab636fe78d5944162339ba111f0d2de166a2882d6 | {"label":"random_eviction/64k/gpu_failure/s0A","value":6441346.793069}</title>
+    <rect x="921.747" y="118.862" width="13.173" height="501.138" rx="0" fill="#059669" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00048" data-run-id="ablation:random_eviction:96k:gpu_failure:seed-0:repeat-A" data-result-hash="508cd27dede13374c939ba90f81df1aae9c5161c10a0ad117750b19ff9d4f777">
+    <title>f9-point-00048 | ablation:random_eviction:96k:gpu_failure:seed-0:repeat-A | 508cd27dede13374c939ba90f81df1aae9c5161c10a0ad117750b19ff9d4f777 | {"label":"random_eviction/96k/gpu_failure/s0A","value":6427764.471707}</title>
+    <rect x="939.08" y="119.919" width="13.173" height="500.081" rx="0" fill="#7c3aed" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00049" data-run-id="ablation:random_eviction:128k:gpu_failure:seed-0:repeat-A" data-result-hash="aab13229a191bceef64c7bbef6dc8b7d08600a32e5ecfeeae578fd2ac69993a6">
+    <title>f9-point-00049 | ablation:random_eviction:128k:gpu_failure:seed-0:repeat-A | aab13229a191bceef64c7bbef6dc8b7d08600a32e5ecfeeae578fd2ac69993a6 | {"label":"random_eviction/128k/gpu_failure/s0A","value":6449070.707336}</title>
+    <rect x="956.413" y="118.262" width="13.173" height="501.738" rx="0" fill="#d97706" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00050" data-run-id="ablation:static_hbm_quota:8k:gpu_failure:seed-0:repeat-A" data-result-hash="3b2d26e0b7471b453bf5345862c54eb1921fc70fefa27843811ffa9f110b056a">
+    <title>f9-point-00050 | ablation:static_hbm_quota:8k:gpu_failure:seed-0:repeat-A | 3b2d26e0b7471b453bf5345862c54eb1921fc70fefa27843811ffa9f110b056a | {"label":"static_hbm_quota/8k/gpu_failure/s0A","value":6326894.21009}</title>
+    <rect x="973.747" y="127.767" width="13.173" height="492.233" rx="0" fill="#2563eb" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00051" data-run-id="ablation:static_hbm_quota:32k:gpu_failure:seed-0:repeat-A" data-result-hash="7829a342ef2592640431b5f4cb97c3217c73ff589fa08c758496a609390cb1df">
+    <title>f9-point-00051 | ablation:static_hbm_quota:32k:gpu_failure:seed-0:repeat-A | 7829a342ef2592640431b5f4cb97c3217c73ff589fa08c758496a609390cb1df | {"label":"static_hbm_quota/32k/gpu_failure/s0A","value":6326441.490779}</title>
+    <rect x="991.08" y="127.802" width="13.173" height="492.198" rx="0" fill="#dc2626" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00052" data-run-id="ablation:static_hbm_quota:64k:gpu_failure:seed-0:repeat-A" data-result-hash="342d9b89d729804b64106689f2ea3a114531f4d2c8dff7fe86c6aaae535362df">
+    <title>f9-point-00052 | ablation:static_hbm_quota:64k:gpu_failure:seed-0:repeat-A | 342d9b89d729804b64106689f2ea3a114531f4d2c8dff7fe86c6aaae535362df | {"label":"static_hbm_quota/64k/gpu_failure/s0A","value":6319134.696246}</title>
+    <rect x="1008.413" y="128.371" width="13.173" height="491.629" rx="0" fill="#059669" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00053" data-run-id="ablation:static_hbm_quota:96k:gpu_failure:seed-0:repeat-A" data-result-hash="7d9878ab6e61721fedea47c624dcc821a682bd5d5f43e719956013b0016e31ad">
+    <title>f9-point-00053 | ablation:static_hbm_quota:96k:gpu_failure:seed-0:repeat-A | 7d9878ab6e61721fedea47c624dcc821a682bd5d5f43e719956013b0016e31ad | {"label":"static_hbm_quota/96k/gpu_failure/s0A","value":6335234.210295}</title>
+    <rect x="1025.747" y="127.118" width="13.173" height="492.882" rx="0" fill="#7c3aed" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00054" data-run-id="ablation:static_hbm_quota:128k:gpu_failure:seed-0:repeat-A" data-result-hash="d2aeda07d1585ad4dfff63ddf7fbc353d6a50ab6fe21f72379624c1446b1676d">
+    <title>f9-point-00054 | ablation:static_hbm_quota:128k:gpu_failure:seed-0:repeat-A | d2aeda07d1585ad4dfff63ddf7fbc353d6a50ab6fe21f72379624c1446b1676d | {"label":"static_hbm_quota/128k/gpu_failure/s0A","value":6328131.695445}</title>
+    <rect x="1043.08" y="127.671" width="13.173" height="492.329" rx="0" fill="#d97706" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00055" data-run-id="ablation:two_managers:8k:gpu_failure:seed-0:repeat-A" data-result-hash="71a0ee021ebd832aff96d6e443f05bdd602bf4f2a16376bec861e1d98ff3b655">
+    <title>f9-point-00055 | ablation:two_managers:8k:gpu_failure:seed-0:repeat-A | 71a0ee021ebd832aff96d6e443f05bdd602bf4f2a16376bec861e1d98ff3b655 | {"label":"two_managers/8k/gpu_failure/s0A","value":6327327.782999}</title>
+    <rect x="1060.413" y="127.733" width="13.173" height="492.267" rx="0" fill="#2563eb" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00056" data-run-id="ablation:two_managers:32k:gpu_failure:seed-0:repeat-A" data-result-hash="3e74a6f4efaee8ccba6a4b732254aba03af3446394ce53e1236a621320487665">
+    <title>f9-point-00056 | ablation:two_managers:32k:gpu_failure:seed-0:repeat-A | 3e74a6f4efaee8ccba6a4b732254aba03af3446394ce53e1236a621320487665 | {"label":"two_managers/32k/gpu_failure/s0A","value":6328543.353477}</title>
+    <rect x="1077.747" y="127.639" width="13.173" height="492.361" rx="0" fill="#dc2626" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00057" data-run-id="ablation:two_managers:64k:gpu_failure:seed-0:repeat-A" data-result-hash="9b74ef9889929b9fb85f6d689cd998d432bd34008171e1bbbdcce56885ed66f2">
+    <title>f9-point-00057 | ablation:two_managers:64k:gpu_failure:seed-0:repeat-A | 9b74ef9889929b9fb85f6d689cd998d432bd34008171e1bbbdcce56885ed66f2 | {"label":"two_managers/64k/gpu_failure/s0A","value":6318081.735707}</title>
+    <rect x="1095.08" y="128.453" width="13.173" height="491.547" rx="0" fill="#059669" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00058" data-run-id="ablation:two_managers:96k:gpu_failure:seed-0:repeat-A" data-result-hash="a8ca846cbdfdec100ff9192e99cf95f0e8a08305c7b22b762b1a5a6cd25d072e">
+    <title>f9-point-00058 | ablation:two_managers:96k:gpu_failure:seed-0:repeat-A | a8ca846cbdfdec100ff9192e99cf95f0e8a08305c7b22b762b1a5a6cd25d072e | {"label":"two_managers/96k/gpu_failure/s0A","value":6334118.971997}</title>
+    <rect x="1112.413" y="127.205" width="13.173" height="492.795" rx="0" fill="#7c3aed" stroke="none" opacity="0.82" />
+  </g>
+  <g data-point-id="f9-point-00059" data-run-id="ablation:two_managers:128k:gpu_failure:seed-0:repeat-A" data-result-hash="14045b45230b80f271a216a546abfab45d385fffe97f4ffcfa7d37ad5b95c1d2">
+    <title>f9-point-00059 | ablation:two_managers:128k:gpu_failure:seed-0:repeat-A | 14045b45230b80f271a216a546abfab45d385fffe97f4ffcfa7d37ad5b95c1d2 | {"label":"two_managers/128k/gpu_failure/s0A","value":6321611.404329}</title>
+    <rect x="1129.747" y="128.178" width="13.173" height="491.822" rx="0" fill="#d97706" stroke="none" opacity="0.82" />
+  </g>
+  <text x="1125" y="102" class="tick" text-anchor="end">n=60</text>
+  <line x1="55" y1="676" x2="1145" y2="676" stroke="#fecaca" stroke-width="1" />
+  <text x="600" y="704" class="footer" text-anchor="middle">E2 modeled/preliminary · not calibrated · no physical experiment</text>
+</svg>

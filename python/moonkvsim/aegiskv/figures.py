@@ -1069,6 +1069,18 @@ def _compact(value: float) -> str:
     return f"{value:.2g}"
 
 
+def _padded_nonnegative_domain(values: Sequence[float]) -> tuple[float, float]:
+    if not values:
+        raise FigureInputError("cannot scale an empty metric series")
+    lower = min(values)
+    upper = max(values)
+    if lower < 0:
+        raise FigureInputError("non-negative figure metric contains a negative value")
+    spread = upper - lower
+    padding = max(1.0, spread * 0.12, upper * 0.002)
+    return max(0.0, lower - padding), upper + padding
+
+
 def _point(
     row: MatrixRow,
     figure_id: str,
@@ -1108,16 +1120,16 @@ def _architecture(rep: RepresentativeRun, spec: _FigureSpec) -> _RenderedFigure:
                 parent=group,
             )
     arrows = (
-        (240, 255, 265, 190, "route"),
-        (435, 190, 505, 235, "lookup / commit"),
-        (675, 235, 760, 170, "Peer metadata decision"),
-        (675, 255, 760, 330, "Store candidate metadata"),
-        (930, 330, 970, 330, "metadata + placement"),
+        (240, 255, 265, 190, "route", 250, 210),
+        (435, 190, 505, 235, "lookup / commit", 470, 205),
+        (675, 235, 760, 170, "Peer decision", 715, 194),
+        (675, 255, 760, 330, "Store candidate", 714, 278),
+        (930, 330, 970, 330, "metadata + placement", 950, 276),
     )
-    for x1, y1, x2, y2, label in arrows:
+    for x1, y1, x2, y2, label, label_x, label_y in arrows:
         canvas.line(x1, y1, x2, y2, stroke="#334155", width=2, parent=group)
         canvas.circle(x2, y2, 4, fill="#334155", parent=group)
-        canvas.text((x1 + x2) / 2, (y1 + y2) / 2 - 8, label, anchor="middle", parent=group)
+        canvas.text(label_x, label_y, label, anchor="middle", parent=group)
     canvas.rect(255, 440, 700, 92, fill="#f8fafc", stroke="#94a3b8", radius=8, parent=group)
     canvas.text(
         605,
@@ -1306,6 +1318,14 @@ def _failure_timeline(rep: RepresentativeRun, spec: _FigureSpec) -> _RenderedFig
     end = max(item[0] for item in events)
     canvas.line(100, 360, 1110, 360, stroke="#334155", width=3)
     bindings: list[PointBinding] = []
+    display_labels = {
+        "execution/data-path fence (immediate)": "immediate fail-stop fence",
+        "detection (schedule-derived)": "detection",
+        "reroute / recovery plan": "reroute + recovery plan",
+        "prompt suffix recompute start": "recompute start",
+        "prompt suffix recompute complete": "recompute complete",
+        "atomic activation / resume": "atomic activation",
+    }
     for index, (timestamp, label) in enumerate(events):
         x = _scale(float(timestamp), float(start), float(end), 130, 1080)
         binding = _point(rep.row, spec.figure_id, index, timestamp_ns=timestamp, event=label)
@@ -1317,7 +1337,8 @@ def _failure_timeline(rep: RepresentativeRun, spec: _FigureSpec) -> _RenderedFig
             else "#2563eb"
         )
         canvas.circle(x, 360, 9, fill=color, parent=group)
-        label_x = _scale(float(index), 0, float(max(1, len(events) - 1)), 80, 1120)
+        label_x = _scale(float(index), 0, float(max(1, len(events) - 1)), 125, 1075)
+        label_anchor = "start" if label_x < 190 else "end" if label_x > 1010 else "middle"
         above = index % 2 == 0
         canvas.line(
             x,
@@ -1330,16 +1351,16 @@ def _failure_timeline(rep: RepresentativeRun, spec: _FigureSpec) -> _RenderedFig
         canvas.text(
             label_x,
             242 if above else 486,
-            label,
+            display_labels.get(label, label),
             css="label",
-            anchor="middle",
+            anchor=label_anchor,
             parent=group,
         )
         canvas.text(
             label_x,
             263 if above else 507,
             f"{(timestamp - start) / 1_000_000:.3f} ms",
-            anchor="middle",
+            anchor=label_anchor,
             parent=group,
         )
     notes = (
@@ -1820,7 +1841,8 @@ def _wct_goodput(rows: Sequence[MatrixRow], spec: _FigureSpec) -> _RenderedFigur
         top = 125.0
         bottom = 535.0
         comparison_rows = list(indexed.values())
-        peak = max(getter(row) for row in comparison_rows)
+        panel_values = [getter(row) for row in comparison_rows]
+        domain_lower, domain_upper = _padded_nonnegative_domain(panel_values)
         canvas.line(left, top, left, bottom)
         canvas.line(left, bottom, right, bottom)
         canvas.text((left + right) / 2, 115, title, css="label", anchor="middle")
@@ -1836,8 +1858,8 @@ def _wct_goodput(rows: Sequence[MatrixRow], spec: _FigureSpec) -> _RenderedFigur
             aegis = indexed[(compared_variants[1], bucket, scenario)]
             baseline_value = getter(baseline)
             aegis_value = getter(aegis)
-            baseline_y = _scale(baseline_value, 0, max(1.0, peak), bottom, top)
-            aegis_y = _scale(aegis_value, 0, max(1.0, peak), bottom, top)
+            baseline_y = _scale(baseline_value, domain_lower, domain_upper, bottom, top)
+            aegis_y = _scale(aegis_value, domain_lower, domain_upper, bottom, top)
             color = _COLORS[BUCKETS.index(bucket)]
             canvas.line(x, baseline_y, x, aegis_y, stroke=color, width=1.5)
             for system, row, value, y in (
@@ -1874,8 +1896,8 @@ def _wct_goodput(rows: Sequence[MatrixRow], spec: _FigureSpec) -> _RenderedFigur
                 css="small",
                 anchor="middle",
             )
-        canvas.text(left - 8, top + 4, _compact(peak), anchor="end")
-        canvas.text(left - 8, bottom + 4, "0", anchor="end")
+        canvas.text(left - 8, top + 4, _compact(domain_upper), anchor="end")
+        canvas.text(left - 8, bottom + 4, _compact(domain_lower), anchor="end")
     canvas.text(600, 590, "NF=no failure · GF=GPU failure", css="small", anchor="middle")
     return _RenderedFigure(
         canvas.serialize(),
@@ -1884,6 +1906,7 @@ def _wct_goodput(rows: Sequence[MatrixRow], spec: _FigureSpec) -> _RenderedFigur
             "minimum_seed_repeat_A_diagnostic_no_cross_seed_statistics_or_confidence_interval",
             "each_line_connects_exact_Vanilla_and_unified_AegisKV_rows_at_same_bucket_scenario_seed",
             "bucket_is_color_encoded_and_system_is_fill_encoded",
+            "per_panel_axis_is_zoomed_with_explicit_nonzero_lower_and_upper_labels",
             "WCT_and_goodput_are_whole_workload_metrics_bucket_is_the_failure_focus_cell",
         ),
     )
@@ -2116,7 +2139,7 @@ def _budget_sensitivity(rows: Sequence[MatrixRow], spec: _FigureSpec) -> _Render
             values = [(row, x_getter(row), y_getter(row)) for row in dimension_rows]
             min_x = min(value[1] for value in values)
             max_x = max(value[1] for value in values)
-            max_y = max(value[2] for value in values)
+            y_lower, y_upper = _padded_nonnegative_domain([value[2] for value in values])
             canvas.rect(
                 left,
                 top,
@@ -2144,7 +2167,10 @@ def _budget_sensitivity(rows: Sequence[MatrixRow], spec: _FigureSpec) -> _Render
                 css="small",
                 anchor="middle",
             )
-            canvas.text(left + 43, top + 29, _compact(max_y), css="small", anchor="end")
+            canvas.text(left + 43, top + 29, _compact(y_upper), css="small", anchor="end")
+            canvas.text(
+                left + 43, bottom - 39, _compact(y_lower), css="small", anchor="end"
+            )
             for tick_value in sorted({value[1] for value in values}):
                 tick_x = _scale(tick_value, min_x, max_x, left + 65, right - 28)
                 canvas.line(tick_x, bottom - 38, tick_x, bottom - 33, stroke="#64748b")
@@ -2167,7 +2193,7 @@ def _budget_sensitivity(rows: Sequence[MatrixRow], spec: _FigureSpec) -> _Render
                     BUCKETS.index(row.context_bucket) - 2
                 )
                 x = _scale(budget, min_x, max_x, left + 65, right - 28) + jitter
-                y = _scale(metric_value, 0, max(1.0, max_y), bottom - 44, top + 32)
+                y = _scale(metric_value, y_lower, y_upper, bottom - 44, top + 32)
                 binding = _point(
                     row,
                     spec.figure_id,
@@ -2285,7 +2311,7 @@ def _scale_sensitivity(rows: Sequence[MatrixRow], spec: _FigureSpec) -> _Rendere
             values = [(row, x_getter(row), y_getter(row)) for row in dimension_rows]
             min_x = min(value[1] for value in values)
             max_x = max(value[1] for value in values)
-            max_y = max(value[2] for value in values)
+            y_lower, y_upper = _padded_nonnegative_domain([value[2] for value in values])
             canvas.rect(
                 left,
                 top,
@@ -2313,7 +2339,10 @@ def _scale_sensitivity(rows: Sequence[MatrixRow], spec: _FigureSpec) -> _Rendere
                 css="small",
                 anchor="middle",
             )
-            canvas.text(left + 43, top + 29, _compact(max_y), css="small", anchor="end")
+            canvas.text(left + 43, top + 29, _compact(y_upper), css="small", anchor="end")
+            canvas.text(
+                left + 43, bottom - 39, _compact(y_lower), css="small", anchor="end"
+            )
             for tick_value in sorted({value[1] for value in values}):
                 tick_x = _scale(tick_value, min_x, max_x, left + 65, right - 28)
                 canvas.line(tick_x, bottom - 38, tick_x, bottom - 33, stroke="#64748b")
@@ -2336,7 +2365,7 @@ def _scale_sensitivity(rows: Sequence[MatrixRow], spec: _FigureSpec) -> _Rendere
                     BUCKETS.index(row.context_bucket) - 2
                 )
                 x = _scale(scale_value, min_x, max_x, left + 65, right - 28) + jitter
-                y = _scale(metric_value, 0, max(1.0, max_y), bottom - 44, top + 32)
+                y = _scale(metric_value, y_lower, y_upper, bottom - 44, top + 32)
                 binding = _point(
                     row,
                     spec.figure_id,
@@ -2451,7 +2480,7 @@ def _resource_cost(rows: Sequence[MatrixRow], spec: _FigureSpec) -> _RenderedFig
     )
     bindings: list[PointBinding] = []
     point_index = 0
-    panel_positions = ((65, 125), (435, 125), (805, 125), (250, 370), (620, 370))
+    panel_positions = ((65, 125), (435, 125), (805, 125), (250, 390), (620, 390))
     panel_width = 330.0
     panel_height = 185.0
     for (label, unit, getter, reversed_delta), (left, top) in zip(
@@ -2524,27 +2553,13 @@ def _resource_cost(rows: Sequence[MatrixRow], spec: _FigureSpec) -> _RenderedFig
                 css="small",
                 anchor="middle",
             )
-            canvas.text(
-                x,
-                top + panel_height + 24,
-                f"A:{_compact(aegis_value)}",
-                css="small",
-                anchor="middle",
-            )
-            canvas.text(
-                x,
-                top + panel_height + 36,
-                f"V:{_compact(vanilla_value)}",
-                css="small",
-                anchor="middle",
-            )
     notes = (
         "minimum_seed_repeat_A_diagnostic_no_cross_seed_statistics_or_confidence_interval",
         "staging_peak_unavailable_in_canonical_E2_payload",
         "recompute_gpu_time_unavailable; tokens_avoided_reported_without_time_claim",
         "no_cross_unit_aggregation",
-        "network_and_copy_cost_validity_blocked_by_transfer_cancellation_accounting",
-        "each_delta_has_visible_AegisKV_and_Vanilla_absolute_values",
+        "network_and_copy_cost_derive_from_terminal_transfer_ledger_with_byte_conservation",
+        "AegisKV_and_Vanilla_absolute_values_are_bound_in_point_coordinates_and_sidecar",
         "dual_sources_are_in_coordinates_and_svg_data_vanilla_attributes",
     )
     return _RenderedFigure(canvas.serialize(), tuple(bindings), notes)

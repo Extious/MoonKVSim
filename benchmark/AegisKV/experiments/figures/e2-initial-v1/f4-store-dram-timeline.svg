@@ -1,0 +1,874 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img">
+  <title>Store DRAM occupancy at event boundaries</title>
+  <style>text{font-family:DejaVu Sans,Arial,sans-serif;fill:#111827}.title{font-size:26px;font-weight:700}.subtitle{font-size:14px;fill:#4b5563}.axis{stroke:#374151;stroke-width:1}.grid{stroke:#e5e7eb;stroke-width:1}.tick{font-size:12px;fill:#4b5563}.label{font-size:14px;font-weight:600}.small{font-size:11px}.footer{font-size:13px;font-weight:700;fill:#991b1b}</style>
+  <rect x="0" y="0" width="1200" height="720" rx="0" fill="#ffffff" stroke="none" opacity="1" />
+  <text x="55" y="46" class="title" text-anchor="start">Store DRAM occupancy at event boundaries</text>
+  <text x="55" y="74" class="subtitle" text-anchor="start">Store committed and pending destination occupancy at event boundaries</text>
+  <line x1="105" y1="118" x2="105" y2="620" stroke="#374151" stroke-width="1.4" />
+  <line x1="105" y1="620" x2="1145" y2="620" stroke="#374151" stroke-width="1.4" />
+  <line x1="105" y1="620" x2="1145" y2="620" stroke="#e5e7eb" stroke-width="1" />
+  <text x="93" y="624" class="tick" text-anchor="end">0</text>
+  <line x1="105" y1="519.6" x2="1145" y2="519.6" stroke="#e5e7eb" stroke-width="1" />
+  <text x="93" y="523.6" class="tick" text-anchor="end">14G</text>
+  <line x1="105" y1="419.2" x2="1145" y2="419.2" stroke="#e5e7eb" stroke-width="1" />
+  <text x="93" y="423.2" class="tick" text-anchor="end">27G</text>
+  <line x1="105" y1="318.8" x2="1145" y2="318.8" stroke="#e5e7eb" stroke-width="1" />
+  <text x="93" y="322.8" class="tick" text-anchor="end">41G</text>
+  <line x1="105" y1="218.4" x2="1145" y2="218.4" stroke="#e5e7eb" stroke-width="1" />
+  <text x="93" y="222.4" class="tick" text-anchor="end">55G</text>
+  <line x1="105" y1="118" x2="1145" y2="118" stroke="#e5e7eb" stroke-width="1" />
+  <text x="93" y="122" class="tick" text-anchor="end">69G</text>
+  <text x="625" y="658" class="label" text-anchor="middle">global virtual time</text>
+  <text x="22" y="369" class="label" text-anchor="start" transform="rotate(-90 22 369)">allocated bytes</text>
+  <polyline points="105,620 105.384,620 105.384,604.554 105.392,604.554 105.392,604.554 105.58,604.554 105.58,589.108 105.588,589.108 105.588,589.108 105.776,589.108 105.776,573.662 105.784,573.662 105.784,573.662 105.972,573.662 105.972,558.215 105.98,558.215 105.98,558.215 106.65,558.215 106.65,537.253 106.661,537.253 106.661,537.253 108.386,537.253 108.386,515.187 108.398,515.187 108.398,515.187 110.036,515.187 110.036,494.224 110.047,494.224 110.047,494.224 111.772,494.224 111.772,472.158 111.784,472.158 111.784,472.158 112.596,472.158 112.596,471.055 112.597,471.055 112.597,471.055 113.112,471.055 113.112,468.848 113.114,468.848 113.114,468.848 113.271,468.848 113.271,467.745 113.271,467.745 113.271,467.745 113.495,467.745 113.495,465.538 113.496,465.538 113.496,465.538 113.743,465.538 113.743,464.435 113.744,464.435 113.744,464.435 114.458,464.435 114.458,457.815 114.461,457.815 114.461,457.815 114.722,457.815 114.722,453.402 114.725,453.402 114.725,453.402 120.256,453.402 120.256,452.299 120.257,452.299 120.257,452.299 120.303,452.299 120.303,451.196 120.303,451.196 120.303,451.196 120.349,451.196 120.349,450.092 120.35,450.092 120.35,450.092 120.447,450.092 120.447,444.576 120.45,444.576 120.45,444.576 120.508,444.576 120.508,437.956 120.512,437.956 120.512,437.956 120.57,437.956 120.57,431.336 120.573,431.336 120.573,431.336 120.631,431.336 120.631,424.716 120.634,424.716 120.634,424.716 120.91,424.716 120.91,423.613 120.911,423.613 120.911,423.613 121.984,423.613 121.984,415.89 121.988,415.89 121.988,415.89 122.499,415.89 122.499,399.341 122.507,399.341 122.507,399.341 123.047,399.341 123.047,381.688 123.057,381.688 123.057,381.688 123.361,381.688 123.361,378.378 123.363,378.378 123.363,378.378 123.397,378.378 123.397,364.035 123.404,364.035 123.404,364.035 123.435,364.035 123.435,348.589 123.443,348.589 123.443,348.589 123.637,348.589 123.637,326.523 123.648,326.523 123.648,326.523 123.763,326.523 123.763,314.387 123.769,314.387 123.769,314.387 123.824,314.387 123.824,304.457 123.829,304.457 123.829,304.457 123.94,304.457 123.94,298.941 123.943,298.941 123.943,298.941 125.52,298.941 125.52,297.837 125.52,297.837 125.52,297.837 125.914,297.837 125.914,294.527 125.916,294.527 125.916,294.527 126.014,294.527 126.014,280.185 126.021,280.185 126.021,280.185 126.121,280.185 126.121,264.738 126.129,264.738 126.129,264.738 126.237,264.738 126.237,257.015 126.241,257.015 126.241,257.015 126.262,257.015 126.262,253.705 126.264,253.705 126.264,253.705 126.387,253.705 126.387,249.292 126.389,249.292 126.389,249.292 126.419,249.292 126.419,248.189 126.42,248.189 126.42,248.189 126.787,248.189 126.787,221.71 126.801,221.71 126.801,221.71 127.439,221.71 127.439,209.574 127.445,209.574 127.445,209.574 127.59,209.574 127.59,207.367 127.591,207.367 127.591,207.367 127.792,207.367 127.792,197.437 127.797,197.437 127.797,197.437 127.88,197.437 127.88,179.785 127.889,179.785 127.889,179.785 128.055,179.785 128.055,175.371 128.057,175.371 128.057,175.371 128.192,175.371 128.192,168.752 128.195,168.752 128.195,168.752 131.945,168.752 131.945,167.648 131.945,167.648 131.945,167.648 260.809,167.648 260.809,136.756 260.826,136.756 260.826,136.756 260.913,136.756 260.913,118 260.93,118 260.93,118 261.014,118 261.014,118 261.03,118 261.03,118 261.118,118 261.118,118 261.134,118 261.134,118 268.593,118 268.593,118 268.594,118 268.594,118 269.181,118 269.181,118 269.182,118 269.182,118 269.441,118 269.441,118 269.445,118 269.445,118 269.626,118 269.626,118 269.626,118 269.626,118 269.971,118 269.971,118 269.979,118 269.979,118 287.235,118 287.235,118 287.235,118 287.235,118 1068.338,118 1068.338,118 1068.34,118 1068.34,118 1068.727,118 1068.727,118 1068.729,118 1068.729,118 1068.782,118 1068.782,118 1068.784,118 1068.784,118 1069.652,118 1069.652,118 1069.654,118 1069.654,118 1069.679,118 1069.679,118 1069.682,118 1069.682,118 1069.858,118 1069.858,118 1069.86,118 1069.86,118 1069.912,118 1069.912,118 1069.917,118 1069.917,118 1069.974,118 1069.974,118 1069.979,118 1069.979,118 1070.045,118 1070.045,118 1070.045,118 1070.045,118 1070.097,118 1070.097,118 1070.103,118 1070.103,118 1070.19,118 1070.19,118 1070.194,118 1070.194,118 1070.347,118 1070.347,118 1070.352,118 1070.352,118 1070.448,118 1070.448,118 1070.45,118 1070.45,118 1070.483,118 1070.483,118 1070.483,118 1070.483,118 1073.369,118 1073.369,118 1073.375,118 1073.375,118 1073.828,118 1073.828,118 1073.833,118 1073.833,118 1073.925,118 1073.925,118 1073.93,118 1073.93,118 1073.976,118 1073.976,118 1073.976,118 1073.976,118 1074.005,118 1074.005,118 1074.005,118 1074.005,118 1074.04,118 1074.04,118 1074.04,118 1074.04,118 1074.204,118 1074.204,118 1074.209,118 1074.209,118 1074.266,118 1074.266,118 1074.269,118 1074.269,118 1074.464,118 1074.464,118 1074.464,118 1074.464,118 1074.469,118 1074.469,118 1074.47,118 1074.47,118 1074.557,118 1074.557,118 1074.557,118 1074.557,118 1074.657,118 1074.657,118 1074.658,118 1074.658,118 1074.796,118 1074.796,118 1074.798,118 1074.798,118 1074.969,118 1074.969,118 1074.969,118 1074.969,118 1075.009,118 1075.009,118 1075.009,118 1075.009,118 1075.191,118 1075.191,118 1075.191,118 1075.191,118 1075.192,118 1075.192,118 1075.192,118 1075.192,118 1076.58,118 1076.58,118 1076.585,118 1076.585,118 1076.906,118 1076.906,118 1076.908,118 1076.908,118 1077.025,118 1077.025,118 1077.026,118 1077.026,118 1077.255,118 1077.255,118 1077.257,118 1077.257,118 1077.509,118 1077.509,118 1077.51,118 1077.51,118 1077.962,118 1077.962,118 1077.965,118 1077.965,118 1078.151,118 1078.151,118 1078.154,118 1078.154,118 1078.297,118 1078.297,118 1078.299,118 1078.299,118 1078.512,118 1078.512,118 1078.52,118 1078.52,118 1080.996,118 1080.996,118 1081.009,118 1081.009,118 1144.059,118 1144.059,118 1144.065,118 1144.065,118 1144.56,118 1144.56,118 1144.562,118 1144.562,118 1144.859,118 1144.859,118 1144.863,118 1144.863,118 1144.926,118 1144.926,118 1144.941,118 1144.941,118 1144.992,118 1144.992,118 1145,118 1145,118" fill="none" stroke="#d97706" stroke-width="2.5" stroke-linejoin="round" />
+  <rect x="130" y="92" width="14" height="8" rx="0" fill="#d97706" stroke="none" opacity="1" />
+  <text x="150" y="101" class="tick" text-anchor="start">store-0:segment-0</text>
+  <g data-point-id="f4-point-00000" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00000 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"INITIAL","committed_bytes":0,"occupied_bytes":0,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":0,"unavailable_bytes":0}</title>
+    <circle cx="105" cy="620" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00001" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00001 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":0,"occupied_bytes":2113929216,"pending_bytes":2113929216,"resource_id":"store-0:segment-0","timestamp_ns":4045000000,"unavailable_bytes":0}</title>
+    <circle cx="105.384" cy="604.554" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00002" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00002 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":2113929216,"occupied_bytes":2113929216,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":4129807169,"unavailable_bytes":0}</title>
+    <circle cx="105.392" cy="604.554" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00003" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00003 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":2113929216,"occupied_bytes":4227858432,"pending_bytes":2113929216,"resource_id":"store-0:segment-0","timestamp_ns":6111000000,"unavailable_bytes":0}</title>
+    <circle cx="105.58" cy="589.108" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00004" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00004 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":4227858432,"occupied_bytes":4227858432,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":6195807169,"unavailable_bytes":0}</title>
+    <circle cx="105.588" cy="589.108" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00005" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00005 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":4227858432,"occupied_bytes":6341787648,"pending_bytes":2113929216,"resource_id":"store-0:segment-0","timestamp_ns":8177000000,"unavailable_bytes":0}</title>
+    <circle cx="105.776" cy="573.662" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00006" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00006 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":6341787648,"occupied_bytes":6341787648,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":8261807169,"unavailable_bytes":0}</title>
+    <circle cx="105.784" cy="573.662" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00007" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00007 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":6341787648,"occupied_bytes":8455716864,"pending_bytes":2113929216,"resource_id":"store-0:segment-0","timestamp_ns":10243000000,"unavailable_bytes":0}</title>
+    <circle cx="105.972" cy="558.215" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00008" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00008 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":8455716864,"occupied_bytes":8455716864,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10327807169,"unavailable_bytes":0}</title>
+    <circle cx="105.98" cy="558.215" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00009" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00009 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":8455716864,"occupied_bytes":11324620800,"pending_bytes":2868903936,"resource_id":"store-0:segment-0","timestamp_ns":17382816091,"unavailable_bytes":0}</title>
+    <circle cx="106.65" cy="537.253" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00010" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00010 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":11324620800,"occupied_bytes":11324620800,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":17497822249,"unavailable_bytes":0}</title>
+    <circle cx="106.661" cy="537.253" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00011" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00011 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":11324620800,"occupied_bytes":14344519680,"pending_bytes":3019898880,"resource_id":"store-0:segment-0","timestamp_ns":35680517241,"unavailable_bytes":0}</title>
+    <circle cx="108.386" cy="515.187" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00012" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00012 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":14344519680,"occupied_bytes":14344519680,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":35801563197,"unavailable_bytes":0}</title>
+    <circle cx="108.398" cy="515.187" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00013" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00013 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":14344519680,"occupied_bytes":17213423616,"pending_bytes":2868903936,"resource_id":"store-0:segment-0","timestamp_ns":53063333333,"unavailable_bytes":0}</title>
+    <circle cx="110.036" cy="494.224" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00014" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00014 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":17213423616,"occupied_bytes":17213423616,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":53178339491,"unavailable_bytes":0}</title>
+    <circle cx="110.047" cy="494.224" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00015" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00015 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":17213423616,"occupied_bytes":20233322496,"pending_bytes":3019898880,"resource_id":"store-0:segment-0","timestamp_ns":71361034482,"unavailable_bytes":0}</title>
+    <circle cx="111.772" cy="472.158" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00016" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00016 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":20233322496,"occupied_bytes":20233322496,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":71482080438,"unavailable_bytes":0}</title>
+    <circle cx="111.784" cy="472.158" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00017" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00017 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":20233322496,"occupied_bytes":20384317440,"pending_bytes":150994944,"resource_id":"store-0:segment-0","timestamp_ns":80046840725,"unavailable_bytes":0}</title>
+    <circle cx="112.596" cy="471.055" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00018" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00018 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":20384317440,"occupied_bytes":20384317440,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":80053130523,"unavailable_bytes":0}</title>
+    <circle cx="112.597" cy="471.055" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00019" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00019 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":20384317440,"occupied_bytes":20686307328,"pending_bytes":301989888,"resource_id":"store-0:segment-0","timestamp_ns":85484045649,"unavailable_bytes":0}</title>
+    <circle cx="113.112" cy="468.848" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00020" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00020 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":20686307328,"occupied_bytes":20686307328,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":85496375245,"unavailable_bytes":0}</title>
+    <circle cx="113.114" cy="468.848" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00021" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00021 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":20686307328,"occupied_bytes":20837302272,"pending_bytes":150994944,"resource_id":"store-0:segment-0","timestamp_ns":87152335887,"unavailable_bytes":0}</title>
+    <circle cx="113.271" cy="467.745" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00022" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00022 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":20837302272,"occupied_bytes":20837302272,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":87158625685,"unavailable_bytes":0}</title>
+    <circle cx="113.271" cy="467.745" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00023" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00023 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":20837302272,"occupied_bytes":21139292160,"pending_bytes":301989888,"resource_id":"store-0:segment-0","timestamp_ns":89516984582,"unavailable_bytes":0}</title>
+    <circle cx="113.495" cy="465.538" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00024" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00024 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":21139292160,"occupied_bytes":21139292160,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":89529314178,"unavailable_bytes":0}</title>
+    <circle cx="113.496" cy="465.538" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00025" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00025 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":21139292160,"occupied_bytes":21290287104,"pending_bytes":150994944,"resource_id":"store-0:segment-0","timestamp_ns":92128352561,"unavailable_bytes":0}</title>
+    <circle cx="113.743" cy="464.435" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00026" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00026 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":21290287104,"occupied_bytes":21290287104,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":92134642359,"unavailable_bytes":0}</title>
+    <circle cx="113.744" cy="464.435" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00027" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00027 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":21290287104,"occupied_bytes":22196256768,"pending_bytes":905969664,"resource_id":"store-0:segment-0","timestamp_ns":99663312061,"unavailable_bytes":0}</title>
+    <circle cx="114.458" cy="457.815" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00028" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00028 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":22196256768,"occupied_bytes":22196256768,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":99699800848,"unavailable_bytes":0}</title>
+    <circle cx="114.461" cy="457.815" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00029" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00029 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":22196256768,"occupied_bytes":22800236544,"pending_bytes":603979776,"resource_id":"store-0:segment-0","timestamp_ns":102449541048,"unavailable_bytes":0}</title>
+    <circle cx="114.722" cy="453.402" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00030" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00030 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":22800236544,"occupied_bytes":22800236544,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":102473950240,"unavailable_bytes":0}</title>
+    <circle cx="114.725" cy="453.402" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00031" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00031 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":22800236544,"occupied_bytes":22951231488,"pending_bytes":150994944,"resource_id":"store-0:segment-0","timestamp_ns":160763750000,"unavailable_bytes":0}</title>
+    <circle cx="120.256" cy="452.299" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00032" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00032 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":22951231488,"occupied_bytes":22951231488,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":160770039798,"unavailable_bytes":0}</title>
+    <circle cx="120.257" cy="452.299" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00033" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00033 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":22951231488,"occupied_bytes":23102226432,"pending_bytes":150994944,"resource_id":"store-0:segment-0","timestamp_ns":161252500000,"unavailable_bytes":0}</title>
+    <circle cx="120.303" cy="451.196" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00034" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00034 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":23102226432,"occupied_bytes":23102226432,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":161258789798,"unavailable_bytes":0}</title>
+    <circle cx="120.303" cy="451.196" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00035" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00035 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":23102226432,"occupied_bytes":23253221376,"pending_bytes":150994944,"resource_id":"store-0:segment-0","timestamp_ns":161741250000,"unavailable_bytes":0}</title>
+    <circle cx="120.349" cy="450.092" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00036" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00036 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":23253221376,"occupied_bytes":23253221376,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":161747539798,"unavailable_bytes":0}</title>
+    <circle cx="120.35" cy="450.092" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00037" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00037 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":23253221376,"occupied_bytes":24008196096,"pending_bytes":754974720,"resource_id":"store-0:segment-0","timestamp_ns":162769423076,"unavailable_bytes":0}</title>
+    <circle cx="120.447" cy="444.576" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00038" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00038 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":24008196096,"occupied_bytes":24008196096,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":162799872065,"unavailable_bytes":0}</title>
+    <circle cx="120.45" cy="444.576" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00039" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00039 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":24008196096,"occupied_bytes":24914165760,"pending_bytes":905969664,"resource_id":"store-0:segment-0","timestamp_ns":163416730769,"unavailable_bytes":0}</title>
+    <circle cx="120.508" cy="437.956" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00040" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00040 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":24914165760,"occupied_bytes":24914165760,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":163453219556,"unavailable_bytes":0}</title>
+    <circle cx="120.512" cy="437.956" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00041" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00041 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":24914165760,"occupied_bytes":25820135424,"pending_bytes":905969664,"resource_id":"store-0:segment-0","timestamp_ns":164064038461,"unavailable_bytes":0}</title>
+    <circle cx="120.57" cy="431.336" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00042" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00042 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":25820135424,"occupied_bytes":25820135424,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":164100527248,"unavailable_bytes":0}</title>
+    <circle cx="120.573" cy="431.336" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00043" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00043 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":25820135424,"occupied_bytes":26726105088,"pending_bytes":905969664,"resource_id":"store-0:segment-0","timestamp_ns":164711346153,"unavailable_bytes":0}</title>
+    <circle cx="120.631" cy="424.716" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00044" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00044 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":26726105088,"occupied_bytes":26726105088,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":164747834940,"unavailable_bytes":0}</title>
+    <circle cx="120.634" cy="424.716" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00045" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00045 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":26726105088,"occupied_bytes":26877100032,"pending_bytes":150994944,"resource_id":"store-0:segment-0","timestamp_ns":167652854957,"unavailable_bytes":0}</title>
+    <circle cx="120.91" cy="423.613" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00046" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00046 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":26877100032,"occupied_bytes":26877100032,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":167659144755,"unavailable_bytes":0}</title>
+    <circle cx="120.911" cy="423.613" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00047" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00047 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":26877100032,"occupied_bytes":27934064640,"pending_bytes":1056964608,"resource_id":"store-0:segment-0","timestamp_ns":178966487726,"unavailable_bytes":0}</title>
+    <circle cx="121.984" cy="415.89" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00048" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00048 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":27934064640,"occupied_bytes":27934064640,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":179009016311,"unavailable_bytes":0}</title>
+    <circle cx="121.988" cy="415.89" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00049" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00049 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":27934064640,"occupied_bytes":30198988800,"pending_bytes":2264924160,"resource_id":"store-0:segment-0","timestamp_ns":184389907516,"unavailable_bytes":0}</title>
+    <circle cx="122.499" cy="399.341" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00050" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00050 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":30198988800,"occupied_bytes":30198988800,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":184480754483,"unavailable_bytes":0}</title>
+    <circle cx="122.507" cy="399.341" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00051" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00051 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":30198988800,"occupied_bytes":32614907904,"pending_bytes":2415919104,"resource_id":"store-0:segment-0","timestamp_ns":190174888625,"unavailable_bytes":0}</title>
+    <circle cx="123.047" cy="381.688" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00052" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00052 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":32614907904,"occupied_bytes":32614907904,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":190271775390,"unavailable_bytes":0}</title>
+    <circle cx="123.057" cy="381.688" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00053" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00053 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":32614907904,"occupied_bytes":33067892736,"pending_bytes":452984832,"resource_id":"store-0:segment-0","timestamp_ns":193480804920,"unavailable_bytes":0}</title>
+    <circle cx="123.361" cy="378.378" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00054" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00054 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":33067892736,"occupied_bytes":33067892736,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":193499174314,"unavailable_bytes":0}</title>
+    <circle cx="123.363" cy="378.378" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00055" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00055 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":33067892736,"occupied_bytes":35030827008,"pending_bytes":1962934272,"resource_id":"store-0:segment-0","timestamp_ns":193853946837,"unavailable_bytes":0}</title>
+    <circle cx="123.397" cy="364.035" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00056" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00056 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":35030827008,"occupied_bytes":35030827008,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":193932714208,"unavailable_bytes":0}</title>
+    <circle cx="123.404" cy="364.035" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00057" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00057 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":35030827008,"occupied_bytes":37144756224,"pending_bytes":2113929216,"resource_id":"store-0:segment-0","timestamp_ns":194255791979,"unavailable_bytes":0}</title>
+    <circle cx="123.435" cy="348.589" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00058" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00058 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":37144756224,"occupied_bytes":37144756224,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":194340599148,"unavailable_bytes":0}</title>
+    <circle cx="123.443" cy="348.589" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00059" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00059 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":37144756224,"occupied_bytes":40164655104,"pending_bytes":3019898880,"resource_id":"store-0:segment-0","timestamp_ns":196384890620,"unavailable_bytes":0}</title>
+    <circle cx="123.637" cy="326.523" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00060" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00060 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":40164655104,"occupied_bytes":40164655104,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":196505936576,"unavailable_bytes":0}</title>
+    <circle cx="123.648" cy="326.523" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00061" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00061 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":40164655104,"occupied_bytes":41825599488,"pending_bytes":1660944384,"resource_id":"store-0:segment-0","timestamp_ns":197710786491,"unavailable_bytes":0}</title>
+    <circle cx="123.763" cy="314.387" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00062" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00062 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":41825599488,"occupied_bytes":41825599488,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":197777474267,"unavailable_bytes":0}</title>
+    <circle cx="123.769" cy="314.387" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00063" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00063 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":41825599488,"occupied_bytes":43184553984,"pending_bytes":1358954496,"resource_id":"store-0:segment-0","timestamp_ns":198357051578,"unavailable_bytes":0}</title>
+    <circle cx="123.824" cy="304.457" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00064" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00064 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":43184553984,"occupied_bytes":43184553984,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":198411659758,"unavailable_bytes":0}</title>
+    <circle cx="123.829" cy="304.457" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00065" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00065 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":43184553984,"occupied_bytes":43939528704,"pending_bytes":754974720,"resource_id":"store-0:segment-0","timestamp_ns":199581262652,"unavailable_bytes":0}</title>
+    <circle cx="123.94" cy="298.941" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00066" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00066 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":43939528704,"occupied_bytes":43939528704,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":199611711641,"unavailable_bytes":0}</title>
+    <circle cx="123.943" cy="298.941" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00067" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00067 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":43939528704,"occupied_bytes":44090523648,"pending_bytes":150994944,"resource_id":"store-0:segment-0","timestamp_ns":216223653046,"unavailable_bytes":0}</title>
+    <circle cx="125.52" cy="297.837" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00068" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00068 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":44090523648,"occupied_bytes":44090523648,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":216229942844,"unavailable_bytes":0}</title>
+    <circle cx="125.52" cy="297.837" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00069" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00069 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":44090523648,"occupied_bytes":44543508480,"pending_bytes":452984832,"resource_id":"store-0:segment-0","timestamp_ns":220379452938,"unavailable_bytes":0}</title>
+    <circle cx="125.914" cy="294.527" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00070" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00070 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":44543508480,"occupied_bytes":44543508480,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":220397822332,"unavailable_bytes":0}</title>
+    <circle cx="125.916" cy="294.527" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00071" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00071 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":44543508480,"occupied_bytes":46506442752,"pending_bytes":1962934272,"resource_id":"store-0:segment-0","timestamp_ns":221429964050,"unavailable_bytes":0}</title>
+    <circle cx="126.014" cy="280.185" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00072" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00072 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":46506442752,"occupied_bytes":46506442752,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":221508731421,"unavailable_bytes":0}</title>
+    <circle cx="126.021" cy="280.185" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00073" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00073 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":46506442752,"occupied_bytes":48620371968,"pending_bytes":2113929216,"resource_id":"store-0:segment-0","timestamp_ns":222561283708,"unavailable_bytes":0}</title>
+    <circle cx="126.121" cy="264.738" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00074" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00074 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":48620371968,"occupied_bytes":48620371968,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":222646090877,"unavailable_bytes":0}</title>
+    <circle cx="126.129" cy="264.738" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00075" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00075 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":48620371968,"occupied_bytes":49677336576,"pending_bytes":1056964608,"resource_id":"store-0:segment-0","timestamp_ns":223786059676,"unavailable_bytes":0}</title>
+    <circle cx="126.237" cy="257.015" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00076" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00076 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":49677336576,"occupied_bytes":49677336576,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":223828588261,"unavailable_bytes":0}</title>
+    <circle cx="126.241" cy="257.015" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00077" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00077 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":49677336576,"occupied_bytes":50130321408,"pending_bytes":452984832,"resource_id":"store-0:segment-0","timestamp_ns":224049678221,"unavailable_bytes":0}</title>
+    <circle cx="126.262" cy="253.705" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00078" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00078 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":50130321408,"occupied_bytes":50130321408,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":224068047615,"unavailable_bytes":0}</title>
+    <circle cx="126.264" cy="253.705" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00079" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00079 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":50130321408,"occupied_bytes":50734301184,"pending_bytes":603979776,"resource_id":"store-0:segment-0","timestamp_ns":225359773992,"unavailable_bytes":0}</title>
+    <circle cx="126.387" cy="249.292" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00080" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00080 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":50734301184,"occupied_bytes":50734301184,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":225384183184,"unavailable_bytes":0}</title>
+    <circle cx="126.389" cy="249.292" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00081" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00081 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":50734301184,"occupied_bytes":50885296128,"pending_bytes":150994944,"resource_id":"store-0:segment-0","timestamp_ns":225706822619,"unavailable_bytes":0}</title>
+    <circle cx="126.419" cy="248.189" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00082" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00082 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":50885296128,"occupied_bytes":50885296128,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":225713112417,"unavailable_bytes":0}</title>
+    <circle cx="126.42" cy="248.189" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00083" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00083 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":50885296128,"occupied_bytes":54509174784,"pending_bytes":3623878656,"resource_id":"store-0:segment-0","timestamp_ns":229581960929,"unavailable_bytes":0}</title>
+    <circle cx="126.787" cy="221.71" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00084" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00084 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":54509174784,"occupied_bytes":54509174784,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":229727166076,"unavailable_bytes":0}</title>
+    <circle cx="126.801" cy="221.71" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00085" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00085 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":54509174784,"occupied_bytes":56170119168,"pending_bytes":1660944384,"resource_id":"store-0:segment-0","timestamp_ns":236451999088,"unavailable_bytes":0}</title>
+    <circle cx="127.439" cy="209.574" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00086" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00086 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":56170119168,"occupied_bytes":56170119168,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":236518686864,"unavailable_bytes":0}</title>
+    <circle cx="127.445" cy="209.574" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00087" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00087 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":56170119168,"occupied_bytes":56472109056,"pending_bytes":301989888,"resource_id":"store-0:segment-0","timestamp_ns":238043502487,"unavailable_bytes":0}</title>
+    <circle cx="127.59" cy="207.367" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00088" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00088 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":56472109056,"occupied_bytes":56472109056,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":238055832083,"unavailable_bytes":0}</title>
+    <circle cx="127.591" cy="207.367" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00089" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00089 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":56472109056,"occupied_bytes":57831063552,"pending_bytes":1358954496,"resource_id":"store-0:segment-0","timestamp_ns":240168149396,"unavailable_bytes":0}</title>
+    <circle cx="127.792" cy="197.437" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00090" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00090 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":57831063552,"occupied_bytes":57831063552,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":240222757576,"unavailable_bytes":0}</title>
+    <circle cx="127.797" cy="197.437" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00091" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00091 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":57831063552,"occupied_bytes":60246982656,"pending_bytes":2415919104,"resource_id":"store-0:segment-0","timestamp_ns":241092511633,"unavailable_bytes":0}</title>
+    <circle cx="127.88" cy="179.785" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00092" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00092 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":60246982656,"occupied_bytes":60246982656,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":241189398398,"unavailable_bytes":0}</title>
+    <circle cx="127.889" cy="179.785" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00093" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00093 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":60246982656,"occupied_bytes":60850962432,"pending_bytes":603979776,"resource_id":"store-0:segment-0","timestamp_ns":242937303630,"unavailable_bytes":0}</title>
+    <circle cx="128.055" cy="175.371" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00094" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00094 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":60850962432,"occupied_bytes":60850962432,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":242961712822,"unavailable_bytes":0}</title>
+    <circle cx="128.057" cy="175.371" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00095" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00095 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":60850962432,"occupied_bytes":61756932096,"pending_bytes":905969664,"resource_id":"store-0:segment-0","timestamp_ns":244380637090,"unavailable_bytes":0}</title>
+    <circle cx="128.192" cy="168.752" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00096" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00096 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":61756932096,"occupied_bytes":61756932096,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":244417125877,"unavailable_bytes":0}</title>
+    <circle cx="128.195" cy="168.752" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00097" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00097 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":61756932096,"occupied_bytes":61907927040,"pending_bytes":150994944,"resource_id":"store-0:segment-0","timestamp_ns":283930887964,"unavailable_bytes":0}</title>
+    <circle cx="131.945" cy="167.648" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00098" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00098 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":61907927040,"occupied_bytes":61907927040,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":283937177762,"unavailable_bytes":0}</title>
+    <circle cx="131.945" cy="167.648" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00099" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00099 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED","committed_bytes":61907927040,"occupied_bytes":66135785472,"pending_bytes":4227858432,"resource_id":"store-0:segment-0","timestamp_ns":1641837099736,"unavailable_bytes":0}</title>
+    <circle cx="260.809" cy="136.756" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00100" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00100 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":66135785472,"occupied_bytes":66135785472,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":1642006464074,"unavailable_bytes":0}</title>
+    <circle cx="260.826" cy="136.756" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00101" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00101 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":64323846144,"occupied_bytes":68702699520,"pending_bytes":4378853376,"resource_id":"store-0:segment-0","timestamp_ns":1642932477688,"unavailable_bytes":0}</title>
+    <circle cx="260.913" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00102" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00102 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":1643107881824,"unavailable_bytes":0}</title>
+    <circle cx="260.93" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00103" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00103 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":64474841088,"occupied_bytes":68702699520,"pending_bytes":4227858432,"resource_id":"store-0:segment-0","timestamp_ns":1643990083988,"unavailable_bytes":0}</title>
+    <circle cx="261.014" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00104" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00104 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":1644159448326,"unavailable_bytes":0}</title>
+    <circle cx="261.03" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00105" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00105 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":64323846144,"occupied_bytes":68702699520,"pending_bytes":4378853376,"resource_id":"store-0:segment-0","timestamp_ns":1645085461940,"unavailable_bytes":0}</title>
+    <circle cx="261.118" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00106" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00106 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":1645260866076,"unavailable_bytes":0}</title>
+    <circle cx="261.134" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00107" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00107 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68400709632,"occupied_bytes":68702699520,"pending_bytes":301989888,"resource_id":"store-0:segment-0","timestamp_ns":1723854214834,"unavailable_bytes":0}</title>
+    <circle cx="268.593" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00108" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00108 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":1723866544430,"unavailable_bytes":0}</title>
+    <circle cx="268.594" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00109" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00109 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68551704576,"occupied_bytes":68702699520,"pending_bytes":150994944,"resource_id":"store-0:segment-0","timestamp_ns":1730056435695,"unavailable_bytes":0}</title>
+    <circle cx="269.181" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00110" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00110 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":1730062725493,"unavailable_bytes":0}</title>
+    <circle cx="269.182" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00111" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00111 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":67645734912,"occupied_bytes":68702699520,"pending_bytes":1056964608,"resource_id":"store-0:segment-0","timestamp_ns":1732791837359,"unavailable_bytes":0}</title>
+    <circle cx="269.441" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00112" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00112 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":1732834365944,"unavailable_bytes":0}</title>
+    <circle cx="269.445" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00113" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00113 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68551704576,"occupied_bytes":68702699520,"pending_bytes":150994944,"resource_id":"store-0:segment-0","timestamp_ns":1734739742524,"unavailable_bytes":0}</title>
+    <circle cx="269.626" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00114" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00114 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":1734746032322,"unavailable_bytes":0}</title>
+    <circle cx="269.626" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00115" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00115 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":66588770304,"occupied_bytes":68702699520,"pending_bytes":2113929216,"resource_id":"store-0:segment-0","timestamp_ns":1738376432098,"unavailable_bytes":0}</title>
+    <circle cx="269.971" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00116" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00116 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":1738461239267,"unavailable_bytes":0}</title>
+    <circle cx="269.979" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00117" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00117 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68551704576,"occupied_bytes":68702699520,"pending_bytes":150994944,"resource_id":"store-0:segment-0","timestamp_ns":1920293385563,"unavailable_bytes":0}</title>
+    <circle cx="287.235" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00118" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00118 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":1920299675361,"unavailable_bytes":0}</title>
+    <circle cx="287.235" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00119" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00119 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68400709632,"occupied_bytes":68702699520,"pending_bytes":301989888,"resource_id":"store-0:segment-0","timestamp_ns":10151145999499,"unavailable_bytes":0}</title>
+    <circle cx="1068.338" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00120" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00120 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10151158329095,"unavailable_bytes":0}</title>
+    <circle cx="1068.34" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00121" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00121 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68249714688,"occupied_bytes":68702699520,"pending_bytes":452984832,"resource_id":"store-0:segment-0","timestamp_ns":10155242614480,"unavailable_bytes":0}</title>
+    <circle cx="1068.727" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00122" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00122 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10155260983874,"unavailable_bytes":0}</title>
+    <circle cx="1068.729" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00123" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00123 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68249714688,"occupied_bytes":68702699520,"pending_bytes":452984832,"resource_id":"store-0:segment-0","timestamp_ns":10155820507048,"unavailable_bytes":0}</title>
+    <circle cx="1068.782" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00124" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00124 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10155838876442,"unavailable_bytes":0}</title>
+    <circle cx="1068.784" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00125" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00125 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68098719744,"occupied_bytes":68702699520,"pending_bytes":603979776,"resource_id":"store-0:segment-0","timestamp_ns":10164984256573,"unavailable_bytes":0}</title>
+    <circle cx="1069.652" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00126" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00126 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10165008665765,"unavailable_bytes":0}</title>
+    <circle cx="1069.654" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00127" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00127 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":67947724800,"occupied_bytes":68702699520,"pending_bytes":754974720,"resource_id":"store-0:segment-0","timestamp_ns":10165276041491,"unavailable_bytes":0}</title>
+    <circle cx="1069.679" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00128" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00128 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10165306490480,"unavailable_bytes":0}</title>
+    <circle cx="1069.682" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00129" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00129 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68098719744,"occupied_bytes":68702699520,"pending_bytes":603979776,"resource_id":"store-0:segment-0","timestamp_ns":10167154853327,"unavailable_bytes":0}</title>
+    <circle cx="1069.858" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00130" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00130 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10167179262519,"unavailable_bytes":0}</title>
+    <circle cx="1069.86" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00131" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00131 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":67494739968,"occupied_bytes":68702699520,"pending_bytes":1207959552,"resource_id":"store-0:segment-0","timestamp_ns":10167729528098,"unavailable_bytes":0}</title>
+    <circle cx="1069.912" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00132" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00132 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10167778096481,"unavailable_bytes":0}</title>
+    <circle cx="1069.917" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00133" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00133 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":67343745024,"occupied_bytes":68702699520,"pending_bytes":1358954496,"resource_id":"store-0:segment-0","timestamp_ns":10168376037214,"unavailable_bytes":0}</title>
+    <circle cx="1069.974" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00134" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00134 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10168430645394,"unavailable_bytes":0}</title>
+    <circle cx="1069.979" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00135" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00135 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68551704576,"occupied_bytes":68702699520,"pending_bytes":150994944,"resource_id":"store-0:segment-0","timestamp_ns":10169127671094,"unavailable_bytes":0}</title>
+    <circle cx="1070.045" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00136" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00136 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10169133960892,"unavailable_bytes":0}</title>
+    <circle cx="1070.045" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00137" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00137 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":67041755136,"occupied_bytes":68702699520,"pending_bytes":1660944384,"resource_id":"store-0:segment-0","timestamp_ns":10169677730588,"unavailable_bytes":0}</title>
+    <circle cx="1070.097" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00138" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00138 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10169744418364,"unavailable_bytes":0}</title>
+    <circle cx="1070.103" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00139" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00139 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":67796729856,"occupied_bytes":68702699520,"pending_bytes":905969664,"resource_id":"store-0:segment-0","timestamp_ns":10170661685641,"unavailable_bytes":0}</title>
+    <circle cx="1070.19" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00140" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00140 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10170698174428,"unavailable_bytes":0}</title>
+    <circle cx="1070.194" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00141" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00141 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":67494739968,"occupied_bytes":68702699520,"pending_bytes":1207959552,"resource_id":"store-0:segment-0","timestamp_ns":10172315725408,"unavailable_bytes":0}</title>
+    <circle cx="1070.347" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00142" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00142 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10172364293791,"unavailable_bytes":0}</title>
+    <circle cx="1070.352" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00143" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00143 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68098719744,"occupied_bytes":68702699520,"pending_bytes":603979776,"resource_id":"store-0:segment-0","timestamp_ns":10173371327596,"unavailable_bytes":0}</title>
+    <circle cx="1070.448" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00144" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00144 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10173395736788,"unavailable_bytes":0}</title>
+    <circle cx="1070.45" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00145" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00145 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68551704576,"occupied_bytes":68702699520,"pending_bytes":150994944,"resource_id":"store-0:segment-0","timestamp_ns":10173742798143,"unavailable_bytes":0}</title>
+    <circle cx="1070.483" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00146" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00146 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10173749087941,"unavailable_bytes":0}</title>
+    <circle cx="1070.483" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00147" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00147 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":67192750080,"occupied_bytes":68702699520,"pending_bytes":1509949440,"resource_id":"store-0:segment-0","timestamp_ns":10204155005583,"unavailable_bytes":0}</title>
+    <circle cx="1073.369" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00148" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00148 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10204215653561,"unavailable_bytes":0}</title>
+    <circle cx="1073.375" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00149" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00149 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":67343745024,"occupied_bytes":68702699520,"pending_bytes":1358954496,"resource_id":"store-0:segment-0","timestamp_ns":10208995328477,"unavailable_bytes":0}</title>
+    <circle cx="1073.828" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00150" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00150 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10209049936657,"unavailable_bytes":0}</title>
+    <circle cx="1073.833" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00151" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00151 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":67343745024,"occupied_bytes":68702699520,"pending_bytes":1358954496,"resource_id":"store-0:segment-0","timestamp_ns":10210010801778,"unavailable_bytes":0}</title>
+    <circle cx="1073.925" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00152" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00152 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10210065409958,"unavailable_bytes":0}</title>
+    <circle cx="1073.93" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00153" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00153 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68551704576,"occupied_bytes":68702699520,"pending_bytes":150994944,"resource_id":"store-0:segment-0","timestamp_ns":10210548374746,"unavailable_bytes":0}</title>
+    <circle cx="1073.976" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00154" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00154 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10210554664544,"unavailable_bytes":0}</title>
+    <circle cx="1073.976" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00155" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00155 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68551704576,"occupied_bytes":68702699520,"pending_bytes":150994944,"resource_id":"store-0:segment-0","timestamp_ns":10210852785485,"unavailable_bytes":0}</title>
+    <circle cx="1074.005" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00156" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00156 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10210859075283,"unavailable_bytes":0}</title>
+    <circle cx="1074.005" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00157" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00157 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68551704576,"occupied_bytes":68702699520,"pending_bytes":150994944,"resource_id":"store-0:segment-0","timestamp_ns":10211223049566,"unavailable_bytes":0}</title>
+    <circle cx="1074.04" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00158" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00158 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10211229339364,"unavailable_bytes":0}</title>
+    <circle cx="1074.04" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00159" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00159 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":67343745024,"occupied_bytes":68702699520,"pending_bytes":1358954496,"resource_id":"store-0:segment-0","timestamp_ns":10212951158753,"unavailable_bytes":0}</title>
+    <circle cx="1074.204" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00160" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00160 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10213005766933,"unavailable_bytes":0}</title>
+    <circle cx="1074.209" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00161" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00161 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68098719744,"occupied_bytes":68702699520,"pending_bytes":603979776,"resource_id":"store-0:segment-0","timestamp_ns":10213610779151,"unavailable_bytes":0}</title>
+    <circle cx="1074.266" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00162" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00162 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10213635188343,"unavailable_bytes":0}</title>
+    <circle cx="1074.269" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00163" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00163 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68551704576,"occupied_bytes":68702699520,"pending_bytes":150994944,"resource_id":"store-0:segment-0","timestamp_ns":10215691097252,"unavailable_bytes":0}</title>
+    <circle cx="1074.464" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00164" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00164 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10215697387050,"unavailable_bytes":0}</title>
+    <circle cx="1074.464" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00165" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00165 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68400709632,"occupied_bytes":68702699520,"pending_bytes":301989888,"resource_id":"store-0:segment-0","timestamp_ns":10215748388956,"unavailable_bytes":0}</title>
+    <circle cx="1074.469" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00166" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00166 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10215760718552,"unavailable_bytes":0}</title>
+    <circle cx="1074.47" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00167" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00167 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68551704576,"occupied_bytes":68702699520,"pending_bytes":150994944,"resource_id":"store-0:segment-0","timestamp_ns":10216671324574,"unavailable_bytes":0}</title>
+    <circle cx="1074.557" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00168" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00168 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10216677614372,"unavailable_bytes":0}</title>
+    <circle cx="1074.557" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00169" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00169 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68551704576,"occupied_bytes":68702699520,"pending_bytes":150994944,"resource_id":"store-0:segment-0","timestamp_ns":10217732861401,"unavailable_bytes":0}</title>
+    <circle cx="1074.657" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00170" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00170 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10217739151199,"unavailable_bytes":0}</title>
+    <circle cx="1074.658" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00171" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00171 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68400709632,"occupied_bytes":68702699520,"pending_bytes":301989888,"resource_id":"store-0:segment-0","timestamp_ns":10219198021644,"unavailable_bytes":0}</title>
+    <circle cx="1074.796" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00172" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00172 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10219210351240,"unavailable_bytes":0}</title>
+    <circle cx="1074.798" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00173" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00173 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68551704576,"occupied_bytes":68702699520,"pending_bytes":150994944,"resource_id":"store-0:segment-0","timestamp_ns":10221010967932,"unavailable_bytes":0}</title>
+    <circle cx="1074.969" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00174" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00174 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10221017257730,"unavailable_bytes":0}</title>
+    <circle cx="1074.969" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00175" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00175 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68551704576,"occupied_bytes":68702699520,"pending_bytes":150994944,"resource_id":"store-0:segment-0","timestamp_ns":10221433253106,"unavailable_bytes":0}</title>
+    <circle cx="1075.009" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00176" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00176 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10221439542904,"unavailable_bytes":0}</title>
+    <circle cx="1075.009" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00177" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00177 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68551704576,"occupied_bytes":68702699520,"pending_bytes":150994944,"resource_id":"store-0:segment-0","timestamp_ns":10223353807473,"unavailable_bytes":0}</title>
+    <circle cx="1075.191" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00178" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00178 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10223360097271,"unavailable_bytes":0}</title>
+    <circle cx="1075.191" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00179" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00179 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68551704576,"occupied_bytes":68702699520,"pending_bytes":150994944,"resource_id":"store-0:segment-0","timestamp_ns":10223363927026,"unavailable_bytes":0}</title>
+    <circle cx="1075.192" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00180" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00180 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10223370216824,"unavailable_bytes":0}</title>
+    <circle cx="1075.192" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00181" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00181 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":67343745024,"occupied_bytes":68702699520,"pending_bytes":1358954496,"resource_id":"store-0:segment-0","timestamp_ns":10237990771494,"unavailable_bytes":0}</title>
+    <circle cx="1076.58" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00182" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00182 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10238045379674,"unavailable_bytes":0}</title>
+    <circle cx="1076.585" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00183" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00183 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68249714688,"occupied_bytes":68702699520,"pending_bytes":452984832,"resource_id":"store-0:segment-0","timestamp_ns":10241427649074,"unavailable_bytes":0}</title>
+    <circle cx="1076.906" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00184" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00184 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10241446018468,"unavailable_bytes":0}</title>
+    <circle cx="1076.908" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00185" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00185 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68551704576,"occupied_bytes":68702699520,"pending_bytes":150994944,"resource_id":"store-0:segment-0","timestamp_ns":10242682435016,"unavailable_bytes":0}</title>
+    <circle cx="1077.025" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00186" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00186 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10242688724814,"unavailable_bytes":0}</title>
+    <circle cx="1077.026" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00187" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00187 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68249714688,"occupied_bytes":68702699520,"pending_bytes":452984832,"resource_id":"store-0:segment-0","timestamp_ns":10245106840374,"unavailable_bytes":0}</title>
+    <circle cx="1077.255" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00188" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00188 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10245125209768,"unavailable_bytes":0}</title>
+    <circle cx="1077.257" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00189" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00189 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68551704576,"occupied_bytes":68702699520,"pending_bytes":150994944,"resource_id":"store-0:segment-0","timestamp_ns":10247780605691,"unavailable_bytes":0}</title>
+    <circle cx="1077.509" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00190" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00190 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10247786895489,"unavailable_bytes":0}</title>
+    <circle cx="1077.51" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00191" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00191 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":67947724800,"occupied_bytes":68702699520,"pending_bytes":754974720,"resource_id":"store-0:segment-0","timestamp_ns":10252554712230,"unavailable_bytes":0}</title>
+    <circle cx="1077.962" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00192" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00192 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10252585161219,"unavailable_bytes":0}</title>
+    <circle cx="1077.965" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00193" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00193 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":67947724800,"occupied_bytes":68702699520,"pending_bytes":754974720,"resource_id":"store-0:segment-0","timestamp_ns":10254548340427,"unavailable_bytes":0}</title>
+    <circle cx="1078.151" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00194" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00194 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10254578789416,"unavailable_bytes":0}</title>
+    <circle cx="1078.154" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00195" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00195 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68400709632,"occupied_bytes":68702699520,"pending_bytes":301989888,"resource_id":"store-0:segment-0","timestamp_ns":10256089738727,"unavailable_bytes":0}</title>
+    <circle cx="1078.297" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00196" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00196 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10256102068323,"unavailable_bytes":0}</title>
+    <circle cx="1078.299" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00197" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00197 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":66588770304,"occupied_bytes":68702699520,"pending_bytes":2113929216,"resource_id":"store-0:segment-0","timestamp_ns":10258352289554,"unavailable_bytes":0}</title>
+    <circle cx="1078.512" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00198" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00198 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10258437096723,"unavailable_bytes":0}</title>
+    <circle cx="1078.52" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00199" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00199 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":65380810752,"occupied_bytes":68702699520,"pending_bytes":3321888768,"resource_id":"store-0:segment-0","timestamp_ns":10284527986843,"unavailable_bytes":0}</title>
+    <circle cx="1080.996" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00200" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00200 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10284661112394,"unavailable_bytes":0}</title>
+    <circle cx="1081.009" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00201" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00201 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":67041755136,"occupied_bytes":68702699520,"pending_bytes":1660944384,"resource_id":"store-0:segment-0","timestamp_ns":10949048689270,"unavailable_bytes":0}</title>
+    <circle cx="1144.059" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00202" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00202 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10949115377046,"unavailable_bytes":0}</title>
+    <circle cx="1144.065" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00203" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00203 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":68098719744,"occupied_bytes":68702699520,"pending_bytes":603979776,"resource_id":"store-0:segment-0","timestamp_ns":10954323427445,"unavailable_bytes":0}</title>
+    <circle cx="1144.56" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00204" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00204 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10954347836637,"unavailable_bytes":0}</title>
+    <circle cx="1144.562" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00205" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00205 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":67796729856,"occupied_bytes":68702699520,"pending_bytes":905969664,"resource_id":"store-0:segment-0","timestamp_ns":10957482222176,"unavailable_bytes":0}</title>
+    <circle cx="1144.859" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00206" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00206 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10957518710963,"unavailable_bytes":0}</title>
+    <circle cx="1144.863" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00207" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00207 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":64625836032,"occupied_bytes":68702699520,"pending_bytes":4076863488,"resource_id":"store-0:segment-0","timestamp_ns":10958181278391,"unavailable_bytes":0}</title>
+    <circle cx="1144.926" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00208" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00208 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10958344602931,"unavailable_bytes":0}</title>
+    <circle cx="1144.941" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00209" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00209 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"AEGIS_STORE_DRAM_PROTECTION:DESTINATION_RESERVED:EVICTED","committed_bytes":66588770304,"occupied_bytes":68702699520,"pending_bytes":2113929216,"resource_id":"store-0:segment-0","timestamp_ns":10958880334606,"unavailable_bytes":0}</title>
+    <circle cx="1144.992" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f4-point-00210" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f4-point-00210 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"cause":"STORE_DRAM_COMMIT:PENDING_TO_COMMITTED","committed_bytes":68702699520,"occupied_bytes":68702699520,"pending_bytes":0,"resource_id":"store-0:segment-0","timestamp_ns":10958965141775,"unavailable_bytes":0}</title>
+    <circle cx="1145" cy="118" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <text x="1120" y="102" class="tick" text-anchor="end">event-boundary peak: 69G B</text>
+  <line x1="55" y1="676" x2="1145" y2="676" stroke="#fecaca" stroke-width="1" />
+  <text x="600" y="704" class="footer" text-anchor="middle">E2 modeled/preliminary · not calibrated · no physical experiment</text>
+</svg>

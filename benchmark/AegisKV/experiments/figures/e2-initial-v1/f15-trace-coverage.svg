@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img">
+  <title>Real multi-agent trace five-bucket coverage</title>
+  <style>text{font-family:DejaVu Sans,Arial,sans-serif;fill:#111827}.title{font-size:26px;font-weight:700}.subtitle{font-size:14px;fill:#4b5563}.axis{stroke:#374151;stroke-width:1}.grid{stroke:#e5e7eb;stroke-width:1}.tick{font-size:12px;fill:#4b5563}.label{font-size:14px;font-weight:600}.small{font-size:11px}.footer{font-size:13px;font-weight:700;fill:#991b1b}</style>
+  <rect x="0" y="0" width="1200" height="720" rx="0" fill="#ffffff" stroke="none" opacity="1" />
+  <text x="55" y="46" class="title" text-anchor="start">Real multi-agent trace five-bucket coverage</text>
+  <text x="55" y="74" class="subtitle" text-anchor="start">Five-bucket counts only; source hash-block-64; not target-tokenizer-equivalent</text>
+  <line x1="105" y1="118" x2="105" y2="620" stroke="#374151" stroke-width="1.4" />
+  <line x1="105" y1="620" x2="1145" y2="620" stroke="#374151" stroke-width="1.4" />
+  <line x1="105" y1="620" x2="1145" y2="620" stroke="#e5e7eb" stroke-width="1" />
+  <text x="93" y="624" class="tick" text-anchor="end">0</text>
+  <line x1="105" y1="519.6" x2="1145" y2="519.6" stroke="#e5e7eb" stroke-width="1" />
+  <text x="93" y="523.6" class="tick" text-anchor="end">11</text>
+  <line x1="105" y1="419.2" x2="1145" y2="419.2" stroke="#e5e7eb" stroke-width="1" />
+  <text x="93" y="423.2" class="tick" text-anchor="end">21</text>
+  <line x1="105" y1="318.8" x2="1145" y2="318.8" stroke="#e5e7eb" stroke-width="1" />
+  <text x="93" y="322.8" class="tick" text-anchor="end">32</text>
+  <line x1="105" y1="218.4" x2="1145" y2="218.4" stroke="#e5e7eb" stroke-width="1" />
+  <text x="93" y="222.4" class="tick" text-anchor="end">42</text>
+  <line x1="105" y1="118" x2="1145" y2="118" stroke="#e5e7eb" stroke-width="1" />
+  <text x="93" y="122" class="tick" text-anchor="end">53</text>
+  <text x="209" y="638" class="tick" text-anchor="middle" transform="rotate(0 209 638)">8k</text>
+  <text x="417" y="638" class="tick" text-anchor="middle" transform="rotate(0 417 638)">32k</text>
+  <text x="625" y="638" class="tick" text-anchor="middle" transform="rotate(0 625 638)">64k</text>
+  <text x="833" y="638" class="tick" text-anchor="middle" transform="rotate(0 833 638)">96k</text>
+  <text x="1041" y="638" class="tick" text-anchor="middle" transform="rotate(0 1041 638)">128k</text>
+  <text x="625" y="658" class="label" text-anchor="middle">single-span model context bucket</text>
+  <text x="22" y="369" class="label" text-anchor="start" transform="rotate(-90 22 369)">real trace spans</text>
+  <g data-point-id="f15-point-00000" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f15-point-00000 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"bucket":"8k","count_source":"representative.span_details","matrix_manifest_declared_suite_provenance_sha256":"01f8bae1b3b39a62811e19823c1965595a2f5f9e174cd9f6c0ff4449480a3fe6","real_trace_spans":4,"target_tokenizer_equivalence":false,"token_count_mode":"source_hash_blocks_64","workload_fingerprint":"a8d525cf4d6fc53194917f8548f623b850c5963e9b087ee28451847bea1e664a","workload_manifest_binding":"not_directly_available","workload_sha256":"293cce4c2ad133c4e4d114ff2890b6d55aebf3ec13bf4f1945bc219026c52574"}</title>
+    <rect x="146.6" y="582.113" width="124.8" height="37.887" rx="0" fill="#2563eb" stroke="none" opacity="1" />
+    <text x="209" y="574.113" class="tick" text-anchor="middle">4</text>
+  </g>
+  <g data-point-id="f15-point-00001" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f15-point-00001 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"bucket":"32k","count_source":"representative.span_details","matrix_manifest_declared_suite_provenance_sha256":"01f8bae1b3b39a62811e19823c1965595a2f5f9e174cd9f6c0ff4449480a3fe6","real_trace_spans":5,"target_tokenizer_equivalence":false,"token_count_mode":"source_hash_blocks_64","workload_fingerprint":"a8d525cf4d6fc53194917f8548f623b850c5963e9b087ee28451847bea1e664a","workload_manifest_binding":"not_directly_available","workload_sha256":"293cce4c2ad133c4e4d114ff2890b6d55aebf3ec13bf4f1945bc219026c52574"}</title>
+    <rect x="354.6" y="572.642" width="124.8" height="47.358" rx="0" fill="#dc2626" stroke="none" opacity="1" />
+    <text x="417" y="564.642" class="tick" text-anchor="middle">5</text>
+  </g>
+  <g data-point-id="f15-point-00002" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f15-point-00002 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"bucket":"64k","count_source":"representative.span_details","matrix_manifest_declared_suite_provenance_sha256":"01f8bae1b3b39a62811e19823c1965595a2f5f9e174cd9f6c0ff4449480a3fe6","real_trace_spans":53,"target_tokenizer_equivalence":false,"token_count_mode":"source_hash_blocks_64","workload_fingerprint":"a8d525cf4d6fc53194917f8548f623b850c5963e9b087ee28451847bea1e664a","workload_manifest_binding":"not_directly_available","workload_sha256":"293cce4c2ad133c4e4d114ff2890b6d55aebf3ec13bf4f1945bc219026c52574"}</title>
+    <rect x="562.6" y="118" width="124.8" height="502" rx="0" fill="#059669" stroke="none" opacity="1" />
+    <text x="625" y="110" class="tick" text-anchor="middle">53</text>
+  </g>
+  <g data-point-id="f15-point-00003" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f15-point-00003 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"bucket":"96k","count_source":"representative.span_details","matrix_manifest_declared_suite_provenance_sha256":"01f8bae1b3b39a62811e19823c1965595a2f5f9e174cd9f6c0ff4449480a3fe6","real_trace_spans":35,"target_tokenizer_equivalence":false,"token_count_mode":"source_hash_blocks_64","workload_fingerprint":"a8d525cf4d6fc53194917f8548f623b850c5963e9b087ee28451847bea1e664a","workload_manifest_binding":"not_directly_available","workload_sha256":"293cce4c2ad133c4e4d114ff2890b6d55aebf3ec13bf4f1945bc219026c52574"}</title>
+    <rect x="770.6" y="288.491" width="124.8" height="331.509" rx="0" fill="#7c3aed" stroke="none" opacity="1" />
+    <text x="833" y="280.491" class="tick" text-anchor="middle">35</text>
+  </g>
+  <g data-point-id="f15-point-00004" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f15-point-00004 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"bucket":"128k","count_source":"representative.span_details","matrix_manifest_declared_suite_provenance_sha256":"01f8bae1b3b39a62811e19823c1965595a2f5f9e174cd9f6c0ff4449480a3fe6","real_trace_spans":20,"target_tokenizer_equivalence":false,"token_count_mode":"source_hash_blocks_64","workload_fingerprint":"a8d525cf4d6fc53194917f8548f623b850c5963e9b087ee28451847bea1e664a","workload_manifest_binding":"not_directly_available","workload_sha256":"293cce4c2ad133c4e4d114ff2890b6d55aebf3ec13bf4f1945bc219026c52574"}</title>
+    <rect x="978.6" y="430.566" width="124.8" height="189.434" rx="0" fill="#d97706" stroke="none" opacity="1" />
+    <text x="1041" y="422.566" class="tick" text-anchor="middle">20</text>
+  </g>
+  <line x1="55" y1="676" x2="1145" y2="676" stroke="#fecaca" stroke-width="1" />
+  <text x="600" y="704" class="footer" text-anchor="middle">E2 modeled/preliminary · not calibrated · no physical experiment</text>
+</svg>

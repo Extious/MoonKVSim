@@ -1,0 +1,1184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img">
+  <title>Peer-HBM and Store budget sensitivity</title>
+  <style>text{font-family:DejaVu Sans,Arial,sans-serif;fill:#111827}.title{font-size:26px;font-weight:700}.subtitle{font-size:14px;fill:#4b5563}.axis{stroke:#374151;stroke-width:1}.grid{stroke:#e5e7eb;stroke-width:1}.tick{font-size:12px;fill:#4b5563}.label{font-size:14px;font-weight:600}.small{font-size:11px}.footer{font-size:13px;font-weight:700;fill:#991b1b}</style>
+  <rect x="0" y="0" width="1200" height="720" rx="0" fill="#ffffff" stroke="none" opacity="1" />
+  <text x="55" y="46" class="title" text-anchor="start">Peer-HBM and Store budget sensitivity</text>
+  <text x="55" y="74" class="subtitle" text-anchor="start">Separate Peer/GPU and Store axes; bucket color; deterministic seed jitter</text>
+  <circle cx="325" cy="90" r="4" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  <text x="334" y="94" class="small" text-anchor="start">8k</text>
+  <circle cx="437" cy="90" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  <text x="446" y="94" class="small" text-anchor="start">32k</text>
+  <circle cx="549" cy="90" r="4" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  <text x="558" y="94" class="small" text-anchor="start">64k</text>
+  <circle cx="661" cy="90" r="4" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  <text x="670" y="94" class="small" text-anchor="start">96k</text>
+  <circle cx="773" cy="90" r="4" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  <text x="782" y="94" class="small" text-anchor="start">128k</text>
+  <rect x="35" y="105" width="350" height="210" rx="4" fill="#f8fafc" stroke="#cbd5e1" opacity="1" />
+  <line x1="83" y1="130" x2="83" y2="277" stroke="#64748b" stroke-width="1" />
+  <line x1="83" y1="277" x2="373" y2="277" stroke="#64748b" stroke-width="1" />
+  <text x="210" y="122" class="label" text-anchor="middle">mean WCT (ms)</text>
+  <text x="210" y="309" class="small" text-anchor="middle">Peer-HBM budget (GiB/GPU)</text>
+  <text x="78" y="134" class="small" text-anchor="end">6.4M</text>
+  <text x="78" y="276" class="small" text-anchor="end">6.3M</text>
+  <line x1="100" y1="277" x2="100" y2="282" stroke="#64748b" stroke-width="1" />
+  <text x="100" y="293" class="small" text-anchor="middle">4</text>
+  <line x1="228.5" y1="277" x2="228.5" y2="282" stroke="#64748b" stroke-width="1" />
+  <text x="228.5" y="293" class="small" text-anchor="middle">8</text>
+  <line x1="357" y1="277" x2="357" y2="282" stroke="#64748b" stroke-width="1" />
+  <text x="357" y="293" class="small" text-anchor="middle">12</text>
+  <text x="369" y="136" class="small" text-anchor="end">n=45 seeds=0,1,2</text>
+  <g data-point-id="f10-point-00000" data-run-id="sensitivity:peer_budget_gib=4:8k:gpu_failure:seed-0:repeat-A" data-result-hash="afd166f8785ad4ce8c11602955dd50bd28acb9499d710a9ec2d44eeb8cca0ad1">
+    <title>f10-point-00000 | sensitivity:peer_budget_gib=4:8k:gpu_failure:seed-0:repeat-A | afd166f8785ad4ce8c11602955dd50bd28acb9499d710a9ec2d44eeb8cca0ad1 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"8k","display_x_jitter_px":-8.0,"metric":"mean WCT (ms)","metric_value":6320685.145861,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="92" cy="207.516" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00001" data-run-id="sensitivity:peer_budget_gib=4:8k:gpu_failure:seed-1:repeat-A" data-result-hash="56553579614c9f28b2f63317b2de227a21015ba9eaec7815cb4751d6046e9461">
+    <title>f10-point-00001 | sensitivity:peer_budget_gib=4:8k:gpu_failure:seed-1:repeat-A | 56553579614c9f28b2f63317b2de227a21015ba9eaec7815cb4751d6046e9461 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"8k","display_x_jitter_px":-2.0,"metric":"mean WCT (ms)","metric_value":6354950.627468,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="98" cy="162.07" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00002" data-run-id="sensitivity:peer_budget_gib=4:8k:gpu_failure:seed-2:repeat-A" data-result-hash="e71e8ce0f91f04189ab631c1cbd0f2b9b56c26fb6293916df2e8127199a19bdc">
+    <title>f10-point-00002 | sensitivity:peer_budget_gib=4:8k:gpu_failure:seed-2:repeat-A | e71e8ce0f91f04189ab631c1cbd0f2b9b56c26fb6293916df2e8127199a19bdc | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"8k","display_x_jitter_px":4.0,"metric":"mean WCT (ms)","metric_value":6335422.7527,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="104" cy="187.97" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00003" data-run-id="sensitivity:peer_budget_gib=4:32k:gpu_failure:seed-0:repeat-A" data-result-hash="e333e53008e63ca34569bf9b9f77a4a264eecace81b83f6a34727e61963aa463">
+    <title>f10-point-00003 | sensitivity:peer_budget_gib=4:32k:gpu_failure:seed-0:repeat-A | e333e53008e63ca34569bf9b9f77a4a264eecace81b83f6a34727e61963aa463 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"32k","display_x_jitter_px":-7.0,"metric":"mean WCT (ms)","metric_value":6328871.538014,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="93" cy="196.658" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00004" data-run-id="sensitivity:peer_budget_gib=4:32k:gpu_failure:seed-1:repeat-A" data-result-hash="b0ac1664b53a09cdc82a6cd4ff97c267283487648b41d4c1a149a5d9972f1134">
+    <title>f10-point-00004 | sensitivity:peer_budget_gib=4:32k:gpu_failure:seed-1:repeat-A | b0ac1664b53a09cdc82a6cd4ff97c267283487648b41d4c1a149a5d9972f1134 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"32k","display_x_jitter_px":-1.0,"metric":"mean WCT (ms)","metric_value":6337299.168735,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="99" cy="185.481" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00005" data-run-id="sensitivity:peer_budget_gib=4:32k:gpu_failure:seed-2:repeat-A" data-result-hash="91a178e39e7a7e1e44fa80b478dc809f2072779a8d210d2f924a6837f41d1ac6">
+    <title>f10-point-00005 | sensitivity:peer_budget_gib=4:32k:gpu_failure:seed-2:repeat-A | 91a178e39e7a7e1e44fa80b478dc809f2072779a8d210d2f924a6837f41d1ac6 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"32k","display_x_jitter_px":5.0,"metric":"mean WCT (ms)","metric_value":6326421.971109,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="105" cy="199.907" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00006" data-run-id="sensitivity:peer_budget_gib=4:64k:gpu_failure:seed-0:repeat-A" data-result-hash="059e2666bbbfa61d250cf14c7be3992a5468b0fcc5eee32129d116e6097b99a4">
+    <title>f10-point-00006 | sensitivity:peer_budget_gib=4:64k:gpu_failure:seed-0:repeat-A | 059e2666bbbfa61d250cf14c7be3992a5468b0fcc5eee32129d116e6097b99a4 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"64k","display_x_jitter_px":-6.0,"metric":"mean WCT (ms)","metric_value":6321508.197359,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="94" cy="206.424" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00007" data-run-id="sensitivity:peer_budget_gib=4:64k:gpu_failure:seed-1:repeat-A" data-result-hash="b5df00e95c03b7d4ea5c680f7c4206ddd69c084d579e7481ee2ca2f71e6abe48">
+    <title>f10-point-00007 | sensitivity:peer_budget_gib=4:64k:gpu_failure:seed-1:repeat-A | b5df00e95c03b7d4ea5c680f7c4206ddd69c084d579e7481ee2ca2f71e6abe48 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"64k","display_x_jitter_px":0.0,"metric":"mean WCT (ms)","metric_value":6348586.191509,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="100" cy="170.511" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00008" data-run-id="sensitivity:peer_budget_gib=4:64k:gpu_failure:seed-2:repeat-A" data-result-hash="1a34c5135edac1fc08c69d660d00417472477f5e7194a36aa1e5c6b8efeaa7c6">
+    <title>f10-point-00008 | sensitivity:peer_budget_gib=4:64k:gpu_failure:seed-2:repeat-A | 1a34c5135edac1fc08c69d660d00417472477f5e7194a36aa1e5c6b8efeaa7c6 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"64k","display_x_jitter_px":6.0,"metric":"mean WCT (ms)","metric_value":6330757.671938,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="106" cy="194.157" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00009" data-run-id="sensitivity:peer_budget_gib=4:96k:gpu_failure:seed-0:repeat-A" data-result-hash="0d088c6aa974927418a0cd6259ecffc3a17f7ba35794460cb864040d5f7325cd">
+    <title>f10-point-00009 | sensitivity:peer_budget_gib=4:96k:gpu_failure:seed-0:repeat-A | 0d088c6aa974927418a0cd6259ecffc3a17f7ba35794460cb864040d5f7325cd | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"96k","display_x_jitter_px":-5.0,"metric":"mean WCT (ms)","metric_value":6322925.368111,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="95" cy="204.545" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00010" data-run-id="sensitivity:peer_budget_gib=4:96k:gpu_failure:seed-1:repeat-A" data-result-hash="c70f228f255dcbd9852897a4a5623959d4784bd342937645944a778c80b99781">
+    <title>f10-point-00010 | sensitivity:peer_budget_gib=4:96k:gpu_failure:seed-1:repeat-A | c70f228f255dcbd9852897a4a5623959d4784bd342937645944a778c80b99781 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"96k","display_x_jitter_px":1.0,"metric":"mean WCT (ms)","metric_value":6309638.322618,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="101" cy="222.167" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00011" data-run-id="sensitivity:peer_budget_gib=4:96k:gpu_failure:seed-2:repeat-A" data-result-hash="a28ac47330534efbf7ccf809f7cdc16f8b25737c0d641f823bb4d528198baa6b">
+    <title>f10-point-00011 | sensitivity:peer_budget_gib=4:96k:gpu_failure:seed-2:repeat-A | a28ac47330534efbf7ccf809f7cdc16f8b25737c0d641f823bb4d528198baa6b | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"96k","display_x_jitter_px":7.0,"metric":"mean WCT (ms)","metric_value":6340524.872292,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="107" cy="181.203" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00012" data-run-id="sensitivity:peer_budget_gib=4:128k:gpu_failure:seed-0:repeat-A" data-result-hash="5cfbd5756d5d23cef756ab8d767b4571963ea6b122d40a81b80b0f8c45003d04">
+    <title>f10-point-00012 | sensitivity:peer_budget_gib=4:128k:gpu_failure:seed-0:repeat-A | 5cfbd5756d5d23cef756ab8d767b4571963ea6b122d40a81b80b0f8c45003d04 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"128k","display_x_jitter_px":-4.0,"metric":"mean WCT (ms)","metric_value":6325202.241089,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="96" cy="201.525" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00013" data-run-id="sensitivity:peer_budget_gib=4:128k:gpu_failure:seed-1:repeat-A" data-result-hash="870d0633ee32c5cdf89ceb1a32adbbc14df21341d4c4a85f194de915ca04acbf">
+    <title>f10-point-00013 | sensitivity:peer_budget_gib=4:128k:gpu_failure:seed-1:repeat-A | 870d0633ee32c5cdf89ceb1a32adbbc14df21341d4c4a85f194de915ca04acbf | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"128k","display_x_jitter_px":2.0,"metric":"mean WCT (ms)","metric_value":6361130.414403,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="102" cy="153.874" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00014" data-run-id="sensitivity:peer_budget_gib=4:128k:gpu_failure:seed-2:repeat-A" data-result-hash="5caab7b4b4d6a32ed2168e92bb9e5d3e95db1a053db0933151ad41802d41a4e8">
+    <title>f10-point-00014 | sensitivity:peer_budget_gib=4:128k:gpu_failure:seed-2:repeat-A | 5caab7b4b4d6a32ed2168e92bb9e5d3e95db1a053db0933151ad41802d41a4e8 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"128k","display_x_jitter_px":8.0,"metric":"mean WCT (ms)","metric_value":6335619.154001,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="108" cy="187.709" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00015" data-run-id="sensitivity:peer_budget_gib=8:8k:gpu_failure:seed-0:repeat-A" data-result-hash="30b8e51226bbac9584b7c3bb7007a1744464ba5ceaa9ea1084e69477f55d5aac">
+    <title>f10-point-00015 | sensitivity:peer_budget_gib=8:8k:gpu_failure:seed-0:repeat-A | 30b8e51226bbac9584b7c3bb7007a1744464ba5ceaa9ea1084e69477f55d5aac | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"8k","display_x_jitter_px":-8.0,"metric":"mean WCT (ms)","metric_value":6322992.985536,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="220.5" cy="204.455" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00016" data-run-id="sensitivity:peer_budget_gib=8:8k:gpu_failure:seed-1:repeat-A" data-result-hash="dc24760a8f02b947a0f83a2d51f7aabbde359fd102e80029cdc484a2a5d00d1f">
+    <title>f10-point-00016 | sensitivity:peer_budget_gib=8:8k:gpu_failure:seed-1:repeat-A | dc24760a8f02b947a0f83a2d51f7aabbde359fd102e80029cdc484a2a5d00d1f | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"8k","display_x_jitter_px":-2.0,"metric":"mean WCT (ms)","metric_value":6336025.75582,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="226.5" cy="187.17" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00017" data-run-id="sensitivity:peer_budget_gib=8:8k:gpu_failure:seed-2:repeat-A" data-result-hash="0e47b2c9547a1b852876c28dc7d76d84424d8d5fe28251742ee9233e03fa250d">
+    <title>f10-point-00017 | sensitivity:peer_budget_gib=8:8k:gpu_failure:seed-2:repeat-A | 0e47b2c9547a1b852876c28dc7d76d84424d8d5fe28251742ee9233e03fa250d | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"8k","display_x_jitter_px":4.0,"metric":"mean WCT (ms)","metric_value":6328849.104621,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="232.5" cy="196.688" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00018" data-run-id="sensitivity:peer_budget_gib=8:32k:gpu_failure:seed-0:repeat-A" data-result-hash="b93379ac2c5284ab6eb5ea2116e198a634a061862243e7a86a74b0d9ab948951">
+    <title>f10-point-00018 | sensitivity:peer_budget_gib=8:32k:gpu_failure:seed-0:repeat-A | b93379ac2c5284ab6eb5ea2116e198a634a061862243e7a86a74b0d9ab948951 | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"32k","display_x_jitter_px":-7.0,"metric":"mean WCT (ms)","metric_value":6317399.808282,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="221.5" cy="211.873" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00019" data-run-id="sensitivity:peer_budget_gib=8:32k:gpu_failure:seed-1:repeat-A" data-result-hash="fc553d68e60623223539d482b0301fd234f82eaf0d41d5c2305fc5eeee9b7bef">
+    <title>f10-point-00019 | sensitivity:peer_budget_gib=8:32k:gpu_failure:seed-1:repeat-A | fc553d68e60623223539d482b0301fd234f82eaf0d41d5c2305fc5eeee9b7bef | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"32k","display_x_jitter_px":-1.0,"metric":"mean WCT (ms)","metric_value":6335798.111118,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="227.5" cy="187.472" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00020" data-run-id="sensitivity:peer_budget_gib=8:32k:gpu_failure:seed-2:repeat-A" data-result-hash="2483a0da8bcd4ab2775524509d07d5c7e522a5ae3e6ba3a6b43aed36475c53f4">
+    <title>f10-point-00020 | sensitivity:peer_budget_gib=8:32k:gpu_failure:seed-2:repeat-A | 2483a0da8bcd4ab2775524509d07d5c7e522a5ae3e6ba3a6b43aed36475c53f4 | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"32k","display_x_jitter_px":5.0,"metric":"mean WCT (ms)","metric_value":6285541.837971,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="233.5" cy="254.126" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00021" data-run-id="sensitivity:peer_budget_gib=8:64k:gpu_failure:seed-0:repeat-A" data-result-hash="092cd1e51981a82581dc0fe757c83957b59807f90e29324f5fe8ee45b4195cab">
+    <title>f10-point-00021 | sensitivity:peer_budget_gib=8:64k:gpu_failure:seed-0:repeat-A | 092cd1e51981a82581dc0fe757c83957b59807f90e29324f5fe8ee45b4195cab | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"64k","display_x_jitter_px":-6.0,"metric":"mean WCT (ms)","metric_value":6323330.982717,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="222.5" cy="204.007" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00022" data-run-id="sensitivity:peer_budget_gib=8:64k:gpu_failure:seed-1:repeat-A" data-result-hash="67c95c2e669e551427762bd949798243aa905e7634fd7521d5f3c4c61930193d">
+    <title>f10-point-00022 | sensitivity:peer_budget_gib=8:64k:gpu_failure:seed-1:repeat-A | 67c95c2e669e551427762bd949798243aa905e7634fd7521d5f3c4c61930193d | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"64k","display_x_jitter_px":0.0,"metric":"mean WCT (ms)","metric_value":6349089.844051,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="228.5" cy="169.843" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00023" data-run-id="sensitivity:peer_budget_gib=8:64k:gpu_failure:seed-2:repeat-A" data-result-hash="e5c45190d9d6b4ae77bbfcbcde9ba1400838a21e4dc65e6e2ee20a68f86f5fec">
+    <title>f10-point-00023 | sensitivity:peer_budget_gib=8:64k:gpu_failure:seed-2:repeat-A | e5c45190d9d6b4ae77bbfcbcde9ba1400838a21e4dc65e6e2ee20a68f86f5fec | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"64k","display_x_jitter_px":6.0,"metric":"mean WCT (ms)","metric_value":6290349.47877,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="234.5" cy="247.75" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00024" data-run-id="sensitivity:peer_budget_gib=8:96k:gpu_failure:seed-0:repeat-A" data-result-hash="5db5328e0c30179f9b8d9c4dac73d4df8ba70fd9ce522f9e6ee0c6eb0fb8efd1">
+    <title>f10-point-00024 | sensitivity:peer_budget_gib=8:96k:gpu_failure:seed-0:repeat-A | 5db5328e0c30179f9b8d9c4dac73d4df8ba70fd9ce522f9e6ee0c6eb0fb8efd1 | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"96k","display_x_jitter_px":-5.0,"metric":"mean WCT (ms)","metric_value":6337545.43365,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="223.5" cy="185.154" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00025" data-run-id="sensitivity:peer_budget_gib=8:96k:gpu_failure:seed-1:repeat-A" data-result-hash="cd972fa04154d249babc83dd6a06292313ea5e3ba551c2d477b39f9507ffa3c5">
+    <title>f10-point-00025 | sensitivity:peer_budget_gib=8:96k:gpu_failure:seed-1:repeat-A | cd972fa04154d249babc83dd6a06292313ea5e3ba551c2d477b39f9507ffa3c5 | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"96k","display_x_jitter_px":1.0,"metric":"mean WCT (ms)","metric_value":6304250.83198,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="229.5" cy="229.313" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00026" data-run-id="sensitivity:peer_budget_gib=8:96k:gpu_failure:seed-2:repeat-A" data-result-hash="94616fe5410f3844ecc83b6625ad79598af20ba682c74157f2a6098db4b235e7">
+    <title>f10-point-00026 | sensitivity:peer_budget_gib=8:96k:gpu_failure:seed-2:repeat-A | 94616fe5410f3844ecc83b6625ad79598af20ba682c74157f2a6098db4b235e7 | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"96k","display_x_jitter_px":7.0,"metric":"mean WCT (ms)","metric_value":6342634.125821,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="235.5" cy="178.405" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00027" data-run-id="sensitivity:peer_budget_gib=8:128k:gpu_failure:seed-0:repeat-A" data-result-hash="b3c75b273ca03713b0fffe8a2f5837452882a0a3802a302dee54f1ec41472d45">
+    <title>f10-point-00027 | sensitivity:peer_budget_gib=8:128k:gpu_failure:seed-0:repeat-A | b3c75b273ca03713b0fffe8a2f5837452882a0a3802a302dee54f1ec41472d45 | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"128k","display_x_jitter_px":-4.0,"metric":"mean WCT (ms)","metric_value":6323954.288625,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="224.5" cy="203.18" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00028" data-run-id="sensitivity:peer_budget_gib=8:128k:gpu_failure:seed-1:repeat-A" data-result-hash="4be618ba255255337efbf50fa63f5959deec519eb8b6097bde34e2d8c1034539">
+    <title>f10-point-00028 | sensitivity:peer_budget_gib=8:128k:gpu_failure:seed-1:repeat-A | 4be618ba255255337efbf50fa63f5959deec519eb8b6097bde34e2d8c1034539 | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"128k","display_x_jitter_px":2.0,"metric":"mean WCT (ms)","metric_value":6360427.201992,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="230.5" cy="154.806" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00029" data-run-id="sensitivity:peer_budget_gib=8:128k:gpu_failure:seed-2:repeat-A" data-result-hash="09656f3e1463efab1d63de4445443a7c4442793adb12b44a294a0f07783c8dcf">
+    <title>f10-point-00029 | sensitivity:peer_budget_gib=8:128k:gpu_failure:seed-2:repeat-A | 09656f3e1463efab1d63de4445443a7c4442793adb12b44a294a0f07783c8dcf | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"128k","display_x_jitter_px":8.0,"metric":"mean WCT (ms)","metric_value":6287336.076939,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="236.5" cy="251.747" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00030" data-run-id="sensitivity:peer_budget_gib=12:8k:gpu_failure:seed-0:repeat-A" data-result-hash="1c362d864530faa98643e98bd4bce964fe2d37d72d5793a7a4da98e741a0f0d5">
+    <title>f10-point-00030 | sensitivity:peer_budget_gib=12:8k:gpu_failure:seed-0:repeat-A | 1c362d864530faa98643e98bd4bce964fe2d37d72d5793a7a4da98e741a0f0d5 | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"8k","display_x_jitter_px":-8.0,"metric":"mean WCT (ms)","metric_value":6329834.930951,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="349" cy="195.381" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00031" data-run-id="sensitivity:peer_budget_gib=12:8k:gpu_failure:seed-1:repeat-A" data-result-hash="dff06db858b0e40521dbe7bbef1acd6d65d5e0b1da74095236066445703c7713">
+    <title>f10-point-00031 | sensitivity:peer_budget_gib=12:8k:gpu_failure:seed-1:repeat-A | dff06db858b0e40521dbe7bbef1acd6d65d5e0b1da74095236066445703c7713 | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"8k","display_x_jitter_px":-2.0,"metric":"mean WCT (ms)","metric_value":6335825.905431,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="355" cy="187.435" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00032" data-run-id="sensitivity:peer_budget_gib=12:8k:gpu_failure:seed-2:repeat-A" data-result-hash="e37adc65c5d31f499991a7c036f84030a94dcf9dd9c950464256b050071bf0dc">
+    <title>f10-point-00032 | sensitivity:peer_budget_gib=12:8k:gpu_failure:seed-2:repeat-A | e37adc65c5d31f499991a7c036f84030a94dcf9dd9c950464256b050071bf0dc | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"8k","display_x_jitter_px":4.0,"metric":"mean WCT (ms)","metric_value":6320045.007828,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="361" cy="208.365" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00033" data-run-id="sensitivity:peer_budget_gib=12:32k:gpu_failure:seed-0:repeat-A" data-result-hash="2132664ef76d20863a4f73de6c8c03f66019d1857dde848d54d8ce7f96641bac">
+    <title>f10-point-00033 | sensitivity:peer_budget_gib=12:32k:gpu_failure:seed-0:repeat-A | 2132664ef76d20863a4f73de6c8c03f66019d1857dde848d54d8ce7f96641bac | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"32k","display_x_jitter_px":-7.0,"metric":"mean WCT (ms)","metric_value":6329689.241867,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="350" cy="195.574" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00034" data-run-id="sensitivity:peer_budget_gib=12:32k:gpu_failure:seed-1:repeat-A" data-result-hash="0d2b8f2cc1c90937a3d9177e417d6b4916f35e76778f9dfe42eb3b1cda6d5ad4">
+    <title>f10-point-00034 | sensitivity:peer_budget_gib=12:32k:gpu_failure:seed-1:repeat-A | 0d2b8f2cc1c90937a3d9177e417d6b4916f35e76778f9dfe42eb3b1cda6d5ad4 | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"32k","display_x_jitter_px":-1.0,"metric":"mean WCT (ms)","metric_value":6340965.282614,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="356" cy="180.618" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00035" data-run-id="sensitivity:peer_budget_gib=12:32k:gpu_failure:seed-2:repeat-A" data-result-hash="338fb5fb76b1dc5e9a3c91329ef80364709d4940da59e79c3a8278f7f45f8e83">
+    <title>f10-point-00035 | sensitivity:peer_budget_gib=12:32k:gpu_failure:seed-2:repeat-A | 338fb5fb76b1dc5e9a3c91329ef80364709d4940da59e79c3a8278f7f45f8e83 | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"32k","display_x_jitter_px":5.0,"metric":"mean WCT (ms)","metric_value":6332267.554645,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="362" cy="192.154" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00036" data-run-id="sensitivity:peer_budget_gib=12:64k:gpu_failure:seed-0:repeat-A" data-result-hash="6dd67644fa526da083eb2231656ca9caa313b8a0f834e2a37eeb5730ae761ce4">
+    <title>f10-point-00036 | sensitivity:peer_budget_gib=12:64k:gpu_failure:seed-0:repeat-A | 6dd67644fa526da083eb2231656ca9caa313b8a0f834e2a37eeb5730ae761ce4 | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"64k","display_x_jitter_px":-6.0,"metric":"mean WCT (ms)","metric_value":6324123.297021,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="351" cy="202.956" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00037" data-run-id="sensitivity:peer_budget_gib=12:64k:gpu_failure:seed-1:repeat-A" data-result-hash="ebf2ea6f1c0e8293337e3be52e408dc61b3052e9b66c259c0f624728c5bade6f">
+    <title>f10-point-00037 | sensitivity:peer_budget_gib=12:64k:gpu_failure:seed-1:repeat-A | ebf2ea6f1c0e8293337e3be52e408dc61b3052e9b66c259c0f624728c5bade6f | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"64k","display_x_jitter_px":0.0,"metric":"mean WCT (ms)","metric_value":6343016.313698,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="357" cy="177.898" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00038" data-run-id="sensitivity:peer_budget_gib=12:64k:gpu_failure:seed-2:repeat-A" data-result-hash="65f58b4f058d98bb85a36e26d1785ccdb3b36bf135873f10f31428f5e9747e55">
+    <title>f10-point-00038 | sensitivity:peer_budget_gib=12:64k:gpu_failure:seed-2:repeat-A | 65f58b4f058d98bb85a36e26d1785ccdb3b36bf135873f10f31428f5e9747e55 | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"64k","display_x_jitter_px":6.0,"metric":"mean WCT (ms)","metric_value":6332905.184912,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="363" cy="191.309" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00039" data-run-id="sensitivity:peer_budget_gib=12:96k:gpu_failure:seed-0:repeat-A" data-result-hash="1634bb42693c8d827c8541997a8039dd4aa9bae388fa408041c8ef9d3ae019fa">
+    <title>f10-point-00039 | sensitivity:peer_budget_gib=12:96k:gpu_failure:seed-0:repeat-A | 1634bb42693c8d827c8541997a8039dd4aa9bae388fa408041c8ef9d3ae019fa | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"96k","display_x_jitter_px":-5.0,"metric":"mean WCT (ms)","metric_value":6336293.26092,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="352" cy="186.815" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00040" data-run-id="sensitivity:peer_budget_gib=12:96k:gpu_failure:seed-1:repeat-A" data-result-hash="96409b9c11a47145ae8de7a5322dbed6f6e8f6f9f7a5728f6cba65351842146a">
+    <title>f10-point-00040 | sensitivity:peer_budget_gib=12:96k:gpu_failure:seed-1:repeat-A | 96409b9c11a47145ae8de7a5322dbed6f6e8f6f9f7a5728f6cba65351842146a | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"96k","display_x_jitter_px":1.0,"metric":"mean WCT (ms)","metric_value":6339004.129477,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="358" cy="183.22" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00041" data-run-id="sensitivity:peer_budget_gib=12:96k:gpu_failure:seed-2:repeat-A" data-result-hash="c6c2ac49113264dc825585c4519ea5c3ac6f9b2caf61b726e4a826fc02c10981">
+    <title>f10-point-00041 | sensitivity:peer_budget_gib=12:96k:gpu_failure:seed-2:repeat-A | c6c2ac49113264dc825585c4519ea5c3ac6f9b2caf61b726e4a826fc02c10981 | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"96k","display_x_jitter_px":7.0,"metric":"mean WCT (ms)","metric_value":6337175.901511,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="364" cy="185.644" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00042" data-run-id="sensitivity:peer_budget_gib=12:128k:gpu_failure:seed-0:repeat-A" data-result-hash="895cb9bcb1361c6c5a9b14e7731d81144d682fd7124ee0c16298d32c6b37a18a">
+    <title>f10-point-00042 | sensitivity:peer_budget_gib=12:128k:gpu_failure:seed-0:repeat-A | 895cb9bcb1361c6c5a9b14e7731d81144d682fd7124ee0c16298d32c6b37a18a | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"128k","display_x_jitter_px":-4.0,"metric":"mean WCT (ms)","metric_value":6333182.063943,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="353" cy="190.941" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00043" data-run-id="sensitivity:peer_budget_gib=12:128k:gpu_failure:seed-1:repeat-A" data-result-hash="977e4af354da977f933c5086d0a119ebb795218a34c36bbec9dbf3ed9ca84eca">
+    <title>f10-point-00043 | sensitivity:peer_budget_gib=12:128k:gpu_failure:seed-1:repeat-A | 977e4af354da977f933c5086d0a119ebb795218a34c36bbec9dbf3ed9ca84eca | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"128k","display_x_jitter_px":2.0,"metric":"mean WCT (ms)","metric_value":6345262.347577,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="359" cy="174.919" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00044" data-run-id="sensitivity:peer_budget_gib=12:128k:gpu_failure:seed-2:repeat-A" data-result-hash="afd2513aee894ff8e42705904d964807cb0fd1d48d6569c4e90f777c9939b7aa">
+    <title>f10-point-00044 | sensitivity:peer_budget_gib=12:128k:gpu_failure:seed-2:repeat-A | afd2513aee894ff8e42705904d964807cb0fd1d48d6569c4e90f777c9939b7aa | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"128k","display_x_jitter_px":8.0,"metric":"mean WCT (ms)","metric_value":6330993.289119,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="365" cy="193.844" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <rect x="425" y="105" width="350" height="210" rx="4" fill="#f8fafc" stroke="#cbd5e1" opacity="1" />
+  <line x1="473" y1="130" x2="473" y2="277" stroke="#64748b" stroke-width="1" />
+  <line x1="473" y1="277" x2="763" y2="277" stroke="#64748b" stroke-width="1" />
+  <text x="600" y="122" class="label" text-anchor="middle">goodput (tokens/s)</text>
+  <text x="600" y="309" class="small" text-anchor="middle">Peer-HBM budget (GiB/GPU)</text>
+  <text x="468" y="134" class="small" text-anchor="end">6.8</text>
+  <text x="468" y="276" class="small" text-anchor="end">4.8</text>
+  <line x1="490" y1="277" x2="490" y2="282" stroke="#64748b" stroke-width="1" />
+  <text x="490" y="293" class="small" text-anchor="middle">4</text>
+  <line x1="618.5" y1="277" x2="618.5" y2="282" stroke="#64748b" stroke-width="1" />
+  <text x="618.5" y="293" class="small" text-anchor="middle">8</text>
+  <line x1="747" y1="277" x2="747" y2="282" stroke="#64748b" stroke-width="1" />
+  <text x="747" y="293" class="small" text-anchor="middle">12</text>
+  <text x="759" y="136" class="small" text-anchor="end">n=45 seeds=0,1,2</text>
+  <g data-point-id="f10-point-00045" data-run-id="sensitivity:peer_budget_gib=4:8k:gpu_failure:seed-0:repeat-A" data-result-hash="afd166f8785ad4ce8c11602955dd50bd28acb9499d710a9ec2d44eeb8cca0ad1">
+    <title>f10-point-00045 | sensitivity:peer_budget_gib=4:8k:gpu_failure:seed-0:repeat-A | afd166f8785ad4ce8c11602955dd50bd28acb9499d710a9ec2d44eeb8cca0ad1 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"8k","display_x_jitter_px":-8.0,"metric":"goodput (tokens/s)","metric_value":5.798,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="482" cy="205.038" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00046" data-run-id="sensitivity:peer_budget_gib=4:8k:gpu_failure:seed-1:repeat-A" data-result-hash="56553579614c9f28b2f63317b2de227a21015ba9eaec7815cb4751d6046e9461">
+    <title>f10-point-00046 | sensitivity:peer_budget_gib=4:8k:gpu_failure:seed-1:repeat-A | 56553579614c9f28b2f63317b2de227a21015ba9eaec7815cb4751d6046e9461 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"8k","display_x_jitter_px":-2.0,"metric":"goodput (tokens/s)","metric_value":5.784,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="488" cy="205.946" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00047" data-run-id="sensitivity:peer_budget_gib=4:8k:gpu_failure:seed-2:repeat-A" data-result-hash="e71e8ce0f91f04189ab631c1cbd0f2b9b56c26fb6293916df2e8127199a19bdc">
+    <title>f10-point-00047 | sensitivity:peer_budget_gib=4:8k:gpu_failure:seed-2:repeat-A | e71e8ce0f91f04189ab631c1cbd0f2b9b56c26fb6293916df2e8127199a19bdc | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"8k","display_x_jitter_px":4.0,"metric":"goodput (tokens/s)","metric_value":5.803,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="494" cy="204.713" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00048" data-run-id="sensitivity:peer_budget_gib=4:32k:gpu_failure:seed-0:repeat-A" data-result-hash="e333e53008e63ca34569bf9b9f77a4a264eecace81b83f6a34727e61963aa463">
+    <title>f10-point-00048 | sensitivity:peer_budget_gib=4:32k:gpu_failure:seed-0:repeat-A | e333e53008e63ca34569bf9b9f77a4a264eecace81b83f6a34727e61963aa463 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"32k","display_x_jitter_px":-7.0,"metric":"goodput (tokens/s)","metric_value":5.797,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="483" cy="205.103" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00049" data-run-id="sensitivity:peer_budget_gib=4:32k:gpu_failure:seed-1:repeat-A" data-result-hash="b0ac1664b53a09cdc82a6cd4ff97c267283487648b41d4c1a149a5d9972f1134">
+    <title>f10-point-00049 | sensitivity:peer_budget_gib=4:32k:gpu_failure:seed-1:repeat-A | b0ac1664b53a09cdc82a6cd4ff97c267283487648b41d4c1a149a5d9972f1134 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"32k","display_x_jitter_px":-1.0,"metric":"goodput (tokens/s)","metric_value":5.782,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="489" cy="206.076" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00050" data-run-id="sensitivity:peer_budget_gib=4:32k:gpu_failure:seed-2:repeat-A" data-result-hash="91a178e39e7a7e1e44fa80b478dc809f2072779a8d210d2f924a6837f41d1ac6">
+    <title>f10-point-00050 | sensitivity:peer_budget_gib=4:32k:gpu_failure:seed-2:repeat-A | 91a178e39e7a7e1e44fa80b478dc809f2072779a8d210d2f924a6837f41d1ac6 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"32k","display_x_jitter_px":5.0,"metric":"goodput (tokens/s)","metric_value":5.807,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="495" cy="204.454" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00051" data-run-id="sensitivity:peer_budget_gib=4:64k:gpu_failure:seed-0:repeat-A" data-result-hash="059e2666bbbfa61d250cf14c7be3992a5468b0fcc5eee32129d116e6097b99a4">
+    <title>f10-point-00051 | sensitivity:peer_budget_gib=4:64k:gpu_failure:seed-0:repeat-A | 059e2666bbbfa61d250cf14c7be3992a5468b0fcc5eee32129d116e6097b99a4 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"64k","display_x_jitter_px":-6.0,"metric":"goodput (tokens/s)","metric_value":5.799,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="484" cy="204.973" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00052" data-run-id="sensitivity:peer_budget_gib=4:64k:gpu_failure:seed-1:repeat-A" data-result-hash="b5df00e95c03b7d4ea5c680f7c4206ddd69c084d579e7481ee2ca2f71e6abe48">
+    <title>f10-point-00052 | sensitivity:peer_budget_gib=4:64k:gpu_failure:seed-1:repeat-A | b5df00e95c03b7d4ea5c680f7c4206ddd69c084d579e7481ee2ca2f71e6abe48 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"64k","display_x_jitter_px":0.0,"metric":"goodput (tokens/s)","metric_value":5.781,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="490" cy="206.14" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00053" data-run-id="sensitivity:peer_budget_gib=4:64k:gpu_failure:seed-2:repeat-A" data-result-hash="1a34c5135edac1fc08c69d660d00417472477f5e7194a36aa1e5c6b8efeaa7c6">
+    <title>f10-point-00053 | sensitivity:peer_budget_gib=4:64k:gpu_failure:seed-2:repeat-A | 1a34c5135edac1fc08c69d660d00417472477f5e7194a36aa1e5c6b8efeaa7c6 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"64k","display_x_jitter_px":6.0,"metric":"goodput (tokens/s)","metric_value":5.808,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="496" cy="204.389" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00054" data-run-id="sensitivity:peer_budget_gib=4:96k:gpu_failure:seed-0:repeat-A" data-result-hash="0d088c6aa974927418a0cd6259ecffc3a17f7ba35794460cb864040d5f7325cd">
+    <title>f10-point-00054 | sensitivity:peer_budget_gib=4:96k:gpu_failure:seed-0:repeat-A | 0d088c6aa974927418a0cd6259ecffc3a17f7ba35794460cb864040d5f7325cd | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"96k","display_x_jitter_px":-5.0,"metric":"goodput (tokens/s)","metric_value":5.796,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="485" cy="205.167" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00055" data-run-id="sensitivity:peer_budget_gib=4:96k:gpu_failure:seed-1:repeat-A" data-result-hash="c70f228f255dcbd9852897a4a5623959d4784bd342937645944a778c80b99781">
+    <title>f10-point-00055 | sensitivity:peer_budget_gib=4:96k:gpu_failure:seed-1:repeat-A | c70f228f255dcbd9852897a4a5623959d4784bd342937645944a778c80b99781 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"96k","display_x_jitter_px":1.0,"metric":"goodput (tokens/s)","metric_value":5.82,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="491" cy="203.611" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00056" data-run-id="sensitivity:peer_budget_gib=4:96k:gpu_failure:seed-2:repeat-A" data-result-hash="a28ac47330534efbf7ccf809f7cdc16f8b25737c0d641f823bb4d528198baa6b">
+    <title>f10-point-00056 | sensitivity:peer_budget_gib=4:96k:gpu_failure:seed-2:repeat-A | a28ac47330534efbf7ccf809f7cdc16f8b25737c0d641f823bb4d528198baa6b | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"96k","display_x_jitter_px":7.0,"metric":"goodput (tokens/s)","metric_value":5.798,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="497" cy="205.038" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00057" data-run-id="sensitivity:peer_budget_gib=4:128k:gpu_failure:seed-0:repeat-A" data-result-hash="5cfbd5756d5d23cef756ab8d767b4571963ea6b122d40a81b80b0f8c45003d04">
+    <title>f10-point-00057 | sensitivity:peer_budget_gib=4:128k:gpu_failure:seed-0:repeat-A | 5cfbd5756d5d23cef756ab8d767b4571963ea6b122d40a81b80b0f8c45003d04 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"128k","display_x_jitter_px":-4.0,"metric":"goodput (tokens/s)","metric_value":5.797,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="486" cy="205.103" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00058" data-run-id="sensitivity:peer_budget_gib=4:128k:gpu_failure:seed-1:repeat-A" data-result-hash="870d0633ee32c5cdf89ceb1a32adbbc14df21341d4c4a85f194de915ca04acbf">
+    <title>f10-point-00058 | sensitivity:peer_budget_gib=4:128k:gpu_failure:seed-1:repeat-A | 870d0633ee32c5cdf89ceb1a32adbbc14df21341d4c4a85f194de915ca04acbf | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"128k","display_x_jitter_px":2.0,"metric":"goodput (tokens/s)","metric_value":5.782,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="492" cy="206.076" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00059" data-run-id="sensitivity:peer_budget_gib=4:128k:gpu_failure:seed-2:repeat-A" data-result-hash="5caab7b4b4d6a32ed2168e92bb9e5d3e95db1a053db0933151ad41802d41a4e8">
+    <title>f10-point-00059 | sensitivity:peer_budget_gib=4:128k:gpu_failure:seed-2:repeat-A | 5caab7b4b4d6a32ed2168e92bb9e5d3e95db1a053db0933151ad41802d41a4e8 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"128k","display_x_jitter_px":8.0,"metric":"goodput (tokens/s)","metric_value":5.807,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="498" cy="204.454" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00060" data-run-id="sensitivity:peer_budget_gib=8:8k:gpu_failure:seed-0:repeat-A" data-result-hash="30b8e51226bbac9584b7c3bb7007a1744464ba5ceaa9ea1084e69477f55d5aac">
+    <title>f10-point-00060 | sensitivity:peer_budget_gib=8:8k:gpu_failure:seed-0:repeat-A | 30b8e51226bbac9584b7c3bb7007a1744464ba5ceaa9ea1084e69477f55d5aac | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"8k","display_x_jitter_px":-8.0,"metric":"goodput (tokens/s)","metric_value":5.798,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="610.5" cy="205.038" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00061" data-run-id="sensitivity:peer_budget_gib=8:8k:gpu_failure:seed-1:repeat-A" data-result-hash="dc24760a8f02b947a0f83a2d51f7aabbde359fd102e80029cdc484a2a5d00d1f">
+    <title>f10-point-00061 | sensitivity:peer_budget_gib=8:8k:gpu_failure:seed-1:repeat-A | dc24760a8f02b947a0f83a2d51f7aabbde359fd102e80029cdc484a2a5d00d1f | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"8k","display_x_jitter_px":-2.0,"metric":"goodput (tokens/s)","metric_value":5.804,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="616.5" cy="204.649" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00062" data-run-id="sensitivity:peer_budget_gib=8:8k:gpu_failure:seed-2:repeat-A" data-result-hash="0e47b2c9547a1b852876c28dc7d76d84424d8d5fe28251742ee9233e03fa250d">
+    <title>f10-point-00062 | sensitivity:peer_budget_gib=8:8k:gpu_failure:seed-2:repeat-A | 0e47b2c9547a1b852876c28dc7d76d84424d8d5fe28251742ee9233e03fa250d | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"8k","display_x_jitter_px":4.0,"metric":"goodput (tokens/s)","metric_value":5.808,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="622.5" cy="204.389" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00063" data-run-id="sensitivity:peer_budget_gib=8:32k:gpu_failure:seed-0:repeat-A" data-result-hash="b93379ac2c5284ab6eb5ea2116e198a634a061862243e7a86a74b0d9ab948951">
+    <title>f10-point-00063 | sensitivity:peer_budget_gib=8:32k:gpu_failure:seed-0:repeat-A | b93379ac2c5284ab6eb5ea2116e198a634a061862243e7a86a74b0d9ab948951 | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"32k","display_x_jitter_px":-7.0,"metric":"goodput (tokens/s)","metric_value":5.798,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="611.5" cy="205.038" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00064" data-run-id="sensitivity:peer_budget_gib=8:32k:gpu_failure:seed-1:repeat-A" data-result-hash="fc553d68e60623223539d482b0301fd234f82eaf0d41d5c2305fc5eeee9b7bef">
+    <title>f10-point-00064 | sensitivity:peer_budget_gib=8:32k:gpu_failure:seed-1:repeat-A | fc553d68e60623223539d482b0301fd234f82eaf0d41d5c2305fc5eeee9b7bef | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"32k","display_x_jitter_px":-1.0,"metric":"goodput (tokens/s)","metric_value":5.783,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="617.5" cy="206.011" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00065" data-run-id="sensitivity:peer_budget_gib=8:32k:gpu_failure:seed-2:repeat-A" data-result-hash="2483a0da8bcd4ab2775524509d07d5c7e522a5ae3e6ba3a6b43aed36475c53f4">
+    <title>f10-point-00065 | sensitivity:peer_budget_gib=8:32k:gpu_failure:seed-2:repeat-A | 2483a0da8bcd4ab2775524509d07d5c7e522a5ae3e6ba3a6b43aed36475c53f4 | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"32k","display_x_jitter_px":5.0,"metric":"goodput (tokens/s)","metric_value":5.847,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="623.5" cy="201.86" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00066" data-run-id="sensitivity:peer_budget_gib=8:64k:gpu_failure:seed-0:repeat-A" data-result-hash="092cd1e51981a82581dc0fe757c83957b59807f90e29324f5fe8ee45b4195cab">
+    <title>f10-point-00066 | sensitivity:peer_budget_gib=8:64k:gpu_failure:seed-0:repeat-A | 092cd1e51981a82581dc0fe757c83957b59807f90e29324f5fe8ee45b4195cab | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"64k","display_x_jitter_px":-6.0,"metric":"goodput (tokens/s)","metric_value":5.797,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="612.5" cy="205.103" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00067" data-run-id="sensitivity:peer_budget_gib=8:64k:gpu_failure:seed-1:repeat-A" data-result-hash="67c95c2e669e551427762bd949798243aa905e7634fd7521d5f3c4c61930193d">
+    <title>f10-point-00067 | sensitivity:peer_budget_gib=8:64k:gpu_failure:seed-1:repeat-A | 67c95c2e669e551427762bd949798243aa905e7634fd7521d5f3c4c61930193d | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"64k","display_x_jitter_px":0.0,"metric":"goodput (tokens/s)","metric_value":5.781,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="618.5" cy="206.14" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00068" data-run-id="sensitivity:peer_budget_gib=8:64k:gpu_failure:seed-2:repeat-A" data-result-hash="e5c45190d9d6b4ae77bbfcbcde9ba1400838a21e4dc65e6e2ee20a68f86f5fec">
+    <title>f10-point-00068 | sensitivity:peer_budget_gib=8:64k:gpu_failure:seed-2:repeat-A | e5c45190d9d6b4ae77bbfcbcde9ba1400838a21e4dc65e6e2ee20a68f86f5fec | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"64k","display_x_jitter_px":6.0,"metric":"goodput (tokens/s)","metric_value":5.839,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="624.5" cy="202.379" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00069" data-run-id="sensitivity:peer_budget_gib=8:96k:gpu_failure:seed-0:repeat-A" data-result-hash="5db5328e0c30179f9b8d9c4dac73d4df8ba70fd9ce522f9e6ee0c6eb0fb8efd1">
+    <title>f10-point-00069 | sensitivity:peer_budget_gib=8:96k:gpu_failure:seed-0:repeat-A | 5db5328e0c30179f9b8d9c4dac73d4df8ba70fd9ce522f9e6ee0c6eb0fb8efd1 | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"96k","display_x_jitter_px":-5.0,"metric":"goodput (tokens/s)","metric_value":5.787,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="613.5" cy="205.751" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00070" data-run-id="sensitivity:peer_budget_gib=8:96k:gpu_failure:seed-1:repeat-A" data-result-hash="cd972fa04154d249babc83dd6a06292313ea5e3ba551c2d477b39f9507ffa3c5">
+    <title>f10-point-00070 | sensitivity:peer_budget_gib=8:96k:gpu_failure:seed-1:repeat-A | cd972fa04154d249babc83dd6a06292313ea5e3ba551c2d477b39f9507ffa3c5 | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"96k","display_x_jitter_px":1.0,"metric":"goodput (tokens/s)","metric_value":5.831,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="619.5" cy="202.897" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00071" data-run-id="sensitivity:peer_budget_gib=8:96k:gpu_failure:seed-2:repeat-A" data-result-hash="94616fe5410f3844ecc83b6625ad79598af20ba682c74157f2a6098db4b235e7">
+    <title>f10-point-00071 | sensitivity:peer_budget_gib=8:96k:gpu_failure:seed-2:repeat-A | 94616fe5410f3844ecc83b6625ad79598af20ba682c74157f2a6098db4b235e7 | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"96k","display_x_jitter_px":7.0,"metric":"goodput (tokens/s)","metric_value":5.799,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="625.5" cy="204.973" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00072" data-run-id="sensitivity:peer_budget_gib=8:128k:gpu_failure:seed-0:repeat-A" data-result-hash="b3c75b273ca03713b0fffe8a2f5837452882a0a3802a302dee54f1ec41472d45">
+    <title>f10-point-00072 | sensitivity:peer_budget_gib=8:128k:gpu_failure:seed-0:repeat-A | b3c75b273ca03713b0fffe8a2f5837452882a0a3802a302dee54f1ec41472d45 | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"128k","display_x_jitter_px":-4.0,"metric":"goodput (tokens/s)","metric_value":5.799,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="614.5" cy="204.973" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00073" data-run-id="sensitivity:peer_budget_gib=8:128k:gpu_failure:seed-1:repeat-A" data-result-hash="4be618ba255255337efbf50fa63f5959deec519eb8b6097bde34e2d8c1034539">
+    <title>f10-point-00073 | sensitivity:peer_budget_gib=8:128k:gpu_failure:seed-1:repeat-A | 4be618ba255255337efbf50fa63f5959deec519eb8b6097bde34e2d8c1034539 | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"128k","display_x_jitter_px":2.0,"metric":"goodput (tokens/s)","metric_value":5.783,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="620.5" cy="206.011" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00074" data-run-id="sensitivity:peer_budget_gib=8:128k:gpu_failure:seed-2:repeat-A" data-result-hash="09656f3e1463efab1d63de4445443a7c4442793adb12b44a294a0f07783c8dcf">
+    <title>f10-point-00074 | sensitivity:peer_budget_gib=8:128k:gpu_failure:seed-2:repeat-A | 09656f3e1463efab1d63de4445443a7c4442793adb12b44a294a0f07783c8dcf | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"128k","display_x_jitter_px":8.0,"metric":"goodput (tokens/s)","metric_value":5.847,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="626.5" cy="201.86" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00075" data-run-id="sensitivity:peer_budget_gib=12:8k:gpu_failure:seed-0:repeat-A" data-result-hash="1c362d864530faa98643e98bd4bce964fe2d37d72d5793a7a4da98e741a0f0d5">
+    <title>f10-point-00075 | sensitivity:peer_budget_gib=12:8k:gpu_failure:seed-0:repeat-A | 1c362d864530faa98643e98bd4bce964fe2d37d72d5793a7a4da98e741a0f0d5 | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"8k","display_x_jitter_px":-8.0,"metric":"goodput (tokens/s)","metric_value":5.796,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="739" cy="205.167" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00076" data-run-id="sensitivity:peer_budget_gib=12:8k:gpu_failure:seed-1:repeat-A" data-result-hash="dff06db858b0e40521dbe7bbef1acd6d65d5e0b1da74095236066445703c7713">
+    <title>f10-point-00076 | sensitivity:peer_budget_gib=12:8k:gpu_failure:seed-1:repeat-A | dff06db858b0e40521dbe7bbef1acd6d65d5e0b1da74095236066445703c7713 | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"8k","display_x_jitter_px":-2.0,"metric":"goodput (tokens/s)","metric_value":5.789,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="745" cy="205.621" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00077" data-run-id="sensitivity:peer_budget_gib=12:8k:gpu_failure:seed-2:repeat-A" data-result-hash="e37adc65c5d31f499991a7c036f84030a94dcf9dd9c950464256b050071bf0dc">
+    <title>f10-point-00077 | sensitivity:peer_budget_gib=12:8k:gpu_failure:seed-2:repeat-A | e37adc65c5d31f499991a7c036f84030a94dcf9dd9c950464256b050071bf0dc | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"8k","display_x_jitter_px":4.0,"metric":"goodput (tokens/s)","metric_value":5.808,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="751" cy="204.389" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00078" data-run-id="sensitivity:peer_budget_gib=12:32k:gpu_failure:seed-0:repeat-A" data-result-hash="2132664ef76d20863a4f73de6c8c03f66019d1857dde848d54d8ce7f96641bac">
+    <title>f10-point-00078 | sensitivity:peer_budget_gib=12:32k:gpu_failure:seed-0:repeat-A | 2132664ef76d20863a4f73de6c8c03f66019d1857dde848d54d8ce7f96641bac | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"32k","display_x_jitter_px":-7.0,"metric":"goodput (tokens/s)","metric_value":5.797,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="740" cy="205.103" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00079" data-run-id="sensitivity:peer_budget_gib=12:32k:gpu_failure:seed-1:repeat-A" data-result-hash="0d2b8f2cc1c90937a3d9177e417d6b4916f35e76778f9dfe42eb3b1cda6d5ad4">
+    <title>f10-point-00079 | sensitivity:peer_budget_gib=12:32k:gpu_failure:seed-1:repeat-A | 0d2b8f2cc1c90937a3d9177e417d6b4916f35e76778f9dfe42eb3b1cda6d5ad4 | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"32k","display_x_jitter_px":-1.0,"metric":"goodput (tokens/s)","metric_value":5.783,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="746" cy="206.011" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00080" data-run-id="sensitivity:peer_budget_gib=12:32k:gpu_failure:seed-2:repeat-A" data-result-hash="338fb5fb76b1dc5e9a3c91329ef80364709d4940da59e79c3a8278f7f45f8e83">
+    <title>f10-point-00080 | sensitivity:peer_budget_gib=12:32k:gpu_failure:seed-2:repeat-A | 338fb5fb76b1dc5e9a3c91329ef80364709d4940da59e79c3a8278f7f45f8e83 | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"32k","display_x_jitter_px":5.0,"metric":"goodput (tokens/s)","metric_value":5.802,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="752" cy="204.778" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00081" data-run-id="sensitivity:peer_budget_gib=12:64k:gpu_failure:seed-0:repeat-A" data-result-hash="6dd67644fa526da083eb2231656ca9caa313b8a0f834e2a37eeb5730ae761ce4">
+    <title>f10-point-00081 | sensitivity:peer_budget_gib=12:64k:gpu_failure:seed-0:repeat-A | 6dd67644fa526da083eb2231656ca9caa313b8a0f834e2a37eeb5730ae761ce4 | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"64k","display_x_jitter_px":-6.0,"metric":"goodput (tokens/s)","metric_value":5.801,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="741" cy="204.843" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00082" data-run-id="sensitivity:peer_budget_gib=12:64k:gpu_failure:seed-1:repeat-A" data-result-hash="ebf2ea6f1c0e8293337e3be52e408dc61b3052e9b66c259c0f624728c5bade6f">
+    <title>f10-point-00082 | sensitivity:peer_budget_gib=12:64k:gpu_failure:seed-1:repeat-A | ebf2ea6f1c0e8293337e3be52e408dc61b3052e9b66c259c0f624728c5bade6f | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"64k","display_x_jitter_px":0.0,"metric":"goodput (tokens/s)","metric_value":5.783,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="747" cy="206.011" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00083" data-run-id="sensitivity:peer_budget_gib=12:64k:gpu_failure:seed-2:repeat-A" data-result-hash="65f58b4f058d98bb85a36e26d1785ccdb3b36bf135873f10f31428f5e9747e55">
+    <title>f10-point-00083 | sensitivity:peer_budget_gib=12:64k:gpu_failure:seed-2:repeat-A | 65f58b4f058d98bb85a36e26d1785ccdb3b36bf135873f10f31428f5e9747e55 | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"64k","display_x_jitter_px":6.0,"metric":"goodput (tokens/s)","metric_value":5.804,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="753" cy="204.649" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00084" data-run-id="sensitivity:peer_budget_gib=12:96k:gpu_failure:seed-0:repeat-A" data-result-hash="1634bb42693c8d827c8541997a8039dd4aa9bae388fa408041c8ef9d3ae019fa">
+    <title>f10-point-00084 | sensitivity:peer_budget_gib=12:96k:gpu_failure:seed-0:repeat-A | 1634bb42693c8d827c8541997a8039dd4aa9bae388fa408041c8ef9d3ae019fa | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"96k","display_x_jitter_px":-5.0,"metric":"goodput (tokens/s)","metric_value":5.793,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="742" cy="205.362" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00085" data-run-id="sensitivity:peer_budget_gib=12:96k:gpu_failure:seed-1:repeat-A" data-result-hash="96409b9c11a47145ae8de7a5322dbed6f6e8f6f9f7a5728f6cba65351842146a">
+    <title>f10-point-00085 | sensitivity:peer_budget_gib=12:96k:gpu_failure:seed-1:repeat-A | 96409b9c11a47145ae8de7a5322dbed6f6e8f6f9f7a5728f6cba65351842146a | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"96k","display_x_jitter_px":1.0,"metric":"goodput (tokens/s)","metric_value":5.783,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="748" cy="206.011" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00086" data-run-id="sensitivity:peer_budget_gib=12:96k:gpu_failure:seed-2:repeat-A" data-result-hash="c6c2ac49113264dc825585c4519ea5c3ac6f9b2caf61b726e4a826fc02c10981">
+    <title>f10-point-00086 | sensitivity:peer_budget_gib=12:96k:gpu_failure:seed-2:repeat-A | c6c2ac49113264dc825585c4519ea5c3ac6f9b2caf61b726e4a826fc02c10981 | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"96k","display_x_jitter_px":7.0,"metric":"goodput (tokens/s)","metric_value":5.803,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="754" cy="204.713" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00087" data-run-id="sensitivity:peer_budget_gib=12:128k:gpu_failure:seed-0:repeat-A" data-result-hash="895cb9bcb1361c6c5a9b14e7731d81144d682fd7124ee0c16298d32c6b37a18a">
+    <title>f10-point-00087 | sensitivity:peer_budget_gib=12:128k:gpu_failure:seed-0:repeat-A | 895cb9bcb1361c6c5a9b14e7731d81144d682fd7124ee0c16298d32c6b37a18a | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"128k","display_x_jitter_px":-4.0,"metric":"goodput (tokens/s)","metric_value":5.797,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="743" cy="205.103" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00088" data-run-id="sensitivity:peer_budget_gib=12:128k:gpu_failure:seed-1:repeat-A" data-result-hash="977e4af354da977f933c5086d0a119ebb795218a34c36bbec9dbf3ed9ca84eca">
+    <title>f10-point-00088 | sensitivity:peer_budget_gib=12:128k:gpu_failure:seed-1:repeat-A | 977e4af354da977f933c5086d0a119ebb795218a34c36bbec9dbf3ed9ca84eca | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"128k","display_x_jitter_px":2.0,"metric":"goodput (tokens/s)","metric_value":5.781,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="749" cy="206.14" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00089" data-run-id="sensitivity:peer_budget_gib=12:128k:gpu_failure:seed-2:repeat-A" data-result-hash="afd2513aee894ff8e42705904d964807cb0fd1d48d6569c4e90f777c9939b7aa">
+    <title>f10-point-00089 | sensitivity:peer_budget_gib=12:128k:gpu_failure:seed-2:repeat-A | afd2513aee894ff8e42705904d964807cb0fd1d48d6569c4e90f777c9939b7aa | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"128k","display_x_jitter_px":8.0,"metric":"goodput (tokens/s)","metric_value":5.808,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="755" cy="204.389" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <rect x="815" y="105" width="350" height="210" rx="4" fill="#f8fafc" stroke="#cbd5e1" opacity="1" />
+  <line x1="863" y1="130" x2="863" y2="277" stroke="#64748b" stroke-width="1" />
+  <line x1="863" y1="277" x2="1153" y2="277" stroke="#64748b" stroke-width="1" />
+  <text x="990" y="122" class="label" text-anchor="middle">restored tokens</text>
+  <text x="990" y="309" class="small" text-anchor="middle">Peer-HBM budget (GiB/GPU)</text>
+  <text x="858" y="134" class="small" text-anchor="end">79K</text>
+  <text x="858" y="276" class="small" text-anchor="end">0</text>
+  <line x1="880" y1="277" x2="880" y2="282" stroke="#64748b" stroke-width="1" />
+  <text x="880" y="293" class="small" text-anchor="middle">4</text>
+  <line x1="1008.5" y1="277" x2="1008.5" y2="282" stroke="#64748b" stroke-width="1" />
+  <text x="1008.5" y="293" class="small" text-anchor="middle">8</text>
+  <line x1="1137" y1="277" x2="1137" y2="282" stroke="#64748b" stroke-width="1" />
+  <text x="1137" y="293" class="small" text-anchor="middle">12</text>
+  <text x="1149" y="136" class="small" text-anchor="end">n=45 seeds=0,1,2</text>
+  <g data-point-id="f10-point-00090" data-run-id="sensitivity:peer_budget_gib=4:8k:gpu_failure:seed-0:repeat-A" data-result-hash="afd166f8785ad4ce8c11602955dd50bd28acb9499d710a9ec2d44eeb8cca0ad1">
+    <title>f10-point-00090 | sensitivity:peer_budget_gib=4:8k:gpu_failure:seed-0:repeat-A | afd166f8785ad4ce8c11602955dd50bd28acb9499d710a9ec2d44eeb8cca0ad1 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"8k","display_x_jitter_px":-8.0,"metric":"restored tokens","metric_value":0.0,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="872" cy="271" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00091" data-run-id="sensitivity:peer_budget_gib=4:8k:gpu_failure:seed-1:repeat-A" data-result-hash="56553579614c9f28b2f63317b2de227a21015ba9eaec7815cb4751d6046e9461">
+    <title>f10-point-00091 | sensitivity:peer_budget_gib=4:8k:gpu_failure:seed-1:repeat-A | 56553579614c9f28b2f63317b2de227a21015ba9eaec7815cb4751d6046e9461 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"8k","display_x_jitter_px":-2.0,"metric":"restored tokens","metric_value":0.0,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="878" cy="271" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00092" data-run-id="sensitivity:peer_budget_gib=4:8k:gpu_failure:seed-2:repeat-A" data-result-hash="e71e8ce0f91f04189ab631c1cbd0f2b9b56c26fb6293916df2e8127199a19bdc">
+    <title>f10-point-00092 | sensitivity:peer_budget_gib=4:8k:gpu_failure:seed-2:repeat-A | e71e8ce0f91f04189ab631c1cbd0f2b9b56c26fb6293916df2e8127199a19bdc | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"8k","display_x_jitter_px":4.0,"metric":"restored tokens","metric_value":0.0,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="884" cy="271" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00093" data-run-id="sensitivity:peer_budget_gib=4:32k:gpu_failure:seed-0:repeat-A" data-result-hash="e333e53008e63ca34569bf9b9f77a4a264eecace81b83f6a34727e61963aa463">
+    <title>f10-point-00093 | sensitivity:peer_budget_gib=4:32k:gpu_failure:seed-0:repeat-A | e333e53008e63ca34569bf9b9f77a4a264eecace81b83f6a34727e61963aa463 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"32k","display_x_jitter_px":-7.0,"metric":"restored tokens","metric_value":23552.0,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="873" cy="231.119" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00094" data-run-id="sensitivity:peer_budget_gib=4:32k:gpu_failure:seed-1:repeat-A" data-result-hash="b0ac1664b53a09cdc82a6cd4ff97c267283487648b41d4c1a149a5d9972f1134">
+    <title>f10-point-00094 | sensitivity:peer_budget_gib=4:32k:gpu_failure:seed-1:repeat-A | b0ac1664b53a09cdc82a6cd4ff97c267283487648b41d4c1a149a5d9972f1134 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"32k","display_x_jitter_px":-1.0,"metric":"restored tokens","metric_value":24576.0,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="879" cy="229.385" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00095" data-run-id="sensitivity:peer_budget_gib=4:32k:gpu_failure:seed-2:repeat-A" data-result-hash="91a178e39e7a7e1e44fa80b478dc809f2072779a8d210d2f924a6837f41d1ac6">
+    <title>f10-point-00095 | sensitivity:peer_budget_gib=4:32k:gpu_failure:seed-2:repeat-A | 91a178e39e7a7e1e44fa80b478dc809f2072779a8d210d2f924a6837f41d1ac6 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"32k","display_x_jitter_px":5.0,"metric":"restored tokens","metric_value":0.0,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="885" cy="271" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00096" data-run-id="sensitivity:peer_budget_gib=4:64k:gpu_failure:seed-0:repeat-A" data-result-hash="059e2666bbbfa61d250cf14c7be3992a5468b0fcc5eee32129d116e6097b99a4">
+    <title>f10-point-00096 | sensitivity:peer_budget_gib=4:64k:gpu_failure:seed-0:repeat-A | 059e2666bbbfa61d250cf14c7be3992a5468b0fcc5eee32129d116e6097b99a4 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"64k","display_x_jitter_px":-6.0,"metric":"restored tokens","metric_value":0.0,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="874" cy="271" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00097" data-run-id="sensitivity:peer_budget_gib=4:64k:gpu_failure:seed-1:repeat-A" data-result-hash="b5df00e95c03b7d4ea5c680f7c4206ddd69c084d579e7481ee2ca2f71e6abe48">
+    <title>f10-point-00097 | sensitivity:peer_budget_gib=4:64k:gpu_failure:seed-1:repeat-A | b5df00e95c03b7d4ea5c680f7c4206ddd69c084d579e7481ee2ca2f71e6abe48 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"64k","display_x_jitter_px":0.0,"metric":"restored tokens","metric_value":0.0,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="880" cy="271" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00098" data-run-id="sensitivity:peer_budget_gib=4:64k:gpu_failure:seed-2:repeat-A" data-result-hash="1a34c5135edac1fc08c69d660d00417472477f5e7194a36aa1e5c6b8efeaa7c6">
+    <title>f10-point-00098 | sensitivity:peer_budget_gib=4:64k:gpu_failure:seed-2:repeat-A | 1a34c5135edac1fc08c69d660d00417472477f5e7194a36aa1e5c6b8efeaa7c6 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"64k","display_x_jitter_px":6.0,"metric":"restored tokens","metric_value":0.0,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="886" cy="271" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00099" data-run-id="sensitivity:peer_budget_gib=4:96k:gpu_failure:seed-0:repeat-A" data-result-hash="0d088c6aa974927418a0cd6259ecffc3a17f7ba35794460cb864040d5f7325cd">
+    <title>f10-point-00099 | sensitivity:peer_budget_gib=4:96k:gpu_failure:seed-0:repeat-A | 0d088c6aa974927418a0cd6259ecffc3a17f7ba35794460cb864040d5f7325cd | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"96k","display_x_jitter_px":-5.0,"metric":"restored tokens","metric_value":60416.0,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="875" cy="168.697" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00100" data-run-id="sensitivity:peer_budget_gib=4:96k:gpu_failure:seed-1:repeat-A" data-result-hash="c70f228f255dcbd9852897a4a5623959d4784bd342937645944a778c80b99781">
+    <title>f10-point-00100 | sensitivity:peer_budget_gib=4:96k:gpu_failure:seed-1:repeat-A | c70f228f255dcbd9852897a4a5623959d4784bd342937645944a778c80b99781 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"96k","display_x_jitter_px":1.0,"metric":"restored tokens","metric_value":0.0,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="881" cy="271" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00101" data-run-id="sensitivity:peer_budget_gib=4:96k:gpu_failure:seed-2:repeat-A" data-result-hash="a28ac47330534efbf7ccf809f7cdc16f8b25737c0d641f823bb4d528198baa6b">
+    <title>f10-point-00101 | sensitivity:peer_budget_gib=4:96k:gpu_failure:seed-2:repeat-A | a28ac47330534efbf7ccf809f7cdc16f8b25737c0d641f823bb4d528198baa6b | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"96k","display_x_jitter_px":7.0,"metric":"restored tokens","metric_value":0.0,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="887" cy="271" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00102" data-run-id="sensitivity:peer_budget_gib=4:128k:gpu_failure:seed-0:repeat-A" data-result-hash="5cfbd5756d5d23cef756ab8d767b4571963ea6b122d40a81b80b0f8c45003d04">
+    <title>f10-point-00102 | sensitivity:peer_budget_gib=4:128k:gpu_failure:seed-0:repeat-A | 5cfbd5756d5d23cef756ab8d767b4571963ea6b122d40a81b80b0f8c45003d04 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"128k","display_x_jitter_px":-4.0,"metric":"restored tokens","metric_value":46080.0,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="876" cy="192.972" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00103" data-run-id="sensitivity:peer_budget_gib=4:128k:gpu_failure:seed-1:repeat-A" data-result-hash="870d0633ee32c5cdf89ceb1a32adbbc14df21341d4c4a85f194de915ca04acbf">
+    <title>f10-point-00103 | sensitivity:peer_budget_gib=4:128k:gpu_failure:seed-1:repeat-A | 870d0633ee32c5cdf89ceb1a32adbbc14df21341d4c4a85f194de915ca04acbf | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"128k","display_x_jitter_px":2.0,"metric":"restored tokens","metric_value":46080.0,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="882" cy="192.972" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00104" data-run-id="sensitivity:peer_budget_gib=4:128k:gpu_failure:seed-2:repeat-A" data-result-hash="5caab7b4b4d6a32ed2168e92bb9e5d3e95db1a053db0933151ad41802d41a4e8">
+    <title>f10-point-00104 | sensitivity:peer_budget_gib=4:128k:gpu_failure:seed-2:repeat-A | 5caab7b4b4d6a32ed2168e92bb9e5d3e95db1a053db0933151ad41802d41a4e8 | {"budget":4.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"128k","display_x_jitter_px":8.0,"metric":"restored tokens","metric_value":46080.0,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="888" cy="192.972" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00105" data-run-id="sensitivity:peer_budget_gib=8:8k:gpu_failure:seed-0:repeat-A" data-result-hash="30b8e51226bbac9584b7c3bb7007a1744464ba5ceaa9ea1084e69477f55d5aac">
+    <title>f10-point-00105 | sensitivity:peer_budget_gib=8:8k:gpu_failure:seed-0:repeat-A | 30b8e51226bbac9584b7c3bb7007a1744464ba5ceaa9ea1084e69477f55d5aac | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"8k","display_x_jitter_px":-8.0,"metric":"restored tokens","metric_value":0.0,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="1000.5" cy="271" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00106" data-run-id="sensitivity:peer_budget_gib=8:8k:gpu_failure:seed-1:repeat-A" data-result-hash="dc24760a8f02b947a0f83a2d51f7aabbde359fd102e80029cdc484a2a5d00d1f">
+    <title>f10-point-00106 | sensitivity:peer_budget_gib=8:8k:gpu_failure:seed-1:repeat-A | dc24760a8f02b947a0f83a2d51f7aabbde359fd102e80029cdc484a2a5d00d1f | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"8k","display_x_jitter_px":-2.0,"metric":"restored tokens","metric_value":0.0,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="1006.5" cy="271" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00107" data-run-id="sensitivity:peer_budget_gib=8:8k:gpu_failure:seed-2:repeat-A" data-result-hash="0e47b2c9547a1b852876c28dc7d76d84424d8d5fe28251742ee9233e03fa250d">
+    <title>f10-point-00107 | sensitivity:peer_budget_gib=8:8k:gpu_failure:seed-2:repeat-A | 0e47b2c9547a1b852876c28dc7d76d84424d8d5fe28251742ee9233e03fa250d | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"8k","display_x_jitter_px":4.0,"metric":"restored tokens","metric_value":0.0,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="1012.5" cy="271" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00108" data-run-id="sensitivity:peer_budget_gib=8:32k:gpu_failure:seed-0:repeat-A" data-result-hash="b93379ac2c5284ab6eb5ea2116e198a634a061862243e7a86a74b0d9ab948951">
+    <title>f10-point-00108 | sensitivity:peer_budget_gib=8:32k:gpu_failure:seed-0:repeat-A | b93379ac2c5284ab6eb5ea2116e198a634a061862243e7a86a74b0d9ab948951 | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"32k","display_x_jitter_px":-7.0,"metric":"restored tokens","metric_value":23552.0,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="1001.5" cy="231.119" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00109" data-run-id="sensitivity:peer_budget_gib=8:32k:gpu_failure:seed-1:repeat-A" data-result-hash="fc553d68e60623223539d482b0301fd234f82eaf0d41d5c2305fc5eeee9b7bef">
+    <title>f10-point-00109 | sensitivity:peer_budget_gib=8:32k:gpu_failure:seed-1:repeat-A | fc553d68e60623223539d482b0301fd234f82eaf0d41d5c2305fc5eeee9b7bef | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"32k","display_x_jitter_px":-1.0,"metric":"restored tokens","metric_value":24576.0,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="1007.5" cy="229.385" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00110" data-run-id="sensitivity:peer_budget_gib=8:32k:gpu_failure:seed-2:repeat-A" data-result-hash="2483a0da8bcd4ab2775524509d07d5c7e522a5ae3e6ba3a6b43aed36475c53f4">
+    <title>f10-point-00110 | sensitivity:peer_budget_gib=8:32k:gpu_failure:seed-2:repeat-A | 2483a0da8bcd4ab2775524509d07d5c7e522a5ae3e6ba3a6b43aed36475c53f4 | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"32k","display_x_jitter_px":5.0,"metric":"restored tokens","metric_value":0.0,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="1013.5" cy="271" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00111" data-run-id="sensitivity:peer_budget_gib=8:64k:gpu_failure:seed-0:repeat-A" data-result-hash="092cd1e51981a82581dc0fe757c83957b59807f90e29324f5fe8ee45b4195cab">
+    <title>f10-point-00111 | sensitivity:peer_budget_gib=8:64k:gpu_failure:seed-0:repeat-A | 092cd1e51981a82581dc0fe757c83957b59807f90e29324f5fe8ee45b4195cab | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"64k","display_x_jitter_px":-6.0,"metric":"restored tokens","metric_value":0.0,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="1002.5" cy="271" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00112" data-run-id="sensitivity:peer_budget_gib=8:64k:gpu_failure:seed-1:repeat-A" data-result-hash="67c95c2e669e551427762bd949798243aa905e7634fd7521d5f3c4c61930193d">
+    <title>f10-point-00112 | sensitivity:peer_budget_gib=8:64k:gpu_failure:seed-1:repeat-A | 67c95c2e669e551427762bd949798243aa905e7634fd7521d5f3c4c61930193d | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"64k","display_x_jitter_px":0.0,"metric":"restored tokens","metric_value":0.0,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="1008.5" cy="271" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00113" data-run-id="sensitivity:peer_budget_gib=8:64k:gpu_failure:seed-2:repeat-A" data-result-hash="e5c45190d9d6b4ae77bbfcbcde9ba1400838a21e4dc65e6e2ee20a68f86f5fec">
+    <title>f10-point-00113 | sensitivity:peer_budget_gib=8:64k:gpu_failure:seed-2:repeat-A | e5c45190d9d6b4ae77bbfcbcde9ba1400838a21e4dc65e6e2ee20a68f86f5fec | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"64k","display_x_jitter_px":6.0,"metric":"restored tokens","metric_value":0.0,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="1014.5" cy="271" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00114" data-run-id="sensitivity:peer_budget_gib=8:96k:gpu_failure:seed-0:repeat-A" data-result-hash="5db5328e0c30179f9b8d9c4dac73d4df8ba70fd9ce522f9e6ee0c6eb0fb8efd1">
+    <title>f10-point-00114 | sensitivity:peer_budget_gib=8:96k:gpu_failure:seed-0:repeat-A | 5db5328e0c30179f9b8d9c4dac73d4df8ba70fd9ce522f9e6ee0c6eb0fb8efd1 | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"96k","display_x_jitter_px":-5.0,"metric":"restored tokens","metric_value":0.0,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="1003.5" cy="271" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00115" data-run-id="sensitivity:peer_budget_gib=8:96k:gpu_failure:seed-1:repeat-A" data-result-hash="cd972fa04154d249babc83dd6a06292313ea5e3ba551c2d477b39f9507ffa3c5">
+    <title>f10-point-00115 | sensitivity:peer_budget_gib=8:96k:gpu_failure:seed-1:repeat-A | cd972fa04154d249babc83dd6a06292313ea5e3ba551c2d477b39f9507ffa3c5 | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"96k","display_x_jitter_px":1.0,"metric":"restored tokens","metric_value":0.0,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="1009.5" cy="271" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00116" data-run-id="sensitivity:peer_budget_gib=8:96k:gpu_failure:seed-2:repeat-A" data-result-hash="94616fe5410f3844ecc83b6625ad79598af20ba682c74157f2a6098db4b235e7">
+    <title>f10-point-00116 | sensitivity:peer_budget_gib=8:96k:gpu_failure:seed-2:repeat-A | 94616fe5410f3844ecc83b6625ad79598af20ba682c74157f2a6098db4b235e7 | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"96k","display_x_jitter_px":7.0,"metric":"restored tokens","metric_value":0.0,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="1015.5" cy="271" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00117" data-run-id="sensitivity:peer_budget_gib=8:128k:gpu_failure:seed-0:repeat-A" data-result-hash="b3c75b273ca03713b0fffe8a2f5837452882a0a3802a302dee54f1ec41472d45">
+    <title>f10-point-00117 | sensitivity:peer_budget_gib=8:128k:gpu_failure:seed-0:repeat-A | b3c75b273ca03713b0fffe8a2f5837452882a0a3802a302dee54f1ec41472d45 | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"128k","display_x_jitter_px":-4.0,"metric":"restored tokens","metric_value":0.0,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="1004.5" cy="271" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00118" data-run-id="sensitivity:peer_budget_gib=8:128k:gpu_failure:seed-1:repeat-A" data-result-hash="4be618ba255255337efbf50fa63f5959deec519eb8b6097bde34e2d8c1034539">
+    <title>f10-point-00118 | sensitivity:peer_budget_gib=8:128k:gpu_failure:seed-1:repeat-A | 4be618ba255255337efbf50fa63f5959deec519eb8b6097bde34e2d8c1034539 | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"128k","display_x_jitter_px":2.0,"metric":"restored tokens","metric_value":46080.0,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="1010.5" cy="192.972" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00119" data-run-id="sensitivity:peer_budget_gib=8:128k:gpu_failure:seed-2:repeat-A" data-result-hash="09656f3e1463efab1d63de4445443a7c4442793adb12b44a294a0f07783c8dcf">
+    <title>f10-point-00119 | sensitivity:peer_budget_gib=8:128k:gpu_failure:seed-2:repeat-A | 09656f3e1463efab1d63de4445443a7c4442793adb12b44a294a0f07783c8dcf | {"budget":8.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"128k","display_x_jitter_px":8.0,"metric":"restored tokens","metric_value":46080.0,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="1016.5" cy="192.972" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00120" data-run-id="sensitivity:peer_budget_gib=12:8k:gpu_failure:seed-0:repeat-A" data-result-hash="1c362d864530faa98643e98bd4bce964fe2d37d72d5793a7a4da98e741a0f0d5">
+    <title>f10-point-00120 | sensitivity:peer_budget_gib=12:8k:gpu_failure:seed-0:repeat-A | 1c362d864530faa98643e98bd4bce964fe2d37d72d5793a7a4da98e741a0f0d5 | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"8k","display_x_jitter_px":-8.0,"metric":"restored tokens","metric_value":0.0,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="1129" cy="271" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00121" data-run-id="sensitivity:peer_budget_gib=12:8k:gpu_failure:seed-1:repeat-A" data-result-hash="dff06db858b0e40521dbe7bbef1acd6d65d5e0b1da74095236066445703c7713">
+    <title>f10-point-00121 | sensitivity:peer_budget_gib=12:8k:gpu_failure:seed-1:repeat-A | dff06db858b0e40521dbe7bbef1acd6d65d5e0b1da74095236066445703c7713 | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"8k","display_x_jitter_px":-2.0,"metric":"restored tokens","metric_value":0.0,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="1135" cy="271" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00122" data-run-id="sensitivity:peer_budget_gib=12:8k:gpu_failure:seed-2:repeat-A" data-result-hash="e37adc65c5d31f499991a7c036f84030a94dcf9dd9c950464256b050071bf0dc">
+    <title>f10-point-00122 | sensitivity:peer_budget_gib=12:8k:gpu_failure:seed-2:repeat-A | e37adc65c5d31f499991a7c036f84030a94dcf9dd9c950464256b050071bf0dc | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"8k","display_x_jitter_px":4.0,"metric":"restored tokens","metric_value":0.0,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="1141" cy="271" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00123" data-run-id="sensitivity:peer_budget_gib=12:32k:gpu_failure:seed-0:repeat-A" data-result-hash="2132664ef76d20863a4f73de6c8c03f66019d1857dde848d54d8ce7f96641bac">
+    <title>f10-point-00123 | sensitivity:peer_budget_gib=12:32k:gpu_failure:seed-0:repeat-A | 2132664ef76d20863a4f73de6c8c03f66019d1857dde848d54d8ce7f96641bac | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"32k","display_x_jitter_px":-7.0,"metric":"restored tokens","metric_value":23552.0,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="1130" cy="231.119" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00124" data-run-id="sensitivity:peer_budget_gib=12:32k:gpu_failure:seed-1:repeat-A" data-result-hash="0d2b8f2cc1c90937a3d9177e417d6b4916f35e76778f9dfe42eb3b1cda6d5ad4">
+    <title>f10-point-00124 | sensitivity:peer_budget_gib=12:32k:gpu_failure:seed-1:repeat-A | 0d2b8f2cc1c90937a3d9177e417d6b4916f35e76778f9dfe42eb3b1cda6d5ad4 | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"32k","display_x_jitter_px":-1.0,"metric":"restored tokens","metric_value":23552.0,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="1136" cy="231.119" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00125" data-run-id="sensitivity:peer_budget_gib=12:32k:gpu_failure:seed-2:repeat-A" data-result-hash="338fb5fb76b1dc5e9a3c91329ef80364709d4940da59e79c3a8278f7f45f8e83">
+    <title>f10-point-00125 | sensitivity:peer_budget_gib=12:32k:gpu_failure:seed-2:repeat-A | 338fb5fb76b1dc5e9a3c91329ef80364709d4940da59e79c3a8278f7f45f8e83 | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"32k","display_x_jitter_px":5.0,"metric":"restored tokens","metric_value":0.0,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="1142" cy="271" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00126" data-run-id="sensitivity:peer_budget_gib=12:64k:gpu_failure:seed-0:repeat-A" data-result-hash="6dd67644fa526da083eb2231656ca9caa313b8a0f834e2a37eeb5730ae761ce4">
+    <title>f10-point-00126 | sensitivity:peer_budget_gib=12:64k:gpu_failure:seed-0:repeat-A | 6dd67644fa526da083eb2231656ca9caa313b8a0f834e2a37eeb5730ae761ce4 | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"64k","display_x_jitter_px":-6.0,"metric":"restored tokens","metric_value":0.0,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="1131" cy="271" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00127" data-run-id="sensitivity:peer_budget_gib=12:64k:gpu_failure:seed-1:repeat-A" data-result-hash="ebf2ea6f1c0e8293337e3be52e408dc61b3052e9b66c259c0f624728c5bade6f">
+    <title>f10-point-00127 | sensitivity:peer_budget_gib=12:64k:gpu_failure:seed-1:repeat-A | ebf2ea6f1c0e8293337e3be52e408dc61b3052e9b66c259c0f624728c5bade6f | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"64k","display_x_jitter_px":0.0,"metric":"restored tokens","metric_value":0.0,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="1137" cy="271" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00128" data-run-id="sensitivity:peer_budget_gib=12:64k:gpu_failure:seed-2:repeat-A" data-result-hash="65f58b4f058d98bb85a36e26d1785ccdb3b36bf135873f10f31428f5e9747e55">
+    <title>f10-point-00128 | sensitivity:peer_budget_gib=12:64k:gpu_failure:seed-2:repeat-A | 65f58b4f058d98bb85a36e26d1785ccdb3b36bf135873f10f31428f5e9747e55 | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"64k","display_x_jitter_px":6.0,"metric":"restored tokens","metric_value":0.0,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="1143" cy="271" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00129" data-run-id="sensitivity:peer_budget_gib=12:96k:gpu_failure:seed-0:repeat-A" data-result-hash="1634bb42693c8d827c8541997a8039dd4aa9bae388fa408041c8ef9d3ae019fa">
+    <title>f10-point-00129 | sensitivity:peer_budget_gib=12:96k:gpu_failure:seed-0:repeat-A | 1634bb42693c8d827c8541997a8039dd4aa9bae388fa408041c8ef9d3ae019fa | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"96k","display_x_jitter_px":-5.0,"metric":"restored tokens","metric_value":0.0,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="1132" cy="271" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00130" data-run-id="sensitivity:peer_budget_gib=12:96k:gpu_failure:seed-1:repeat-A" data-result-hash="96409b9c11a47145ae8de7a5322dbed6f6e8f6f9f7a5728f6cba65351842146a">
+    <title>f10-point-00130 | sensitivity:peer_budget_gib=12:96k:gpu_failure:seed-1:repeat-A | 96409b9c11a47145ae8de7a5322dbed6f6e8f6f9f7a5728f6cba65351842146a | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"96k","display_x_jitter_px":1.0,"metric":"restored tokens","metric_value":70656.0,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="1138" cy="151.357" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00131" data-run-id="sensitivity:peer_budget_gib=12:96k:gpu_failure:seed-2:repeat-A" data-result-hash="c6c2ac49113264dc825585c4519ea5c3ac6f9b2caf61b726e4a826fc02c10981">
+    <title>f10-point-00131 | sensitivity:peer_budget_gib=12:96k:gpu_failure:seed-2:repeat-A | c6c2ac49113264dc825585c4519ea5c3ac6f9b2caf61b726e4a826fc02c10981 | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"96k","display_x_jitter_px":7.0,"metric":"restored tokens","metric_value":0.0,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="1144" cy="271" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00132" data-run-id="sensitivity:peer_budget_gib=12:128k:gpu_failure:seed-0:repeat-A" data-result-hash="895cb9bcb1361c6c5a9b14e7731d81144d682fd7124ee0c16298d32c6b37a18a">
+    <title>f10-point-00132 | sensitivity:peer_budget_gib=12:128k:gpu_failure:seed-0:repeat-A | 895cb9bcb1361c6c5a9b14e7731d81144d682fd7124ee0c16298d32c6b37a18a | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"128k","display_x_jitter_px":-4.0,"metric":"restored tokens","metric_value":46080.0,"seed":0,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="1133" cy="192.972" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00133" data-run-id="sensitivity:peer_budget_gib=12:128k:gpu_failure:seed-1:repeat-A" data-result-hash="977e4af354da977f933c5086d0a119ebb795218a34c36bbec9dbf3ed9ca84eca">
+    <title>f10-point-00133 | sensitivity:peer_budget_gib=12:128k:gpu_failure:seed-1:repeat-A | 977e4af354da977f933c5086d0a119ebb795218a34c36bbec9dbf3ed9ca84eca | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"128k","display_x_jitter_px":2.0,"metric":"restored tokens","metric_value":0.0,"seed":1,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="1139" cy="271" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00134" data-run-id="sensitivity:peer_budget_gib=12:128k:gpu_failure:seed-2:repeat-A" data-result-hash="afd2513aee894ff8e42705904d964807cb0fd1d48d6569c4e90f777c9939b7aa">
+    <title>f10-point-00134 | sensitivity:peer_budget_gib=12:128k:gpu_failure:seed-2:repeat-A | afd2513aee894ff8e42705904d964807cb0fd1d48d6569c4e90f777c9939b7aa | {"budget":12.0,"budget_label":"Peer-HBM budget (GiB/GPU)","context_bucket":"128k","display_x_jitter_px":8.0,"metric":"restored tokens","metric_value":0.0,"seed":2,"sensitivity_dimension":"peer_budget_gib"}</title>
+    <circle cx="1145" cy="271" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <rect x="35" y="370" width="350" height="210" rx="4" fill="#f8fafc" stroke="#cbd5e1" opacity="1" />
+  <line x1="83" y1="395" x2="83" y2="542" stroke="#64748b" stroke-width="1" />
+  <line x1="83" y1="542" x2="373" y2="542" stroke="#64748b" stroke-width="1" />
+  <text x="210" y="387" class="label" text-anchor="middle">mean WCT (ms)</text>
+  <text x="210" y="574" class="small" text-anchor="middle">Store DRAM budget (global GiB)</text>
+  <text x="78" y="399" class="small" text-anchor="end">6.4M</text>
+  <text x="78" y="541" class="small" text-anchor="end">6.3M</text>
+  <line x1="100" y1="542" x2="100" y2="547" stroke="#64748b" stroke-width="1" />
+  <text x="100" y="558" class="small" text-anchor="middle">32</text>
+  <line x1="185.667" y1="542" x2="185.667" y2="547" stroke="#64748b" stroke-width="1" />
+  <text x="185.667" y="558" class="small" text-anchor="middle">64</text>
+  <line x1="357" y1="542" x2="357" y2="547" stroke="#64748b" stroke-width="1" />
+  <text x="357" y="558" class="small" text-anchor="middle">128</text>
+  <text x="369" y="401" class="small" text-anchor="end">n=45 seeds=0,1,2</text>
+  <g data-point-id="f10-point-00135" data-run-id="sensitivity:store_budget_gib=32:8k:gpu_failure:seed-0:repeat-A" data-result-hash="889a38509841f4ff229e591a38d5f54e95aaa4b23b6062a0a63e97a4db223cd5">
+    <title>f10-point-00135 | sensitivity:store_budget_gib=32:8k:gpu_failure:seed-0:repeat-A | 889a38509841f4ff229e591a38d5f54e95aaa4b23b6062a0a63e97a4db223cd5 | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"8k","display_x_jitter_px":-8.0,"metric":"mean WCT (ms)","metric_value":6343749.535435,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="92" cy="452.013" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00136" data-run-id="sensitivity:store_budget_gib=32:8k:gpu_failure:seed-1:repeat-A" data-result-hash="4bf6ce9a5015a6cd15f05d16aecfbb0a80289d87a8deaddf5c393937f9708838">
+    <title>f10-point-00136 | sensitivity:store_budget_gib=32:8k:gpu_failure:seed-1:repeat-A | 4bf6ce9a5015a6cd15f05d16aecfbb0a80289d87a8deaddf5c393937f9708838 | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"8k","display_x_jitter_px":-2.0,"metric":"mean WCT (ms)","metric_value":6343577.982222,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="98" cy="452.203" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00137" data-run-id="sensitivity:store_budget_gib=32:8k:gpu_failure:seed-2:repeat-A" data-result-hash="8b54b7810275b6e64749c08787766cc88187753fe352dd586bad0d1e4e2250fc">
+    <title>f10-point-00137 | sensitivity:store_budget_gib=32:8k:gpu_failure:seed-2:repeat-A | 8b54b7810275b6e64749c08787766cc88187753fe352dd586bad0d1e4e2250fc | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"8k","display_x_jitter_px":4.0,"metric":"mean WCT (ms)","metric_value":6373895.998093,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="104" cy="418.728" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00138" data-run-id="sensitivity:store_budget_gib=32:32k:gpu_failure:seed-0:repeat-A" data-result-hash="6b42ca81aca4e252edb470fcce39592def1f4f9b7a93bbdd221d2045986f5880">
+    <title>f10-point-00138 | sensitivity:store_budget_gib=32:32k:gpu_failure:seed-0:repeat-A | 6b42ca81aca4e252edb470fcce39592def1f4f9b7a93bbdd221d2045986f5880 | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"32k","display_x_jitter_px":-7.0,"metric":"mean WCT (ms)","metric_value":6338433.93769,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="93" cy="457.883" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00139" data-run-id="sensitivity:store_budget_gib=32:32k:gpu_failure:seed-1:repeat-A" data-result-hash="aeed219bbad3a987c9786c4d48ce26955ec444d5272eee454e76cb550a57bbb2">
+    <title>f10-point-00139 | sensitivity:store_budget_gib=32:32k:gpu_failure:seed-1:repeat-A | aeed219bbad3a987c9786c4d48ce26955ec444d5272eee454e76cb550a57bbb2 | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"32k","display_x_jitter_px":-1.0,"metric":"mean WCT (ms)","metric_value":6345246.41725,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="99" cy="450.361" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00140" data-run-id="sensitivity:store_budget_gib=32:32k:gpu_failure:seed-2:repeat-A" data-result-hash="5556aec305b67c4bec0391e3714b79d666ac2477e2724e2dc18ea753b02151a5">
+    <title>f10-point-00140 | sensitivity:store_budget_gib=32:32k:gpu_failure:seed-2:repeat-A | 5556aec305b67c4bec0391e3714b79d666ac2477e2724e2dc18ea753b02151a5 | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"32k","display_x_jitter_px":5.0,"metric":"mean WCT (ms)","metric_value":6322990.545476,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="105" cy="474.934" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00141" data-run-id="sensitivity:store_budget_gib=32:64k:gpu_failure:seed-0:repeat-A" data-result-hash="73486aa3309982a28ebb0d89eeb36cd0d2c4cf062aea753eea787f403f56f32b">
+    <title>f10-point-00141 | sensitivity:store_budget_gib=32:64k:gpu_failure:seed-0:repeat-A | 73486aa3309982a28ebb0d89eeb36cd0d2c4cf062aea753eea787f403f56f32b | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"64k","display_x_jitter_px":-6.0,"metric":"mean WCT (ms)","metric_value":6328091.050138,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="94" cy="469.302" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00142" data-run-id="sensitivity:store_budget_gib=32:64k:gpu_failure:seed-1:repeat-A" data-result-hash="693659f8a089b0b8b4cb1cd37539253cb4857bb4cf2af74c4efb447fb3c2c80e">
+    <title>f10-point-00142 | sensitivity:store_budget_gib=32:64k:gpu_failure:seed-1:repeat-A | 693659f8a089b0b8b4cb1cd37539253cb4857bb4cf2af74c4efb447fb3c2c80e | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"64k","display_x_jitter_px":0.0,"metric":"mean WCT (ms)","metric_value":6361785.911476,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="100" cy="432.099" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00143" data-run-id="sensitivity:store_budget_gib=32:64k:gpu_failure:seed-2:repeat-A" data-result-hash="e858796339de1871c73ad1cfb5ff376304548cb974c224bab1c80190fdae9735">
+    <title>f10-point-00143 | sensitivity:store_budget_gib=32:64k:gpu_failure:seed-2:repeat-A | e858796339de1871c73ad1cfb5ff376304548cb974c224bab1c80190fdae9735 | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"64k","display_x_jitter_px":6.0,"metric":"mean WCT (ms)","metric_value":6315658.525678,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="106" cy="483.029" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00144" data-run-id="sensitivity:store_budget_gib=32:96k:gpu_failure:seed-0:repeat-A" data-result-hash="9ba9e1b805b0ced39e73878618395e88f915686f13c46aedaa1cc97b6b393fab">
+    <title>f10-point-00144 | sensitivity:store_budget_gib=32:96k:gpu_failure:seed-0:repeat-A | 9ba9e1b805b0ced39e73878618395e88f915686f13c46aedaa1cc97b6b393fab | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"96k","display_x_jitter_px":-5.0,"metric":"mean WCT (ms)","metric_value":6342150.465194,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="95" cy="453.779" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00145" data-run-id="sensitivity:store_budget_gib=32:96k:gpu_failure:seed-1:repeat-A" data-result-hash="35ae95ff871174b512b36bfc180674f2d3c1ce877ddba2662fcfdae2090458a2">
+    <title>f10-point-00145 | sensitivity:store_budget_gib=32:96k:gpu_failure:seed-1:repeat-A | 35ae95ff871174b512b36bfc180674f2d3c1ce877ddba2662fcfdae2090458a2 | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"96k","display_x_jitter_px":1.0,"metric":"mean WCT (ms)","metric_value":6335806.327921,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="101" cy="460.784" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00146" data-run-id="sensitivity:store_budget_gib=32:96k:gpu_failure:seed-2:repeat-A" data-result-hash="929557857c5f909c3eb1137e291236230f951ccd10b7c64db5d8f7eb506d86de">
+    <title>f10-point-00146 | sensitivity:store_budget_gib=32:96k:gpu_failure:seed-2:repeat-A | 929557857c5f909c3eb1137e291236230f951ccd10b7c64db5d8f7eb506d86de | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"96k","display_x_jitter_px":7.0,"metric":"mean WCT (ms)","metric_value":6365865.506076,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="107" cy="427.595" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00147" data-run-id="sensitivity:store_budget_gib=32:128k:gpu_failure:seed-0:repeat-A" data-result-hash="19b13fe3315eb3a6c54e8d46354b3802717e8a39a107cfc3a355198180a28448">
+    <title>f10-point-00147 | sensitivity:store_budget_gib=32:128k:gpu_failure:seed-0:repeat-A | 19b13fe3315eb3a6c54e8d46354b3802717e8a39a107cfc3a355198180a28448 | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"128k","display_x_jitter_px":-4.0,"metric":"mean WCT (ms)","metric_value":6346830.699841,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="96" cy="448.612" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00148" data-run-id="sensitivity:store_budget_gib=32:128k:gpu_failure:seed-1:repeat-A" data-result-hash="86b0c6a86d0d31c135ef4859ccf9f5527be476d770df7bff244184069ff61357">
+    <title>f10-point-00148 | sensitivity:store_budget_gib=32:128k:gpu_failure:seed-1:repeat-A | 86b0c6a86d0d31c135ef4859ccf9f5527be476d770df7bff244184069ff61357 | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"128k","display_x_jitter_px":2.0,"metric":"mean WCT (ms)","metric_value":6376294.022183,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="102" cy="416.08" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00149" data-run-id="sensitivity:store_budget_gib=32:128k:gpu_failure:seed-2:repeat-A" data-result-hash="8f4124565fc138ac25e1e5f19c10d7677973c83530a2cf3f811d685bf65dd574">
+    <title>f10-point-00149 | sensitivity:store_budget_gib=32:128k:gpu_failure:seed-2:repeat-A | 8f4124565fc138ac25e1e5f19c10d7677973c83530a2cf3f811d685bf65dd574 | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"128k","display_x_jitter_px":8.0,"metric":"mean WCT (ms)","metric_value":6311055.05603,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="108" cy="488.112" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00150" data-run-id="sensitivity:store_budget_gib=64:8k:gpu_failure:seed-0:repeat-A" data-result-hash="413d4b6efdfc4b8a5f7cf6145f5cb7e99c511e2f9d5addf3f82187f9fba684b9">
+    <title>f10-point-00150 | sensitivity:store_budget_gib=64:8k:gpu_failure:seed-0:repeat-A | 413d4b6efdfc4b8a5f7cf6145f5cb7e99c511e2f9d5addf3f82187f9fba684b9 | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"8k","display_x_jitter_px":-8.0,"metric":"mean WCT (ms)","metric_value":6322992.985536,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="177.667" cy="474.931" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00151" data-run-id="sensitivity:store_budget_gib=64:8k:gpu_failure:seed-1:repeat-A" data-result-hash="9a2d72f669a8d1817520c103ae7a2841f0fd8671d2e8d7d4996f9993d3f10089">
+    <title>f10-point-00151 | sensitivity:store_budget_gib=64:8k:gpu_failure:seed-1:repeat-A | 9a2d72f669a8d1817520c103ae7a2841f0fd8671d2e8d7d4996f9993d3f10089 | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"8k","display_x_jitter_px":-2.0,"metric":"mean WCT (ms)","metric_value":6336025.75582,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="183.667" cy="460.541" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00152" data-run-id="sensitivity:store_budget_gib=64:8k:gpu_failure:seed-2:repeat-A" data-result-hash="e25a69a060aa24225cfb3de36113fcc1d1604985747f465e79280959fd55b66b">
+    <title>f10-point-00152 | sensitivity:store_budget_gib=64:8k:gpu_failure:seed-2:repeat-A | e25a69a060aa24225cfb3de36113fcc1d1604985747f465e79280959fd55b66b | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"8k","display_x_jitter_px":4.0,"metric":"mean WCT (ms)","metric_value":6328849.104621,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="189.667" cy="468.465" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00153" data-run-id="sensitivity:store_budget_gib=64:32k:gpu_failure:seed-0:repeat-A" data-result-hash="db583ba8cf884355644b64d78e058ca82820a785f65adecbcf5655bb6defcc64">
+    <title>f10-point-00153 | sensitivity:store_budget_gib=64:32k:gpu_failure:seed-0:repeat-A | db583ba8cf884355644b64d78e058ca82820a785f65adecbcf5655bb6defcc64 | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"32k","display_x_jitter_px":-7.0,"metric":"mean WCT (ms)","metric_value":6317399.808282,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="178.667" cy="481.107" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00154" data-run-id="sensitivity:store_budget_gib=64:32k:gpu_failure:seed-1:repeat-A" data-result-hash="e1f03762f3ff711bb7a9c5f69ee200eb9a47c2db4a5a9636c2704420004aebe2">
+    <title>f10-point-00154 | sensitivity:store_budget_gib=64:32k:gpu_failure:seed-1:repeat-A | e1f03762f3ff711bb7a9c5f69ee200eb9a47c2db4a5a9636c2704420004aebe2 | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"32k","display_x_jitter_px":-1.0,"metric":"mean WCT (ms)","metric_value":6335798.111118,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="184.667" cy="460.793" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00155" data-run-id="sensitivity:store_budget_gib=64:32k:gpu_failure:seed-2:repeat-A" data-result-hash="0608986e7beb909cd87c1d4d4aa552a8e149fee709c44aefef7aeec7dace10bb">
+    <title>f10-point-00155 | sensitivity:store_budget_gib=64:32k:gpu_failure:seed-2:repeat-A | 0608986e7beb909cd87c1d4d4aa552a8e149fee709c44aefef7aeec7dace10bb | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"32k","display_x_jitter_px":5.0,"metric":"mean WCT (ms)","metric_value":6285541.837971,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="190.667" cy="516.282" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00156" data-run-id="sensitivity:store_budget_gib=64:64k:gpu_failure:seed-0:repeat-A" data-result-hash="77b1b48b63569be141e48a1cc87c43136ca5fbab94c543a5196986d9009e3e53">
+    <title>f10-point-00156 | sensitivity:store_budget_gib=64:64k:gpu_failure:seed-0:repeat-A | 77b1b48b63569be141e48a1cc87c43136ca5fbab94c543a5196986d9009e3e53 | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"64k","display_x_jitter_px":-6.0,"metric":"mean WCT (ms)","metric_value":6323330.982717,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="179.667" cy="474.558" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00157" data-run-id="sensitivity:store_budget_gib=64:64k:gpu_failure:seed-1:repeat-A" data-result-hash="74df672316b7d876c1cdea340f22f1dbaaf3d2f9e465a99bc40b083c483a2abf">
+    <title>f10-point-00157 | sensitivity:store_budget_gib=64:64k:gpu_failure:seed-1:repeat-A | 74df672316b7d876c1cdea340f22f1dbaaf3d2f9e465a99bc40b083c483a2abf | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"64k","display_x_jitter_px":0.0,"metric":"mean WCT (ms)","metric_value":6349089.844051,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="185.667" cy="446.117" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00158" data-run-id="sensitivity:store_budget_gib=64:64k:gpu_failure:seed-2:repeat-A" data-result-hash="14b8225bf65174c1cd30241f66dcbc7d4c52f04176e9c0b9019ff079141b9f3f">
+    <title>f10-point-00158 | sensitivity:store_budget_gib=64:64k:gpu_failure:seed-2:repeat-A | 14b8225bf65174c1cd30241f66dcbc7d4c52f04176e9c0b9019ff079141b9f3f | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"64k","display_x_jitter_px":6.0,"metric":"mean WCT (ms)","metric_value":6290349.47877,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="191.667" cy="510.974" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00159" data-run-id="sensitivity:store_budget_gib=64:96k:gpu_failure:seed-0:repeat-A" data-result-hash="e11d922f927d08f311d45a6a989ffb2ef101e8201fd7e29615ab41557967e6fb">
+    <title>f10-point-00159 | sensitivity:store_budget_gib=64:96k:gpu_failure:seed-0:repeat-A | e11d922f927d08f311d45a6a989ffb2ef101e8201fd7e29615ab41557967e6fb | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"96k","display_x_jitter_px":-5.0,"metric":"mean WCT (ms)","metric_value":6337545.43365,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="180.667" cy="458.864" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00160" data-run-id="sensitivity:store_budget_gib=64:96k:gpu_failure:seed-1:repeat-A" data-result-hash="e94adae593d5e1011f95a0fdb148788ec1f63ff9f3e54a6620e0693de142a8a4">
+    <title>f10-point-00160 | sensitivity:store_budget_gib=64:96k:gpu_failure:seed-1:repeat-A | e94adae593d5e1011f95a0fdb148788ec1f63ff9f3e54a6620e0693de142a8a4 | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"96k","display_x_jitter_px":1.0,"metric":"mean WCT (ms)","metric_value":6304250.83198,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="186.667" cy="495.625" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00161" data-run-id="sensitivity:store_budget_gib=64:96k:gpu_failure:seed-2:repeat-A" data-result-hash="192f3a1f3e1b61a70c949d1f4a517f9aabd442932b232e692f8e867af1fc00fb">
+    <title>f10-point-00161 | sensitivity:store_budget_gib=64:96k:gpu_failure:seed-2:repeat-A | 192f3a1f3e1b61a70c949d1f4a517f9aabd442932b232e692f8e867af1fc00fb | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"96k","display_x_jitter_px":7.0,"metric":"mean WCT (ms)","metric_value":6342634.125821,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="192.667" cy="453.245" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00162" data-run-id="sensitivity:store_budget_gib=64:128k:gpu_failure:seed-0:repeat-A" data-result-hash="96060a33d52ab5ccb38546e303b561682e2925b88cd307bd5fa2a251c6abe18c">
+    <title>f10-point-00162 | sensitivity:store_budget_gib=64:128k:gpu_failure:seed-0:repeat-A | 96060a33d52ab5ccb38546e303b561682e2925b88cd307bd5fa2a251c6abe18c | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"128k","display_x_jitter_px":-4.0,"metric":"mean WCT (ms)","metric_value":6323954.288625,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="181.667" cy="473.87" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00163" data-run-id="sensitivity:store_budget_gib=64:128k:gpu_failure:seed-1:repeat-A" data-result-hash="6842cc042da5683c777dca72b44547880a48f1b947bd67cff9f962749f5040fa">
+    <title>f10-point-00163 | sensitivity:store_budget_gib=64:128k:gpu_failure:seed-1:repeat-A | 6842cc042da5683c777dca72b44547880a48f1b947bd67cff9f962749f5040fa | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"128k","display_x_jitter_px":2.0,"metric":"mean WCT (ms)","metric_value":6360427.201992,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="187.667" cy="433.599" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00164" data-run-id="sensitivity:store_budget_gib=64:128k:gpu_failure:seed-2:repeat-A" data-result-hash="8ba0173d8fe918cd7d254f40d24f798c5c888905de6d8d14b99ff446a6d333f4">
+    <title>f10-point-00164 | sensitivity:store_budget_gib=64:128k:gpu_failure:seed-2:repeat-A | 8ba0173d8fe918cd7d254f40d24f798c5c888905de6d8d14b99ff446a6d333f4 | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"128k","display_x_jitter_px":8.0,"metric":"mean WCT (ms)","metric_value":6287336.076939,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="193.667" cy="514.301" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00165" data-run-id="sensitivity:store_budget_gib=128:8k:gpu_failure:seed-0:repeat-A" data-result-hash="ba1b5061f54763baaa22b5a92c29e37667892bc3845499675550af025792d521">
+    <title>f10-point-00165 | sensitivity:store_budget_gib=128:8k:gpu_failure:seed-0:repeat-A | ba1b5061f54763baaa22b5a92c29e37667892bc3845499675550af025792d521 | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"8k","display_x_jitter_px":-8.0,"metric":"mean WCT (ms)","metric_value":6317467.961402,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="349" cy="481.032" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00166" data-run-id="sensitivity:store_budget_gib=128:8k:gpu_failure:seed-1:repeat-A" data-result-hash="857218208ca88483fcf9c718d6feb4c8539f0d6f6ee709e66a8199cec0ebadbc">
+    <title>f10-point-00166 | sensitivity:store_budget_gib=128:8k:gpu_failure:seed-1:repeat-A | 857218208ca88483fcf9c718d6feb4c8539f0d6f6ee709e66a8199cec0ebadbc | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"8k","display_x_jitter_px":-2.0,"metric":"mean WCT (ms)","metric_value":6323037.419618,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="355" cy="474.882" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00167" data-run-id="sensitivity:store_budget_gib=128:8k:gpu_failure:seed-2:repeat-A" data-result-hash="bcfbccef9a6a132f4e592a9d18efdfc76d71ea2a9dc7e8860de76a50c1c96d3a">
+    <title>f10-point-00167 | sensitivity:store_budget_gib=128:8k:gpu_failure:seed-2:repeat-A | bcfbccef9a6a132f4e592a9d18efdfc76d71ea2a9dc7e8860de76a50c1c96d3a | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"8k","display_x_jitter_px":4.0,"metric":"mean WCT (ms)","metric_value":6326943.77447,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="361" cy="470.569" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00168" data-run-id="sensitivity:store_budget_gib=128:32k:gpu_failure:seed-0:repeat-A" data-result-hash="26aa6452e75991d29db5437ec407489e2997d304a84197422c7b95d7092d6170">
+    <title>f10-point-00168 | sensitivity:store_budget_gib=128:32k:gpu_failure:seed-0:repeat-A | 26aa6452e75991d29db5437ec407489e2997d304a84197422c7b95d7092d6170 | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"32k","display_x_jitter_px":-7.0,"metric":"mean WCT (ms)","metric_value":6313301.704203,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="350" cy="485.632" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00169" data-run-id="sensitivity:store_budget_gib=128:32k:gpu_failure:seed-1:repeat-A" data-result-hash="b7d17265b00a5ad6b461915fab406adf27cdff1e4cff3c9505fb2e058eea26ed">
+    <title>f10-point-00169 | sensitivity:store_budget_gib=128:32k:gpu_failure:seed-1:repeat-A | b7d17265b00a5ad6b461915fab406adf27cdff1e4cff3c9505fb2e058eea26ed | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"32k","display_x_jitter_px":-1.0,"metric":"mean WCT (ms)","metric_value":6323322.254428,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="356" cy="474.568" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00170" data-run-id="sensitivity:store_budget_gib=128:32k:gpu_failure:seed-2:repeat-A" data-result-hash="a4568f1ce98b118fad141322c1f25ba071091282740acbbf394c3f9464e2589a">
+    <title>f10-point-00170 | sensitivity:store_budget_gib=128:32k:gpu_failure:seed-2:repeat-A | a4568f1ce98b118fad141322c1f25ba071091282740acbbf394c3f9464e2589a | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"32k","display_x_jitter_px":5.0,"metric":"mean WCT (ms)","metric_value":6282776.212419,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="362" cy="519.335" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00171" data-run-id="sensitivity:store_budget_gib=128:64k:gpu_failure:seed-0:repeat-A" data-result-hash="95964c3c5bbf588c11d537f8db65814c2b8519bf5fbf5a8285b81b5482dc2cc9">
+    <title>f10-point-00171 | sensitivity:store_budget_gib=128:64k:gpu_failure:seed-0:repeat-A | 95964c3c5bbf588c11d537f8db65814c2b8519bf5fbf5a8285b81b5482dc2cc9 | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"64k","display_x_jitter_px":-6.0,"metric":"mean WCT (ms)","metric_value":6316196.523066,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="351" cy="482.435" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00172" data-run-id="sensitivity:store_budget_gib=128:64k:gpu_failure:seed-1:repeat-A" data-result-hash="affc6cb151489d96075e242d9eda2b616178800afe9c852c1b8e57201df29413">
+    <title>f10-point-00172 | sensitivity:store_budget_gib=128:64k:gpu_failure:seed-1:repeat-A | affc6cb151489d96075e242d9eda2b616178800afe9c852c1b8e57201df29413 | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"64k","display_x_jitter_px":0.0,"metric":"mean WCT (ms)","metric_value":6335887.526532,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="357" cy="460.694" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00173" data-run-id="sensitivity:store_budget_gib=128:64k:gpu_failure:seed-2:repeat-A" data-result-hash="372ed234203c4291315eeb2f1d34389189fab3b742faa4191534e1eb08967ea9">
+    <title>f10-point-00173 | sensitivity:store_budget_gib=128:64k:gpu_failure:seed-2:repeat-A | 372ed234203c4291315eeb2f1d34389189fab3b742faa4191534e1eb08967ea9 | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"64k","display_x_jitter_px":6.0,"metric":"mean WCT (ms)","metric_value":6280435.770294,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="363" cy="521.92" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00174" data-run-id="sensitivity:store_budget_gib=128:96k:gpu_failure:seed-0:repeat-A" data-result-hash="3a45a4492b77234bd02804595da72011e667a48b68788e6e25ba82f9ad0294d0">
+    <title>f10-point-00174 | sensitivity:store_budget_gib=128:96k:gpu_failure:seed-0:repeat-A | 3a45a4492b77234bd02804595da72011e667a48b68788e6e25ba82f9ad0294d0 | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"96k","display_x_jitter_px":-5.0,"metric":"mean WCT (ms)","metric_value":6327280.238815,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="352" cy="470.198" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00175" data-run-id="sensitivity:store_budget_gib=128:96k:gpu_failure:seed-1:repeat-A" data-result-hash="51748abf275530f1f31800592a25aff9e2b8990dac1d65dd8b6750a03fded96a">
+    <title>f10-point-00175 | sensitivity:store_budget_gib=128:96k:gpu_failure:seed-1:repeat-A | 51748abf275530f1f31800592a25aff9e2b8990dac1d65dd8b6750a03fded96a | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"96k","display_x_jitter_px":1.0,"metric":"mean WCT (ms)","metric_value":6304113.469551,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="358" cy="495.777" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00176" data-run-id="sensitivity:store_budget_gib=128:96k:gpu_failure:seed-2:repeat-A" data-result-hash="a608894227cb151a5af7171afd716efbae80b0148e5e84e9c035c44d673d019f">
+    <title>f10-point-00176 | sensitivity:store_budget_gib=128:96k:gpu_failure:seed-2:repeat-A | a608894227cb151a5af7171afd716efbae80b0148e5e84e9c035c44d673d019f | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"96k","display_x_jitter_px":7.0,"metric":"mean WCT (ms)","metric_value":6338280.414806,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="364" cy="458.052" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00177" data-run-id="sensitivity:store_budget_gib=128:128k:gpu_failure:seed-0:repeat-A" data-result-hash="e48b8c4909eeae61c0e3daab349175eb59650419983b57f787895c95a109f8b2">
+    <title>f10-point-00177 | sensitivity:store_budget_gib=128:128k:gpu_failure:seed-0:repeat-A | e48b8c4909eeae61c0e3daab349175eb59650419983b57f787895c95a109f8b2 | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"128k","display_x_jitter_px":-4.0,"metric":"mean WCT (ms)","metric_value":6321402.797868,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="353" cy="476.687" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00178" data-run-id="sensitivity:store_budget_gib=128:128k:gpu_failure:seed-1:repeat-A" data-result-hash="890c29eae65210a4a5a1ff8e8edc622eacb8334c8ed1ae150f3ef1ae2e64a05b">
+    <title>f10-point-00178 | sensitivity:store_budget_gib=128:128k:gpu_failure:seed-1:repeat-A | 890c29eae65210a4a5a1ff8e8edc622eacb8334c8ed1ae150f3ef1ae2e64a05b | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"128k","display_x_jitter_px":2.0,"metric":"mean WCT (ms)","metric_value":6345682.541029,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="359" cy="449.879" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00179" data-run-id="sensitivity:store_budget_gib=128:128k:gpu_failure:seed-2:repeat-A" data-result-hash="e05b1f7d0800008273486965660d093aa562a4d5eddb6a08ba1046b432d27051">
+    <title>f10-point-00179 | sensitivity:store_budget_gib=128:128k:gpu_failure:seed-2:repeat-A | e05b1f7d0800008273486965660d093aa562a4d5eddb6a08ba1046b432d27051 | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"128k","display_x_jitter_px":8.0,"metric":"mean WCT (ms)","metric_value":6281344.361344,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="365" cy="520.916" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <rect x="425" y="370" width="350" height="210" rx="4" fill="#f8fafc" stroke="#cbd5e1" opacity="1" />
+  <line x1="473" y1="395" x2="473" y2="542" stroke="#64748b" stroke-width="1" />
+  <line x1="473" y1="542" x2="763" y2="542" stroke="#64748b" stroke-width="1" />
+  <text x="600" y="387" class="label" text-anchor="middle">goodput (tokens/s)</text>
+  <text x="600" y="574" class="small" text-anchor="middle">Store DRAM budget (global GiB)</text>
+  <text x="468" y="399" class="small" text-anchor="end">6.8</text>
+  <text x="468" y="541" class="small" text-anchor="end">4.8</text>
+  <line x1="490" y1="542" x2="490" y2="547" stroke="#64748b" stroke-width="1" />
+  <text x="490" y="558" class="small" text-anchor="middle">32</text>
+  <line x1="575.667" y1="542" x2="575.667" y2="547" stroke="#64748b" stroke-width="1" />
+  <text x="575.667" y="558" class="small" text-anchor="middle">64</text>
+  <line x1="747" y1="542" x2="747" y2="547" stroke="#64748b" stroke-width="1" />
+  <text x="747" y="558" class="small" text-anchor="middle">128</text>
+  <text x="759" y="401" class="small" text-anchor="end">n=45 seeds=0,1,2</text>
+  <g data-point-id="f10-point-00180" data-run-id="sensitivity:store_budget_gib=32:8k:gpu_failure:seed-0:repeat-A" data-result-hash="889a38509841f4ff229e591a38d5f54e95aaa4b23b6062a0a63e97a4db223cd5">
+    <title>f10-point-00180 | sensitivity:store_budget_gib=32:8k:gpu_failure:seed-0:repeat-A | 889a38509841f4ff229e591a38d5f54e95aaa4b23b6062a0a63e97a4db223cd5 | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"8k","display_x_jitter_px":-8.0,"metric":"goodput (tokens/s)","metric_value":5.803,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="482" cy="469.778" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00181" data-run-id="sensitivity:store_budget_gib=32:8k:gpu_failure:seed-1:repeat-A" data-result-hash="4bf6ce9a5015a6cd15f05d16aecfbb0a80289d87a8deaddf5c393937f9708838">
+    <title>f10-point-00181 | sensitivity:store_budget_gib=32:8k:gpu_failure:seed-1:repeat-A | 4bf6ce9a5015a6cd15f05d16aecfbb0a80289d87a8deaddf5c393937f9708838 | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"8k","display_x_jitter_px":-2.0,"metric":"goodput (tokens/s)","metric_value":5.815,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="488" cy="469" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00182" data-run-id="sensitivity:store_budget_gib=32:8k:gpu_failure:seed-2:repeat-A" data-result-hash="8b54b7810275b6e64749c08787766cc88187753fe352dd586bad0d1e4e2250fc">
+    <title>f10-point-00182 | sensitivity:store_budget_gib=32:8k:gpu_failure:seed-2:repeat-A | 8b54b7810275b6e64749c08787766cc88187753fe352dd586bad0d1e4e2250fc | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"8k","display_x_jitter_px":4.0,"metric":"goodput (tokens/s)","metric_value":5.787,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="494" cy="470.814" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00183" data-run-id="sensitivity:store_budget_gib=32:32k:gpu_failure:seed-0:repeat-A" data-result-hash="6b42ca81aca4e252edb470fcce39592def1f4f9b7a93bbdd221d2045986f5880">
+    <title>f10-point-00183 | sensitivity:store_budget_gib=32:32k:gpu_failure:seed-0:repeat-A | 6b42ca81aca4e252edb470fcce39592def1f4f9b7a93bbdd221d2045986f5880 | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"32k","display_x_jitter_px":-7.0,"metric":"goodput (tokens/s)","metric_value":5.79,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="483" cy="470.62" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00184" data-run-id="sensitivity:store_budget_gib=32:32k:gpu_failure:seed-1:repeat-A" data-result-hash="aeed219bbad3a987c9786c4d48ce26955ec444d5272eee454e76cb550a57bbb2">
+    <title>f10-point-00184 | sensitivity:store_budget_gib=32:32k:gpu_failure:seed-1:repeat-A | aeed219bbad3a987c9786c4d48ce26955ec444d5272eee454e76cb550a57bbb2 | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"32k","display_x_jitter_px":-1.0,"metric":"goodput (tokens/s)","metric_value":5.789,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="489" cy="470.685" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00185" data-run-id="sensitivity:store_budget_gib=32:32k:gpu_failure:seed-2:repeat-A" data-result-hash="5556aec305b67c4bec0391e3714b79d666ac2477e2724e2dc18ea753b02151a5">
+    <title>f10-point-00185 | sensitivity:store_budget_gib=32:32k:gpu_failure:seed-2:repeat-A | 5556aec305b67c4bec0391e3714b79d666ac2477e2724e2dc18ea753b02151a5 | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"32k","display_x_jitter_px":5.0,"metric":"goodput (tokens/s)","metric_value":5.827,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="495" cy="468.222" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00186" data-run-id="sensitivity:store_budget_gib=32:64k:gpu_failure:seed-0:repeat-A" data-result-hash="73486aa3309982a28ebb0d89eeb36cd0d2c4cf062aea753eea787f403f56f32b">
+    <title>f10-point-00186 | sensitivity:store_budget_gib=32:64k:gpu_failure:seed-0:repeat-A | 73486aa3309982a28ebb0d89eeb36cd0d2c4cf062aea753eea787f403f56f32b | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"64k","display_x_jitter_px":-6.0,"metric":"goodput (tokens/s)","metric_value":5.801,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="484" cy="469.907" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00187" data-run-id="sensitivity:store_budget_gib=32:64k:gpu_failure:seed-1:repeat-A" data-result-hash="693659f8a089b0b8b4cb1cd37539253cb4857bb4cf2af74c4efb447fb3c2c80e">
+    <title>f10-point-00187 | sensitivity:store_budget_gib=32:64k:gpu_failure:seed-1:repeat-A | 693659f8a089b0b8b4cb1cd37539253cb4857bb4cf2af74c4efb447fb3c2c80e | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"64k","display_x_jitter_px":0.0,"metric":"goodput (tokens/s)","metric_value":5.787,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="490" cy="470.814" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00188" data-run-id="sensitivity:store_budget_gib=32:64k:gpu_failure:seed-2:repeat-A" data-result-hash="e858796339de1871c73ad1cfb5ff376304548cb974c224bab1c80190fdae9735">
+    <title>f10-point-00188 | sensitivity:store_budget_gib=32:64k:gpu_failure:seed-2:repeat-A | e858796339de1871c73ad1cfb5ff376304548cb974c224bab1c80190fdae9735 | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"64k","display_x_jitter_px":6.0,"metric":"goodput (tokens/s)","metric_value":5.822,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="496" cy="468.546" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00189" data-run-id="sensitivity:store_budget_gib=32:96k:gpu_failure:seed-0:repeat-A" data-result-hash="9ba9e1b805b0ced39e73878618395e88f915686f13c46aedaa1cc97b6b393fab">
+    <title>f10-point-00189 | sensitivity:store_budget_gib=32:96k:gpu_failure:seed-0:repeat-A | 9ba9e1b805b0ced39e73878618395e88f915686f13c46aedaa1cc97b6b393fab | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"96k","display_x_jitter_px":-5.0,"metric":"goodput (tokens/s)","metric_value":5.792,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="485" cy="470.49" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00190" data-run-id="sensitivity:store_budget_gib=32:96k:gpu_failure:seed-1:repeat-A" data-result-hash="35ae95ff871174b512b36bfc180674f2d3c1ce877ddba2662fcfdae2090458a2">
+    <title>f10-point-00190 | sensitivity:store_budget_gib=32:96k:gpu_failure:seed-1:repeat-A | 35ae95ff871174b512b36bfc180674f2d3c1ce877ddba2662fcfdae2090458a2 | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"96k","display_x_jitter_px":1.0,"metric":"goodput (tokens/s)","metric_value":5.81,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="491" cy="469.324" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00191" data-run-id="sensitivity:store_budget_gib=32:96k:gpu_failure:seed-2:repeat-A" data-result-hash="929557857c5f909c3eb1137e291236230f951ccd10b7c64db5d8f7eb506d86de">
+    <title>f10-point-00191 | sensitivity:store_budget_gib=32:96k:gpu_failure:seed-2:repeat-A | 929557857c5f909c3eb1137e291236230f951ccd10b7c64db5d8f7eb506d86de | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"96k","display_x_jitter_px":7.0,"metric":"goodput (tokens/s)","metric_value":5.797,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="497" cy="470.166" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00192" data-run-id="sensitivity:store_budget_gib=32:128k:gpu_failure:seed-0:repeat-A" data-result-hash="19b13fe3315eb3a6c54e8d46354b3802717e8a39a107cfc3a355198180a28448">
+    <title>f10-point-00192 | sensitivity:store_budget_gib=32:128k:gpu_failure:seed-0:repeat-A | 19b13fe3315eb3a6c54e8d46354b3802717e8a39a107cfc3a355198180a28448 | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"128k","display_x_jitter_px":-4.0,"metric":"goodput (tokens/s)","metric_value":5.8,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="486" cy="469.972" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00193" data-run-id="sensitivity:store_budget_gib=32:128k:gpu_failure:seed-1:repeat-A" data-result-hash="86b0c6a86d0d31c135ef4859ccf9f5527be476d770df7bff244184069ff61357">
+    <title>f10-point-00193 | sensitivity:store_budget_gib=32:128k:gpu_failure:seed-1:repeat-A | 86b0c6a86d0d31c135ef4859ccf9f5527be476d770df7bff244184069ff61357 | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"128k","display_x_jitter_px":2.0,"metric":"goodput (tokens/s)","metric_value":5.782,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="492" cy="471.138" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00194" data-run-id="sensitivity:store_budget_gib=32:128k:gpu_failure:seed-2:repeat-A" data-result-hash="8f4124565fc138ac25e1e5f19c10d7677973c83530a2cf3f811d685bf65dd574">
+    <title>f10-point-00194 | sensitivity:store_budget_gib=32:128k:gpu_failure:seed-2:repeat-A | 8f4124565fc138ac25e1e5f19c10d7677973c83530a2cf3f811d685bf65dd574 | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"128k","display_x_jitter_px":8.0,"metric":"goodput (tokens/s)","metric_value":5.831,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="498" cy="467.963" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00195" data-run-id="sensitivity:store_budget_gib=64:8k:gpu_failure:seed-0:repeat-A" data-result-hash="413d4b6efdfc4b8a5f7cf6145f5cb7e99c511e2f9d5addf3f82187f9fba684b9">
+    <title>f10-point-00195 | sensitivity:store_budget_gib=64:8k:gpu_failure:seed-0:repeat-A | 413d4b6efdfc4b8a5f7cf6145f5cb7e99c511e2f9d5addf3f82187f9fba684b9 | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"8k","display_x_jitter_px":-8.0,"metric":"goodput (tokens/s)","metric_value":5.798,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="567.667" cy="470.102" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00196" data-run-id="sensitivity:store_budget_gib=64:8k:gpu_failure:seed-1:repeat-A" data-result-hash="9a2d72f669a8d1817520c103ae7a2841f0fd8671d2e8d7d4996f9993d3f10089">
+    <title>f10-point-00196 | sensitivity:store_budget_gib=64:8k:gpu_failure:seed-1:repeat-A | 9a2d72f669a8d1817520c103ae7a2841f0fd8671d2e8d7d4996f9993d3f10089 | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"8k","display_x_jitter_px":-2.0,"metric":"goodput (tokens/s)","metric_value":5.804,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="573.667" cy="469.713" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00197" data-run-id="sensitivity:store_budget_gib=64:8k:gpu_failure:seed-2:repeat-A" data-result-hash="e25a69a060aa24225cfb3de36113fcc1d1604985747f465e79280959fd55b66b">
+    <title>f10-point-00197 | sensitivity:store_budget_gib=64:8k:gpu_failure:seed-2:repeat-A | e25a69a060aa24225cfb3de36113fcc1d1604985747f465e79280959fd55b66b | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"8k","display_x_jitter_px":4.0,"metric":"goodput (tokens/s)","metric_value":5.808,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="579.667" cy="469.454" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00198" data-run-id="sensitivity:store_budget_gib=64:32k:gpu_failure:seed-0:repeat-A" data-result-hash="db583ba8cf884355644b64d78e058ca82820a785f65adecbcf5655bb6defcc64">
+    <title>f10-point-00198 | sensitivity:store_budget_gib=64:32k:gpu_failure:seed-0:repeat-A | db583ba8cf884355644b64d78e058ca82820a785f65adecbcf5655bb6defcc64 | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"32k","display_x_jitter_px":-7.0,"metric":"goodput (tokens/s)","metric_value":5.798,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="568.667" cy="470.102" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00199" data-run-id="sensitivity:store_budget_gib=64:32k:gpu_failure:seed-1:repeat-A" data-result-hash="e1f03762f3ff711bb7a9c5f69ee200eb9a47c2db4a5a9636c2704420004aebe2">
+    <title>f10-point-00199 | sensitivity:store_budget_gib=64:32k:gpu_failure:seed-1:repeat-A | e1f03762f3ff711bb7a9c5f69ee200eb9a47c2db4a5a9636c2704420004aebe2 | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"32k","display_x_jitter_px":-1.0,"metric":"goodput (tokens/s)","metric_value":5.783,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="574.667" cy="471.074" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00200" data-run-id="sensitivity:store_budget_gib=64:32k:gpu_failure:seed-2:repeat-A" data-result-hash="0608986e7beb909cd87c1d4d4aa552a8e149fee709c44aefef7aeec7dace10bb">
+    <title>f10-point-00200 | sensitivity:store_budget_gib=64:32k:gpu_failure:seed-2:repeat-A | 0608986e7beb909cd87c1d4d4aa552a8e149fee709c44aefef7aeec7dace10bb | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"32k","display_x_jitter_px":5.0,"metric":"goodput (tokens/s)","metric_value":5.847,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="580.667" cy="466.926" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00201" data-run-id="sensitivity:store_budget_gib=64:64k:gpu_failure:seed-0:repeat-A" data-result-hash="77b1b48b63569be141e48a1cc87c43136ca5fbab94c543a5196986d9009e3e53">
+    <title>f10-point-00201 | sensitivity:store_budget_gib=64:64k:gpu_failure:seed-0:repeat-A | 77b1b48b63569be141e48a1cc87c43136ca5fbab94c543a5196986d9009e3e53 | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"64k","display_x_jitter_px":-6.0,"metric":"goodput (tokens/s)","metric_value":5.797,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="569.667" cy="470.166" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00202" data-run-id="sensitivity:store_budget_gib=64:64k:gpu_failure:seed-1:repeat-A" data-result-hash="74df672316b7d876c1cdea340f22f1dbaaf3d2f9e465a99bc40b083c483a2abf">
+    <title>f10-point-00202 | sensitivity:store_budget_gib=64:64k:gpu_failure:seed-1:repeat-A | 74df672316b7d876c1cdea340f22f1dbaaf3d2f9e465a99bc40b083c483a2abf | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"64k","display_x_jitter_px":0.0,"metric":"goodput (tokens/s)","metric_value":5.781,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="575.667" cy="471.203" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00203" data-run-id="sensitivity:store_budget_gib=64:64k:gpu_failure:seed-2:repeat-A" data-result-hash="14b8225bf65174c1cd30241f66dcbc7d4c52f04176e9c0b9019ff079141b9f3f">
+    <title>f10-point-00203 | sensitivity:store_budget_gib=64:64k:gpu_failure:seed-2:repeat-A | 14b8225bf65174c1cd30241f66dcbc7d4c52f04176e9c0b9019ff079141b9f3f | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"64k","display_x_jitter_px":6.0,"metric":"goodput (tokens/s)","metric_value":5.839,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="581.667" cy="467.445" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00204" data-run-id="sensitivity:store_budget_gib=64:96k:gpu_failure:seed-0:repeat-A" data-result-hash="e11d922f927d08f311d45a6a989ffb2ef101e8201fd7e29615ab41557967e6fb">
+    <title>f10-point-00204 | sensitivity:store_budget_gib=64:96k:gpu_failure:seed-0:repeat-A | e11d922f927d08f311d45a6a989ffb2ef101e8201fd7e29615ab41557967e6fb | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"96k","display_x_jitter_px":-5.0,"metric":"goodput (tokens/s)","metric_value":5.787,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="570.667" cy="470.814" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00205" data-run-id="sensitivity:store_budget_gib=64:96k:gpu_failure:seed-1:repeat-A" data-result-hash="e94adae593d5e1011f95a0fdb148788ec1f63ff9f3e54a6620e0693de142a8a4">
+    <title>f10-point-00205 | sensitivity:store_budget_gib=64:96k:gpu_failure:seed-1:repeat-A | e94adae593d5e1011f95a0fdb148788ec1f63ff9f3e54a6620e0693de142a8a4 | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"96k","display_x_jitter_px":1.0,"metric":"goodput (tokens/s)","metric_value":5.831,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="576.667" cy="467.963" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00206" data-run-id="sensitivity:store_budget_gib=64:96k:gpu_failure:seed-2:repeat-A" data-result-hash="192f3a1f3e1b61a70c949d1f4a517f9aabd442932b232e692f8e867af1fc00fb">
+    <title>f10-point-00206 | sensitivity:store_budget_gib=64:96k:gpu_failure:seed-2:repeat-A | 192f3a1f3e1b61a70c949d1f4a517f9aabd442932b232e692f8e867af1fc00fb | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"96k","display_x_jitter_px":7.0,"metric":"goodput (tokens/s)","metric_value":5.799,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="582.667" cy="470.037" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00207" data-run-id="sensitivity:store_budget_gib=64:128k:gpu_failure:seed-0:repeat-A" data-result-hash="96060a33d52ab5ccb38546e303b561682e2925b88cd307bd5fa2a251c6abe18c">
+    <title>f10-point-00207 | sensitivity:store_budget_gib=64:128k:gpu_failure:seed-0:repeat-A | 96060a33d52ab5ccb38546e303b561682e2925b88cd307bd5fa2a251c6abe18c | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"128k","display_x_jitter_px":-4.0,"metric":"goodput (tokens/s)","metric_value":5.799,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="571.667" cy="470.037" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00208" data-run-id="sensitivity:store_budget_gib=64:128k:gpu_failure:seed-1:repeat-A" data-result-hash="6842cc042da5683c777dca72b44547880a48f1b947bd67cff9f962749f5040fa">
+    <title>f10-point-00208 | sensitivity:store_budget_gib=64:128k:gpu_failure:seed-1:repeat-A | 6842cc042da5683c777dca72b44547880a48f1b947bd67cff9f962749f5040fa | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"128k","display_x_jitter_px":2.0,"metric":"goodput (tokens/s)","metric_value":5.783,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="577.667" cy="471.074" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00209" data-run-id="sensitivity:store_budget_gib=64:128k:gpu_failure:seed-2:repeat-A" data-result-hash="8ba0173d8fe918cd7d254f40d24f798c5c888905de6d8d14b99ff446a6d333f4">
+    <title>f10-point-00209 | sensitivity:store_budget_gib=64:128k:gpu_failure:seed-2:repeat-A | 8ba0173d8fe918cd7d254f40d24f798c5c888905de6d8d14b99ff446a6d333f4 | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"128k","display_x_jitter_px":8.0,"metric":"goodput (tokens/s)","metric_value":5.847,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="583.667" cy="466.926" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00210" data-run-id="sensitivity:store_budget_gib=128:8k:gpu_failure:seed-0:repeat-A" data-result-hash="ba1b5061f54763baaa22b5a92c29e37667892bc3845499675550af025792d521">
+    <title>f10-point-00210 | sensitivity:store_budget_gib=128:8k:gpu_failure:seed-0:repeat-A | ba1b5061f54763baaa22b5a92c29e37667892bc3845499675550af025792d521 | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"8k","display_x_jitter_px":-8.0,"metric":"goodput (tokens/s)","metric_value":5.803,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="739" cy="469.778" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00211" data-run-id="sensitivity:store_budget_gib=128:8k:gpu_failure:seed-1:repeat-A" data-result-hash="857218208ca88483fcf9c718d6feb4c8539f0d6f6ee709e66a8199cec0ebadbc">
+    <title>f10-point-00211 | sensitivity:store_budget_gib=128:8k:gpu_failure:seed-1:repeat-A | 857218208ca88483fcf9c718d6feb4c8539f0d6f6ee709e66a8199cec0ebadbc | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"8k","display_x_jitter_px":-2.0,"metric":"goodput (tokens/s)","metric_value":5.817,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="745" cy="468.87" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00212" data-run-id="sensitivity:store_budget_gib=128:8k:gpu_failure:seed-2:repeat-A" data-result-hash="bcfbccef9a6a132f4e592a9d18efdfc76d71ea2a9dc7e8860de76a50c1c96d3a">
+    <title>f10-point-00212 | sensitivity:store_budget_gib=128:8k:gpu_failure:seed-2:repeat-A | bcfbccef9a6a132f4e592a9d18efdfc76d71ea2a9dc7e8860de76a50c1c96d3a | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"8k","display_x_jitter_px":4.0,"metric":"goodput (tokens/s)","metric_value":5.809,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="751" cy="469.389" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00213" data-run-id="sensitivity:store_budget_gib=128:32k:gpu_failure:seed-0:repeat-A" data-result-hash="26aa6452e75991d29db5437ec407489e2997d304a84197422c7b95d7092d6170">
+    <title>f10-point-00213 | sensitivity:store_budget_gib=128:32k:gpu_failure:seed-0:repeat-A | 26aa6452e75991d29db5437ec407489e2997d304a84197422c7b95d7092d6170 | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"32k","display_x_jitter_px":-7.0,"metric":"goodput (tokens/s)","metric_value":5.801,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="740" cy="469.907" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00214" data-run-id="sensitivity:store_budget_gib=128:32k:gpu_failure:seed-1:repeat-A" data-result-hash="b7d17265b00a5ad6b461915fab406adf27cdff1e4cff3c9505fb2e058eea26ed">
+    <title>f10-point-00214 | sensitivity:store_budget_gib=128:32k:gpu_failure:seed-1:repeat-A | b7d17265b00a5ad6b461915fab406adf27cdff1e4cff3c9505fb2e058eea26ed | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"32k","display_x_jitter_px":-1.0,"metric":"goodput (tokens/s)","metric_value":5.795,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="746" cy="470.296" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00215" data-run-id="sensitivity:store_budget_gib=128:32k:gpu_failure:seed-2:repeat-A" data-result-hash="a4568f1ce98b118fad141322c1f25ba071091282740acbbf394c3f9464e2589a">
+    <title>f10-point-00215 | sensitivity:store_budget_gib=128:32k:gpu_failure:seed-2:repeat-A | a4568f1ce98b118fad141322c1f25ba071091282740acbbf394c3f9464e2589a | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"32k","display_x_jitter_px":5.0,"metric":"goodput (tokens/s)","metric_value":5.848,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="752" cy="466.862" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00216" data-run-id="sensitivity:store_budget_gib=128:64k:gpu_failure:seed-0:repeat-A" data-result-hash="95964c3c5bbf588c11d537f8db65814c2b8519bf5fbf5a8285b81b5482dc2cc9">
+    <title>f10-point-00216 | sensitivity:store_budget_gib=128:64k:gpu_failure:seed-0:repeat-A | 95964c3c5bbf588c11d537f8db65814c2b8519bf5fbf5a8285b81b5482dc2cc9 | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"64k","display_x_jitter_px":-6.0,"metric":"goodput (tokens/s)","metric_value":5.804,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="741" cy="469.713" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00217" data-run-id="sensitivity:store_budget_gib=128:64k:gpu_failure:seed-1:repeat-A" data-result-hash="affc6cb151489d96075e242d9eda2b616178800afe9c852c1b8e57201df29413">
+    <title>f10-point-00217 | sensitivity:store_budget_gib=128:64k:gpu_failure:seed-1:repeat-A | affc6cb151489d96075e242d9eda2b616178800afe9c852c1b8e57201df29413 | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"64k","display_x_jitter_px":0.0,"metric":"goodput (tokens/s)","metric_value":5.793,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="747" cy="470.426" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00218" data-run-id="sensitivity:store_budget_gib=128:64k:gpu_failure:seed-2:repeat-A" data-result-hash="372ed234203c4291315eeb2f1d34389189fab3b742faa4191534e1eb08967ea9">
+    <title>f10-point-00218 | sensitivity:store_budget_gib=128:64k:gpu_failure:seed-2:repeat-A | 372ed234203c4291315eeb2f1d34389189fab3b742faa4191534e1eb08967ea9 | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"64k","display_x_jitter_px":6.0,"metric":"goodput (tokens/s)","metric_value":5.849,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="753" cy="466.797" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00219" data-run-id="sensitivity:store_budget_gib=128:96k:gpu_failure:seed-0:repeat-A" data-result-hash="3a45a4492b77234bd02804595da72011e667a48b68788e6e25ba82f9ad0294d0">
+    <title>f10-point-00219 | sensitivity:store_budget_gib=128:96k:gpu_failure:seed-0:repeat-A | 3a45a4492b77234bd02804595da72011e667a48b68788e6e25ba82f9ad0294d0 | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"96k","display_x_jitter_px":-5.0,"metric":"goodput (tokens/s)","metric_value":5.798,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="742" cy="470.102" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00220" data-run-id="sensitivity:store_budget_gib=128:96k:gpu_failure:seed-1:repeat-A" data-result-hash="51748abf275530f1f31800592a25aff9e2b8990dac1d65dd8b6750a03fded96a">
+    <title>f10-point-00220 | sensitivity:store_budget_gib=128:96k:gpu_failure:seed-1:repeat-A | 51748abf275530f1f31800592a25aff9e2b8990dac1d65dd8b6750a03fded96a | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"96k","display_x_jitter_px":1.0,"metric":"goodput (tokens/s)","metric_value":5.831,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="748" cy="467.963" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00221" data-run-id="sensitivity:store_budget_gib=128:96k:gpu_failure:seed-2:repeat-A" data-result-hash="a608894227cb151a5af7171afd716efbae80b0148e5e84e9c035c44d673d019f">
+    <title>f10-point-00221 | sensitivity:store_budget_gib=128:96k:gpu_failure:seed-2:repeat-A | a608894227cb151a5af7171afd716efbae80b0148e5e84e9c035c44d673d019f | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"96k","display_x_jitter_px":7.0,"metric":"goodput (tokens/s)","metric_value":5.803,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="754" cy="469.778" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00222" data-run-id="sensitivity:store_budget_gib=128:128k:gpu_failure:seed-0:repeat-A" data-result-hash="e48b8c4909eeae61c0e3daab349175eb59650419983b57f787895c95a109f8b2">
+    <title>f10-point-00222 | sensitivity:store_budget_gib=128:128k:gpu_failure:seed-0:repeat-A | e48b8c4909eeae61c0e3daab349175eb59650419983b57f787895c95a109f8b2 | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"128k","display_x_jitter_px":-4.0,"metric":"goodput (tokens/s)","metric_value":5.801,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="743" cy="469.907" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00223" data-run-id="sensitivity:store_budget_gib=128:128k:gpu_failure:seed-1:repeat-A" data-result-hash="890c29eae65210a4a5a1ff8e8edc622eacb8334c8ed1ae150f3ef1ae2e64a05b">
+    <title>f10-point-00223 | sensitivity:store_budget_gib=128:128k:gpu_failure:seed-1:repeat-A | 890c29eae65210a4a5a1ff8e8edc622eacb8334c8ed1ae150f3ef1ae2e64a05b | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"128k","display_x_jitter_px":2.0,"metric":"goodput (tokens/s)","metric_value":5.794,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="749" cy="470.361" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00224" data-run-id="sensitivity:store_budget_gib=128:128k:gpu_failure:seed-2:repeat-A" data-result-hash="e05b1f7d0800008273486965660d093aa562a4d5eddb6a08ba1046b432d27051">
+    <title>f10-point-00224 | sensitivity:store_budget_gib=128:128k:gpu_failure:seed-2:repeat-A | e05b1f7d0800008273486965660d093aa562a4d5eddb6a08ba1046b432d27051 | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"128k","display_x_jitter_px":8.0,"metric":"goodput (tokens/s)","metric_value":5.848,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="755" cy="466.862" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <rect x="815" y="370" width="350" height="210" rx="4" fill="#f8fafc" stroke="#cbd5e1" opacity="1" />
+  <line x1="863" y1="395" x2="863" y2="542" stroke="#64748b" stroke-width="1" />
+  <line x1="863" y1="542" x2="1153" y2="542" stroke="#64748b" stroke-width="1" />
+  <text x="990" y="387" class="label" text-anchor="middle">restored tokens</text>
+  <text x="990" y="574" class="small" text-anchor="middle">Store DRAM budget (global GiB)</text>
+  <text x="858" y="399" class="small" text-anchor="end">1.2e+02K</text>
+  <text x="858" y="541" class="small" text-anchor="end">0</text>
+  <line x1="880" y1="542" x2="880" y2="547" stroke="#64748b" stroke-width="1" />
+  <text x="880" y="558" class="small" text-anchor="middle">32</text>
+  <line x1="965.667" y1="542" x2="965.667" y2="547" stroke="#64748b" stroke-width="1" />
+  <text x="965.667" y="558" class="small" text-anchor="middle">64</text>
+  <line x1="1137" y1="542" x2="1137" y2="547" stroke="#64748b" stroke-width="1" />
+  <text x="1137" y="558" class="small" text-anchor="middle">128</text>
+  <text x="1149" y="401" class="small" text-anchor="end">n=45 seeds=0,1,2</text>
+  <g data-point-id="f10-point-00225" data-run-id="sensitivity:store_budget_gib=32:8k:gpu_failure:seed-0:repeat-A" data-result-hash="889a38509841f4ff229e591a38d5f54e95aaa4b23b6062a0a63e97a4db223cd5">
+    <title>f10-point-00225 | sensitivity:store_budget_gib=32:8k:gpu_failure:seed-0:repeat-A | 889a38509841f4ff229e591a38d5f54e95aaa4b23b6062a0a63e97a4db223cd5 | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"8k","display_x_jitter_px":-8.0,"metric":"restored tokens","metric_value":0.0,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="872" cy="536" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00226" data-run-id="sensitivity:store_budget_gib=32:8k:gpu_failure:seed-1:repeat-A" data-result-hash="4bf6ce9a5015a6cd15f05d16aecfbb0a80289d87a8deaddf5c393937f9708838">
+    <title>f10-point-00226 | sensitivity:store_budget_gib=32:8k:gpu_failure:seed-1:repeat-A | 4bf6ce9a5015a6cd15f05d16aecfbb0a80289d87a8deaddf5c393937f9708838 | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"8k","display_x_jitter_px":-2.0,"metric":"restored tokens","metric_value":0.0,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="878" cy="536" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00227" data-run-id="sensitivity:store_budget_gib=32:8k:gpu_failure:seed-2:repeat-A" data-result-hash="8b54b7810275b6e64749c08787766cc88187753fe352dd586bad0d1e4e2250fc">
+    <title>f10-point-00227 | sensitivity:store_budget_gib=32:8k:gpu_failure:seed-2:repeat-A | 8b54b7810275b6e64749c08787766cc88187753fe352dd586bad0d1e4e2250fc | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"8k","display_x_jitter_px":4.0,"metric":"restored tokens","metric_value":0.0,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="884" cy="536" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00228" data-run-id="sensitivity:store_budget_gib=32:32k:gpu_failure:seed-0:repeat-A" data-result-hash="6b42ca81aca4e252edb470fcce39592def1f4f9b7a93bbdd221d2045986f5880">
+    <title>f10-point-00228 | sensitivity:store_budget_gib=32:32k:gpu_failure:seed-0:repeat-A | 6b42ca81aca4e252edb470fcce39592def1f4f9b7a93bbdd221d2045986f5880 | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"32k","display_x_jitter_px":-7.0,"metric":"restored tokens","metric_value":23552.0,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="873" cy="509.793" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00229" data-run-id="sensitivity:store_budget_gib=32:32k:gpu_failure:seed-1:repeat-A" data-result-hash="aeed219bbad3a987c9786c4d48ce26955ec444d5272eee454e76cb550a57bbb2">
+    <title>f10-point-00229 | sensitivity:store_budget_gib=32:32k:gpu_failure:seed-1:repeat-A | aeed219bbad3a987c9786c4d48ce26955ec444d5272eee454e76cb550a57bbb2 | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"32k","display_x_jitter_px":-1.0,"metric":"restored tokens","metric_value":24576.0,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="879" cy="508.653" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00230" data-run-id="sensitivity:store_budget_gib=32:32k:gpu_failure:seed-2:repeat-A" data-result-hash="5556aec305b67c4bec0391e3714b79d666ac2477e2724e2dc18ea753b02151a5">
+    <title>f10-point-00230 | sensitivity:store_budget_gib=32:32k:gpu_failure:seed-2:repeat-A | 5556aec305b67c4bec0391e3714b79d666ac2477e2724e2dc18ea753b02151a5 | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"32k","display_x_jitter_px":5.0,"metric":"restored tokens","metric_value":0.0,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="885" cy="536" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00231" data-run-id="sensitivity:store_budget_gib=32:64k:gpu_failure:seed-0:repeat-A" data-result-hash="73486aa3309982a28ebb0d89eeb36cd0d2c4cf062aea753eea787f403f56f32b">
+    <title>f10-point-00231 | sensitivity:store_budget_gib=32:64k:gpu_failure:seed-0:repeat-A | 73486aa3309982a28ebb0d89eeb36cd0d2c4cf062aea753eea787f403f56f32b | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"64k","display_x_jitter_px":-6.0,"metric":"restored tokens","metric_value":0.0,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="874" cy="536" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00232" data-run-id="sensitivity:store_budget_gib=32:64k:gpu_failure:seed-1:repeat-A" data-result-hash="693659f8a089b0b8b4cb1cd37539253cb4857bb4cf2af74c4efb447fb3c2c80e">
+    <title>f10-point-00232 | sensitivity:store_budget_gib=32:64k:gpu_failure:seed-1:repeat-A | 693659f8a089b0b8b4cb1cd37539253cb4857bb4cf2af74c4efb447fb3c2c80e | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"64k","display_x_jitter_px":0.0,"metric":"restored tokens","metric_value":0.0,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="880" cy="536" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00233" data-run-id="sensitivity:store_budget_gib=32:64k:gpu_failure:seed-2:repeat-A" data-result-hash="e858796339de1871c73ad1cfb5ff376304548cb974c224bab1c80190fdae9735">
+    <title>f10-point-00233 | sensitivity:store_budget_gib=32:64k:gpu_failure:seed-2:repeat-A | e858796339de1871c73ad1cfb5ff376304548cb974c224bab1c80190fdae9735 | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"64k","display_x_jitter_px":6.0,"metric":"restored tokens","metric_value":0.0,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="886" cy="536" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00234" data-run-id="sensitivity:store_budget_gib=32:96k:gpu_failure:seed-0:repeat-A" data-result-hash="9ba9e1b805b0ced39e73878618395e88f915686f13c46aedaa1cc97b6b393fab">
+    <title>f10-point-00234 | sensitivity:store_budget_gib=32:96k:gpu_failure:seed-0:repeat-A | 9ba9e1b805b0ced39e73878618395e88f915686f13c46aedaa1cc97b6b393fab | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"96k","display_x_jitter_px":-5.0,"metric":"restored tokens","metric_value":0.0,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="875" cy="536" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00235" data-run-id="sensitivity:store_budget_gib=32:96k:gpu_failure:seed-1:repeat-A" data-result-hash="35ae95ff871174b512b36bfc180674f2d3c1ce877ddba2662fcfdae2090458a2">
+    <title>f10-point-00235 | sensitivity:store_budget_gib=32:96k:gpu_failure:seed-1:repeat-A | 35ae95ff871174b512b36bfc180674f2d3c1ce877ddba2662fcfdae2090458a2 | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"96k","display_x_jitter_px":1.0,"metric":"restored tokens","metric_value":0.0,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="881" cy="536" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00236" data-run-id="sensitivity:store_budget_gib=32:96k:gpu_failure:seed-2:repeat-A" data-result-hash="929557857c5f909c3eb1137e291236230f951ccd10b7c64db5d8f7eb506d86de">
+    <title>f10-point-00236 | sensitivity:store_budget_gib=32:96k:gpu_failure:seed-2:repeat-A | 929557857c5f909c3eb1137e291236230f951ccd10b7c64db5d8f7eb506d86de | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"96k","display_x_jitter_px":7.0,"metric":"restored tokens","metric_value":0.0,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="887" cy="536" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00237" data-run-id="sensitivity:store_budget_gib=32:128k:gpu_failure:seed-0:repeat-A" data-result-hash="19b13fe3315eb3a6c54e8d46354b3802717e8a39a107cfc3a355198180a28448">
+    <title>f10-point-00237 | sensitivity:store_budget_gib=32:128k:gpu_failure:seed-0:repeat-A | 19b13fe3315eb3a6c54e8d46354b3802717e8a39a107cfc3a355198180a28448 | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"128k","display_x_jitter_px":-4.0,"metric":"restored tokens","metric_value":0.0,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="876" cy="536" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00238" data-run-id="sensitivity:store_budget_gib=32:128k:gpu_failure:seed-1:repeat-A" data-result-hash="86b0c6a86d0d31c135ef4859ccf9f5527be476d770df7bff244184069ff61357">
+    <title>f10-point-00238 | sensitivity:store_budget_gib=32:128k:gpu_failure:seed-1:repeat-A | 86b0c6a86d0d31c135ef4859ccf9f5527be476d770df7bff244184069ff61357 | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"128k","display_x_jitter_px":2.0,"metric":"restored tokens","metric_value":0.0,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="882" cy="536" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00239" data-run-id="sensitivity:store_budget_gib=32:128k:gpu_failure:seed-2:repeat-A" data-result-hash="8f4124565fc138ac25e1e5f19c10d7677973c83530a2cf3f811d685bf65dd574">
+    <title>f10-point-00239 | sensitivity:store_budget_gib=32:128k:gpu_failure:seed-2:repeat-A | 8f4124565fc138ac25e1e5f19c10d7677973c83530a2cf3f811d685bf65dd574 | {"budget":32.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"128k","display_x_jitter_px":8.0,"metric":"restored tokens","metric_value":0.0,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="888" cy="536" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00240" data-run-id="sensitivity:store_budget_gib=64:8k:gpu_failure:seed-0:repeat-A" data-result-hash="413d4b6efdfc4b8a5f7cf6145f5cb7e99c511e2f9d5addf3f82187f9fba684b9">
+    <title>f10-point-00240 | sensitivity:store_budget_gib=64:8k:gpu_failure:seed-0:repeat-A | 413d4b6efdfc4b8a5f7cf6145f5cb7e99c511e2f9d5addf3f82187f9fba684b9 | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"8k","display_x_jitter_px":-8.0,"metric":"restored tokens","metric_value":0.0,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="957.667" cy="536" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00241" data-run-id="sensitivity:store_budget_gib=64:8k:gpu_failure:seed-1:repeat-A" data-result-hash="9a2d72f669a8d1817520c103ae7a2841f0fd8671d2e8d7d4996f9993d3f10089">
+    <title>f10-point-00241 | sensitivity:store_budget_gib=64:8k:gpu_failure:seed-1:repeat-A | 9a2d72f669a8d1817520c103ae7a2841f0fd8671d2e8d7d4996f9993d3f10089 | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"8k","display_x_jitter_px":-2.0,"metric":"restored tokens","metric_value":0.0,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="963.667" cy="536" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00242" data-run-id="sensitivity:store_budget_gib=64:8k:gpu_failure:seed-2:repeat-A" data-result-hash="e25a69a060aa24225cfb3de36113fcc1d1604985747f465e79280959fd55b66b">
+    <title>f10-point-00242 | sensitivity:store_budget_gib=64:8k:gpu_failure:seed-2:repeat-A | e25a69a060aa24225cfb3de36113fcc1d1604985747f465e79280959fd55b66b | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"8k","display_x_jitter_px":4.0,"metric":"restored tokens","metric_value":0.0,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="969.667" cy="536" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00243" data-run-id="sensitivity:store_budget_gib=64:32k:gpu_failure:seed-0:repeat-A" data-result-hash="db583ba8cf884355644b64d78e058ca82820a785f65adecbcf5655bb6defcc64">
+    <title>f10-point-00243 | sensitivity:store_budget_gib=64:32k:gpu_failure:seed-0:repeat-A | db583ba8cf884355644b64d78e058ca82820a785f65adecbcf5655bb6defcc64 | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"32k","display_x_jitter_px":-7.0,"metric":"restored tokens","metric_value":23552.0,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="958.667" cy="509.793" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00244" data-run-id="sensitivity:store_budget_gib=64:32k:gpu_failure:seed-1:repeat-A" data-result-hash="e1f03762f3ff711bb7a9c5f69ee200eb9a47c2db4a5a9636c2704420004aebe2">
+    <title>f10-point-00244 | sensitivity:store_budget_gib=64:32k:gpu_failure:seed-1:repeat-A | e1f03762f3ff711bb7a9c5f69ee200eb9a47c2db4a5a9636c2704420004aebe2 | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"32k","display_x_jitter_px":-1.0,"metric":"restored tokens","metric_value":24576.0,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="964.667" cy="508.653" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00245" data-run-id="sensitivity:store_budget_gib=64:32k:gpu_failure:seed-2:repeat-A" data-result-hash="0608986e7beb909cd87c1d4d4aa552a8e149fee709c44aefef7aeec7dace10bb">
+    <title>f10-point-00245 | sensitivity:store_budget_gib=64:32k:gpu_failure:seed-2:repeat-A | 0608986e7beb909cd87c1d4d4aa552a8e149fee709c44aefef7aeec7dace10bb | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"32k","display_x_jitter_px":5.0,"metric":"restored tokens","metric_value":0.0,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="970.667" cy="536" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00246" data-run-id="sensitivity:store_budget_gib=64:64k:gpu_failure:seed-0:repeat-A" data-result-hash="77b1b48b63569be141e48a1cc87c43136ca5fbab94c543a5196986d9009e3e53">
+    <title>f10-point-00246 | sensitivity:store_budget_gib=64:64k:gpu_failure:seed-0:repeat-A | 77b1b48b63569be141e48a1cc87c43136ca5fbab94c543a5196986d9009e3e53 | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"64k","display_x_jitter_px":-6.0,"metric":"restored tokens","metric_value":0.0,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="959.667" cy="536" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00247" data-run-id="sensitivity:store_budget_gib=64:64k:gpu_failure:seed-1:repeat-A" data-result-hash="74df672316b7d876c1cdea340f22f1dbaaf3d2f9e465a99bc40b083c483a2abf">
+    <title>f10-point-00247 | sensitivity:store_budget_gib=64:64k:gpu_failure:seed-1:repeat-A | 74df672316b7d876c1cdea340f22f1dbaaf3d2f9e465a99bc40b083c483a2abf | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"64k","display_x_jitter_px":0.0,"metric":"restored tokens","metric_value":0.0,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="965.667" cy="536" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00248" data-run-id="sensitivity:store_budget_gib=64:64k:gpu_failure:seed-2:repeat-A" data-result-hash="14b8225bf65174c1cd30241f66dcbc7d4c52f04176e9c0b9019ff079141b9f3f">
+    <title>f10-point-00248 | sensitivity:store_budget_gib=64:64k:gpu_failure:seed-2:repeat-A | 14b8225bf65174c1cd30241f66dcbc7d4c52f04176e9c0b9019ff079141b9f3f | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"64k","display_x_jitter_px":6.0,"metric":"restored tokens","metric_value":0.0,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="971.667" cy="536" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00249" data-run-id="sensitivity:store_budget_gib=64:96k:gpu_failure:seed-0:repeat-A" data-result-hash="e11d922f927d08f311d45a6a989ffb2ef101e8201fd7e29615ab41557967e6fb">
+    <title>f10-point-00249 | sensitivity:store_budget_gib=64:96k:gpu_failure:seed-0:repeat-A | e11d922f927d08f311d45a6a989ffb2ef101e8201fd7e29615ab41557967e6fb | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"96k","display_x_jitter_px":-5.0,"metric":"restored tokens","metric_value":0.0,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="960.667" cy="536" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00250" data-run-id="sensitivity:store_budget_gib=64:96k:gpu_failure:seed-1:repeat-A" data-result-hash="e94adae593d5e1011f95a0fdb148788ec1f63ff9f3e54a6620e0693de142a8a4">
+    <title>f10-point-00250 | sensitivity:store_budget_gib=64:96k:gpu_failure:seed-1:repeat-A | e94adae593d5e1011f95a0fdb148788ec1f63ff9f3e54a6620e0693de142a8a4 | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"96k","display_x_jitter_px":1.0,"metric":"restored tokens","metric_value":0.0,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="966.667" cy="536" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00251" data-run-id="sensitivity:store_budget_gib=64:96k:gpu_failure:seed-2:repeat-A" data-result-hash="192f3a1f3e1b61a70c949d1f4a517f9aabd442932b232e692f8e867af1fc00fb">
+    <title>f10-point-00251 | sensitivity:store_budget_gib=64:96k:gpu_failure:seed-2:repeat-A | 192f3a1f3e1b61a70c949d1f4a517f9aabd442932b232e692f8e867af1fc00fb | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"96k","display_x_jitter_px":7.0,"metric":"restored tokens","metric_value":0.0,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="972.667" cy="536" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00252" data-run-id="sensitivity:store_budget_gib=64:128k:gpu_failure:seed-0:repeat-A" data-result-hash="96060a33d52ab5ccb38546e303b561682e2925b88cd307bd5fa2a251c6abe18c">
+    <title>f10-point-00252 | sensitivity:store_budget_gib=64:128k:gpu_failure:seed-0:repeat-A | 96060a33d52ab5ccb38546e303b561682e2925b88cd307bd5fa2a251c6abe18c | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"128k","display_x_jitter_px":-4.0,"metric":"restored tokens","metric_value":0.0,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="961.667" cy="536" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00253" data-run-id="sensitivity:store_budget_gib=64:128k:gpu_failure:seed-1:repeat-A" data-result-hash="6842cc042da5683c777dca72b44547880a48f1b947bd67cff9f962749f5040fa">
+    <title>f10-point-00253 | sensitivity:store_budget_gib=64:128k:gpu_failure:seed-1:repeat-A | 6842cc042da5683c777dca72b44547880a48f1b947bd67cff9f962749f5040fa | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"128k","display_x_jitter_px":2.0,"metric":"restored tokens","metric_value":46080.0,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="967.667" cy="484.724" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00254" data-run-id="sensitivity:store_budget_gib=64:128k:gpu_failure:seed-2:repeat-A" data-result-hash="8ba0173d8fe918cd7d254f40d24f798c5c888905de6d8d14b99ff446a6d333f4">
+    <title>f10-point-00254 | sensitivity:store_budget_gib=64:128k:gpu_failure:seed-2:repeat-A | 8ba0173d8fe918cd7d254f40d24f798c5c888905de6d8d14b99ff446a6d333f4 | {"budget":64.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"128k","display_x_jitter_px":8.0,"metric":"restored tokens","metric_value":46080.0,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="973.667" cy="484.724" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00255" data-run-id="sensitivity:store_budget_gib=128:8k:gpu_failure:seed-0:repeat-A" data-result-hash="ba1b5061f54763baaa22b5a92c29e37667892bc3845499675550af025792d521">
+    <title>f10-point-00255 | sensitivity:store_budget_gib=128:8k:gpu_failure:seed-0:repeat-A | ba1b5061f54763baaa22b5a92c29e37667892bc3845499675550af025792d521 | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"8k","display_x_jitter_px":-8.0,"metric":"restored tokens","metric_value":0.0,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="1129" cy="536" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00256" data-run-id="sensitivity:store_budget_gib=128:8k:gpu_failure:seed-1:repeat-A" data-result-hash="857218208ca88483fcf9c718d6feb4c8539f0d6f6ee709e66a8199cec0ebadbc">
+    <title>f10-point-00256 | sensitivity:store_budget_gib=128:8k:gpu_failure:seed-1:repeat-A | 857218208ca88483fcf9c718d6feb4c8539f0d6f6ee709e66a8199cec0ebadbc | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"8k","display_x_jitter_px":-2.0,"metric":"restored tokens","metric_value":0.0,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="1135" cy="536" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00257" data-run-id="sensitivity:store_budget_gib=128:8k:gpu_failure:seed-2:repeat-A" data-result-hash="bcfbccef9a6a132f4e592a9d18efdfc76d71ea2a9dc7e8860de76a50c1c96d3a">
+    <title>f10-point-00257 | sensitivity:store_budget_gib=128:8k:gpu_failure:seed-2:repeat-A | bcfbccef9a6a132f4e592a9d18efdfc76d71ea2a9dc7e8860de76a50c1c96d3a | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"8k","display_x_jitter_px":4.0,"metric":"restored tokens","metric_value":0.0,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="1141" cy="536" r="3" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00258" data-run-id="sensitivity:store_budget_gib=128:32k:gpu_failure:seed-0:repeat-A" data-result-hash="26aa6452e75991d29db5437ec407489e2997d304a84197422c7b95d7092d6170">
+    <title>f10-point-00258 | sensitivity:store_budget_gib=128:32k:gpu_failure:seed-0:repeat-A | 26aa6452e75991d29db5437ec407489e2997d304a84197422c7b95d7092d6170 | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"32k","display_x_jitter_px":-7.0,"metric":"restored tokens","metric_value":23552.0,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="1130" cy="509.793" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00259" data-run-id="sensitivity:store_budget_gib=128:32k:gpu_failure:seed-1:repeat-A" data-result-hash="b7d17265b00a5ad6b461915fab406adf27cdff1e4cff3c9505fb2e058eea26ed">
+    <title>f10-point-00259 | sensitivity:store_budget_gib=128:32k:gpu_failure:seed-1:repeat-A | b7d17265b00a5ad6b461915fab406adf27cdff1e4cff3c9505fb2e058eea26ed | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"32k","display_x_jitter_px":-1.0,"metric":"restored tokens","metric_value":24576.0,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="1136" cy="508.653" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00260" data-run-id="sensitivity:store_budget_gib=128:32k:gpu_failure:seed-2:repeat-A" data-result-hash="a4568f1ce98b118fad141322c1f25ba071091282740acbbf394c3f9464e2589a">
+    <title>f10-point-00260 | sensitivity:store_budget_gib=128:32k:gpu_failure:seed-2:repeat-A | a4568f1ce98b118fad141322c1f25ba071091282740acbbf394c3f9464e2589a | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"32k","display_x_jitter_px":5.0,"metric":"restored tokens","metric_value":0.0,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="1142" cy="536" r="3" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00261" data-run-id="sensitivity:store_budget_gib=128:64k:gpu_failure:seed-0:repeat-A" data-result-hash="95964c3c5bbf588c11d537f8db65814c2b8519bf5fbf5a8285b81b5482dc2cc9">
+    <title>f10-point-00261 | sensitivity:store_budget_gib=128:64k:gpu_failure:seed-0:repeat-A | 95964c3c5bbf588c11d537f8db65814c2b8519bf5fbf5a8285b81b5482dc2cc9 | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"64k","display_x_jitter_px":-6.0,"metric":"restored tokens","metric_value":0.0,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="1131" cy="536" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00262" data-run-id="sensitivity:store_budget_gib=128:64k:gpu_failure:seed-1:repeat-A" data-result-hash="affc6cb151489d96075e242d9eda2b616178800afe9c852c1b8e57201df29413">
+    <title>f10-point-00262 | sensitivity:store_budget_gib=128:64k:gpu_failure:seed-1:repeat-A | affc6cb151489d96075e242d9eda2b616178800afe9c852c1b8e57201df29413 | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"64k","display_x_jitter_px":0.0,"metric":"restored tokens","metric_value":0.0,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="1137" cy="536" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00263" data-run-id="sensitivity:store_budget_gib=128:64k:gpu_failure:seed-2:repeat-A" data-result-hash="372ed234203c4291315eeb2f1d34389189fab3b742faa4191534e1eb08967ea9">
+    <title>f10-point-00263 | sensitivity:store_budget_gib=128:64k:gpu_failure:seed-2:repeat-A | 372ed234203c4291315eeb2f1d34389189fab3b742faa4191534e1eb08967ea9 | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"64k","display_x_jitter_px":6.0,"metric":"restored tokens","metric_value":0.0,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="1143" cy="536" r="3" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00264" data-run-id="sensitivity:store_budget_gib=128:96k:gpu_failure:seed-0:repeat-A" data-result-hash="3a45a4492b77234bd02804595da72011e667a48b68788e6e25ba82f9ad0294d0">
+    <title>f10-point-00264 | sensitivity:store_budget_gib=128:96k:gpu_failure:seed-0:repeat-A | 3a45a4492b77234bd02804595da72011e667a48b68788e6e25ba82f9ad0294d0 | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"96k","display_x_jitter_px":-5.0,"metric":"restored tokens","metric_value":0.0,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="1132" cy="536" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00265" data-run-id="sensitivity:store_budget_gib=128:96k:gpu_failure:seed-1:repeat-A" data-result-hash="51748abf275530f1f31800592a25aff9e2b8990dac1d65dd8b6750a03fded96a">
+    <title>f10-point-00265 | sensitivity:store_budget_gib=128:96k:gpu_failure:seed-1:repeat-A | 51748abf275530f1f31800592a25aff9e2b8990dac1d65dd8b6750a03fded96a | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"96k","display_x_jitter_px":1.0,"metric":"restored tokens","metric_value":0.0,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="1138" cy="536" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00266" data-run-id="sensitivity:store_budget_gib=128:96k:gpu_failure:seed-2:repeat-A" data-result-hash="a608894227cb151a5af7171afd716efbae80b0148e5e84e9c035c44d673d019f">
+    <title>f10-point-00266 | sensitivity:store_budget_gib=128:96k:gpu_failure:seed-2:repeat-A | a608894227cb151a5af7171afd716efbae80b0148e5e84e9c035c44d673d019f | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"96k","display_x_jitter_px":7.0,"metric":"restored tokens","metric_value":0.0,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="1144" cy="536" r="3" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00267" data-run-id="sensitivity:store_budget_gib=128:128k:gpu_failure:seed-0:repeat-A" data-result-hash="e48b8c4909eeae61c0e3daab349175eb59650419983b57f787895c95a109f8b2">
+    <title>f10-point-00267 | sensitivity:store_budget_gib=128:128k:gpu_failure:seed-0:repeat-A | e48b8c4909eeae61c0e3daab349175eb59650419983b57f787895c95a109f8b2 | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"128k","display_x_jitter_px":-4.0,"metric":"restored tokens","metric_value":0.0,"seed":0,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="1133" cy="536" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00268" data-run-id="sensitivity:store_budget_gib=128:128k:gpu_failure:seed-1:repeat-A" data-result-hash="890c29eae65210a4a5a1ff8e8edc622eacb8334c8ed1ae150f3ef1ae2e64a05b">
+    <title>f10-point-00268 | sensitivity:store_budget_gib=128:128k:gpu_failure:seed-1:repeat-A | 890c29eae65210a4a5a1ff8e8edc622eacb8334c8ed1ae150f3ef1ae2e64a05b | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"128k","display_x_jitter_px":2.0,"metric":"restored tokens","metric_value":107520.0,"seed":1,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="1139" cy="416.357" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <g data-point-id="f10-point-00269" data-run-id="sensitivity:store_budget_gib=128:128k:gpu_failure:seed-2:repeat-A" data-result-hash="e05b1f7d0800008273486965660d093aa562a4d5eddb6a08ba1046b432d27051">
+    <title>f10-point-00269 | sensitivity:store_budget_gib=128:128k:gpu_failure:seed-2:repeat-A | e05b1f7d0800008273486965660d093aa562a4d5eddb6a08ba1046b432d27051 | {"budget":128.0,"budget_label":"Store DRAM budget (global GiB)","context_bucket":"128k","display_x_jitter_px":8.0,"metric":"restored tokens","metric_value":107520.0,"seed":2,"sensitivity_dimension":"store_budget_gib"}</title>
+    <circle cx="1145" cy="416.357" r="3" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <line x1="55" y1="676" x2="1145" y2="676" stroke="#fecaca" stroke-width="1" />
+  <text x="600" y="704" class="footer" text-anchor="middle">E2 modeled/preliminary · not calibrated · no physical experiment</text>
+</svg>

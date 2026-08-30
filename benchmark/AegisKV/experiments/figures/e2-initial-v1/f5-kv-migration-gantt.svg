@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img">
+  <title>KV migration Gantt</title>
+  <style>text{font-family:DejaVu Sans,Arial,sans-serif;fill:#111827}.title{font-size:26px;font-weight:700}.subtitle{font-size:14px;fill:#4b5563}.axis{stroke:#374151;stroke-width:1}.grid{stroke:#e5e7eb;stroke-width:1}.tick{font-size:12px;fill:#4b5563}.label{font-size:14px;font-weight:600}.small{font-size:11px}.footer{font-size:13px;font-weight:700;fill:#991b1b}</style>
+  <rect x="0" y="0" width="1200" height="720" rx="0" fill="#ffffff" stroke="none" opacity="1" />
+  <text x="55" y="46" class="title" text-anchor="start">KV migration Gantt</text>
+  <text x="55" y="74" class="subtitle" text-anchor="start">Terminal transfer ledger: queue, service, commit/abort, and conserved bytes</text>
+  <g data-point-id="f5-point-00000" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00000 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":1660944384,"cause":"AEGIS_PEER_HBM_PROTECTION","end_ns":3619145158,"path":"D2D_P2P","planned_end_ns":3619145158,"ready_ns":3602285714,"span_id":"weka:002001296e8a8c38ad9d7cc436d691afc602:main:000001","start_ns":3602285714,"status":"COMMITTED","transfer_id":"study:00000022:put:PEER_HBM:study:00000014:put-start:PEER_HBM:weka:002001296e8a8c38ad9d7cc436d691afc602:main:000001:batch-0","transferred_bytes":1660944384}</title>
+    <rect x="250" y="130" width="0.092" height="9.75" rx="0" fill="#7c3aed" stroke="none" opacity="1" />
+    <text x="240" y="138.75" class="tick" text-anchor="end">D2D_P2P · 0001:batch-0</text>
+    <desc>cause=AEGIS_PEER_HBM_PROTECTION; status=COMMITTED; submitted=1660944384; transferred=1660944384; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00001" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00001 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":2113929216,"cause":"AEGIS_STORE_DRAM_PROTECTION","end_ns":4129807169,"path":"SOURCE_D2H_STORE","planned_end_ns":4129807169,"ready_ns":4045000000,"span_id":"weka:002001296e8a8c38ad9d7cc436d691afc602:main:000001","start_ns":4045000000,"status":"COMMITTED","transfer_id":"study:00000023:put:STORE_DRAM:study:00000018:put-start:STORE_DRAM:weka:002001296e8a8c38ad9d7cc436d691afc602:main:000001:batch-0","transferred_bytes":2113929216}</title>
+    <rect x="252.41" y="141.75" width="0.462" height="9.75" rx="0" fill="#059669" stroke="none" opacity="1" />
+    <text x="240" y="150.5" class="tick" text-anchor="end">SOURCE_D2H_STORE · 0001:batch-0</text>
+    <desc>cause=AEGIS_STORE_DRAM_PROTECTION; status=COMMITTED; submitted=2113929216; transferred=2113929216; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00002" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00002 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":1811939328,"cause":"AEGIS_PEER_HBM_PROTECTION","end_ns":5391512251,"path":"D2D_P2P","planned_end_ns":5391512251,"ready_ns":5373142857,"span_id":"weka:002001296e8a8c38ad9d7cc436d691afc602:main:000001","start_ns":5373142857,"status":"COMMITTED","transfer_id":"study:00000024:put:PEER_HBM:study:00000015:put-start:PEER_HBM:weka:002001296e8a8c38ad9d7cc436d691afc602:main:000001:batch-1","transferred_bytes":1811939328}</title>
+    <rect x="259.638" y="153.5" width="0.1" height="9.75" rx="0" fill="#7c3aed" stroke="none" opacity="1" />
+    <text x="240" y="162.25" class="tick" text-anchor="end">D2D_P2P · 0001:batch-1</text>
+    <desc>cause=AEGIS_PEER_HBM_PROTECTION; status=COMMITTED; submitted=1811939328; transferred=1811939328; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00003" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00003 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":2113929216,"cause":"AEGIS_STORE_DRAM_PROTECTION","end_ns":6195807169,"path":"SOURCE_D2H_STORE","planned_end_ns":6195807169,"ready_ns":6111000000,"span_id":"weka:002001296e8a8c38ad9d7cc436d691afc602:main:000001","start_ns":6111000000,"status":"COMMITTED","transfer_id":"study:00000025:put:STORE_DRAM:study:00000019:put-start:STORE_DRAM:weka:002001296e8a8c38ad9d7cc436d691afc602:main:000001:batch-1","transferred_bytes":2113929216}</title>
+    <rect x="263.654" y="165.25" width="0.462" height="9.75" rx="0" fill="#059669" stroke="none" opacity="1" />
+    <text x="240" y="174" class="tick" text-anchor="end">SOURCE_D2H_STORE · 0001:batch-1</text>
+    <desc>cause=AEGIS_STORE_DRAM_PROTECTION; status=COMMITTED; submitted=2113929216; transferred=2113929216; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00004" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00004 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":1811939328,"cause":"AEGIS_PEER_HBM_PROTECTION","end_ns":7162369394,"path":"D2D_P2P","planned_end_ns":7162369394,"ready_ns":7144000000,"span_id":"weka:002001296e8a8c38ad9d7cc436d691afc602:main:000001","start_ns":7144000000,"status":"COMMITTED","transfer_id":"study:00000026:put:PEER_HBM:study:00000016:put-start:PEER_HBM:weka:002001296e8a8c38ad9d7cc436d691afc602:main:000001:batch-2","transferred_bytes":1811939328}</title>
+    <rect x="269.276" y="177" width="0.1" height="9.75" rx="0" fill="#7c3aed" stroke="none" opacity="1" />
+    <text x="240" y="185.75" class="tick" text-anchor="end">D2D_P2P · 0001:batch-2</text>
+    <desc>cause=AEGIS_PEER_HBM_PROTECTION; status=COMMITTED; submitted=1811939328; transferred=1811939328; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00005" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00005 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":2113929216,"cause":"AEGIS_STORE_DRAM_PROTECTION","end_ns":8261807169,"path":"SOURCE_D2H_STORE","planned_end_ns":8261807169,"ready_ns":8177000000,"span_id":"weka:002001296e8a8c38ad9d7cc436d691afc602:main:000001","start_ns":8177000000,"status":"COMMITTED","transfer_id":"study:00000027:put:STORE_DRAM:study:00000020:put-start:STORE_DRAM:weka:002001296e8a8c38ad9d7cc436d691afc602:main:000001:batch-2","transferred_bytes":2113929216}</title>
+    <rect x="274.898" y="188.75" width="0.462" height="9.75" rx="0" fill="#059669" stroke="none" opacity="1" />
+    <text x="240" y="197.5" class="tick" text-anchor="end">SOURCE_D2H_STORE · 0001:batch-2</text>
+    <desc>cause=AEGIS_STORE_DRAM_PROTECTION; status=COMMITTED; submitted=2113929216; transferred=2113929216; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00006" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00006 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":1509949440,"cause":"AEGIS_PEER_HBM_PROTECTION","end_ns":8930206637,"path":"D2D_P2P","planned_end_ns":8930206637,"ready_ns":8914857142,"span_id":"weka:002001296e8a8c38ad9d7cc436d691afc602:main:000001","start_ns":8914857142,"status":"COMMITTED","transfer_id":"study:00000028:put:PEER_HBM:study:00000017:put-start:PEER_HBM:weka:002001296e8a8c38ad9d7cc436d691afc602:main:000001:batch-3","transferred_bytes":1509949440}</title>
+    <rect x="278.914" y="200.5" width="0.084" height="9.75" rx="0" fill="#7c3aed" stroke="none" opacity="1" />
+    <text x="240" y="209.25" class="tick" text-anchor="end">D2D_P2P · 0001:batch-3</text>
+    <desc>cause=AEGIS_PEER_HBM_PROTECTION; status=COMMITTED; submitted=1509949440; transferred=1509949440; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00007" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00007 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":2113929216,"cause":"AEGIS_STORE_DRAM_PROTECTION","end_ns":10327807169,"path":"SOURCE_D2H_STORE","planned_end_ns":10327807169,"ready_ns":10243000000,"span_id":"weka:002001296e8a8c38ad9d7cc436d691afc602:main:000001","start_ns":10243000000,"status":"COMMITTED","transfer_id":"study:00000029:put:STORE_DRAM:study:00000021:put-start:STORE_DRAM:weka:002001296e8a8c38ad9d7cc436d691afc602:main:000001:batch-3","transferred_bytes":2113929216}</title>
+    <rect x="286.143" y="212.25" width="0.462" height="9.75" rx="0" fill="#059669" stroke="none" opacity="1" />
+    <text x="240" y="221" class="tick" text-anchor="end">SOURCE_D2H_STORE · 0001:batch-3</text>
+    <desc>cause=AEGIS_STORE_DRAM_PROTECTION; status=COMMITTED; submitted=2113929216; transferred=2113929216; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00008" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00008 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":2415919104,"cause":"AEGIS_PEER_HBM_PROTECTION","end_ns":14662570111,"path":"D2D_P2P","planned_end_ns":14662570111,"ready_ns":14638160919,"span_id":"weka:0196085d85d2075a50b74cd8795ffbdcea9a:main:000000","start_ns":14638160919,"status":"COMMITTED","transfer_id":"study:00000040:put:PEER_HBM:study:00000004:put-start:PEER_HBM:weka:0196085d85d2075a50b74cd8795ffbdcea9a:main:000000:batch-0","transferred_bytes":2415919104}</title>
+    <rect x="310.064" y="224" width="0.133" height="9.75" rx="0" fill="#7c3aed" stroke="none" opacity="1" />
+    <text x="240" y="232.75" class="tick" text-anchor="end">D2D_P2P · 0000:batch-0</text>
+    <desc>cause=AEGIS_PEER_HBM_PROTECTION; status=COMMITTED; submitted=2415919104; transferred=2415919104; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00009" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00009 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":2868903936,"cause":"AEGIS_STORE_DRAM_PROTECTION","end_ns":17497822249,"path":"SOURCE_D2H_STORE","planned_end_ns":17497822249,"ready_ns":17382816091,"span_id":"weka:0196085d85d2075a50b74cd8795ffbdcea9a:main:000000","start_ns":17382816091,"status":"COMMITTED","transfer_id":"study:00000041:put:STORE_DRAM:study:00000008:put-start:STORE_DRAM:weka:0196085d85d2075a50b74cd8795ffbdcea9a:main:000000:batch-0","transferred_bytes":2868903936}</title>
+    <rect x="325.002" y="235.75" width="0.626" height="9.75" rx="0" fill="#059669" stroke="none" opacity="1" />
+    <text x="240" y="244.5" class="tick" text-anchor="end">SOURCE_D2H_STORE · 0000:batch-0</text>
+    <desc>cause=AEGIS_STORE_DRAM_PROTECTION; status=COMMITTED; submitted=2868903936; transferred=2868903936; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00010" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00010 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":2415919104,"cause":"AEGIS_PEER_HBM_PROTECTION","end_ns":29300731031,"path":"D2D_P2P","planned_end_ns":29300731031,"ready_ns":29276321839,"span_id":"weka:0196085d85d2075a50b74cd8795ffbdcea9a:main:000000","start_ns":29276321839,"status":"COMMITTED","transfer_id":"study:00000042:put:PEER_HBM:study:00000005:put-start:PEER_HBM:weka:0196085d85d2075a50b74cd8795ffbdcea9a:main:000000:batch-1","transferred_bytes":2415919104}</title>
+    <rect x="389.733" y="247.5" width="0.133" height="9.75" rx="0" fill="#7c3aed" stroke="none" opacity="1" />
+    <text x="240" y="256.25" class="tick" text-anchor="end">D2D_P2P · 0000:batch-1</text>
+    <desc>cause=AEGIS_PEER_HBM_PROTECTION; status=COMMITTED; submitted=2415919104; transferred=2415919104; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00011" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00011 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":3019898880,"cause":"AEGIS_STORE_DRAM_PROTECTION","end_ns":35801563197,"path":"SOURCE_D2H_STORE","planned_end_ns":35801563197,"ready_ns":35680517241,"span_id":"weka:0196085d85d2075a50b74cd8795ffbdcea9a:main:000000","start_ns":35680517241,"status":"COMMITTED","transfer_id":"study:00000043:put:STORE_DRAM:study:00000009:put-start:STORE_DRAM:weka:0196085d85d2075a50b74cd8795ffbdcea9a:main:000000:batch-1","transferred_bytes":3019898880}</title>
+    <rect x="424.588" y="259.25" width="0.659" height="9.75" rx="0" fill="#059669" stroke="none" opacity="1" />
+    <text x="240" y="268" class="tick" text-anchor="end">SOURCE_D2H_STORE · 0000:batch-1</text>
+    <desc>cause=AEGIS_STORE_DRAM_PROTECTION; status=COMMITTED; submitted=3019898880; transferred=3019898880; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00012" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00012 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":1509949440,"cause":"AEGIS_PEER_HBM_PROTECTION","end_ns":43929832253,"path":"D2D_P2P","planned_end_ns":43929832253,"ready_ns":43914482758,"span_id":"weka:0196085d85d2075a50b74cd8795ffbdcea9a:main:000000","start_ns":43914482758,"status":"COMMITTED","transfer_id":"study:00000044:put:PEER_HBM:study:00000006:put-start:PEER_HBM:weka:0196085d85d2075a50b74cd8795ffbdcea9a:main:000000:batch-2","transferred_bytes":1509949440}</title>
+    <rect x="469.402" y="271" width="0.084" height="9.75" rx="0" fill="#7c3aed" stroke="none" opacity="1" />
+    <text x="240" y="279.75" class="tick" text-anchor="end">D2D_P2P · 0000:batch-2</text>
+    <desc>cause=AEGIS_PEER_HBM_PROTECTION; status=COMMITTED; submitted=1509949440; transferred=1509949440; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00013" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00013 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":2868903936,"cause":"AEGIS_STORE_DRAM_PROTECTION","end_ns":53178339491,"path":"SOURCE_D2H_STORE","planned_end_ns":53178339491,"ready_ns":53063333333,"span_id":"weka:0196085d85d2075a50b74cd8795ffbdcea9a:main:000000","start_ns":53063333333,"status":"COMMITTED","transfer_id":"study:00000045:put:STORE_DRAM:study:00000010:put-start:STORE_DRAM:weka:0196085d85d2075a50b74cd8795ffbdcea9a:main:000000:batch-2","transferred_bytes":2868903936}</title>
+    <rect x="519.195" y="282.75" width="0.626" height="9.75" rx="0" fill="#059669" stroke="none" opacity="1" />
+    <text x="240" y="291.5" class="tick" text-anchor="end">SOURCE_D2H_STORE · 0000:batch-2</text>
+    <desc>cause=AEGIS_STORE_DRAM_PROTECTION; status=COMMITTED; submitted=2868903936; transferred=2868903936; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00014" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00014 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":452984832,"cause":"AEGIS_PEER_HBM_PROTECTION","end_ns":59472308584,"path":"D2D_P2P","planned_end_ns":59472308584,"ready_ns":59467528735,"span_id":"weka:0196085d85d2075a50b74cd8795ffbdcea9a:main:000000","start_ns":59467528735,"status":"COMMITTED","transfer_id":"study:00000046:put:PEER_HBM:study:00000007:put-start:PEER_HBM:weka:0196085d85d2075a50b74cd8795ffbdcea9a:main:000000:batch-3","transferred_bytes":452984832}</title>
+    <rect x="554.051" y="294.5" width="0.026" height="9.75" rx="0" fill="#7c3aed" stroke="none" opacity="1" />
+    <text x="240" y="303.25" class="tick" text-anchor="end">D2D_P2P · 0000:batch-3</text>
+    <desc>cause=AEGIS_PEER_HBM_PROTECTION; status=COMMITTED; submitted=452984832; transferred=452984832; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00015" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00015 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":3019898880,"cause":"AEGIS_STORE_DRAM_PROTECTION","end_ns":71482080438,"path":"SOURCE_D2H_STORE","planned_end_ns":71482080438,"ready_ns":71361034482,"span_id":"weka:0196085d85d2075a50b74cd8795ffbdcea9a:main:000000","start_ns":71361034482,"status":"COMMITTED","transfer_id":"study:00000047:put:STORE_DRAM:study:00000011:put-start:STORE_DRAM:weka:0196085d85d2075a50b74cd8795ffbdcea9a:main:000000:batch-3","transferred_bytes":3019898880}</title>
+    <rect x="618.782" y="306.25" width="0.659" height="9.75" rx="0" fill="#059669" stroke="none" opacity="1" />
+    <text x="240" y="315" class="tick" text-anchor="end">SOURCE_D2H_STORE · 0000:batch-3</text>
+    <desc>cause=AEGIS_STORE_DRAM_PROTECTION; status=COMMITTED; submitted=3019898880; transferred=3019898880; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00016" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00016 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":1811939328,"cause":"AEGIS_PEER_HBM_PROTECTION","end_ns":79708493757,"path":"D2D_P2P","planned_end_ns":79708493757,"ready_ns":79690124363,"span_id":"weka:002001296e8a8c38ad9d7cc436d691afc602:main:000002","start_ns":79690124363,"status":"COMMITTED","transfer_id":"study:00000048:put:PEER_HBM:study:00000032:put-start:PEER_HBM:weka:002001296e8a8c38ad9d7cc436d691afc602:main:000002:batch-0","transferred_bytes":1811939328}</title>
+    <rect x="664.113" y="318" width="0.1" height="9.75" rx="0" fill="#7c3aed" stroke="none" opacity="1" />
+    <text x="240" y="326.75" class="tick" text-anchor="end">D2D_P2P · 0002:batch-0</text>
+    <desc>cause=AEGIS_PEER_HBM_PROTECTION; status=COMMITTED; submitted=1811939328; transferred=1811939328; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00017" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00017 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":1811939328,"cause":"AEGIS_PEER_HBM_PROTECTION","end_ns":79803618120,"path":"D2D_P2P","planned_end_ns":79803618120,"ready_ns":79785248726,"span_id":"weka:002001296e8a8c38ad9d7cc436d691afc602:main:000002","start_ns":79785248726,"status":"COMMITTED","transfer_id":"study:00000050:put:PEER_HBM:study:00000033:put-start:PEER_HBM:weka:002001296e8a8c38ad9d7cc436d691afc602:main:000002:batch-1","transferred_bytes":1811939328}</title>
+    <rect x="664.631" y="329.75" width="0.1" height="9.75" rx="0" fill="#7c3aed" stroke="none" opacity="1" />
+    <text x="240" y="338.5" class="tick" text-anchor="end">D2D_P2P · 0002:batch-1</text>
+    <desc>cause=AEGIS_PEER_HBM_PROTECTION; status=COMMITTED; submitted=1811939328; transferred=1811939328; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00018" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00018 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":1811939328,"cause":"AEGIS_PEER_HBM_PROTECTION","end_ns":79898742483,"path":"D2D_P2P","planned_end_ns":79898742483,"ready_ns":79880373089,"span_id":"weka:002001296e8a8c38ad9d7cc436d691afc602:main:000002","start_ns":79880373089,"status":"COMMITTED","transfer_id":"study:00000052:put:PEER_HBM:study:00000034:put-start:PEER_HBM:weka:002001296e8a8c38ad9d7cc436d691afc602:main:000002:batch-2","transferred_bytes":1811939328}</title>
+    <rect x="665.149" y="341.5" width="0.1" height="9.75" rx="0" fill="#7c3aed" stroke="none" opacity="1" />
+    <text x="240" y="350.25" class="tick" text-anchor="end">D2D_P2P · 0002:batch-2</text>
+    <desc>cause=AEGIS_PEER_HBM_PROTECTION; status=COMMITTED; submitted=1811939328; transferred=1811939328; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00019" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00019 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":1358954496,"cause":"AEGIS_PEER_HBM_PROTECTION","end_ns":79989336997,"path":"D2D_P2P","planned_end_ns":79989336997,"ready_ns":79975497452,"span_id":"weka:002001296e8a8c38ad9d7cc436d691afc602:main:000002","start_ns":79975497452,"status":"COMMITTED","transfer_id":"study:00000054:put:PEER_HBM:study:00000035:put-start:PEER_HBM:weka:002001296e8a8c38ad9d7cc436d691afc602:main:000002:batch-3","transferred_bytes":1358954496}</title>
+    <rect x="665.667" y="353.25" width="0.075" height="9.75" rx="0" fill="#7c3aed" stroke="none" opacity="1" />
+    <text x="240" y="362" class="tick" text-anchor="end">D2D_P2P · 0002:batch-3</text>
+    <desc>cause=AEGIS_PEER_HBM_PROTECTION; status=COMMITTED; submitted=1358954496; transferred=1358954496; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00020" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00020 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":150994944,"cause":"AEGIS_STORE_DRAM_PROTECTION","end_ns":80053130523,"path":"SOURCE_D2H_STORE","planned_end_ns":80053130523,"ready_ns":80046840725,"span_id":"weka:002001296e8a8c38ad9d7cc436d691afc602:main:000002","start_ns":80046840725,"status":"COMMITTED","transfer_id":"study:00000055:put:STORE_DRAM:study:00000039:put-start:STORE_DRAM:weka:002001296e8a8c38ad9d7cc436d691afc602:main:000002:batch-3","transferred_bytes":150994944}</title>
+    <rect x="666.055" y="365" width="0.034" height="9.75" rx="0" fill="#059669" stroke="none" opacity="1" />
+    <text x="240" y="373.75" class="tick" text-anchor="end">SOURCE_D2H_STORE · 0002:batch-3</text>
+    <desc>cause=AEGIS_STORE_DRAM_PROTECTION; status=COMMITTED; submitted=150994944; transferred=150994944; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00021" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00021 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":1811939328,"cause":"AEGIS_PEER_HBM_PROTECTION","end_ns":85255692357,"path":"D2D_P2P","planned_end_ns":85255692357,"ready_ns":85237322963,"span_id":"weka:002001296e8a8c38ad9d7cc436d691afc602:main:000003","start_ns":85237322963,"status":"COMMITTED","transfer_id":"study:00000066:put:PEER_HBM:study:00000058:put-start:PEER_HBM:weka:002001296e8a8c38ad9d7cc436d691afc602:main:000003:batch-0","transferred_bytes":1811939328}</title>
+    <rect x="694.304" y="376.75" width="0.1" height="9.75" rx="0" fill="#7c3aed" stroke="none" opacity="1" />
+    <text x="240" y="385.5" class="tick" text-anchor="end">D2D_P2P · 0003:batch-0</text>
+    <desc>cause=AEGIS_PEER_HBM_PROTECTION; status=COMMITTED; submitted=1811939328; transferred=1811939328; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00022" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00022 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":1811939328,"cause":"AEGIS_PEER_HBM_PROTECTION","end_ns":85318685383,"path":"D2D_P2P","planned_end_ns":85318685383,"ready_ns":85300315989,"span_id":"weka:002001296e8a8c38ad9d7cc436d691afc602:main:000003","start_ns":85300315989,"status":"COMMITTED","transfer_id":"study:00000068:put:PEER_HBM:study:00000059:put-start:PEER_HBM:weka:002001296e8a8c38ad9d7cc436d691afc602:main:000003:batch-1","transferred_bytes":1811939328}</title>
+    <rect x="694.647" y="388.5" width="0.1" height="9.75" rx="0" fill="#7c3aed" stroke="none" opacity="1" />
+    <text x="240" y="397.25" class="tick" text-anchor="end">D2D_P2P · 0003:batch-1</text>
+    <desc>cause=AEGIS_PEER_HBM_PROTECTION; status=COMMITTED; submitted=1811939328; transferred=1811939328; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00023" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00023 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":1811939328,"cause":"AEGIS_PEER_HBM_PROTECTION","end_ns":85381678410,"path":"D2D_P2P","planned_end_ns":85381678410,"ready_ns":85363309016,"span_id":"weka:002001296e8a8c38ad9d7cc436d691afc602:main:000003","start_ns":85363309016,"status":"COMMITTED","transfer_id":"study:00000070:put:PEER_HBM:study:00000060:put-start:PEER_HBM:weka:002001296e8a8c38ad9d7cc436d691afc602:main:000003:batch-2","transferred_bytes":1811939328}</title>
+    <rect x="694.99" y="400.25" width="0.1" height="9.75" rx="0" fill="#7c3aed" stroke="none" opacity="1" />
+    <text x="240" y="409" class="tick" text-anchor="end">D2D_P2P · 0003:batch-2</text>
+    <desc>cause=AEGIS_PEER_HBM_PROTECTION; status=COMMITTED; submitted=1811939328; transferred=1811939328; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00024" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00024 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":1358954496,"cause":"AEGIS_PEER_HBM_PROTECTION","end_ns":85445391006,"path":"D2D_P2P","planned_end_ns":85445391006,"ready_ns":85431551461,"span_id":"weka:002001296e8a8c38ad9d7cc436d691afc602:main:000003","start_ns":85431551461,"status":"COMMITTED","transfer_id":"study:00000072:put:PEER_HBM:study:00000061:put-start:PEER_HBM:weka:002001296e8a8c38ad9d7cc436d691afc602:main:000003:batch-3","transferred_bytes":1358954496}</title>
+    <rect x="695.362" y="412" width="0.075" height="9.75" rx="0" fill="#7c3aed" stroke="none" opacity="1" />
+    <text x="240" y="420.75" class="tick" text-anchor="end">D2D_P2P · 0003:batch-3</text>
+    <desc>cause=AEGIS_PEER_HBM_PROTECTION; status=COMMITTED; submitted=1358954496; transferred=1358954496; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00025" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00025 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":301989888,"cause":"AEGIS_STORE_DRAM_PROTECTION","end_ns":85496375245,"path":"SOURCE_D2H_STORE","planned_end_ns":85496375245,"ready_ns":85484045649,"span_id":"weka:002001296e8a8c38ad9d7cc436d691afc602:main:000003","start_ns":85484045649,"status":"COMMITTED","transfer_id":"study:00000073:put:STORE_DRAM:study:00000065:put-start:STORE_DRAM:weka:002001296e8a8c38ad9d7cc436d691afc602:main:000003:batch-3","transferred_bytes":301989888}</title>
+    <rect x="695.647" y="423.75" width="0.067" height="9.75" rx="0" fill="#059669" stroke="none" opacity="1" />
+    <text x="240" y="432.5" class="tick" text-anchor="end">SOURCE_D2H_STORE · 0003:batch-3</text>
+    <desc>cause=AEGIS_STORE_DRAM_PROTECTION; status=COMMITTED; submitted=301989888; transferred=301989888; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00026" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00026 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":1811939328,"cause":"AEGIS_PEER_HBM_PROTECTION","end_ns":86835869837,"path":"D2D_P2P","planned_end_ns":86835869837,"ready_ns":86817500443,"span_id":"weka:002001296e8a8c38ad9d7cc436d691afc602:main:000004","start_ns":86817500443,"status":"COMMITTED","transfer_id":"study:00000084:put:PEER_HBM:study:00000076:put-start:PEER_HBM:weka:002001296e8a8c38ad9d7cc436d691afc602:main:000004:batch-0","transferred_bytes":1811939328}</title>
+    <rect x="702.905" y="435.5" width="0.1" height="9.75" rx="0" fill="#7c3aed" stroke="none" opacity="1" />
+    <text x="240" y="444.25" class="tick" text-anchor="end">D2D_P2P · 0004:batch-0</text>
+    <desc>cause=AEGIS_PEER_HBM_PROTECTION; status=COMMITTED; submitted=1811939328; transferred=1811939328; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00027" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00027 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":1962934272,"cause":"AEGIS_PEER_HBM_PROTECTION","end_ns":86928064385,"path":"D2D_P2P","planned_end_ns":86928064385,"ready_ns":86908185042,"span_id":"weka:002001296e8a8c38ad9d7cc436d691afc602:main:000004","start_ns":86908185042,"status":"COMMITTED","transfer_id":"study:00000086:put:PEER_HBM:study:00000077:put-start:PEER_HBM:weka:002001296e8a8c38ad9d7cc436d691afc602:main:000004:batch-1","transferred_bytes":1962934272}</title>
+    <rect x="703.398" y="447.25" width="0.108" height="9.75" rx="0" fill="#7c3aed" stroke="none" opacity="1" />
+    <text x="240" y="456" class="tick" text-anchor="end">D2D_P2P · 0004:batch-1</text>
+    <desc>cause=AEGIS_PEER_HBM_PROTECTION; status=COMMITTED; submitted=1962934272; transferred=1962934272; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00028" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00028 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":1811939328,"cause":"AEGIS_PEER_HBM_PROTECTION","end_ns":87010263298,"path":"D2D_P2P","planned_end_ns":87010263298,"ready_ns":86991893904,"span_id":"weka:002001296e8a8c38ad9d7cc436d691afc602:main:000004","start_ns":86991893904,"status":"COMMITTED","transfer_id":"study:00000088:put:PEER_HBM:study:00000078:put-start:PEER_HBM:weka:002001296e8a8c38ad9d7cc436d691afc602:main:000004:batch-2","transferred_bytes":1811939328}</title>
+    <rect x="703.854" y="459" width="0.1" height="9.75" rx="0" fill="#7c3aed" stroke="none" opacity="1" />
+    <text x="240" y="467.75" class="tick" text-anchor="end">D2D_P2P · 0004:batch-2</text>
+    <desc>cause=AEGIS_PEER_HBM_PROTECTION; status=COMMITTED; submitted=1811939328; transferred=1811939328; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00029" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00029 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":1660944384,"cause":"AEGIS_PEER_HBM_PROTECTION","end_ns":87099437947,"path":"D2D_P2P","planned_end_ns":87099437947,"ready_ns":87082578503,"span_id":"weka:002001296e8a8c38ad9d7cc436d691afc602:main:000004","start_ns":87082578503,"status":"COMMITTED","transfer_id":"study:00000090:put:PEER_HBM:study:00000079:put-start:PEER_HBM:weka:002001296e8a8c38ad9d7cc436d691afc602:main:000004:batch-3","transferred_bytes":1660944384}</title>
+    <rect x="704.347" y="470.75" width="0.092" height="9.75" rx="0" fill="#7c3aed" stroke="none" opacity="1" />
+    <text x="240" y="479.5" class="tick" text-anchor="end">D2D_P2P · 0004:batch-3</text>
+    <desc>cause=AEGIS_PEER_HBM_PROTECTION; status=COMMITTED; submitted=1660944384; transferred=1660944384; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00030" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00030 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":150994944,"cause":"AEGIS_STORE_DRAM_PROTECTION","end_ns":87158625685,"path":"SOURCE_D2H_STORE","planned_end_ns":87158625685,"ready_ns":87152335887,"span_id":"weka:002001296e8a8c38ad9d7cc436d691afc602:main:000004","start_ns":87152335887,"status":"COMMITTED","transfer_id":"study:00000091:put:STORE_DRAM:study:00000083:put-start:STORE_DRAM:weka:002001296e8a8c38ad9d7cc436d691afc602:main:000004:batch-3","transferred_bytes":150994944}</title>
+    <rect x="704.727" y="482.5" width="0.034" height="9.75" rx="0" fill="#059669" stroke="none" opacity="1" />
+    <text x="240" y="491.25" class="tick" text-anchor="end">SOURCE_D2H_STORE · 0004:batch-3</text>
+    <desc>cause=AEGIS_STORE_DRAM_PROTECTION; status=COMMITTED; submitted=150994944; transferred=150994944; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00031" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00031 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":301989888,"cause":"AEGIS_STORE_DRAM_PROTECTION","end_ns":89529314178,"path":"SOURCE_D2H_STORE","planned_end_ns":89529314178,"ready_ns":89516984582,"span_id":"weka:002001296e8a8c38ad9d7cc436d691afc602:main:000005","start_ns":89516984582,"status":"COMMITTED","transfer_id":"study:00000109:put:STORE_DRAM:study:00000101:put-start:STORE_DRAM:weka:002001296e8a8c38ad9d7cc436d691afc602:main:000005:batch-3","transferred_bytes":301989888}</title>
+    <rect x="717.597" y="494.25" width="0.067" height="9.75" rx="0" fill="#059669" stroke="none" opacity="1" />
+    <text x="240" y="503" class="tick" text-anchor="end">SOURCE_D2H_STORE · 0005:batch-3</text>
+    <desc>cause=AEGIS_STORE_DRAM_PROTECTION; status=COMMITTED; submitted=301989888; transferred=301989888; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00032" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00032 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":150994944,"cause":"AEGIS_STORE_DRAM_PROTECTION","end_ns":92134642359,"path":"SOURCE_D2H_STORE","planned_end_ns":92134642359,"ready_ns":92128352561,"span_id":"weka:002001296e8a8c38ad9d7cc436d691afc602:main:000006","start_ns":92128352561,"status":"COMMITTED","transfer_id":"study:00000127:put:STORE_DRAM:study:00000119:put-start:STORE_DRAM:weka:002001296e8a8c38ad9d7cc436d691afc602:main:000006:batch-3","transferred_bytes":150994944}</title>
+    <rect x="731.809" y="506" width="0.034" height="9.75" rx="0" fill="#059669" stroke="none" opacity="1" />
+    <text x="240" y="514.75" class="tick" text-anchor="end">SOURCE_D2H_STORE · 0006:batch-3</text>
+    <desc>cause=AEGIS_STORE_DRAM_PROTECTION; status=COMMITTED; submitted=150994944; transferred=150994944; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00033" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00033 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":905969664,"cause":"AEGIS_STORE_DRAM_PROTECTION","end_ns":99699800848,"path":"SOURCE_D2H_STORE","planned_end_ns":99699800848,"ready_ns":99663312061,"span_id":"weka:002001296e8a8c38ad9d7cc436d691afc602:main:000007","start_ns":99663312061,"status":"COMMITTED","transfer_id":"study:00000145:put:STORE_DRAM:study:00000137:put-start:STORE_DRAM:weka:002001296e8a8c38ad9d7cc436d691afc602:main:000007:batch-3","transferred_bytes":905969664}</title>
+    <rect x="772.819" y="517.75" width="0.199" height="9.75" rx="0" fill="#059669" stroke="none" opacity="1" />
+    <text x="240" y="526.5" class="tick" text-anchor="end">SOURCE_D2H_STORE · 0007:batch-3</text>
+    <desc>cause=AEGIS_STORE_DRAM_PROTECTION; status=COMMITTED; submitted=905969664; transferred=905969664; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00034" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00034 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":603979776,"cause":"AEGIS_STORE_DRAM_PROTECTION","end_ns":102473950240,"path":"SOURCE_D2H_STORE","planned_end_ns":102473950240,"ready_ns":102449541048,"span_id":"weka:002001296e8a8c38ad9d7cc436d691afc602:main:000008","start_ns":102449541048,"status":"COMMITTED","transfer_id":"study:00000163:put:STORE_DRAM:study:00000155:put-start:STORE_DRAM:weka:002001296e8a8c38ad9d7cc436d691afc602:main:000008:batch-3","transferred_bytes":603979776}</title>
+    <rect x="787.983" y="529.5" width="0.133" height="9.75" rx="0" fill="#059669" stroke="none" opacity="1" />
+    <text x="240" y="538.25" class="tick" text-anchor="end">SOURCE_D2H_STORE · 0008:batch-3</text>
+    <desc>cause=AEGIS_STORE_DRAM_PROTECTION; status=COMMITTED; submitted=603979776; transferred=603979776; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00035" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00035 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":150994944,"cause":"AEGIS_STORE_DRAM_PROTECTION","end_ns":160770039798,"path":"SOURCE_D2H_STORE","planned_end_ns":160770039798,"ready_ns":160763750000,"span_id":"weka:0196085d85d2075a50b74cd8795ffbdcea9a:main:000006","start_ns":160763750000,"status":"COMMITTED","transfer_id":"study:00000173:put:STORE_DRAM:study:00000169:put-start:STORE_DRAM:weka:0196085d85d2075a50b74cd8795ffbdcea9a:main:000006:batch-0","transferred_bytes":150994944}</title>
+    <rect x="1105.362" y="541.25" width="0.034" height="9.75" rx="0" fill="#059669" stroke="none" opacity="1" />
+    <text x="240" y="550" class="tick" text-anchor="end">SOURCE_D2H_STORE · 0006:batch-0</text>
+    <desc>cause=AEGIS_STORE_DRAM_PROTECTION; status=COMMITTED; submitted=150994944; transferred=150994944; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00036" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00036 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":150994944,"cause":"AEGIS_STORE_DRAM_PROTECTION","end_ns":161258789798,"path":"SOURCE_D2H_STORE","planned_end_ns":161258789798,"ready_ns":161252500000,"span_id":"weka:0196085d85d2075a50b74cd8795ffbdcea9a:main:000006","start_ns":161252500000,"status":"COMMITTED","transfer_id":"study:00000175:put:STORE_DRAM:study:00000170:put-start:STORE_DRAM:weka:0196085d85d2075a50b74cd8795ffbdcea9a:main:000006:batch-1","transferred_bytes":150994944}</title>
+    <rect x="1108.022" y="553" width="0.034" height="9.75" rx="0" fill="#059669" stroke="none" opacity="1" />
+    <text x="240" y="561.75" class="tick" text-anchor="end">SOURCE_D2H_STORE · 0006:batch-1</text>
+    <desc>cause=AEGIS_STORE_DRAM_PROTECTION; status=COMMITTED; submitted=150994944; transferred=150994944; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00037" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00037 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":150994944,"cause":"AEGIS_STORE_DRAM_PROTECTION","end_ns":161747539798,"path":"SOURCE_D2H_STORE","planned_end_ns":161747539798,"ready_ns":161741250000,"span_id":"weka:0196085d85d2075a50b74cd8795ffbdcea9a:main:000006","start_ns":161741250000,"status":"COMMITTED","transfer_id":"study:00000177:put:STORE_DRAM:study:00000171:put-start:STORE_DRAM:weka:0196085d85d2075a50b74cd8795ffbdcea9a:main:000006:batch-2","transferred_bytes":150994944}</title>
+    <rect x="1110.682" y="564.75" width="0.034" height="9.75" rx="0" fill="#059669" stroke="none" opacity="1" />
+    <text x="240" y="573.5" class="tick" text-anchor="end">SOURCE_D2H_STORE · 0006:batch-2</text>
+    <desc>cause=AEGIS_STORE_DRAM_PROTECTION; status=COMMITTED; submitted=150994944; transferred=150994944; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00038" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00038 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":754974720,"cause":"AEGIS_STORE_DRAM_PROTECTION","end_ns":162799872065,"path":"SOURCE_D2H_STORE","planned_end_ns":162799872065,"ready_ns":162769423076,"span_id":"weka:0196085d85d2075a50b74cd8795ffbdcea9a:subagent:000010:000000","start_ns":162769423076,"status":"COMMITTED","transfer_id":"study:00000209:put:STORE_DRAM:study:00000194:put-start:STORE_DRAM:weka:0196085d85d2075a50b74cd8795ffbdcea9a:subagent:000010:000000:batch-0","transferred_bytes":754974720}</title>
+    <rect x="1116.278" y="576.5" width="0.166" height="9.75" rx="0" fill="#059669" stroke="none" opacity="1" />
+    <text x="240" y="585.25" class="tick" text-anchor="end">SOURCE_D2H_STORE · 0000:batch-0</text>
+    <desc>cause=AEGIS_STORE_DRAM_PROTECTION; status=COMMITTED; submitted=754974720; transferred=754974720; aborted=0</desc>
+  </g>
+  <g data-point-id="f5-point-00039" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f5-point-00039 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aborted_bytes":0,"bytes":905969664,"cause":"AEGIS_STORE_DRAM_PROTECTION","end_ns":163453219556,"path":"SOURCE_D2H_STORE","planned_end_ns":163453219556,"ready_ns":163416730769,"span_id":"weka:0196085d85d2075a50b74cd8795ffbdcea9a:subagent:000010:000000","start_ns":163416730769,"status":"COMMITTED","transfer_id":"study:00000213:put:STORE_DRAM:study:00000195:put-start:STORE_DRAM:weka:0196085d85d2075a50b74cd8795ffbdcea9a:subagent:000010:000000:batch-1","transferred_bytes":905969664}</title>
+    <rect x="1119.801" y="588.25" width="0.199" height="9.75" rx="0" fill="#059669" stroke="none" opacity="1" />
+    <text x="240" y="597" class="tick" text-anchor="end">SOURCE_D2H_STORE · 0000:batch-1</text>
+    <desc>cause=AEGIS_STORE_DRAM_PROTECTION; status=COMMITTED; submitted=905969664; transferred=905969664; aborted=0</desc>
+  </g>
+  <line x1="250" y1="110" x2="250" y2="625" stroke="#374151" stroke-width="1" />
+  <line x1="250" y1="625" x2="1120" y2="625" stroke="#374151" stroke-width="1" />
+  <text x="685" y="648" class="label" text-anchor="middle">global virtual time · displayed 40/172 transfers</text>
+  <line x1="55" y1="676" x2="1145" y2="676" stroke="#fecaca" stroke-width="1" />
+  <text x="600" y="704" class="footer" text-anchor="middle">E2 modeled/preliminary · not calibrated · no physical experiment</text>
+</svg>

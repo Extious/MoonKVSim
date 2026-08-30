@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img">
+  <title>Matched WCT and goodput</title>
+  <style>text{font-family:DejaVu Sans,Arial,sans-serif;fill:#111827}.title{font-size:26px;font-weight:700}.subtitle{font-size:14px;fill:#4b5563}.axis{stroke:#374151;stroke-width:1}.grid{stroke:#e5e7eb;stroke-width:1}.tick{font-size:12px;fill:#4b5563}.label{font-size:14px;font-weight:600}.small{font-size:11px}.footer{font-size:13px;font-weight:700;fill:#991b1b}</style>
+  <rect x="0" y="0" width="1200" height="720" rx="0" fill="#ffffff" stroke="none" opacity="1" />
+  <text x="55" y="46" class="title" text-anchor="start">Matched WCT and goodput</text>
+  <text x="55" y="74" class="subtitle" text-anchor="start">Whole-workload metrics; bucket is failure-focus cell; matched Vanilla↔AegisKV</text>
+  <circle cx="325" cy="90" r="4" fill="#2563eb" stroke="#ffffff" stroke-width="1" />
+  <text x="334" y="94" class="small" text-anchor="start">8k</text>
+  <circle cx="437" cy="90" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  <text x="446" y="94" class="small" text-anchor="start">32k</text>
+  <circle cx="549" cy="90" r="4" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  <text x="558" y="94" class="small" text-anchor="start">64k</text>
+  <circle cx="661" cy="90" r="4" fill="#7c3aed" stroke="#ffffff" stroke-width="1" />
+  <text x="670" y="94" class="small" text-anchor="start">96k</text>
+  <circle cx="773" cy="90" r="4" fill="#d97706" stroke="#ffffff" stroke-width="1" />
+  <text x="782" y="94" class="small" text-anchor="start">128k</text>
+  <circle cx="890" cy="90" r="5" fill="#ffffff" stroke="#334155" stroke-width="1" />
+  <text x="902" y="95" class="small" text-anchor="start">Vanilla</text>
+  <circle cx="995" cy="90" r="5" fill="#334155" stroke="#334155" stroke-width="1" />
+  <text x="1007" y="95" class="small" text-anchor="start">AegisKV</text>
+  <line x1="55" y1="125" x2="55" y2="535" stroke="#374151" stroke-width="1" />
+  <line x1="55" y1="535" x2="565" y2="535" stroke="#374151" stroke-width="1" />
+  <text x="310" y="115" class="label" text-anchor="middle">mean workflow WCT (ms)</text>
+  <line x1="83" y1="317.99" x2="83" y2="454.318" stroke="#2563eb" stroke-width="1.5" />
+  <g data-point-id="f6-point-00000" data-run-id="core:vanilla_mooncake_dram:8k:no_failure:seed-0:repeat-A" data-result-hash="743e944e26b7337779d93c7ce4782cced92f8daacb558b31014fe5af4ffcaa64">
+    <title>f6-point-00000 | core:vanilla_mooncake_dram:8k:no_failure:seed-0:repeat-A | 743e944e26b7337779d93c7ce4782cced92f8daacb558b31014fe5af4ffcaa64 | {"context_bucket":"8k","matched_pair":"8k/no_failure","panel":"mean workflow WCT (ms)","scenario":"no_failure","value":6335118.459094,"variant_id":"vanilla_mooncake_dram"}</title>
+    <circle cx="83" cy="317.99" r="3.5" fill="#ffffff" stroke="#2563eb" stroke-width="1" />
+  </g>
+  <g data-point-id="f6-point-00001" data-run-id="core:aegiskv_unified:8k:no_failure:seed-0:repeat-A" data-result-hash="6ecd1f3033a294e39f136b174a5eedbac695c9bf818842d4ce9ce92b12f457a6">
+    <title>f6-point-00001 | core:aegiskv_unified:8k:no_failure:seed-0:repeat-A | 6ecd1f3033a294e39f136b174a5eedbac695c9bf818842d4ce9ce92b12f457a6 | {"context_bucket":"8k","matched_pair":"8k/no_failure","panel":"mean workflow WCT (ms)","scenario":"no_failure","value":6313649.742157,"variant_id":"aegiskv_unified"}</title>
+    <circle cx="83" cy="454.318" r="3.5" fill="#2563eb" stroke="#2563eb" stroke-width="1" />
+  </g>
+  <text x="83" y="551" class="small" text-anchor="middle">8k</text>
+  <text x="83" y="564" class="small" text-anchor="middle">NF</text>
+  <line x1="134.556" y1="315.732" x2="134.556" y2="394.988" stroke="#2563eb" stroke-width="1.5" />
+  <g data-point-id="f6-point-00002" data-run-id="core:vanilla_mooncake_dram:8k:gpu_failure:seed-0:repeat-A" data-result-hash="ffbf3e66bf7003778887e0897d535666f8b0fe197802de4ed003fb84f1c9a8bc">
+    <title>f6-point-00002 | core:vanilla_mooncake_dram:8k:gpu_failure:seed-0:repeat-A | ffbf3e66bf7003778887e0897d535666f8b0fe197802de4ed003fb84f1c9a8bc | {"context_bucket":"8k","matched_pair":"8k/gpu_failure","panel":"mean workflow WCT (ms)","scenario":"gpu_failure","value":6335474.003479,"variant_id":"vanilla_mooncake_dram"}</title>
+    <circle cx="134.556" cy="315.732" r="3.5" fill="#ffffff" stroke="#2563eb" stroke-width="1" />
+  </g>
+  <g data-point-id="f6-point-00003" data-run-id="core:aegiskv_unified:8k:gpu_failure:seed-0:repeat-A" data-result-hash="547a2dbeb9e0f6ce40956072d0923977c8927c9718d9abc994d11100b40961aa">
+    <title>f6-point-00003 | core:aegiskv_unified:8k:gpu_failure:seed-0:repeat-A | 547a2dbeb9e0f6ce40956072d0923977c8927c9718d9abc994d11100b40961aa | {"context_bucket":"8k","matched_pair":"8k/gpu_failure","panel":"mean workflow WCT (ms)","scenario":"gpu_failure","value":6322992.985536,"variant_id":"aegiskv_unified"}</title>
+    <circle cx="134.556" cy="394.988" r="3.5" fill="#2563eb" stroke="#2563eb" stroke-width="1" />
+  </g>
+  <text x="134.556" y="551" class="small" text-anchor="middle">8k</text>
+  <text x="134.556" y="564" class="small" text-anchor="middle">GF</text>
+  <line x1="186.111" y1="317.99" x2="186.111" y2="454.318" stroke="#dc2626" stroke-width="1.5" />
+  <g data-point-id="f6-point-00004" data-run-id="core:vanilla_mooncake_dram:32k:no_failure:seed-0:repeat-A" data-result-hash="23eb9c1e992d455b1421b33de58ac1e564f2fdd4bd5b9829572f5625534a665e">
+    <title>f6-point-00004 | core:vanilla_mooncake_dram:32k:no_failure:seed-0:repeat-A | 23eb9c1e992d455b1421b33de58ac1e564f2fdd4bd5b9829572f5625534a665e | {"context_bucket":"32k","matched_pair":"32k/no_failure","panel":"mean workflow WCT (ms)","scenario":"no_failure","value":6335118.459094,"variant_id":"vanilla_mooncake_dram"}</title>
+    <circle cx="186.111" cy="317.99" r="3.5" fill="#ffffff" stroke="#dc2626" stroke-width="1" />
+  </g>
+  <g data-point-id="f6-point-00005" data-run-id="core:aegiskv_unified:32k:no_failure:seed-0:repeat-A" data-result-hash="c80fce660ad288857107684594541c578057bffb3f51c7c542c8571128d14237">
+    <title>f6-point-00005 | core:aegiskv_unified:32k:no_failure:seed-0:repeat-A | c80fce660ad288857107684594541c578057bffb3f51c7c542c8571128d14237 | {"context_bucket":"32k","matched_pair":"32k/no_failure","panel":"mean workflow WCT (ms)","scenario":"no_failure","value":6313649.742157,"variant_id":"aegiskv_unified"}</title>
+    <circle cx="186.111" cy="454.318" r="3.5" fill="#dc2626" stroke="#dc2626" stroke-width="1" />
+  </g>
+  <text x="186.111" y="551" class="small" text-anchor="middle">32k</text>
+  <text x="186.111" y="564" class="small" text-anchor="middle">NF</text>
+  <line x1="237.667" y1="366.204" x2="237.667" y2="430.505" stroke="#dc2626" stroke-width="1.5" />
+  <g data-point-id="f6-point-00006" data-run-id="core:vanilla_mooncake_dram:32k:gpu_failure:seed-0:repeat-A" data-result-hash="74008ef5ba6919df607cb3b1eb97df7f87f32006c8130600e13bb0f039a21804">
+    <title>f6-point-00006 | core:vanilla_mooncake_dram:32k:gpu_failure:seed-0:repeat-A | 74008ef5ba6919df607cb3b1eb97df7f87f32006c8130600e13bb0f039a21804 | {"context_bucket":"32k","matched_pair":"32k/gpu_failure","panel":"mean workflow WCT (ms)","scenario":"gpu_failure","value":6327525.780752,"variant_id":"vanilla_mooncake_dram"}</title>
+    <circle cx="237.667" cy="366.204" r="3.5" fill="#ffffff" stroke="#dc2626" stroke-width="1" />
+  </g>
+  <g data-point-id="f6-point-00007" data-run-id="core:aegiskv_unified:32k:gpu_failure:seed-0:repeat-A" data-result-hash="6035700446290202d4ea0153ec70549ba8abe2a1d584f151abea7adb0dfb512e">
+    <title>f6-point-00007 | core:aegiskv_unified:32k:gpu_failure:seed-0:repeat-A | 6035700446290202d4ea0153ec70549ba8abe2a1d584f151abea7adb0dfb512e | {"context_bucket":"32k","matched_pair":"32k/gpu_failure","panel":"mean workflow WCT (ms)","scenario":"gpu_failure","value":6317399.808282,"variant_id":"aegiskv_unified"}</title>
+    <circle cx="237.667" cy="430.505" r="3.5" fill="#dc2626" stroke="#dc2626" stroke-width="1" />
+  </g>
+  <text x="237.667" y="551" class="small" text-anchor="middle">32k</text>
+  <text x="237.667" y="564" class="small" text-anchor="middle">GF</text>
+  <line x1="289.222" y1="317.99" x2="289.222" y2="454.318" stroke="#059669" stroke-width="1.5" />
+  <g data-point-id="f6-point-00008" data-run-id="core:vanilla_mooncake_dram:64k:no_failure:seed-0:repeat-A" data-result-hash="5438d4222e1cebb2012a6663cc4eef7843668766938000452b388b3bff5b53c2">
+    <title>f6-point-00008 | core:vanilla_mooncake_dram:64k:no_failure:seed-0:repeat-A | 5438d4222e1cebb2012a6663cc4eef7843668766938000452b388b3bff5b53c2 | {"context_bucket":"64k","matched_pair":"64k/no_failure","panel":"mean workflow WCT (ms)","scenario":"no_failure","value":6335118.459094,"variant_id":"vanilla_mooncake_dram"}</title>
+    <circle cx="289.222" cy="317.99" r="3.5" fill="#ffffff" stroke="#059669" stroke-width="1" />
+  </g>
+  <g data-point-id="f6-point-00009" data-run-id="core:aegiskv_unified:64k:no_failure:seed-0:repeat-A" data-result-hash="d74973830e2851b19210b6654ed4af16d27b8d86836e59b8627e4c56c4b7fde6">
+    <title>f6-point-00009 | core:aegiskv_unified:64k:no_failure:seed-0:repeat-A | d74973830e2851b19210b6654ed4af16d27b8d86836e59b8627e4c56c4b7fde6 | {"context_bucket":"64k","matched_pair":"64k/no_failure","panel":"mean workflow WCT (ms)","scenario":"no_failure","value":6313649.742157,"variant_id":"aegiskv_unified"}</title>
+    <circle cx="289.222" cy="454.318" r="3.5" fill="#059669" stroke="#059669" stroke-width="1" />
+  </g>
+  <text x="289.222" y="551" class="small" text-anchor="middle">64k</text>
+  <text x="289.222" y="564" class="small" text-anchor="middle">NF</text>
+  <line x1="340.778" y1="275.493" x2="340.778" y2="392.842" stroke="#059669" stroke-width="1.5" />
+  <g data-point-id="f6-point-00010" data-run-id="core:vanilla_mooncake_dram:64k:gpu_failure:seed-0:repeat-A" data-result-hash="00a65e50323a62fc54c201689c7f91bf1944f714cd56daa00ad4bcc6959a812e">
+    <title>f6-point-00010 | core:vanilla_mooncake_dram:64k:gpu_failure:seed-0:repeat-A | 00a65e50323a62fc54c201689c7f91bf1944f714cd56daa00ad4bcc6959a812e | {"context_bucket":"64k","matched_pair":"64k/gpu_failure","panel":"mean workflow WCT (ms)","scenario":"gpu_failure","value":6341810.753579,"variant_id":"vanilla_mooncake_dram"}</title>
+    <circle cx="340.778" cy="275.493" r="3.5" fill="#ffffff" stroke="#059669" stroke-width="1" />
+  </g>
+  <g data-point-id="f6-point-00011" data-run-id="core:aegiskv_unified:64k:gpu_failure:seed-0:repeat-A" data-result-hash="87fab35f98dfd805ca7d1fb5bdd779bef2826f7fbeb4e9d688d9ccf799ebdb9d">
+    <title>f6-point-00011 | core:aegiskv_unified:64k:gpu_failure:seed-0:repeat-A | 87fab35f98dfd805ca7d1fb5bdd779bef2826f7fbeb4e9d688d9ccf799ebdb9d | {"context_bucket":"64k","matched_pair":"64k/gpu_failure","panel":"mean workflow WCT (ms)","scenario":"gpu_failure","value":6323330.982717,"variant_id":"aegiskv_unified"}</title>
+    <circle cx="340.778" cy="392.842" r="3.5" fill="#059669" stroke="#059669" stroke-width="1" />
+  </g>
+  <text x="340.778" y="551" class="small" text-anchor="middle">64k</text>
+  <text x="340.778" y="564" class="small" text-anchor="middle">GF</text>
+  <line x1="392.333" y1="317.99" x2="392.333" y2="454.318" stroke="#7c3aed" stroke-width="1.5" />
+  <g data-point-id="f6-point-00012" data-run-id="core:vanilla_mooncake_dram:96k:no_failure:seed-0:repeat-A" data-result-hash="e86aa291eb8cd8998898c2401df556bf35a9588bd164ac2c051cb4d74abcdc13">
+    <title>f6-point-00012 | core:vanilla_mooncake_dram:96k:no_failure:seed-0:repeat-A | e86aa291eb8cd8998898c2401df556bf35a9588bd164ac2c051cb4d74abcdc13 | {"context_bucket":"96k","matched_pair":"96k/no_failure","panel":"mean workflow WCT (ms)","scenario":"no_failure","value":6335118.459094,"variant_id":"vanilla_mooncake_dram"}</title>
+    <circle cx="392.333" cy="317.99" r="3.5" fill="#ffffff" stroke="#7c3aed" stroke-width="1" />
+  </g>
+  <g data-point-id="f6-point-00013" data-run-id="core:aegiskv_unified:96k:no_failure:seed-0:repeat-A" data-result-hash="b8a3a8dd4dfa3c79dca234bf1e371d7867c650d1121d5e8008a5548d61e78067">
+    <title>f6-point-00013 | core:aegiskv_unified:96k:no_failure:seed-0:repeat-A | b8a3a8dd4dfa3c79dca234bf1e371d7867c650d1121d5e8008a5548d61e78067 | {"context_bucket":"96k","matched_pair":"96k/no_failure","panel":"mean workflow WCT (ms)","scenario":"no_failure","value":6313649.742157,"variant_id":"aegiskv_unified"}</title>
+    <circle cx="392.333" cy="454.318" r="3.5" fill="#7c3aed" stroke="#7c3aed" stroke-width="1" />
+  </g>
+  <text x="392.333" y="551" class="small" text-anchor="middle">96k</text>
+  <text x="392.333" y="564" class="small" text-anchor="middle">NF</text>
+  <line x1="443.889" y1="205.682" x2="443.889" y2="302.579" stroke="#7c3aed" stroke-width="1.5" />
+  <g data-point-id="f6-point-00014" data-run-id="core:vanilla_mooncake_dram:96k:gpu_failure:seed-0:repeat-A" data-result-hash="cc6365889b8cdcca768858f4e274c018517e449612f3115a89987935d2efcf20">
+    <title>f6-point-00014 | core:vanilla_mooncake_dram:96k:gpu_failure:seed-0:repeat-A | cc6365889b8cdcca768858f4e274c018517e449612f3115a89987935d2efcf20 | {"context_bucket":"96k","matched_pair":"96k/gpu_failure","panel":"mean workflow WCT (ms)","scenario":"gpu_failure","value":6352804.553217,"variant_id":"vanilla_mooncake_dram"}</title>
+    <circle cx="443.889" cy="205.682" r="3.5" fill="#ffffff" stroke="#7c3aed" stroke-width="1" />
+  </g>
+  <g data-point-id="f6-point-00015" data-run-id="core:aegiskv_unified:96k:gpu_failure:seed-0:repeat-A" data-result-hash="ceb99a125ea6339d52fe180d2140dcb176b48018523fe423e03f506ff7b5c658">
+    <title>f6-point-00015 | core:aegiskv_unified:96k:gpu_failure:seed-0:repeat-A | ceb99a125ea6339d52fe180d2140dcb176b48018523fe423e03f506ff7b5c658 | {"context_bucket":"96k","matched_pair":"96k/gpu_failure","panel":"mean workflow WCT (ms)","scenario":"gpu_failure","value":6337545.43365,"variant_id":"aegiskv_unified"}</title>
+    <circle cx="443.889" cy="302.579" r="3.5" fill="#7c3aed" stroke="#7c3aed" stroke-width="1" />
+  </g>
+  <text x="443.889" y="551" class="small" text-anchor="middle">96k</text>
+  <text x="443.889" y="564" class="small" text-anchor="middle">GF</text>
+  <line x1="495.444" y1="317.99" x2="495.444" y2="454.318" stroke="#d97706" stroke-width="1.5" />
+  <g data-point-id="f6-point-00016" data-run-id="core:vanilla_mooncake_dram:128k:no_failure:seed-0:repeat-A" data-result-hash="d2feff27444eb2c91b899dd714dee62559d7fe2668d614af8d6fb66c2647d718">
+    <title>f6-point-00016 | core:vanilla_mooncake_dram:128k:no_failure:seed-0:repeat-A | d2feff27444eb2c91b899dd714dee62559d7fe2668d614af8d6fb66c2647d718 | {"context_bucket":"128k","matched_pair":"128k/no_failure","panel":"mean workflow WCT (ms)","scenario":"no_failure","value":6335118.459094,"variant_id":"vanilla_mooncake_dram"}</title>
+    <circle cx="495.444" cy="317.99" r="3.5" fill="#ffffff" stroke="#d97706" stroke-width="1" />
+  </g>
+  <g data-point-id="f6-point-00017" data-run-id="core:aegiskv_unified:128k:no_failure:seed-0:repeat-A" data-result-hash="969978bbd4972d97fb63daccf65d4d8b7cd79f4b486b238cf6bef17696a0d0c3">
+    <title>f6-point-00017 | core:aegiskv_unified:128k:no_failure:seed-0:repeat-A | 969978bbd4972d97fb63daccf65d4d8b7cd79f4b486b238cf6bef17696a0d0c3 | {"context_bucket":"128k","matched_pair":"128k/no_failure","panel":"mean workflow WCT (ms)","scenario":"no_failure","value":6313649.742157,"variant_id":"aegiskv_unified"}</title>
+    <circle cx="495.444" cy="454.318" r="3.5" fill="#d97706" stroke="#d97706" stroke-width="1" />
+  </g>
+  <text x="495.444" y="551" class="small" text-anchor="middle">128k</text>
+  <text x="495.444" y="564" class="small" text-anchor="middle">NF</text>
+  <line x1="547" y1="302.885" x2="547" y2="388.883" stroke="#d97706" stroke-width="1.5" />
+  <g data-point-id="f6-point-00018" data-run-id="core:vanilla_mooncake_dram:128k:gpu_failure:seed-0:repeat-A" data-result-hash="d73c4f4869b4de17465c5c723cc8f5455db0286437405b1a829c07d06a5c3f92">
+    <title>f6-point-00018 | core:vanilla_mooncake_dram:128k:gpu_failure:seed-0:repeat-A | d73c4f4869b4de17465c5c723cc8f5455db0286437405b1a829c07d06a5c3f92 | {"context_bucket":"128k","matched_pair":"128k/gpu_failure","panel":"mean workflow WCT (ms)","scenario":"gpu_failure","value":6337497.201831,"variant_id":"vanilla_mooncake_dram"}</title>
+    <circle cx="547" cy="302.885" r="3.5" fill="#ffffff" stroke="#d97706" stroke-width="1" />
+  </g>
+  <g data-point-id="f6-point-00019" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f6-point-00019 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"context_bucket":"128k","matched_pair":"128k/gpu_failure","panel":"mean workflow WCT (ms)","scenario":"gpu_failure","value":6323954.288625,"variant_id":"aegiskv_unified"}</title>
+    <circle cx="547" cy="388.883" r="3.5" fill="#d97706" stroke="#d97706" stroke-width="1" />
+  </g>
+  <text x="547" y="551" class="small" text-anchor="middle">128k</text>
+  <text x="547" y="564" class="small" text-anchor="middle">GF</text>
+  <text x="47" y="129" class="tick" text-anchor="end">6.4M</text>
+  <text x="47" y="539" class="tick" text-anchor="end">6.3M</text>
+  <line x1="635" y1="125" x2="635" y2="535" stroke="#374151" stroke-width="1" />
+  <line x1="635" y1="535" x2="1145" y2="535" stroke="#374151" stroke-width="1" />
+  <text x="890" y="115" class="label" text-anchor="middle">goodput (tokens/s)</text>
+  <line x1="663" y1="330.506" x2="663" y2="327.269" stroke="#2563eb" stroke-width="1.5" />
+  <g data-point-id="f6-point-00020" data-run-id="core:vanilla_mooncake_dram:8k:no_failure:seed-0:repeat-A" data-result-hash="743e944e26b7337779d93c7ce4782cced92f8daacb558b31014fe5af4ffcaa64">
+    <title>f6-point-00020 | core:vanilla_mooncake_dram:8k:no_failure:seed-0:repeat-A | 743e944e26b7337779d93c7ce4782cced92f8daacb558b31014fe5af4ffcaa64 | {"context_bucket":"8k","matched_pair":"8k/no_failure","panel":"goodput (tokens/s)","scenario":"no_failure","value":5.792,"variant_id":"vanilla_mooncake_dram"}</title>
+    <circle cx="663" cy="330.506" r="3.5" fill="#ffffff" stroke="#2563eb" stroke-width="1" />
+  </g>
+  <g data-point-id="f6-point-00021" data-run-id="core:aegiskv_unified:8k:no_failure:seed-0:repeat-A" data-result-hash="6ecd1f3033a294e39f136b174a5eedbac695c9bf818842d4ce9ce92b12f457a6">
+    <title>f6-point-00021 | core:aegiskv_unified:8k:no_failure:seed-0:repeat-A | 6ecd1f3033a294e39f136b174a5eedbac695c9bf818842d4ce9ce92b12f457a6 | {"context_bucket":"8k","matched_pair":"8k/no_failure","panel":"goodput (tokens/s)","scenario":"no_failure","value":5.808,"variant_id":"aegiskv_unified"}</title>
+    <circle cx="663" cy="327.269" r="3.5" fill="#2563eb" stroke="#2563eb" stroke-width="1" />
+  </g>
+  <text x="663" y="551" class="small" text-anchor="middle">8k</text>
+  <text x="663" y="564" class="small" text-anchor="middle">NF</text>
+  <line x1="714.556" y1="330.506" x2="714.556" y2="329.292" stroke="#2563eb" stroke-width="1.5" />
+  <g data-point-id="f6-point-00022" data-run-id="core:vanilla_mooncake_dram:8k:gpu_failure:seed-0:repeat-A" data-result-hash="ffbf3e66bf7003778887e0897d535666f8b0fe197802de4ed003fb84f1c9a8bc">
+    <title>f6-point-00022 | core:vanilla_mooncake_dram:8k:gpu_failure:seed-0:repeat-A | ffbf3e66bf7003778887e0897d535666f8b0fe197802de4ed003fb84f1c9a8bc | {"context_bucket":"8k","matched_pair":"8k/gpu_failure","panel":"goodput (tokens/s)","scenario":"gpu_failure","value":5.792,"variant_id":"vanilla_mooncake_dram"}</title>
+    <circle cx="714.556" cy="330.506" r="3.5" fill="#ffffff" stroke="#2563eb" stroke-width="1" />
+  </g>
+  <g data-point-id="f6-point-00023" data-run-id="core:aegiskv_unified:8k:gpu_failure:seed-0:repeat-A" data-result-hash="547a2dbeb9e0f6ce40956072d0923977c8927c9718d9abc994d11100b40961aa">
+    <title>f6-point-00023 | core:aegiskv_unified:8k:gpu_failure:seed-0:repeat-A | 547a2dbeb9e0f6ce40956072d0923977c8927c9718d9abc994d11100b40961aa | {"context_bucket":"8k","matched_pair":"8k/gpu_failure","panel":"goodput (tokens/s)","scenario":"gpu_failure","value":5.798,"variant_id":"aegiskv_unified"}</title>
+    <circle cx="714.556" cy="329.292" r="3.5" fill="#2563eb" stroke="#2563eb" stroke-width="1" />
+  </g>
+  <text x="714.556" y="551" class="small" text-anchor="middle">8k</text>
+  <text x="714.556" y="564" class="small" text-anchor="middle">GF</text>
+  <line x1="766.111" y1="330.506" x2="766.111" y2="327.269" stroke="#dc2626" stroke-width="1.5" />
+  <g data-point-id="f6-point-00024" data-run-id="core:vanilla_mooncake_dram:32k:no_failure:seed-0:repeat-A" data-result-hash="23eb9c1e992d455b1421b33de58ac1e564f2fdd4bd5b9829572f5625534a665e">
+    <title>f6-point-00024 | core:vanilla_mooncake_dram:32k:no_failure:seed-0:repeat-A | 23eb9c1e992d455b1421b33de58ac1e564f2fdd4bd5b9829572f5625534a665e | {"context_bucket":"32k","matched_pair":"32k/no_failure","panel":"goodput (tokens/s)","scenario":"no_failure","value":5.792,"variant_id":"vanilla_mooncake_dram"}</title>
+    <circle cx="766.111" cy="330.506" r="3.5" fill="#ffffff" stroke="#dc2626" stroke-width="1" />
+  </g>
+  <g data-point-id="f6-point-00025" data-run-id="core:aegiskv_unified:32k:no_failure:seed-0:repeat-A" data-result-hash="c80fce660ad288857107684594541c578057bffb3f51c7c542c8571128d14237">
+    <title>f6-point-00025 | core:aegiskv_unified:32k:no_failure:seed-0:repeat-A | c80fce660ad288857107684594541c578057bffb3f51c7c542c8571128d14237 | {"context_bucket":"32k","matched_pair":"32k/no_failure","panel":"goodput (tokens/s)","scenario":"no_failure","value":5.808,"variant_id":"aegiskv_unified"}</title>
+    <circle cx="766.111" cy="327.269" r="3.5" fill="#dc2626" stroke="#dc2626" stroke-width="1" />
+  </g>
+  <text x="766.111" y="551" class="small" text-anchor="middle">32k</text>
+  <text x="766.111" y="564" class="small" text-anchor="middle">NF</text>
+  <line x1="817.667" y1="330.506" x2="817.667" y2="329.292" stroke="#dc2626" stroke-width="1.5" />
+  <g data-point-id="f6-point-00026" data-run-id="core:vanilla_mooncake_dram:32k:gpu_failure:seed-0:repeat-A" data-result-hash="74008ef5ba6919df607cb3b1eb97df7f87f32006c8130600e13bb0f039a21804">
+    <title>f6-point-00026 | core:vanilla_mooncake_dram:32k:gpu_failure:seed-0:repeat-A | 74008ef5ba6919df607cb3b1eb97df7f87f32006c8130600e13bb0f039a21804 | {"context_bucket":"32k","matched_pair":"32k/gpu_failure","panel":"goodput (tokens/s)","scenario":"gpu_failure","value":5.792,"variant_id":"vanilla_mooncake_dram"}</title>
+    <circle cx="817.667" cy="330.506" r="3.5" fill="#ffffff" stroke="#dc2626" stroke-width="1" />
+  </g>
+  <g data-point-id="f6-point-00027" data-run-id="core:aegiskv_unified:32k:gpu_failure:seed-0:repeat-A" data-result-hash="6035700446290202d4ea0153ec70549ba8abe2a1d584f151abea7adb0dfb512e">
+    <title>f6-point-00027 | core:aegiskv_unified:32k:gpu_failure:seed-0:repeat-A | 6035700446290202d4ea0153ec70549ba8abe2a1d584f151abea7adb0dfb512e | {"context_bucket":"32k","matched_pair":"32k/gpu_failure","panel":"goodput (tokens/s)","scenario":"gpu_failure","value":5.798,"variant_id":"aegiskv_unified"}</title>
+    <circle cx="817.667" cy="329.292" r="3.5" fill="#dc2626" stroke="#dc2626" stroke-width="1" />
+  </g>
+  <text x="817.667" y="551" class="small" text-anchor="middle">32k</text>
+  <text x="817.667" y="564" class="small" text-anchor="middle">GF</text>
+  <line x1="869.222" y1="330.506" x2="869.222" y2="327.269" stroke="#059669" stroke-width="1.5" />
+  <g data-point-id="f6-point-00028" data-run-id="core:vanilla_mooncake_dram:64k:no_failure:seed-0:repeat-A" data-result-hash="5438d4222e1cebb2012a6663cc4eef7843668766938000452b388b3bff5b53c2">
+    <title>f6-point-00028 | core:vanilla_mooncake_dram:64k:no_failure:seed-0:repeat-A | 5438d4222e1cebb2012a6663cc4eef7843668766938000452b388b3bff5b53c2 | {"context_bucket":"64k","matched_pair":"64k/no_failure","panel":"goodput (tokens/s)","scenario":"no_failure","value":5.792,"variant_id":"vanilla_mooncake_dram"}</title>
+    <circle cx="869.222" cy="330.506" r="3.5" fill="#ffffff" stroke="#059669" stroke-width="1" />
+  </g>
+  <g data-point-id="f6-point-00029" data-run-id="core:aegiskv_unified:64k:no_failure:seed-0:repeat-A" data-result-hash="d74973830e2851b19210b6654ed4af16d27b8d86836e59b8627e4c56c4b7fde6">
+    <title>f6-point-00029 | core:aegiskv_unified:64k:no_failure:seed-0:repeat-A | d74973830e2851b19210b6654ed4af16d27b8d86836e59b8627e4c56c4b7fde6 | {"context_bucket":"64k","matched_pair":"64k/no_failure","panel":"goodput (tokens/s)","scenario":"no_failure","value":5.808,"variant_id":"aegiskv_unified"}</title>
+    <circle cx="869.222" cy="327.269" r="3.5" fill="#059669" stroke="#059669" stroke-width="1" />
+  </g>
+  <text x="869.222" y="551" class="small" text-anchor="middle">64k</text>
+  <text x="869.222" y="564" class="small" text-anchor="middle">NF</text>
+  <line x1="920.778" y1="331.719" x2="920.778" y2="329.494" stroke="#059669" stroke-width="1.5" />
+  <g data-point-id="f6-point-00030" data-run-id="core:vanilla_mooncake_dram:64k:gpu_failure:seed-0:repeat-A" data-result-hash="00a65e50323a62fc54c201689c7f91bf1944f714cd56daa00ad4bcc6959a812e">
+    <title>f6-point-00030 | core:vanilla_mooncake_dram:64k:gpu_failure:seed-0:repeat-A | 00a65e50323a62fc54c201689c7f91bf1944f714cd56daa00ad4bcc6959a812e | {"context_bucket":"64k","matched_pair":"64k/gpu_failure","panel":"goodput (tokens/s)","scenario":"gpu_failure","value":5.786,"variant_id":"vanilla_mooncake_dram"}</title>
+    <circle cx="920.778" cy="331.719" r="3.5" fill="#ffffff" stroke="#059669" stroke-width="1" />
+  </g>
+  <g data-point-id="f6-point-00031" data-run-id="core:aegiskv_unified:64k:gpu_failure:seed-0:repeat-A" data-result-hash="87fab35f98dfd805ca7d1fb5bdd779bef2826f7fbeb4e9d688d9ccf799ebdb9d">
+    <title>f6-point-00031 | core:aegiskv_unified:64k:gpu_failure:seed-0:repeat-A | 87fab35f98dfd805ca7d1fb5bdd779bef2826f7fbeb4e9d688d9ccf799ebdb9d | {"context_bucket":"64k","matched_pair":"64k/gpu_failure","panel":"goodput (tokens/s)","scenario":"gpu_failure","value":5.797,"variant_id":"aegiskv_unified"}</title>
+    <circle cx="920.778" cy="329.494" r="3.5" fill="#059669" stroke="#059669" stroke-width="1" />
+  </g>
+  <text x="920.778" y="551" class="small" text-anchor="middle">64k</text>
+  <text x="920.778" y="564" class="small" text-anchor="middle">GF</text>
+  <line x1="972.333" y1="330.506" x2="972.333" y2="327.269" stroke="#7c3aed" stroke-width="1.5" />
+  <g data-point-id="f6-point-00032" data-run-id="core:vanilla_mooncake_dram:96k:no_failure:seed-0:repeat-A" data-result-hash="e86aa291eb8cd8998898c2401df556bf35a9588bd164ac2c051cb4d74abcdc13">
+    <title>f6-point-00032 | core:vanilla_mooncake_dram:96k:no_failure:seed-0:repeat-A | e86aa291eb8cd8998898c2401df556bf35a9588bd164ac2c051cb4d74abcdc13 | {"context_bucket":"96k","matched_pair":"96k/no_failure","panel":"goodput (tokens/s)","scenario":"no_failure","value":5.792,"variant_id":"vanilla_mooncake_dram"}</title>
+    <circle cx="972.333" cy="330.506" r="3.5" fill="#ffffff" stroke="#7c3aed" stroke-width="1" />
+  </g>
+  <g data-point-id="f6-point-00033" data-run-id="core:aegiskv_unified:96k:no_failure:seed-0:repeat-A" data-result-hash="b8a3a8dd4dfa3c79dca234bf1e371d7867c650d1121d5e8008a5548d61e78067">
+    <title>f6-point-00033 | core:aegiskv_unified:96k:no_failure:seed-0:repeat-A | b8a3a8dd4dfa3c79dca234bf1e371d7867c650d1121d5e8008a5548d61e78067 | {"context_bucket":"96k","matched_pair":"96k/no_failure","panel":"goodput (tokens/s)","scenario":"no_failure","value":5.808,"variant_id":"aegiskv_unified"}</title>
+    <circle cx="972.333" cy="327.269" r="3.5" fill="#7c3aed" stroke="#7c3aed" stroke-width="1" />
+  </g>
+  <text x="972.333" y="551" class="small" text-anchor="middle">96k</text>
+  <text x="972.333" y="564" class="small" text-anchor="middle">NF</text>
+  <line x1="1023.889" y1="332.731" x2="1023.889" y2="331.517" stroke="#7c3aed" stroke-width="1.5" />
+  <g data-point-id="f6-point-00034" data-run-id="core:vanilla_mooncake_dram:96k:gpu_failure:seed-0:repeat-A" data-result-hash="cc6365889b8cdcca768858f4e274c018517e449612f3115a89987935d2efcf20">
+    <title>f6-point-00034 | core:vanilla_mooncake_dram:96k:gpu_failure:seed-0:repeat-A | cc6365889b8cdcca768858f4e274c018517e449612f3115a89987935d2efcf20 | {"context_bucket":"96k","matched_pair":"96k/gpu_failure","panel":"goodput (tokens/s)","scenario":"gpu_failure","value":5.781,"variant_id":"vanilla_mooncake_dram"}</title>
+    <circle cx="1023.889" cy="332.731" r="3.5" fill="#ffffff" stroke="#7c3aed" stroke-width="1" />
+  </g>
+  <g data-point-id="f6-point-00035" data-run-id="core:aegiskv_unified:96k:gpu_failure:seed-0:repeat-A" data-result-hash="ceb99a125ea6339d52fe180d2140dcb176b48018523fe423e03f506ff7b5c658">
+    <title>f6-point-00035 | core:aegiskv_unified:96k:gpu_failure:seed-0:repeat-A | ceb99a125ea6339d52fe180d2140dcb176b48018523fe423e03f506ff7b5c658 | {"context_bucket":"96k","matched_pair":"96k/gpu_failure","panel":"goodput (tokens/s)","scenario":"gpu_failure","value":5.787,"variant_id":"aegiskv_unified"}</title>
+    <circle cx="1023.889" cy="331.517" r="3.5" fill="#7c3aed" stroke="#7c3aed" stroke-width="1" />
+  </g>
+  <text x="1023.889" y="551" class="small" text-anchor="middle">96k</text>
+  <text x="1023.889" y="564" class="small" text-anchor="middle">GF</text>
+  <line x1="1075.444" y1="330.506" x2="1075.444" y2="327.269" stroke="#d97706" stroke-width="1.5" />
+  <g data-point-id="f6-point-00036" data-run-id="core:vanilla_mooncake_dram:128k:no_failure:seed-0:repeat-A" data-result-hash="d2feff27444eb2c91b899dd714dee62559d7fe2668d614af8d6fb66c2647d718">
+    <title>f6-point-00036 | core:vanilla_mooncake_dram:128k:no_failure:seed-0:repeat-A | d2feff27444eb2c91b899dd714dee62559d7fe2668d614af8d6fb66c2647d718 | {"context_bucket":"128k","matched_pair":"128k/no_failure","panel":"goodput (tokens/s)","scenario":"no_failure","value":5.792,"variant_id":"vanilla_mooncake_dram"}</title>
+    <circle cx="1075.444" cy="330.506" r="3.5" fill="#ffffff" stroke="#d97706" stroke-width="1" />
+  </g>
+  <g data-point-id="f6-point-00037" data-run-id="core:aegiskv_unified:128k:no_failure:seed-0:repeat-A" data-result-hash="969978bbd4972d97fb63daccf65d4d8b7cd79f4b486b238cf6bef17696a0d0c3">
+    <title>f6-point-00037 | core:aegiskv_unified:128k:no_failure:seed-0:repeat-A | 969978bbd4972d97fb63daccf65d4d8b7cd79f4b486b238cf6bef17696a0d0c3 | {"context_bucket":"128k","matched_pair":"128k/no_failure","panel":"goodput (tokens/s)","scenario":"no_failure","value":5.808,"variant_id":"aegiskv_unified"}</title>
+    <circle cx="1075.444" cy="327.269" r="3.5" fill="#d97706" stroke="#d97706" stroke-width="1" />
+  </g>
+  <text x="1075.444" y="551" class="small" text-anchor="middle">128k</text>
+  <text x="1075.444" y="564" class="small" text-anchor="middle">NF</text>
+  <line x1="1127" y1="330.506" x2="1127" y2="329.09" stroke="#d97706" stroke-width="1.5" />
+  <g data-point-id="f6-point-00038" data-run-id="core:vanilla_mooncake_dram:128k:gpu_failure:seed-0:repeat-A" data-result-hash="d73c4f4869b4de17465c5c723cc8f5455db0286437405b1a829c07d06a5c3f92">
+    <title>f6-point-00038 | core:vanilla_mooncake_dram:128k:gpu_failure:seed-0:repeat-A | d73c4f4869b4de17465c5c723cc8f5455db0286437405b1a829c07d06a5c3f92 | {"context_bucket":"128k","matched_pair":"128k/gpu_failure","panel":"goodput (tokens/s)","scenario":"gpu_failure","value":5.792,"variant_id":"vanilla_mooncake_dram"}</title>
+    <circle cx="1127" cy="330.506" r="3.5" fill="#ffffff" stroke="#d97706" stroke-width="1" />
+  </g>
+  <g data-point-id="f6-point-00039" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b">
+    <title>f6-point-00039 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"context_bucket":"128k","matched_pair":"128k/gpu_failure","panel":"goodput (tokens/s)","scenario":"gpu_failure","value":5.799,"variant_id":"aegiskv_unified"}</title>
+    <circle cx="1127" cy="329.09" r="3.5" fill="#d97706" stroke="#d97706" stroke-width="1" />
+  </g>
+  <text x="1127" y="551" class="small" text-anchor="middle">128k</text>
+  <text x="1127" y="564" class="small" text-anchor="middle">GF</text>
+  <text x="627" y="129" class="tick" text-anchor="end">6.8</text>
+  <text x="627" y="539" class="tick" text-anchor="end">4.8</text>
+  <text x="600" y="590" class="small" text-anchor="middle">NF=no failure · GF=GPU failure</text>
+  <line x1="55" y1="676" x2="1145" y2="676" stroke="#fecaca" stroke-width="1" />
+  <text x="600" y="704" class="footer" text-anchor="middle">E2 modeled/preliminary · not calibrated · no physical experiment</text>
+</svg>

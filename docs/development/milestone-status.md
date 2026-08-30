@@ -159,8 +159,32 @@ validation remain higher-evidence limitations outside the E2-only DoD.
 
 ## M6-M9
 
-Status: M6-M8 implementation in progress on `aegiskv`, created directly from the
-accepted baseline tag. The immutable patent, provenance manifest, contract, and
-automated audit are present; manual patent review remains pending. No matched
-AegisKV result or paper-ready result is claimed until the branch-local runtime,
-tests, matrix, determinism, and provenance gates complete.
+Status: initial E2 simulation release completed on `aegiskv`; broader plan
+closure and paper-ready evidence remain open.
+
+- M6: the tag-derived branch, immutable patent, provenance manifest, contract,
+  27-clause runtime evidence, and automated audits are present. Manual patent
+  review remains pending.
+- M7: source-owned Peer-HBM and Store-DRAM paths independently reserve,
+  transfer, commit, abort, and expose `HBM_ONLY`, `DRAM_ONLY`,
+  `HBM_AND_DRAM`, and `BYPASS` outcomes. Transfer byte conservation and
+  per-cause resource accounting are strict gates.
+- M8: one `GPU_FAILURE` causes immediate fail-stop fencing, route-version
+  invalidation, reroute, committed-prefix restore, prompt-suffix recompute,
+  silent replay, and atomic activation on the one global virtual clock.
+- M9 initial release: 46 variants over five observed context buckets, two
+  scenarios, three seeds, and two fresh determinism repetitions produced 2,760
+  rows and 1,380 exact A/B pairs. Multi-seed statistics use repeat A only and
+  report conservative two-sided 95% Student-t intervals. Fourteen preliminary
+  SVGs (F1--F11 and F13--F15) pass provenance audit; F12 is explicitly excluded
+  because physical calibration is outside the requested simulation-only scope.
+
+The canonical matrix is
+`benchmark/AegisKV/experiments/e2-initial-v1/`; the figure set is
+`benchmark/AegisKV/experiments/figures/e2-initial-v1/`; and the bounded initial
+interpretation is in `benchmark/AegisKV/experiments/INITIAL_REPORT.md`.
+
+This initial release is not paper-ready. The current experiment harness still
+uses aligned resource-interval contention rather than the full topology-sliced
+work-conserving fluid backend, does not model every TP/PP/Store-node dimension,
+and does not establish physical timing accuracy.

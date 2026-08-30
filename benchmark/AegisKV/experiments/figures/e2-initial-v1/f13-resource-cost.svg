@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img">
+  <title>AegisKV resource-cost decomposition</title>
+  <style>text{font-family:DejaVu Sans,Arial,sans-serif;fill:#111827}.title{font-size:26px;font-weight:700}.subtitle{font-size:14px;fill:#4b5563}.axis{stroke:#374151;stroke-width:1}.grid{stroke:#e5e7eb;stroke-width:1}.tick{font-size:12px;fill:#4b5563}.label{font-size:14px;font-weight:600}.small{font-size:11px}.footer{font-size:13px;font-weight:700;fill:#991b1b}</style>
+  <rect x="0" y="0" width="1200" height="720" rx="0" fill="#ffffff" stroke="none" opacity="1" />
+  <text x="55" y="46" class="title" text-anchor="start">AegisKV resource-cost decomposition</text>
+  <text x="55" y="74" class="subtitle" text-anchor="start">Matched Vanilla deltas by unit; staging peak and recompute GPU time unavailable</text>
+  <rect x="65" y="125" width="330" height="185" rx="4" fill="#f8fafc" stroke="#cbd5e1" opacity="1" />
+  <line x1="85" y1="217.5" x2="380" y2="217.5" stroke="#64748b" stroke-width="1" />
+  <text x="230" y="116" class="label" text-anchor="middle">Peer-HBM byte-ns Δ (byte-ns)</text>
+  <text x="81" y="138" class="tick" text-anchor="start">+2.6e+14G</text>
+  <text x="81" y="305" class="tick" text-anchor="start">-2.6e+14G</text>
+  <g data-point-id="f13-point-00000" data-run-id="core:aegiskv_unified:8k:gpu_failure:seed-0:repeat-A" data-result-hash="547a2dbeb9e0f6ce40956072d0923977c8927c9718d9abc994d11100b40961aa" data-vanilla-run-id="core:vanilla_mooncake_dram:8k:gpu_failure:seed-0:repeat-A" data-vanilla-result-hash="ffbf3e66bf7003778887e0897d535666f8b0fe197802de4ed003fb84f1c9a8bc">
+    <title>f13-point-00000 | core:aegiskv_unified:8k:gpu_failure:seed-0:repeat-A | 547a2dbeb9e0f6ce40956072d0923977c8927c9718d9abc994d11100b40961aa | {"aegiskv_absolute":263529364269768451817472,"component":"Peer-HBM byte-ns","context_bucket":"8k","delta_definition":"aegiskv_minus_vanilla","delta_vs_vanilla":263529364269768451817472,"unit":"byte-ns","vanilla_absolute":0,"vanilla_result_hash":"ffbf3e66bf7003778887e0897d535666f8b0fe197802de4ed003fb84f1c9a8bc","vanilla_run_id":"core:vanilla_mooncake_dram:8k:gpu_failure:seed-0:repeat-A"}</title>
+    <line x1="141.5" y1="217.5" x2="141.5" y2="143.095" stroke="#dc2626" stroke-width="5" />
+    <circle cx="141.5" cy="143.095" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <text x="141.5" y="322" class="small" text-anchor="middle">8k</text>
+  <g data-point-id="f13-point-00001" data-run-id="core:aegiskv_unified:32k:gpu_failure:seed-0:repeat-A" data-result-hash="6035700446290202d4ea0153ec70549ba8abe2a1d584f151abea7adb0dfb512e" data-vanilla-run-id="core:vanilla_mooncake_dram:32k:gpu_failure:seed-0:repeat-A" data-vanilla-result-hash="74008ef5ba6919df607cb3b1eb97df7f87f32006c8130600e13bb0f039a21804">
+    <title>f13-point-00001 | core:aegiskv_unified:32k:gpu_failure:seed-0:repeat-A | 6035700446290202d4ea0153ec70549ba8abe2a1d584f151abea7adb0dfb512e | {"aegiskv_absolute":252688400808575200395264,"component":"Peer-HBM byte-ns","context_bucket":"32k","delta_definition":"aegiskv_minus_vanilla","delta_vs_vanilla":252688400808575200395264,"unit":"byte-ns","vanilla_absolute":0,"vanilla_result_hash":"74008ef5ba6919df607cb3b1eb97df7f87f32006c8130600e13bb0f039a21804","vanilla_run_id":"core:vanilla_mooncake_dram:32k:gpu_failure:seed-0:repeat-A"}</title>
+    <line x1="194.5" y1="217.5" x2="194.5" y2="146.156" stroke="#dc2626" stroke-width="5" />
+    <circle cx="194.5" cy="146.156" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <text x="194.5" y="322" class="small" text-anchor="middle">32k</text>
+  <g data-point-id="f13-point-00002" data-run-id="core:aegiskv_unified:64k:gpu_failure:seed-0:repeat-A" data-result-hash="87fab35f98dfd805ca7d1fb5bdd779bef2826f7fbeb4e9d688d9ccf799ebdb9d" data-vanilla-run-id="core:vanilla_mooncake_dram:64k:gpu_failure:seed-0:repeat-A" data-vanilla-result-hash="00a65e50323a62fc54c201689c7f91bf1944f714cd56daa00ad4bcc6959a812e">
+    <title>f13-point-00002 | core:aegiskv_unified:64k:gpu_failure:seed-0:repeat-A | 87fab35f98dfd805ca7d1fb5bdd779bef2826f7fbeb4e9d688d9ccf799ebdb9d | {"aegiskv_absolute":252121539977837172228096,"component":"Peer-HBM byte-ns","context_bucket":"64k","delta_definition":"aegiskv_minus_vanilla","delta_vs_vanilla":252121539977837172228096,"unit":"byte-ns","vanilla_absolute":0,"vanilla_result_hash":"00a65e50323a62fc54c201689c7f91bf1944f714cd56daa00ad4bcc6959a812e","vanilla_run_id":"core:vanilla_mooncake_dram:64k:gpu_failure:seed-0:repeat-A"}</title>
+    <line x1="247.5" y1="217.5" x2="247.5" y2="146.316" stroke="#dc2626" stroke-width="5" />
+    <circle cx="247.5" cy="146.316" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <text x="247.5" y="322" class="small" text-anchor="middle">64k</text>
+  <g data-point-id="f13-point-00003" data-run-id="core:aegiskv_unified:96k:gpu_failure:seed-0:repeat-A" data-result-hash="ceb99a125ea6339d52fe180d2140dcb176b48018523fe423e03f506ff7b5c658" data-vanilla-run-id="core:vanilla_mooncake_dram:96k:gpu_failure:seed-0:repeat-A" data-vanilla-result-hash="cc6365889b8cdcca768858f4e274c018517e449612f3115a89987935d2efcf20">
+    <title>f13-point-00003 | core:aegiskv_unified:96k:gpu_failure:seed-0:repeat-A | ceb99a125ea6339d52fe180d2140dcb176b48018523fe423e03f506ff7b5c658 | {"aegiskv_absolute":252085066996166965592064,"component":"Peer-HBM byte-ns","context_bucket":"96k","delta_definition":"aegiskv_minus_vanilla","delta_vs_vanilla":252085066996166965592064,"unit":"byte-ns","vanilla_absolute":0,"vanilla_result_hash":"cc6365889b8cdcca768858f4e274c018517e449612f3115a89987935d2efcf20","vanilla_run_id":"core:vanilla_mooncake_dram:96k:gpu_failure:seed-0:repeat-A"}</title>
+    <line x1="300.5" y1="217.5" x2="300.5" y2="146.327" stroke="#dc2626" stroke-width="5" />
+    <circle cx="300.5" cy="146.327" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <text x="300.5" y="322" class="small" text-anchor="middle">96k</text>
+  <g data-point-id="f13-point-00004" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b" data-vanilla-run-id="core:vanilla_mooncake_dram:128k:gpu_failure:seed-0:repeat-A" data-vanilla-result-hash="d73c4f4869b4de17465c5c723cc8f5455db0286437405b1a829c07d06a5c3f92">
+    <title>f13-point-00004 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aegiskv_absolute":263867528549025007534080,"component":"Peer-HBM byte-ns","context_bucket":"128k","delta_definition":"aegiskv_minus_vanilla","delta_vs_vanilla":263867528549025007534080,"unit":"byte-ns","vanilla_absolute":0,"vanilla_result_hash":"d73c4f4869b4de17465c5c723cc8f5455db0286437405b1a829c07d06a5c3f92","vanilla_run_id":"core:vanilla_mooncake_dram:128k:gpu_failure:seed-0:repeat-A"}</title>
+    <line x1="353.5" y1="217.5" x2="353.5" y2="143" stroke="#dc2626" stroke-width="5" />
+    <circle cx="353.5" cy="143" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <text x="353.5" y="322" class="small" text-anchor="middle">128k</text>
+  <rect x="435" y="125" width="330" height="185" rx="4" fill="#f8fafc" stroke="#cbd5e1" opacity="1" />
+  <line x1="455" y1="217.5" x2="750" y2="217.5" stroke="#64748b" stroke-width="1" />
+  <text x="600" y="116" class="label" text-anchor="middle">Store DRAM byte-ns Δ (byte-ns)</text>
+  <text x="451" y="138" class="tick" text-anchor="start">+1e+14G</text>
+  <text x="451" y="305" class="tick" text-anchor="start">-1e+14G</text>
+  <g data-point-id="f13-point-00005" data-run-id="core:aegiskv_unified:8k:gpu_failure:seed-0:repeat-A" data-result-hash="547a2dbeb9e0f6ce40956072d0923977c8927c9718d9abc994d11100b40961aa" data-vanilla-run-id="core:vanilla_mooncake_dram:8k:gpu_failure:seed-0:repeat-A" data-vanilla-result-hash="ffbf3e66bf7003778887e0897d535666f8b0fe197802de4ed003fb84f1c9a8bc">
+    <title>f13-point-00005 | core:aegiskv_unified:8k:gpu_failure:seed-0:repeat-A | 547a2dbeb9e0f6ce40956072d0923977c8927c9718d9abc994d11100b40961aa | {"aegiskv_absolute":732971906784317562421248,"component":"Store DRAM byte-ns","context_bucket":"8k","delta_definition":"aegiskv_minus_vanilla","delta_vs_vanilla":20342200689022205952000,"unit":"byte-ns","vanilla_absolute":712629706095295356469248,"vanilla_result_hash":"ffbf3e66bf7003778887e0897d535666f8b0fe197802de4ed003fb84f1c9a8bc","vanilla_run_id":"core:vanilla_mooncake_dram:8k:gpu_failure:seed-0:repeat-A"}</title>
+    <line x1="511.5" y1="217.5" x2="511.5" y2="202.516" stroke="#dc2626" stroke-width="5" />
+    <circle cx="511.5" cy="202.516" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <text x="511.5" y="322" class="small" text-anchor="middle">8k</text>
+  <g data-point-id="f13-point-00006" data-run-id="core:aegiskv_unified:32k:gpu_failure:seed-0:repeat-A" data-result-hash="6035700446290202d4ea0153ec70549ba8abe2a1d584f151abea7adb0dfb512e" data-vanilla-run-id="core:vanilla_mooncake_dram:32k:gpu_failure:seed-0:repeat-A" data-vanilla-result-hash="74008ef5ba6919df607cb3b1eb97df7f87f32006c8130600e13bb0f039a21804">
+    <title>f13-point-00006 | core:aegiskv_unified:32k:gpu_failure:seed-0:repeat-A | 6035700446290202d4ea0153ec70549ba8abe2a1d584f151abea7adb0dfb512e | {"aegiskv_absolute":733448695241943929585664,"component":"Store DRAM byte-ns","context_bucket":"32k","delta_definition":"aegiskv_minus_vanilla","delta_vs_vanilla":20099281167262584668160,"unit":"byte-ns","vanilla_absolute":713349414074681344917504,"vanilla_result_hash":"74008ef5ba6919df607cb3b1eb97df7f87f32006c8130600e13bb0f039a21804","vanilla_run_id":"core:vanilla_mooncake_dram:32k:gpu_failure:seed-0:repeat-A"}</title>
+    <line x1="564.5" y1="217.5" x2="564.5" y2="202.695" stroke="#dc2626" stroke-width="5" />
+    <circle cx="564.5" cy="202.695" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <text x="564.5" y="322" class="small" text-anchor="middle">32k</text>
+  <g data-point-id="f13-point-00007" data-run-id="core:aegiskv_unified:64k:gpu_failure:seed-0:repeat-A" data-result-hash="87fab35f98dfd805ca7d1fb5bdd779bef2826f7fbeb4e9d688d9ccf799ebdb9d" data-vanilla-run-id="core:vanilla_mooncake_dram:64k:gpu_failure:seed-0:repeat-A" data-vanilla-result-hash="00a65e50323a62fc54c201689c7f91bf1944f714cd56daa00ad4bcc6959a812e">
+    <title>f13-point-00007 | core:aegiskv_unified:64k:gpu_failure:seed-0:repeat-A | 87fab35f98dfd805ca7d1fb5bdd779bef2826f7fbeb4e9d688d9ccf799ebdb9d | {"aegiskv_absolute":733087143677863196098560,"component":"Store DRAM byte-ns","context_bucket":"64k","delta_definition":"aegiskv_minus_vanilla","delta_vs_vanilla":19753017496858842365952,"unit":"byte-ns","vanilla_absolute":713334126181004353732608,"vanilla_result_hash":"00a65e50323a62fc54c201689c7f91bf1944f714cd56daa00ad4bcc6959a812e","vanilla_run_id":"core:vanilla_mooncake_dram:64k:gpu_failure:seed-0:repeat-A"}</title>
+    <line x1="617.5" y1="217.5" x2="617.5" y2="202.95" stroke="#dc2626" stroke-width="5" />
+    <circle cx="617.5" cy="202.95" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <text x="617.5" y="322" class="small" text-anchor="middle">64k</text>
+  <g data-point-id="f13-point-00008" data-run-id="core:aegiskv_unified:96k:gpu_failure:seed-0:repeat-A" data-result-hash="ceb99a125ea6339d52fe180d2140dcb176b48018523fe423e03f506ff7b5c658" data-vanilla-run-id="core:vanilla_mooncake_dram:96k:gpu_failure:seed-0:repeat-A" data-vanilla-result-hash="cc6365889b8cdcca768858f4e274c018517e449612f3115a89987935d2efcf20">
+    <title>f13-point-00008 | core:aegiskv_unified:96k:gpu_failure:seed-0:repeat-A | ceb99a125ea6339d52fe180d2140dcb176b48018523fe423e03f506ff7b5c658 | {"aegiskv_absolute":714958501594005956984832,"component":"Store DRAM byte-ns","context_bucket":"96k","delta_definition":"aegiskv_minus_vanilla","delta_vs_vanilla":101139738523362020818944,"unit":"byte-ns","vanilla_absolute":613818763070643936165888,"vanilla_result_hash":"cc6365889b8cdcca768858f4e274c018517e449612f3115a89987935d2efcf20","vanilla_run_id":"core:vanilla_mooncake_dram:96k:gpu_failure:seed-0:repeat-A"}</title>
+    <line x1="670.5" y1="217.5" x2="670.5" y2="143" stroke="#dc2626" stroke-width="5" />
+    <circle cx="670.5" cy="143" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <text x="670.5" y="322" class="small" text-anchor="middle">96k</text>
+  <g data-point-id="f13-point-00009" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b" data-vanilla-run-id="core:vanilla_mooncake_dram:128k:gpu_failure:seed-0:repeat-A" data-vanilla-result-hash="d73c4f4869b4de17465c5c723cc8f5455db0286437405b1a829c07d06a5c3f92">
+    <title>f13-point-00009 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aegiskv_absolute":732822969454589103833088,"component":"Store DRAM byte-ns","context_bucket":"128k","delta_definition":"aegiskv_minus_vanilla","delta_vs_vanilla":20394774788975785672704,"unit":"byte-ns","vanilla_absolute":712428194665613318160384,"vanilla_result_hash":"d73c4f4869b4de17465c5c723cc8f5455db0286437405b1a829c07d06a5c3f92","vanilla_run_id":"core:vanilla_mooncake_dram:128k:gpu_failure:seed-0:repeat-A"}</title>
+    <line x1="723.5" y1="217.5" x2="723.5" y2="202.477" stroke="#dc2626" stroke-width="5" />
+    <circle cx="723.5" cy="202.477" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <text x="723.5" y="322" class="small" text-anchor="middle">128k</text>
+  <rect x="805" y="125" width="330" height="185" rx="4" fill="#f8fafc" stroke="#cbd5e1" opacity="1" />
+  <line x1="825" y1="217.5" x2="1120" y2="217.5" stroke="#64748b" stroke-width="1" />
+  <text x="970" y="116" class="label" text-anchor="middle">network byte-time Δ (byte-ns)</text>
+  <text x="821" y="138" class="tick" text-anchor="start">+5.2e+09G</text>
+  <text x="821" y="305" class="tick" text-anchor="start">-5.2e+09G</text>
+  <g data-point-id="f13-point-00010" data-run-id="core:aegiskv_unified:8k:gpu_failure:seed-0:repeat-A" data-result-hash="547a2dbeb9e0f6ce40956072d0923977c8927c9718d9abc994d11100b40961aa" data-vanilla-run-id="core:vanilla_mooncake_dram:8k:gpu_failure:seed-0:repeat-A" data-vanilla-result-hash="ffbf3e66bf7003778887e0897d535666f8b0fe197802de4ed003fb84f1c9a8bc">
+    <title>f13-point-00010 | core:aegiskv_unified:8k:gpu_failure:seed-0:repeat-A | 547a2dbeb9e0f6ce40956072d0923977c8927c9718d9abc994d11100b40961aa | {"aegiskv_absolute":12298884828496920576,"component":"network byte-time","context_bucket":"8k","delta_definition":"aegiskv_minus_vanilla","delta_vs_vanilla":5002951390528536576,"unit":"byte-ns","vanilla_absolute":7295933437968384000,"vanilla_result_hash":"ffbf3e66bf7003778887e0897d535666f8b0fe197802de4ed003fb84f1c9a8bc","vanilla_run_id":"core:vanilla_mooncake_dram:8k:gpu_failure:seed-0:repeat-A"}</title>
+    <line x1="881.5" y1="217.5" x2="881.5" y2="145.256" stroke="#dc2626" stroke-width="5" />
+    <circle cx="881.5" cy="145.256" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <text x="881.5" y="322" class="small" text-anchor="middle">8k</text>
+  <g data-point-id="f13-point-00011" data-run-id="core:aegiskv_unified:32k:gpu_failure:seed-0:repeat-A" data-result-hash="6035700446290202d4ea0153ec70549ba8abe2a1d584f151abea7adb0dfb512e" data-vanilla-run-id="core:vanilla_mooncake_dram:32k:gpu_failure:seed-0:repeat-A" data-vanilla-result-hash="74008ef5ba6919df607cb3b1eb97df7f87f32006c8130600e13bb0f039a21804">
+    <title>f13-point-00011 | core:aegiskv_unified:32k:gpu_failure:seed-0:repeat-A | 6035700446290202d4ea0153ec70549ba8abe2a1d584f151abea7adb0dfb512e | {"aegiskv_absolute":12785046589399891968,"component":"network byte-time","context_bucket":"32k","delta_definition":"aegiskv_minus_vanilla","delta_vs_vanilla":5159171532081070080,"unit":"byte-ns","vanilla_absolute":7625875057318821888,"vanilla_result_hash":"74008ef5ba6919df607cb3b1eb97df7f87f32006c8130600e13bb0f039a21804","vanilla_run_id":"core:vanilla_mooncake_dram:32k:gpu_failure:seed-0:repeat-A"}</title>
+    <line x1="934.5" y1="217.5" x2="934.5" y2="143" stroke="#dc2626" stroke-width="5" />
+    <circle cx="934.5" cy="143" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <text x="934.5" y="322" class="small" text-anchor="middle">32k</text>
+  <g data-point-id="f13-point-00012" data-run-id="core:aegiskv_unified:64k:gpu_failure:seed-0:repeat-A" data-result-hash="87fab35f98dfd805ca7d1fb5bdd779bef2826f7fbeb4e9d688d9ccf799ebdb9d" data-vanilla-run-id="core:vanilla_mooncake_dram:64k:gpu_failure:seed-0:repeat-A" data-vanilla-result-hash="00a65e50323a62fc54c201689c7f91bf1944f714cd56daa00ad4bcc6959a812e">
+    <title>f13-point-00012 | core:aegiskv_unified:64k:gpu_failure:seed-0:repeat-A | 87fab35f98dfd805ca7d1fb5bdd779bef2826f7fbeb4e9d688d9ccf799ebdb9d | {"aegiskv_absolute":11859356039881162752,"component":"network byte-time","context_bucket":"64k","delta_definition":"aegiskv_minus_vanilla","delta_vs_vanilla":4543359065077579776,"unit":"byte-ns","vanilla_absolute":7315996974803582976,"vanilla_result_hash":"00a65e50323a62fc54c201689c7f91bf1944f714cd56daa00ad4bcc6959a812e","vanilla_run_id":"core:vanilla_mooncake_dram:64k:gpu_failure:seed-0:repeat-A"}</title>
+    <line x1="987.5" y1="217.5" x2="987.5" y2="151.893" stroke="#dc2626" stroke-width="5" />
+    <circle cx="987.5" cy="151.893" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <text x="987.5" y="322" class="small" text-anchor="middle">64k</text>
+  <g data-point-id="f13-point-00013" data-run-id="core:aegiskv_unified:96k:gpu_failure:seed-0:repeat-A" data-result-hash="ceb99a125ea6339d52fe180d2140dcb176b48018523fe423e03f506ff7b5c658" data-vanilla-run-id="core:vanilla_mooncake_dram:96k:gpu_failure:seed-0:repeat-A" data-vanilla-result-hash="cc6365889b8cdcca768858f4e274c018517e449612f3115a89987935d2efcf20">
+    <title>f13-point-00013 | core:aegiskv_unified:96k:gpu_failure:seed-0:repeat-A | ceb99a125ea6339d52fe180d2140dcb176b48018523fe423e03f506ff7b5c658 | {"aegiskv_absolute":10208169719840636928,"component":"network byte-time","context_bucket":"96k","delta_definition":"aegiskv_minus_vanilla","delta_vs_vanilla":3878651679247171584,"unit":"byte-ns","vanilla_absolute":6329518040593465344,"vanilla_result_hash":"cc6365889b8cdcca768858f4e274c018517e449612f3115a89987935d2efcf20","vanilla_run_id":"core:vanilla_mooncake_dram:96k:gpu_failure:seed-0:repeat-A"}</title>
+    <line x1="1040.5" y1="217.5" x2="1040.5" y2="161.491" stroke="#dc2626" stroke-width="5" />
+    <circle cx="1040.5" cy="161.491" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <text x="1040.5" y="322" class="small" text-anchor="middle">96k</text>
+  <g data-point-id="f13-point-00014" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b" data-vanilla-run-id="core:vanilla_mooncake_dram:128k:gpu_failure:seed-0:repeat-A" data-vanilla-result-hash="d73c4f4869b4de17465c5c723cc8f5455db0286437405b1a829c07d06a5c3f92">
+    <title>f13-point-00014 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aegiskv_absolute":12509639473782325248,"component":"network byte-time","context_bucket":"128k","delta_definition":"aegiskv_minus_vanilla","delta_vs_vanilla":4940112352411385856,"unit":"byte-ns","vanilla_absolute":7569527121370939392,"vanilla_result_hash":"d73c4f4869b4de17465c5c723cc8f5455db0286437405b1a829c07d06a5c3f92","vanilla_run_id":"core:vanilla_mooncake_dram:128k:gpu_failure:seed-0:repeat-A"}</title>
+    <line x1="1093.5" y1="217.5" x2="1093.5" y2="146.163" stroke="#dc2626" stroke-width="5" />
+    <circle cx="1093.5" cy="146.163" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <text x="1093.5" y="322" class="small" text-anchor="middle">128k</text>
+  <rect x="250" y="390" width="330" height="185" rx="4" fill="#f8fafc" stroke="#cbd5e1" opacity="1" />
+  <line x1="270" y1="482.5" x2="565" y2="482.5" stroke="#64748b" stroke-width="1" />
+  <text x="415" y="381" class="label" text-anchor="middle">copy-engine busy Δ (ns)</text>
+  <text x="266" y="403" class="tick" text-anchor="start">+2.9G</text>
+  <text x="266" y="570" class="tick" text-anchor="start">-2.9G</text>
+  <g data-point-id="f13-point-00015" data-run-id="core:aegiskv_unified:8k:gpu_failure:seed-0:repeat-A" data-result-hash="547a2dbeb9e0f6ce40956072d0923977c8927c9718d9abc994d11100b40961aa" data-vanilla-run-id="core:vanilla_mooncake_dram:8k:gpu_failure:seed-0:repeat-A" data-vanilla-result-hash="ffbf3e66bf7003778887e0897d535666f8b0fe197802de4ed003fb84f1c9a8bc">
+    <title>f13-point-00015 | core:aegiskv_unified:8k:gpu_failure:seed-0:repeat-A | 547a2dbeb9e0f6ce40956072d0923977c8927c9718d9abc994d11100b40961aa | {"aegiskv_absolute":6914650695,"component":"copy-engine busy","context_bucket":"8k","delta_definition":"aegiskv_minus_vanilla","delta_vs_vanilla":2934333115,"unit":"ns","vanilla_absolute":3980317580,"vanilla_result_hash":"ffbf3e66bf7003778887e0897d535666f8b0fe197802de4ed003fb84f1c9a8bc","vanilla_run_id":"core:vanilla_mooncake_dram:8k:gpu_failure:seed-0:repeat-A"}</title>
+    <line x1="326.5" y1="482.5" x2="326.5" y2="408" stroke="#dc2626" stroke-width="5" />
+    <circle cx="326.5" cy="408" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <text x="326.5" y="587" class="small" text-anchor="middle">8k</text>
+  <g data-point-id="f13-point-00016" data-run-id="core:aegiskv_unified:32k:gpu_failure:seed-0:repeat-A" data-result-hash="6035700446290202d4ea0153ec70549ba8abe2a1d584f151abea7adb0dfb512e" data-vanilla-run-id="core:vanilla_mooncake_dram:32k:gpu_failure:seed-0:repeat-A" data-vanilla-result-hash="74008ef5ba6919df607cb3b1eb97df7f87f32006c8130600e13bb0f039a21804">
+    <title>f13-point-00016 | core:aegiskv_unified:32k:gpu_failure:seed-0:repeat-A | 6035700446290202d4ea0153ec70549ba8abe2a1d584f151abea7adb0dfb512e | {"aegiskv_absolute":6961238960,"component":"copy-engine busy","context_bucket":"32k","delta_definition":"aegiskv_minus_vanilla","delta_vs_vanilla":2865915222,"unit":"ns","vanilla_absolute":4095323738,"vanilla_result_hash":"74008ef5ba6919df607cb3b1eb97df7f87f32006c8130600e13bb0f039a21804","vanilla_run_id":"core:vanilla_mooncake_dram:32k:gpu_failure:seed-0:repeat-A"}</title>
+    <line x1="379.5" y1="482.5" x2="379.5" y2="409.737" stroke="#dc2626" stroke-width="5" />
+    <circle cx="379.5" cy="409.737" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <text x="379.5" y="587" class="small" text-anchor="middle">32k</text>
+  <g data-point-id="f13-point-00017" data-run-id="core:aegiskv_unified:64k:gpu_failure:seed-0:repeat-A" data-result-hash="87fab35f98dfd805ca7d1fb5bdd779bef2826f7fbeb4e9d688d9ccf799ebdb9d" data-vanilla-run-id="core:vanilla_mooncake_dram:64k:gpu_failure:seed-0:repeat-A" data-vanilla-result-hash="00a65e50323a62fc54c201689c7f91bf1944f714cd56daa00ad4bcc6959a812e">
+    <title>f13-point-00017 | core:aegiskv_unified:64k:gpu_failure:seed-0:repeat-A | 87fab35f98dfd805ca7d1fb5bdd779bef2826f7fbeb4e9d688d9ccf799ebdb9d | {"aegiskv_absolute":6353779071,"component":"copy-engine busy","context_bucket":"64k","delta_definition":"aegiskv_minus_vanilla","delta_vs_vanilla":2373711491,"unit":"ns","vanilla_absolute":3980067580,"vanilla_result_hash":"00a65e50323a62fc54c201689c7f91bf1944f714cd56daa00ad4bcc6959a812e","vanilla_run_id":"core:vanilla_mooncake_dram:64k:gpu_failure:seed-0:repeat-A"}</title>
+    <line x1="432.5" y1="482.5" x2="432.5" y2="422.234" stroke="#dc2626" stroke-width="5" />
+    <circle cx="432.5" cy="422.234" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <text x="432.5" y="587" class="small" text-anchor="middle">64k</text>
+  <g data-point-id="f13-point-00018" data-run-id="core:aegiskv_unified:96k:gpu_failure:seed-0:repeat-A" data-result-hash="ceb99a125ea6339d52fe180d2140dcb176b48018523fe423e03f506ff7b5c658" data-vanilla-run-id="core:vanilla_mooncake_dram:96k:gpu_failure:seed-0:repeat-A" data-vanilla-result-hash="cc6365889b8cdcca768858f4e274c018517e449612f3115a89987935d2efcf20">
+    <title>f13-point-00018 | core:aegiskv_unified:96k:gpu_failure:seed-0:repeat-A | ceb99a125ea6339d52fe180d2140dcb176b48018523fe423e03f506ff7b5c658 | {"aegiskv_absolute":5699480907,"component":"copy-engine busy","context_bucket":"96k","delta_definition":"aegiskv_minus_vanilla","delta_vs_vanilla":2112750184,"unit":"ns","vanilla_absolute":3586730723,"vanilla_result_hash":"cc6365889b8cdcca768858f4e274c018517e449612f3115a89987935d2efcf20","vanilla_run_id":"core:vanilla_mooncake_dram:96k:gpu_failure:seed-0:repeat-A"}</title>
+    <line x1="485.5" y1="482.5" x2="485.5" y2="428.859" stroke="#dc2626" stroke-width="5" />
+    <circle cx="485.5" cy="428.859" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <text x="485.5" y="587" class="small" text-anchor="middle">96k</text>
+  <g data-point-id="f13-point-00019" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b" data-vanilla-run-id="core:vanilla_mooncake_dram:128k:gpu_failure:seed-0:repeat-A" data-vanilla-result-hash="d73c4f4869b4de17465c5c723cc8f5455db0286437405b1a829c07d06a5c3f92">
+    <title>f13-point-00019 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aegiskv_absolute":6766945539,"component":"copy-engine busy","context_bucket":"128k","delta_definition":"aegiskv_minus_vanilla","delta_vs_vanilla":2786877958,"unit":"ns","vanilla_absolute":3980067581,"vanilla_result_hash":"d73c4f4869b4de17465c5c723cc8f5455db0286437405b1a829c07d06a5c3f92","vanilla_run_id":"core:vanilla_mooncake_dram:128k:gpu_failure:seed-0:repeat-A"}</title>
+    <line x1="538.5" y1="482.5" x2="538.5" y2="411.744" stroke="#dc2626" stroke-width="5" />
+    <circle cx="538.5" cy="411.744" r="4" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <text x="538.5" y="587" class="small" text-anchor="middle">128k</text>
+  <rect x="620" y="390" width="330" height="185" rx="4" fill="#f8fafc" stroke="#cbd5e1" opacity="1" />
+  <line x1="640" y1="482.5" x2="935" y2="482.5" stroke="#64748b" stroke-width="1" />
+  <text x="785" y="381" class="label" text-anchor="middle">recompute avoided Δ (tokens)</text>
+  <text x="636" y="403" class="tick" text-anchor="start">+4.1K</text>
+  <text x="636" y="570" class="tick" text-anchor="start">-4.1K</text>
+  <g data-point-id="f13-point-00020" data-run-id="core:aegiskv_unified:8k:gpu_failure:seed-0:repeat-A" data-result-hash="547a2dbeb9e0f6ce40956072d0923977c8927c9718d9abc994d11100b40961aa" data-vanilla-run-id="core:vanilla_mooncake_dram:8k:gpu_failure:seed-0:repeat-A" data-vanilla-result-hash="ffbf3e66bf7003778887e0897d535666f8b0fe197802de4ed003fb84f1c9a8bc">
+    <title>f13-point-00020 | core:aegiskv_unified:8k:gpu_failure:seed-0:repeat-A | 547a2dbeb9e0f6ce40956072d0923977c8927c9718d9abc994d11100b40961aa | {"aegiskv_absolute":448,"component":"recompute avoided","context_bucket":"8k","delta_definition":"vanilla_minus_aegiskv","delta_vs_vanilla":0,"unit":"tokens","vanilla_absolute":448,"vanilla_result_hash":"ffbf3e66bf7003778887e0897d535666f8b0fe197802de4ed003fb84f1c9a8bc","vanilla_run_id":"core:vanilla_mooncake_dram:8k:gpu_failure:seed-0:repeat-A"}</title>
+    <line x1="696.5" y1="482.5" x2="696.5" y2="482.5" stroke="#059669" stroke-width="5" />
+    <circle cx="696.5" cy="482.5" r="4" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <text x="696.5" y="587" class="small" text-anchor="middle">8k</text>
+  <g data-point-id="f13-point-00021" data-run-id="core:aegiskv_unified:32k:gpu_failure:seed-0:repeat-A" data-result-hash="6035700446290202d4ea0153ec70549ba8abe2a1d584f151abea7adb0dfb512e" data-vanilla-run-id="core:vanilla_mooncake_dram:32k:gpu_failure:seed-0:repeat-A" data-vanilla-result-hash="74008ef5ba6919df607cb3b1eb97df7f87f32006c8130600e13bb0f039a21804">
+    <title>f13-point-00021 | core:aegiskv_unified:32k:gpu_failure:seed-0:repeat-A | 6035700446290202d4ea0153ec70549ba8abe2a1d584f151abea7adb0dfb512e | {"aegiskv_absolute":2688,"component":"recompute avoided","context_bucket":"32k","delta_definition":"vanilla_minus_aegiskv","delta_vs_vanilla":4096,"unit":"tokens","vanilla_absolute":6784,"vanilla_result_hash":"74008ef5ba6919df607cb3b1eb97df7f87f32006c8130600e13bb0f039a21804","vanilla_run_id":"core:vanilla_mooncake_dram:32k:gpu_failure:seed-0:repeat-A"}</title>
+    <line x1="749.5" y1="482.5" x2="749.5" y2="408" stroke="#059669" stroke-width="5" />
+    <circle cx="749.5" cy="408" r="4" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <text x="749.5" y="587" class="small" text-anchor="middle">32k</text>
+  <g data-point-id="f13-point-00022" data-run-id="core:aegiskv_unified:64k:gpu_failure:seed-0:repeat-A" data-result-hash="87fab35f98dfd805ca7d1fb5bdd779bef2826f7fbeb4e9d688d9ccf799ebdb9d" data-vanilla-run-id="core:vanilla_mooncake_dram:64k:gpu_failure:seed-0:repeat-A" data-vanilla-result-hash="00a65e50323a62fc54c201689c7f91bf1944f714cd56daa00ad4bcc6959a812e">
+    <title>f13-point-00022 | core:aegiskv_unified:64k:gpu_failure:seed-0:repeat-A | 87fab35f98dfd805ca7d1fb5bdd779bef2826f7fbeb4e9d688d9ccf799ebdb9d | {"aegiskv_absolute":63744,"component":"recompute avoided","context_bucket":"64k","delta_definition":"vanilla_minus_aegiskv","delta_vs_vanilla":0,"unit":"tokens","vanilla_absolute":63744,"vanilla_result_hash":"00a65e50323a62fc54c201689c7f91bf1944f714cd56daa00ad4bcc6959a812e","vanilla_run_id":"core:vanilla_mooncake_dram:64k:gpu_failure:seed-0:repeat-A"}</title>
+    <line x1="802.5" y1="482.5" x2="802.5" y2="482.5" stroke="#059669" stroke-width="5" />
+    <circle cx="802.5" cy="482.5" r="4" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <text x="802.5" y="587" class="small" text-anchor="middle">64k</text>
+  <g data-point-id="f13-point-00023" data-run-id="core:aegiskv_unified:96k:gpu_failure:seed-0:repeat-A" data-result-hash="ceb99a125ea6339d52fe180d2140dcb176b48018523fe423e03f506ff7b5c658" data-vanilla-run-id="core:vanilla_mooncake_dram:96k:gpu_failure:seed-0:repeat-A" data-vanilla-result-hash="cc6365889b8cdcca768858f4e274c018517e449612f3115a89987935d2efcf20">
+    <title>f13-point-00023 | core:aegiskv_unified:96k:gpu_failure:seed-0:repeat-A | ceb99a125ea6339d52fe180d2140dcb176b48018523fe423e03f506ff7b5c658 | {"aegiskv_absolute":88384,"component":"recompute avoided","context_bucket":"96k","delta_definition":"vanilla_minus_aegiskv","delta_vs_vanilla":0,"unit":"tokens","vanilla_absolute":88384,"vanilla_result_hash":"cc6365889b8cdcca768858f4e274c018517e449612f3115a89987935d2efcf20","vanilla_run_id":"core:vanilla_mooncake_dram:96k:gpu_failure:seed-0:repeat-A"}</title>
+    <line x1="855.5" y1="482.5" x2="855.5" y2="482.5" stroke="#059669" stroke-width="5" />
+    <circle cx="855.5" cy="482.5" r="4" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <text x="855.5" y="587" class="small" text-anchor="middle">96k</text>
+  <g data-point-id="f13-point-00024" data-run-id="core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A" data-result-hash="57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b" data-vanilla-run-id="core:vanilla_mooncake_dram:128k:gpu_failure:seed-0:repeat-A" data-vanilla-result-hash="d73c4f4869b4de17465c5c723cc8f5455db0286437405b1a829c07d06a5c3f92">
+    <title>f13-point-00024 | core:aegiskv_unified:128k:gpu_failure:seed-0:repeat-A | 57c38e2c33079beccafe8a075ce13d429088453189c36f72387d4280e2128a9b | {"aegiskv_absolute":119424,"component":"recompute avoided","context_bucket":"128k","delta_definition":"vanilla_minus_aegiskv","delta_vs_vanilla":0,"unit":"tokens","vanilla_absolute":119424,"vanilla_result_hash":"d73c4f4869b4de17465c5c723cc8f5455db0286437405b1a829c07d06a5c3f92","vanilla_run_id":"core:vanilla_mooncake_dram:128k:gpu_failure:seed-0:repeat-A"}</title>
+    <line x1="908.5" y1="482.5" x2="908.5" y2="482.5" stroke="#059669" stroke-width="5" />
+    <circle cx="908.5" cy="482.5" r="4" fill="#059669" stroke="#ffffff" stroke-width="1" />
+  </g>
+  <text x="908.5" y="587" class="small" text-anchor="middle">128k</text>
+  <line x1="55" y1="676" x2="1145" y2="676" stroke="#fecaca" stroke-width="1" />
+  <text x="600" y="704" class="footer" text-anchor="middle">E2 modeled/preliminary · not calibrated · no physical experiment</text>
+</svg>
