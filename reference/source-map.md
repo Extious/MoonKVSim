@@ -213,8 +213,10 @@ toy/CPU lifecycle slice. They do not establish CUDA cache capacity, worker
 allocation parity, hybrid-cache behavior, or failure-time cached-page recovery.
 
 The normalized runner implements the complete 19-file section 16 publication
-contract, including 13 fixed-schema Parquet files. No clean, source-frozen,
-successful repeated real-trace bundle has yet been accepted. The bundle
+contract, including 13 fixed-schema Parquet files. A single clean source-frozen
+e094 no-failure diagnostic has passed at E2, but it is not an accepted repeat.
+No clean, source-frozen, successful repeated real-trace bundle has yet been
+accepted. The bundle
 publisher records caller-supplied evidence claims and verifies their structure,
 resolved-input bindings, declared file set, and bytes; it does not prove those
 external claims. Its directed tests establish E1 publication integrity and

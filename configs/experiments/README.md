@@ -101,16 +101,23 @@ repair, and implicit fallback. Run a materialized config only with:
 
 ```bash
 uv run python scripts/run_vanilla_failure_trace_e2.py \
-  --config /absolute/path/to/materialized-failure-config.json \
+  --config configs/experiments/vanilla-weka-failure-e2.json \
   --output /tmp/moonkvsim-weka-failure-e2-run
 ```
 
 `vanilla-weka-failure-e2-unresolved.template.json` is deliberately not a
 harness config: `runnable=false`, its timestamp and target contain literal
-`UNRESOLVED` sentinels, and strict loading rejects it. A clean-code
-no-failure diagnostic must first identify a reused-prefix span and stable fixed
-timestamp. Only then may the template be materialized as a complete config and
-its hardware fingerprint recomputed. No full e094 failure run is claimed here.
+`UNRESOLVED` sentinels, and strict loading rejects it. One clean,
+source-frozen no-failure diagnostic at commit `a094e9542ed6ab36d3d39e8ac5a543947ca70709`
+executed all 27 selected e094 spans and published a PASS 19-artifact E2 bundle.
+That bundle still reports `workflow_timing_complete_count=0` and
+`snapshot_state_complete=false`; PASS does not mean every projection view is
+complete.
+The deterministic selector used that single uncalibrated diagnostic to produce
+`reference/vanilla-weka-failure-point-selection.json` and the checked-in fixed
+failure config above. This is selector discovery, not repeated acceptance or
+E3/E4/E5 evidence. No accepted failure run or repeated no-failure/failure pair
+is claimed here.
 
 ## Caller-owned transfer resource plans
 

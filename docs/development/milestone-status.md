@@ -117,10 +117,12 @@ byte-identically. This is not timing calibration or physical validation.
 
 Committed output-position recovery is now externally fenced: modeled internal
 forwards replay committed positions silently, and activation occurs only after
-`READY_TO_ACTIVATE`. Open gates are a materialized fixed e094 failure config,
-two accepted complete no-failure runs, two accepted failure runs, two accepted
-near-128K trace-shape runs, token-content equivalence, physical/matched
-validation, and baseline acceptance.
+`READY_TO_ACTIVATE`. One clean source-frozen full-selected-workflow e094
+no-failure diagnostic PASS exists; it is selector discovery only and is not an
+accepted repeat. A deterministic fixed failure config has been materialized
+from that diagnostic. Open gates are two accepted complete no-failure runs, two
+accepted failure runs, two accepted near-128K trace-shape runs, token-content
+equivalence, physical/matched validation, and baseline acceptance.
 
 ## M6-M9
 
