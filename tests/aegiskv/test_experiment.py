@@ -12,6 +12,7 @@ from moonkvsim.aegiskv.experiment import (
     derive_failure_schedule,
     run_study_cell,
     sensitivity_variants,
+    store_node_sensitivity_variants,
     transport_sensitivity_variants,
 )
 from moonkvsim.aegiskv.experiment_workload import load_experiment_records
@@ -38,6 +39,9 @@ def test_protocol_enumerates_seven_systems_and_declared_variants() -> None:
         TransportKind.TCP_HOST_STAGED,
     ]
     assert {item.suite for item in transport} == {"transport_sensitivity"}
+    store_nodes = store_node_sensitivity_variants()
+    assert [item.parameters.store_node_count for item in store_nodes] == [1, 2, 4]
+    assert {item.suite for item in store_nodes} == {"store_node_sensitivity"}
 
 
 def test_store_transport_paths_charge_host_staging_only_when_explicit() -> None:
@@ -98,6 +102,69 @@ def test_store_transport_paths_charge_host_staging_only_when_explicit() -> None:
                 expected_fabric in item["rate_resource_ids"]
                 for item in store_transfers
             )
+
+
+def test_four_store_nodes_partition_capacity_and_restore_from_multiple_segments() -> None:
+    records = _committed_records()
+    parameters = ModelParameters(store_node_count=4)
+    variant = core_variants(parameters)[-1]
+    schedule = derive_failure_schedule(
+        records,
+        bucket="32k",
+        seed=0,
+        parameters=parameters,
+    )
+    first = run_study_cell(
+        records,
+        CellSpec(
+            variant=variant,
+            context_bucket="32k",
+            scenario=Scenario.GPU_FAILURE,
+            seed=0,
+            repetition="A",
+            failure_schedule=schedule,
+        ),
+    )
+    second = run_study_cell(
+        records,
+        CellSpec(
+            variant=variant,
+            context_bucket="32k",
+            scenario=Scenario.GPU_FAILURE,
+            seed=0,
+            repetition="B",
+            failure_schedule=schedule,
+        ),
+    )
+    assert first.payload_sha256 == second.payload_sha256
+    assert first.journal_sha256 == second.journal_sha256
+    resource_model = first.payload["resource_model"]
+    assert resource_model["store_node_count"] == 4
+    assert resource_model["store_dram_segments"] == [
+        f"store-{index}:segment-0" for index in range(4)
+    ]
+    store_segments = first.payload["metrics"]["resource_cost"][
+        "store_dram_by_segment"
+    ]
+    assert len(store_segments) == 4
+    assert sum(item["capacity_bytes"] for item in store_segments.values()) == (
+        parameters.store_budget_bytes
+    )
+    assert all(item["valid"] for item in store_segments.values())
+    assert set(first.representative["store_dram_timelines"]) == set(store_segments)
+    recovery = [
+        item
+        for item in first.representative["transfers"]
+        if item["cause"] == "AEGIS_RECOVERY_STORE_DRAM"
+    ]
+    assert {item["source"] for item in recovery} == set(store_segments)
+    for item in recovery:
+        node_id = item["source"].split(":", 1)[0]
+        assert f"{node_id}.dram-rate" in item["rate_resource_ids"]
+        assert f"{node_id}.fabric-rate" in item["rate_resource_ids"]
+    assert first.payload["metrics"]["pool_audit"][
+        "pending_destination_bytes_final"
+    ] == 0
 
 
 def test_sensitivity_catalog_binds_fabric_and_control_delay_parameters() -> None:

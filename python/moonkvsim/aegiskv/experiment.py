@@ -253,6 +253,7 @@ SYSTEM_PROFILES: Final[dict[SystemId, SystemProfile]] = {
 @dataclass(frozen=True, slots=True)
 class ModelParameters:
     dp_count: int = 4
+    store_node_count: int = 1
     physical_hbm_bytes_per_gpu: int = 80 * GIB
     model_weights_bytes_per_gpu: int = 16 * GIB
     runtime_fixed_bytes_per_gpu: int = 8 * GIB
@@ -273,6 +274,7 @@ class ModelParameters:
     def __post_init__(self) -> None:
         positive = (
             self.dp_count,
+            self.store_node_count,
             self.physical_hbm_bytes_per_gpu,
             self.model_weights_bytes_per_gpu,
             self.runtime_fixed_bytes_per_gpu,
@@ -312,6 +314,7 @@ class ModelParameters:
     def to_dict(self) -> dict[str, Any]:
         return {
             "dp_count": self.dp_count,
+            "store_node_count": self.store_node_count,
             "physical_hbm_bytes_per_gpu": self.physical_hbm_bytes_per_gpu,
             "model_weights_bytes_per_gpu": self.model_weights_bytes_per_gpu,
             "runtime_fixed_bytes_per_gpu": self.runtime_fixed_bytes_per_gpu,
@@ -987,6 +990,7 @@ class _PendingPutStart:
     path: str
     source_gpu_id: str
     target_gpu_id: str | None
+    target_store_id: str | None
     chunks: tuple[_Chunk, ...]
     scores: tuple[Fraction, ...]
     handle: EventHandle
@@ -999,6 +1003,7 @@ class _PendingPut:
     path: str
     source_gpu_id: str
     target_gpu_id: str | None
+    target_store_id: str | None
     chunks: tuple[_Chunk, ...]
     scores: tuple[Fraction, ...]
     task: TransferTask
@@ -1063,6 +1068,26 @@ class _StudyRuntime:
             for span_id, metadata in by_span.items()
         }
         self.gpu_ids = tuple(f"gpu-{index}" for index in range(self.parameters.dp_count))
+        self.store_segment_ids = tuple(
+            f"store-{index}:segment-0"
+            for index in range(self.parameters.store_node_count)
+        )
+        self.store_rate_ids = {
+            segment_id: {
+                "dram": f"store-{index}.dram-rate",
+                "rdma_fabric": (
+                    "store-fabric-rate"
+                    if self.parameters.store_node_count == 1
+                    else f"store-{index}.fabric-rate"
+                ),
+                "tcp_fabric": (
+                    "store-tcp-fabric-rate"
+                    if self.parameters.store_node_count == 1
+                    else f"store-{index}.tcp-fabric-rate"
+                ),
+            }
+            for index, segment_id in enumerate(self.store_segment_ids)
+        }
         self.failed_gpu_ids: set[str] = set()
         hbm_initial_accounts = {
             HBM_MODEL_WEIGHTS_ACCOUNT: self.parameters.model_weights_bytes_per_gpu,
@@ -1126,6 +1151,21 @@ class _StudyRuntime:
                 self.parameters.store_bandwidth_bytes_per_second,
             )
         )
+        store_rate_resources: dict[str, RateResource] = {}
+        for rate_ids in self.store_rate_ids.values():
+            for key, resource_id in rate_ids.items():
+                capacity = (
+                    self.parameters.tcp_store_bandwidth_bytes_per_second
+                    if key == "tcp_fabric"
+                    else self.parameters.store_bandwidth_bytes_per_second
+                )
+                store_rate_resources.setdefault(
+                    resource_id,
+                    RateResource(
+                        resource_id=resource_id,
+                        capacity_bytes_per_second=float(capacity),
+                    ),
+                )
         self.transfer_rate_resources = {
             **{
                 f"{gpu_id}.hbm-rate": RateResource(
@@ -1149,24 +1189,7 @@ class _StudyRuntime:
                     self.parameters.peer_bandwidth_bytes_per_second
                 ),
             ),
-            "store-fabric-rate": RateResource(
-                resource_id="store-fabric-rate",
-                capacity_bytes_per_second=float(
-                    self.parameters.store_bandwidth_bytes_per_second
-                ),
-            ),
-            "store-tcp-fabric-rate": RateResource(
-                resource_id="store-tcp-fabric-rate",
-                capacity_bytes_per_second=float(
-                    self.parameters.tcp_store_bandwidth_bytes_per_second
-                ),
-            ),
-            "store-0.dram-rate": RateResource(
-                resource_id="store-0.dram-rate",
-                capacity_bytes_per_second=float(
-                    self.parameters.store_bandwidth_bytes_per_second
-                ),
-            ),
+            **store_rate_resources,
         }
         self.flow_model = FlowContentionModel(
             [
@@ -1191,12 +1214,19 @@ class _StudyRuntime:
             )
             for gpu_id in self.gpu_ids
         }
-        self.store_pool = _ModeledPool(
-            pool_id="STORE_DRAM:store-0:segment-0",
-            capacity_bytes=self.parameters.store_budget_bytes,
-            eviction=self.profile.eviction,
-            seed=seed,
+        base_store_capacity, extra_store_bytes = divmod(
+            self.parameters.store_budget_bytes,
+            self.parameters.store_node_count,
         )
+        self.store_pools = {
+            segment_id: _ModeledPool(
+                pool_id=f"STORE_DRAM:{segment_id}",
+                capacity_bytes=base_store_capacity + (index < extra_store_bytes),
+                eviction=self.profile.eviction,
+                seed=seed,
+            )
+            for index, segment_id in enumerate(self.store_segment_ids)
+        }
         self.aimd = HBMQuotaAIMD(AIMD_PARAMETERS)
         initial_fraction = _fraction_to_decimal(self.profile.peer_fraction)
         self.aimd_states = {
@@ -1284,13 +1314,14 @@ class _StudyRuntime:
             raise ExperimentError("study ended with an active fluid flow")
         if any(
             pool.pending or pool.pending_bytes
-            for pool in (*self.peer_pools.values(), self.store_pool)
+            for pool in (*self.peer_pools.values(), *self.store_pools.values())
         ):
             raise ExperimentError("study ended with a pending destination reservation")
         end_ns = self.des.now_ns
         for pool in self.peer_pools.values():
             pool.finalize(end_ns)
-        self.store_pool.finalize(end_ns)
+        for pool in self.store_pools.values():
+            pool.finalize(end_ns)
         payload = self._payload(end_ns)
         representative = {
             "failure_events": self.failure_events,
@@ -1311,9 +1342,10 @@ class _StudyRuntime:
             "peer_hbm_timelines": {
                 gpu_id: pool.timeline for gpu_id, pool in sorted(self.peer_pools.items())
             },
-            "store_dram_timeline": self.store_pool.timeline,
+            "store_dram_timeline": _aggregate_pool_timeline(self.store_pools),
             "store_dram_timelines": {
-                "store-0:segment-0": self.store_pool.timeline,
+                segment_id: pool.timeline
+                for segment_id, pool in sorted(self.store_pools.items())
             },
             "aimd_events": self.aimd_events,
             "route_events": self.route_events,
@@ -1435,12 +1467,16 @@ class _StudyRuntime:
                     raise ExperimentError(f"failed Peer-HBM ledger is inconsistent on {gpu_id}")
             elif pool.unavailable_bytes != 0:
                 raise ExperimentError(f"healthy Peer-HBM has unavailable bytes on {gpu_id}")
-        if (
-            self.store_pool.occupied_bytes + self.store_pool.pending_bytes
-            > self.store_pool.capacity_bytes
+        for segment_id, pool in self.store_pools.items():
+            if pool.occupied_bytes + pool.pending_bytes > pool.capacity_bytes:
+                raise ExperimentError(
+                    f"Store DRAM capacity invariant failed on {segment_id}"
+                )
+        if sum(pool.capacity_bytes for pool in self.store_pools.values()) != (
+            self.parameters.store_budget_bytes
         ):
-            raise ExperimentError("Store DRAM capacity invariant failed")
-        for pool in (*self.peer_pools.values(), self.store_pool):
+            raise ExperimentError("Store DRAM partition lost total capacity")
+        for pool in (*self.peer_pools.values(), *self.store_pools.values()):
             if sum(item.bytes for item in pool.pending.values()) != pool.pending_bytes:
                 raise ExperimentError("pool pending reservation bytes diverged")
             if set(pool._pending_keys.values()) - set(pool.pending):
@@ -1505,7 +1541,11 @@ class _StudyRuntime:
                 execution.chunks, now_ns=self.des.now_ns
             )
         store_prefix = (
-            self.store_pool.lookup_prefix_tokens(execution.chunks, now_ns=self.des.now_ns)
+            self._store_lookup_prefix_tokens(
+                execution.chunks,
+                now_ns=self.des.now_ns,
+                mutate_signals=True,
+            )
             if self._reuse_visible("STORE_DRAM")
             else 0
         )
@@ -1573,6 +1613,61 @@ class _StudyRuntime:
         # the ablation changes value aggregation, not whether committed data
         # mysteriously becomes invisible to cache lookup.
         return enabled
+
+    def _store_segment_for_chunk(self, chunk: _Chunk) -> str:
+        if len(self.store_segment_ids) == 1:
+            return self.store_segment_ids[0]
+        digest = hashlib.sha256(f"store-placement:{chunk.key}".encode()).digest()
+        return self.store_segment_ids[
+            int.from_bytes(digest[:8], "big") % len(self.store_segment_ids)
+        ]
+
+    def _store_lookup_prefix_tokens(
+        self,
+        chunks: Sequence[_Chunk],
+        *,
+        now_ns: int,
+        mutate_signals: bool,
+    ) -> int:
+        tokens = 0
+        for chunk in chunks:
+            pool = self.store_pools[self._store_segment_for_chunk(chunk)]
+            present = (
+                pool.contains(chunk.key, now_ns=now_ns)
+                if mutate_signals
+                else chunk.key in pool.entries
+            )
+            if not present:
+                break
+            tokens += chunk.token_count
+        return tokens
+
+    def _store_recovery_bytes_by_segment(
+        self,
+        execution: _SpanExecution,
+        *,
+        start_token: int,
+        token_count: int,
+    ) -> dict[str, int]:
+        if token_count <= 0:
+            return {}
+        end_token = start_token + token_count
+        covered_tokens = 0
+        result: Counter[str] = Counter()
+        for chunk in execution.chunks:
+            chunk_end = chunk.token_start + chunk.token_count
+            if chunk_end <= start_token or chunk.token_start >= end_token:
+                continue
+            if chunk.token_start < start_token or chunk_end > end_token:
+                raise ExperimentError(
+                    "Store recovery range split a policy chunk boundary"
+                )
+            segment_id = self._store_segment_for_chunk(chunk)
+            result[segment_id] += chunk.bytes
+            covered_tokens += chunk.token_count
+        if covered_tokens != token_count:
+            raise ExperimentError("Store recovery range lost continuous-prefix tokens")
+        return dict(sorted(result.items()))
 
     def _peer_target(self, *, source_gpu_id: str, span_id: str) -> str:
         healthy = tuple(gpu for gpu in self.gpu_ids if gpu not in self.failed_gpu_ids)
@@ -2060,11 +2155,6 @@ class _StudyRuntime:
                 if path == "PEER_HBM"
                 else None
             )
-            modeled_pool = (
-                self.peer_pools[target_gpu_id]
-                if target_gpu_id is not None
-                else self.store_pool
-            )
             batch_count = min(4, candidate_count)
             for batch_index in range(batch_count):
                 begin = candidate_count * batch_index // batch_count
@@ -2072,38 +2162,55 @@ class _StudyRuntime:
                 chunks = execution.chunks[begin:end]
                 if not chunks:
                     continue
-                scores = tuple(
-                    self._chunk_score(
-                        execution,
-                        chunk,
-                        path=path,
-                        modeled_pool=modeled_pool,
-                    )
-                    for chunk in chunks
-                )
                 produced_ns = compute_start_ns + (
                     (compute_end_ns - compute_start_ns) * end // len(execution.chunks)
                 )
-                plan_id = self._next_id(
-                    f"put-start:{path}:{execution.metadata.span_id}:batch-{batch_index}"
-                )
-                handle = self.des.schedule_at(
-                    produced_ns,
-                    EventKind.PUT_START,
-                    event_id=f"start:{plan_id}",
-                    payload={"plan_id": plan_id, "path": path},
-                )
-                self.pending_put_starts[plan_id] = _PendingPutStart(
-                    plan_id=plan_id,
-                    span_id=execution.metadata.span_id,
-                    path=path,
-                    source_gpu_id=source_gpu_id,
-                    target_gpu_id=target_gpu_id,
-                    chunks=chunks,
-                    scores=scores,
-                    handle=handle,
-                    produced_ns=produced_ns,
-                )
+                grouped_chunks: dict[str | None, list[_Chunk]] = defaultdict(list)
+                if path == "PEER_HBM":
+                    grouped_chunks[None].extend(chunks)
+                else:
+                    for chunk in chunks:
+                        grouped_chunks[self._store_segment_for_chunk(chunk)].append(chunk)
+                for target_store_id, group in sorted(
+                    grouped_chunks.items(), key=lambda item: str(item[0])
+                ):
+                    group_chunks = tuple(group)
+                    modeled_pool = (
+                        self.peer_pools[target_gpu_id]
+                        if target_gpu_id is not None
+                        else self.store_pools[cast(str, target_store_id)]
+                    )
+                    scores = tuple(
+                        self._chunk_score(
+                            execution,
+                            chunk,
+                            path=path,
+                            modeled_pool=modeled_pool,
+                        )
+                        for chunk in group_chunks
+                    )
+                    plan_id = self._next_id(
+                        f"put-start:{path}:{execution.metadata.span_id}:"
+                        f"batch-{batch_index}:{target_store_id or 'peer'}"
+                    )
+                    handle = self.des.schedule_at(
+                        produced_ns,
+                        EventKind.PUT_START,
+                        event_id=f"start:{plan_id}",
+                        payload={"plan_id": plan_id, "path": path},
+                    )
+                    self.pending_put_starts[plan_id] = _PendingPutStart(
+                        plan_id=plan_id,
+                        span_id=execution.metadata.span_id,
+                        path=path,
+                        source_gpu_id=source_gpu_id,
+                        target_gpu_id=target_gpu_id,
+                        target_store_id=target_store_id,
+                        chunks=group_chunks,
+                        scores=scores,
+                        handle=handle,
+                        produced_ns=produced_ns,
+                    )
 
     def _make_transfer_task(
         self,
@@ -2117,9 +2224,8 @@ class _StudyRuntime:
         ready_ns: int,
         total_bytes: int,
     ) -> TransferTask:
-        store_id = "store-0:segment-0"
-        source_is_store = source_id == store_id
-        target_is_store = target_id == store_id
+        source_is_store = source_id in self.store_pools
+        target_is_store = target_id in self.store_pools
         if source_is_store == target_is_store:
             if source_is_store:
                 raise ExperimentError("Store-to-Store flow is outside the experiment scope")
@@ -2155,12 +2261,12 @@ class _StudyRuntime:
             opcode = TransferOpcode.WRITE
         else:
             source = (
-                _experiment_store_location()
+                _experiment_store_location(source_id)
                 if source_is_store
                 else _experiment_gpu_location(source_id)
             )
             target = (
-                _experiment_store_location()
+                _experiment_store_location(target_id)
                 if target_is_store
                 else _experiment_gpu_location(target_id)
             )
@@ -2170,14 +2276,16 @@ class _StudyRuntime:
                 TransportKind.TCP_HOST_STAGED,
             }
             gpu_id = target_id if source_is_store else source_id
+            store_segment_id = source_id if source_is_store else target_id
+            store_rate_ids = self.store_rate_ids[store_segment_id]
             store_fabric_resource_id = (
-                "store-tcp-fabric-rate"
+                store_rate_ids["tcp_fabric"]
                 if store_transport is TransportKind.TCP_HOST_STAGED
-                else "store-fabric-rate"
+                else store_rate_ids["rdma_fabric"]
             )
             store_rate_resources = (
                 (
-                    "store-0.dram-rate",
+                    store_rate_ids["dram"],
                     store_fabric_resource_id,
                     *(
                         (f"{gpu_id}.host-rate",)
@@ -2195,7 +2303,7 @@ class _StudyRuntime:
                         else ()
                     ),
                     store_fabric_resource_id,
-                    "store-0.dram-rate",
+                    store_rate_ids["dram"],
                 )
             )
             path = TopologyPath(
@@ -2260,7 +2368,9 @@ class _StudyRuntime:
             self._update_peer_quota(target_gpu_id=plan.target_gpu_id)
             pool = self.peer_pools[plan.target_gpu_id]
         else:
-            pool = self.store_pool
+            if plan.target_store_id not in self.store_pools:
+                raise ExperimentError("Store protection lost its physical segment")
+            pool = self.store_pools[plan.target_store_id]
         pool_reservation = pool.reserve(
             transfer_id,
             plan.chunks,
@@ -2297,7 +2407,7 @@ class _StudyRuntime:
             target_id=(
                 plan.target_gpu_id
                 if plan.target_gpu_id is not None
-                else "store-0:segment-0"
+                else cast(str, plan.target_store_id)
             ),
             cause=cause,
             route_version=self.executions[plan.span_id].route_version,
@@ -2315,6 +2425,7 @@ class _StudyRuntime:
             path=plan.path,
             source_gpu_id=plan.source_gpu_id,
             target_gpu_id=plan.target_gpu_id,
+            target_store_id=plan.target_store_id,
             chunks=pool_reservation.chunks,
             scores=pool_reservation.scores,
             task=task,
@@ -2343,7 +2454,7 @@ class _StudyRuntime:
                     target_gpu_id=(
                         plan.target_gpu_id
                         if plan.target_gpu_id is not None
-                        else "store-0:segment-0"
+                        else cast(str, plan.target_store_id)
                     ),
                     ready_ns=self.des.now_ns,
                     status="PENDING",
@@ -2394,7 +2505,7 @@ class _StudyRuntime:
             pool = (
                 self.peer_pools[pending.target_gpu_id]
                 if pending.target_gpu_id is not None
-                else self.store_pool
+                else self.store_pools[cast(str, pending.target_store_id)]
             )
             pool.abort_reservation(
                 pending.pool_reservation_id,
@@ -2459,7 +2570,9 @@ class _StudyRuntime:
                 raise ExperimentError("failed Peer-HBM target attempted protection commit")
             pool = self.peer_pools[pending.target_gpu_id]
         else:
-            pool = self.store_pool
+            if pending.target_store_id not in self.store_pools:
+                raise ExperimentError("Store commit lost its physical segment")
+            pool = self.store_pools[pending.target_store_id]
         committed = pool.commit_reservation(
             pending.pool_reservation_id,
             now_ns=self.des.now_ns,
@@ -2483,6 +2596,7 @@ class _StudyRuntime:
                 "candidate_chunks": len(pending.chunks),
                 "admitted_chunks": admitted,
                 "target_gpu_id": pending.target_gpu_id,
+                "target_store_id": pending.target_store_id,
                 "independent_path": True,
                 "source_owned": True,
                 "target_owned_destage": False,
@@ -2587,7 +2701,7 @@ class _StudyRuntime:
             destination_pool = (
                 self.peer_pools[pending.target_gpu_id]
                 if pending.target_gpu_id is not None
-                else self.store_pool
+                else self.store_pools[cast(str, pending.target_store_id)]
             )
             released = destination_pool.abort_reservation(
                 pending.pool_reservation_id,
@@ -2863,7 +2977,11 @@ class _StudyRuntime:
                     peer_source_gpu
                 ].lookup_prefix_tokens(execution.chunks, now_ns=self.des.now_ns)
         committed_store_tokens = (
-            self.store_pool.lookup_prefix_tokens(execution.chunks, now_ns=self.des.now_ns)
+            self._store_lookup_prefix_tokens(
+                execution.chunks,
+                now_ns=self.des.now_ns,
+                mutate_signals=True,
+            )
             if self.profile.store_fraction > 0
             else 0
         )
@@ -2896,14 +3014,27 @@ class _StudyRuntime:
 
         ready_ns = self.des.now_ns + self.parameters.reroute_ns
         recovery_transfer_ids: set[str] = set()
-        source_breakdown = (
-            ("PEER_HBM", execution.restored_peer_tokens),
-            ("STORE_DRAM", execution.restored_store_tokens),
+        store_recovery_bytes = self._store_recovery_bytes_by_segment(
+            execution,
+            start_token=execution.restored_peer_tokens,
+            token_count=execution.restored_store_tokens,
         )
-        for source, tokens in source_breakdown:
-            if tokens <= 0:
-                continue
-            transfer_bytes = _tokens_to_allocated_bytes(tokens)
+        transfer_specs: list[tuple[str, str, int]] = []
+        if execution.restored_peer_tokens > 0:
+            if peer_source_gpu is None:
+                raise ExperimentError("Peer-HBM recovery lost its committed source")
+            transfer_specs.append(
+                (
+                    "PEER_HBM",
+                    peer_source_gpu,
+                    _tokens_to_allocated_bytes(execution.restored_peer_tokens),
+                )
+            )
+        transfer_specs.extend(
+            ("STORE_DRAM", segment_id, transfer_bytes)
+            for segment_id, transfer_bytes in store_recovery_bytes.items()
+        )
+        for source, transfer_source, transfer_bytes in transfer_specs:
             if source == "PEER_HBM" and peer_source_gpu == target_gpu:
                 cause = "AEGIS_RECOVERY_PEER_HBM_LOCAL_ACTIVATION"
                 self._record_transfer(
@@ -2925,14 +3056,9 @@ class _StudyRuntime:
                 )
                 continue
             transfer_id = self._next_id(
-                f"recovery:{source}:{execution.metadata.span_id}"
+                f"recovery:{source}:{transfer_source}:{execution.metadata.span_id}"
             )
             cause = f"AEGIS_RECOVERY_{source}"
-            transfer_source = "store-0:segment-0"
-            if source == "PEER_HBM":
-                if peer_source_gpu is None:
-                    raise ExperimentError("Peer-HBM recovery lost its committed source")
-                transfer_source = peer_source_gpu
             transfer_start_ns = ready_ns + self.parameters.transfer_setup_ns
             task = self._make_transfer_task(
                 transfer_id=transfer_id,
@@ -3000,6 +3126,7 @@ class _StudyRuntime:
                 "route_version": execution.route_version,
                 "target_gpu_id": target_gpu,
                 "peer_source_gpu_id": peer_source_gpu,
+                "store_source_segment_ids": sorted(store_recovery_bytes),
                 "source_tokens": {
                     "PEER_HBM": execution.restored_peer_tokens,
                     "STORE_DRAM": execution.restored_store_tokens,
@@ -3570,6 +3697,25 @@ class _StudyRuntime:
             )
             for gpu_id, timeline in sorted(self.host_staging_timelines.items())
         }
+        store_timeline = _aggregate_pool_timeline(self.store_pools)
+        store_peak_bytes = max(
+            (int(point["occupied_bytes"]) for point in store_timeline),
+            default=0,
+        )
+        store_by_segment = {
+            segment_id: {
+                "capacity_bytes": pool.capacity_bytes,
+                "final_bytes": pool.occupied_bytes,
+                "peak_bytes": pool.peak_bytes,
+                "pending_peak_bytes": pool.pending_peak_bytes,
+                "byte_ns": pool.byte_ns,
+                "failed_unavailable": False,
+                "valid": (
+                    pool.occupied_bytes + pool.pending_bytes <= pool.capacity_bytes
+                ),
+            }
+            for segment_id, pool in sorted(self.store_pools.items())
+        }
         transfer_accounting = _aggregate_transfer_accounting(self.transfers)
         metrics = {
             "virtual_end_ns": end_ns,
@@ -3614,8 +3760,10 @@ class _StudyRuntime:
                 "peer_hbm_byte_ns": sum(
                     pool.byte_ns for pool in self.peer_pools.values()
                 ),
-                "store_dram_peak_bytes": self.store_pool.peak_bytes,
-                "store_dram_byte_ns": self.store_pool.byte_ns,
+                "store_dram_peak_bytes": store_peak_bytes,
+                "store_dram_byte_ns": sum(
+                    pool.byte_ns for pool in self.store_pools.values()
+                ),
                 "peer_hbm_by_gpu": peer_by_gpu,
                 "gpu_hbm_account_stack_by_gpu": hbm_by_gpu,
                 "gpu_hbm_recovery_reserve_peak_bytes": max(
@@ -3634,16 +3782,7 @@ class _StudyRuntime:
                 "host_staging_acquire_count": self.host_staging_acquire_count,
                 "source_pin_acquire_count": self.source_pin_acquire_count,
                 "source_pin_count_final": len(self.active_source_pins),
-                "store_dram_by_segment": {
-                    "store-0:segment-0": {
-                        "capacity_bytes": self.store_pool.capacity_bytes,
-                        "final_bytes": self.store_pool.occupied_bytes,
-                        "peak_bytes": self.store_pool.peak_bytes,
-                        "pending_peak_bytes": self.store_pool.pending_peak_bytes,
-                        "byte_ns": self.store_pool.byte_ns,
-                        "failed_unavailable": False,
-                    }
-                },
+                "store_dram_by_segment": store_by_segment,
                 "network_byte_ns": transfer_accounting["network_byte_ns"],
                 "copy_engine_busy_ns": transfer_accounting["copy_engine_busy_ns"],
                 "fabric_busy_ns": transfer_accounting["fabric_busy_ns"],
@@ -3715,24 +3854,36 @@ class _StudyRuntime:
                     ),
                 },
                 "store_dram": {
-                    "capacity_bytes": self.store_pool.capacity_bytes,
-                    "final_bytes": self.store_pool.occupied_bytes,
-                    "evicted_chunks": self.store_pool.evicted_chunks,
-                    "bypassed_chunks": self.store_pool.bypassed_chunks,
-                    "dual_role_alias_no_double_charge_count": self.store_pool.alias_hits,
-                    "pending_peak_bytes": self.store_pool.pending_peak_bytes,
-                    "valid": (
-                        self.store_pool.occupied_bytes + self.store_pool.pending_bytes
-                        <= self.store_pool.capacity_bytes
+                    "capacity_bytes": sum(
+                        pool.capacity_bytes for pool in self.store_pools.values()
+                    ),
+                    "final_bytes": sum(
+                        pool.occupied_bytes for pool in self.store_pools.values()
+                    ),
+                    "evicted_chunks": sum(
+                        pool.evicted_chunks for pool in self.store_pools.values()
+                    ),
+                    "bypassed_chunks": sum(
+                        pool.bypassed_chunks for pool in self.store_pools.values()
+                    ),
+                    "dual_role_alias_no_double_charge_count": sum(
+                        pool.alias_hits for pool in self.store_pools.values()
+                    ),
+                    "pending_peak_bytes": sum(
+                        pool.pending_peak_bytes for pool in self.store_pools.values()
+                    ),
+                    "per_segment": store_by_segment,
+                    "valid": all(
+                        bool(item["valid"]) for item in store_by_segment.values()
                     ),
                 },
                 "pending_destination_bytes_final": sum(
                     pool.pending_bytes
-                    for pool in (*self.peer_pools.values(), self.store_pool)
+                    for pool in (*self.peer_pools.values(), *self.store_pools.values())
                 ),
                 "unattributed_reserve_bytes": sum(
                     pool.pending_bytes
-                    for pool in (*self.peer_pools.values(), self.store_pool)
+                    for pool in (*self.peer_pools.values(), *self.store_pools.values())
                     if not pool.pending
                 ),
             },
@@ -3763,7 +3914,8 @@ class _StudyRuntime:
             },
             "resource_model": {
                 "peer_hbm_resources": list(sorted(self.peer_pools)),
-                "store_dram_segments": ["store-0:segment-0"],
+                "store_dram_segments": list(self.store_segment_ids),
+                "store_node_count": self.parameters.store_node_count,
                 "host_dram_staging_resources": [
                     ledger.resource_id
                     for _, ledger in sorted(self.host_staging_ledgers.items())
@@ -3780,8 +3932,13 @@ class _StudyRuntime:
                 ],
                 "fabric_resources": [
                     "peer-fabric-rate",
-                    "store-fabric-rate",
-                    "store-tcp-fabric-rate",
+                    *sorted(
+                        {
+                            rate_ids[fabric_kind]
+                            for rate_ids in self.store_rate_ids.values()
+                            for fabric_kind in ("rdma_fabric", "tcp_fabric")
+                        }
+                    ),
                 ],
                 "rate_resources": {
                     resource_id: resource.capacity_bytes_per_second
@@ -4148,6 +4305,26 @@ def transport_sensitivity_variants(
     )
 
 
+def store_node_sensitivity_variants(
+    parameters: ModelParameters = DEFAULT_PARAMETERS,
+) -> tuple[ExperimentVariant, ...]:
+    """Hold total Store capacity fixed while varying physical Store nodes."""
+
+    full = SYSTEM_PROFILES[SystemId.AEGIS_UNIFIED]
+    return tuple(
+        ExperimentVariant(
+            suite="store_node_sensitivity",
+            variant_id=f"store_node_count={node_count}",
+            profile=full,
+            parameters=replace(parameters, store_node_count=node_count),
+            interpretation=(
+                "modeled_store_node_count_with_fixed_total_store_capacity"
+            ),
+        )
+        for node_count in (1, 2, 4)
+    )
+
+
 def _common_active_ranges(
     oracle_details: Sequence[Mapping[str, Mapping[str, Any]]],
     *,
@@ -4376,13 +4553,16 @@ def _experiment_gpu_location(gpu_id: str) -> MemoryLocation:
     )
 
 
-def _experiment_store_location() -> MemoryLocation:
+def _experiment_store_location(segment_id: str) -> MemoryLocation:
+    if not segment_id.startswith("store-") or ":segment-" not in segment_id:
+        raise ExperimentError("experiment Store location requires a store segment ID")
+    node_id = segment_id.split(":", 1)[0]
     return MemoryLocation(
-        resource_id="store-0:segment-0",
-        node_id="node-store-0",
-        numa_node_id="numa:node-store-0:0",
+        resource_id=segment_id,
+        node_id=f"node-{node_id}",
+        numa_node_id=f"numa:node-{node_id}:0",
         kind=MemoryKind.STORE_DRAM,
-        endpoint="rdma://store-0/segment-0",
+        endpoint=f"rdma://{segment_id.replace(':', '/')}",
     )
 
 
