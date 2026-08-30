@@ -518,6 +518,33 @@ def test_nonzero_recovery_prefix_fails_before_router_or_scheduler_mutation() -> 
     coordinator.audit()
 
 
+def test_coordinator_retires_finished_route_before_later_gpu_failure() -> None:
+    harness = _harness()
+    coordinator = harness.coordinator
+    request = Request("request-finished-before-failure", 16, 1, harness.des.now_ns)
+    authority = coordinator.route_and_admit(request, required_blocks=())
+    assert authority.target_replica_id == "dp-0"
+
+    coordinator.finish_current_request(request.request_id)
+    coordinator.failure_controller.schedule_gpu_failure(
+        failure_id="failure-after-request-finished",
+        gpu_id="gpu-0",
+        at_ns=harness.des.now_ns + 1,
+        detection_delay_ns=0,
+    )
+    harness.des.run()
+
+    assert coordinator.failure_controller.attempt(request.request_id, 0).status is (
+        AttemptStatus.FINISHED
+    )
+    assert not any(
+        record.record_type in {"BASELINE_ROUTE_FENCED", "BASELINE_REROUTED"}
+        and record.data.get("request_id") == request.request_id
+        for record in harness.des.journal.records
+    )
+    coordinator.audit()
+
+
 def test_partial_store_prefix_recomputes_without_leaking_target_scheduler_state() -> None:
     harness = _harness()
     coordinator = harness.coordinator

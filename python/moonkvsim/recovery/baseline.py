@@ -43,6 +43,7 @@ class AttemptStatus(StrEnum):
     FENCED = "FENCED"
     RECOVERING = "RECOVERING"
     RECOVERY_FAILED_NO_TARGET = "RECOVERY_FAILED_NO_TARGET"
+    FINISHED = "FINISHED"
 
 
 class SilentReplayStatus(StrEnum):
@@ -867,6 +868,47 @@ class BaselineGPUFailureController:
     def complete_operation(self, handle: EventHandle) -> None:
         if self._in_flight.pop(handle.event_id, None) is None:
             raise KeyError(f"unknown in-flight operation: {handle.event_id}")
+
+    def finish_request(
+        self,
+        request_id: str,
+        route_version: int,
+        *,
+        terminal_status: str,
+    ) -> RouteAttempt:
+        """Retire one authoritative route from future failure recovery.
+
+        Scheduler completion and failure-controller route lifetime are separate
+        state machines.  The coordinator must close both: otherwise a later GPU
+        failure would treat an already-finished request as an affected active
+        route and create a spurious reroute/recovery plan.
+        """
+
+        if not terminal_status:
+            raise ValueError("terminal_status must be non-empty")
+        key = (request_id, route_version)
+        attempt = self.attempt(request_id, route_version)
+        if self._current_route_versions.get(request_id) != route_version:
+            raise RecoveryInvariantError("cannot finish a stale route version")
+        if attempt.status is not AttemptStatus.ACTIVE:
+            raise ValueError("only an active authoritative route may finish")
+        if self._active_output_routes.get(request_id) != route_version:
+            raise RecoveryInvariantError("finished route is not the active output route")
+
+        finished = replace(attempt, status=AttemptStatus.FINISHED)
+        self._attempts[key] = finished
+        del self._active_output_routes[request_id]
+        self._append(
+            "BASELINE_ROUTE_FINISHED",
+            {
+                "request_id": request_id,
+                "route_version": route_version,
+                "target_id": attempt.target_id,
+                "terminal_status": terminal_status,
+                "committed_next_output_index": self._next_output_indices[request_id],
+            },
+        )
+        return finished
 
     def schedule_gpu_failure(
         self,

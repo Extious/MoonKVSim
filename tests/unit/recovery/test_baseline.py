@@ -504,6 +504,47 @@ def test_reroute_activation_allows_exactly_one_output_and_fences_stale_route() -
     assert controller.emitted_outputs[0].route_version == 1
 
 
+def test_finished_route_is_not_affected_by_a_later_gpu_failure() -> None:
+    des = GlobalDES()
+    controller = make_controller(
+        des,
+        GlobalKVDirectory(),
+        AllocationRegistry(),
+    )
+    controller.begin_request(
+        request_id="request-0",
+        target_id="engine-dp0",
+        required_blocks=(),
+    )
+
+    finished = controller.finish_request(
+        "request-0",
+        0,
+        terminal_status="FINISHED_STOPPED",
+    )
+    controller.schedule_gpu_failure(
+        failure_id="failure-after-finish",
+        gpu_id="gpu-0",
+        at_ns=1,
+        detection_delay_ns=0,
+    )
+    des.run()
+
+    assert finished.status is AttemptStatus.FINISHED
+    assert controller.attempt("request-0", 0).status is AttemptStatus.FINISHED
+    assert controller.current_route_version("request-0") == 0
+    assert not any(
+        record.record_type in {"BASELINE_ROUTE_FENCED", "BASELINE_REROUTED"}
+        and record.data.get("request_id") == "request-0"
+        for record in des.journal.records
+    )
+    assert not controller.try_emit_output(
+        request_id="request-0",
+        route_version=0,
+        output_index=0,
+    )
+
+
 def test_committed_output_checkpoint_requires_continuous_silent_replay() -> None:
     des = GlobalDES()
     delivered: list[object] = []

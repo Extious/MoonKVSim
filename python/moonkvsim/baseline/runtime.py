@@ -1894,9 +1894,22 @@ class BaselineCoordinator:
     ) -> None:
         authority = self.router.current_authority(request_id)
         self.router.require_authority(authority)
+        attempt = self.failure_controller.attempt(request_id, authority.route_version)
+        if (
+            attempt.status is not AttemptStatus.ACTIVE
+            or attempt.target_id != authority.target_replica_id
+        ):
+            raise BaselineCoordinatorError(
+                "only the active authoritative failure-controller route may finish"
+            )
         self._replicas[authority.target_replica_id].scheduler.finish_request(
             request_id,
             status,
+        )
+        self.failure_controller.finish_request(
+            request_id,
+            authority.route_version,
+            terminal_status=status.name,
         )
         self._append(
             "BASELINE_REQUEST_FINISHED",
@@ -2579,10 +2592,10 @@ class BaselineCoordinator:
                 return f"STALE_ROUTE:{item.request_id}@{item.route_version}"
             if authority.target_replica_id != replica_id:
                 return f"TARGET_MISMATCH:{item.request_id}@{item.route_version}"
-            if attempt.status is not AttemptStatus.ACTIVE:
-                return f"INACTIVE_ROUTE:{item.request_id}@{item.route_version}"
             if request.finished:
                 return f"FINISHED_REQUEST:{item.request_id}@{item.route_version}"
+            if attempt.status is not AttemptStatus.ACTIVE:
+                return f"INACTIVE_ROUTE:{item.request_id}@{item.route_version}"
         if not self.failure_controller.target_is_healthy(replica_id):
             return f"UNHEALTHY_TARGET:{replica_id}"
         return None
