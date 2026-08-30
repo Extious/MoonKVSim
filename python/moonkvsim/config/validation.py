@@ -9,6 +9,7 @@ absence of persistent-storage vocabulary from a deployment.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 from collections import defaultdict, deque
@@ -57,6 +58,9 @@ _FORBIDDEN_DEPLOYMENT_TERMS: Final = (
     "STORESSD",
     "PERSISTENCE",
 )
+_SOURCE_HASH_IDS_ELISION_SCHEMA_SHA256: Final = (
+    "65af89d4b8475ab72c26eee1158369541f5cfb028aac28fc98e4f8acf7438cee"
+)
 
 
 class SchemaValidationError(ValueError):
@@ -97,6 +101,76 @@ def load_schema(schema_name: str) -> dict[str, Any]:
     return document
 
 
+@cache
+def _format_checker() -> FormatChecker:
+    """Return the one read-only format checker shared by cached validators."""
+
+    return FormatChecker()
+
+
+@cache
+def _validator_for_canonical_schema(canonical_name: str) -> Draft202012Validator:
+    """Build one reusable validator for a canonical repository schema name."""
+
+    return Draft202012Validator(
+        load_schema(canonical_name),
+        format_checker=_format_checker(),
+    )
+
+
+def _schema_validator(schema_name: str) -> Draft202012Validator:
+    return _validator_for_canonical_schema(_canonical_schema_name(schema_name))
+
+
+def _source_hash_ids_schema_supports_elision(schema: Mapping[str, Any]) -> bool:
+    """Enable elision only for the fully reviewed multi-agent schema."""
+
+    if type(schema) is not dict:
+        return False
+    try:
+        canonical = json.dumps(
+            schema,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode("utf-8")
+    except (TypeError, ValueError):
+        return False
+    return hashlib.sha256(canonical).hexdigest() == (
+        _SOURCE_HASH_IDS_ELISION_SCHEMA_SHA256
+    )
+
+
+@cache
+def _source_hash_ids_elision_enabled() -> bool:
+    """Cache the process-local full-schema drift gate."""
+
+    return _source_hash_ids_schema_supports_elision(load_schema("multi-agent-trace"))
+
+
+def _schema_validation_instance(
+    instance: SchemaInstance,
+    canonical_name: str,
+) -> SchemaInstance:
+    """Elide already-proven valid source-hash items from schema traversal only."""
+
+    if canonical_name != "multi-agent-trace" or type(instance) is not dict:
+        return instance
+    if not _source_hash_ids_elision_enabled():
+        return instance
+    hash_ids = instance.get("source_hash_ids")
+    if (
+        type(hash_ids) is not list
+        or not hash_ids
+        or not all(type(item) is int and item >= 0 for item in hash_ids)
+    ):
+        return instance
+    validation_instance = instance.copy()
+    validation_instance["source_hash_ids"] = []
+    return validation_instance
+
+
 def _json_path(error: ValidationError) -> str:
     if not error.absolute_path:
         return "$"
@@ -105,9 +179,11 @@ def _json_path(error: ValidationError) -> str:
 
 
 def _schema_errors(instance: SchemaInstance, schema_name: str) -> list[str]:
-    validator = Draft202012Validator(load_schema(schema_name), format_checker=FormatChecker())
+    canonical_name = _canonical_schema_name(schema_name)
+    validator = _schema_validator(canonical_name)
+    validation_instance = _schema_validation_instance(instance, canonical_name)
     errors = sorted(
-        validator.iter_errors(instance),
+        validator.iter_errors(validation_instance),
         key=lambda error: (tuple(str(part) for part in error.absolute_path), error.message),
     )
     return [f"{_json_path(error)}: {error.message}" for error in errors]

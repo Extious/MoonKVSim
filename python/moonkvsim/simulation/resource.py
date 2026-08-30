@@ -72,6 +72,20 @@ class ConcurrencyResource:
         self._assert_no_overlap(reservation.lane)
         return reservation
 
+    def reservation(self, reservation_id: str) -> Reservation | None:
+        """Return one immutable reservation without rebuilding calendar order."""
+
+        return self._by_id.get(reservation_id)
+
+    def reservations_on_lane(self, lane: int) -> tuple[Reservation, ...]:
+        """Return the already ordered, immutable view of one calendar lane."""
+
+        if type(lane) is not int:
+            raise TypeError("lane must be an integer")
+        if lane < 0 or lane >= self.lanes:
+            raise IndexError(f"lane {lane} is outside [0, {self.lanes})")
+        return tuple(self._intervals[lane])
+
     def reservations(self) -> tuple[Reservation, ...]:
         return tuple(
             sorted(

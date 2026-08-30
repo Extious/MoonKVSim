@@ -783,16 +783,10 @@ class TransferResourceLeaseManager:
         ready_ns: int,
         duration_ns: int,
     ) -> tuple[int, int]:
-        by_lane: dict[int, list[Reservation]] = defaultdict(list)
-        for reservation in resource.reservations():
-            by_lane[reservation.lane].append(reservation)
         candidates: list[tuple[int, int]] = []
         for lane in range(resource.lanes):
             candidate = ready_ns
-            for reservation in sorted(
-                by_lane[lane],
-                key=lambda item: (item.start_ns, item.end_ns, item.reservation_id),
-            ):
+            for reservation in resource.reservations_on_lane(lane):
                 if candidate + duration_ns <= reservation.start_ns:
                     break
                 if candidate < reservation.end_ns:
@@ -829,9 +823,7 @@ class TransferResourceLeaseManager:
             resource = self.concurrency_resources.get(expected.resource_id)
             if resource is None:
                 raise TransferResourceError("leased concurrency resource disappeared")
-            actual = {
-                item.reservation_id: item for item in resource.reservations()
-            }.get(expected.reservation_id)
+            actual = resource.reservation(expected.reservation_id)
             if actual != expected:
                 raise TransferResourceError("leased concurrency reservation diverged")
 

@@ -326,6 +326,50 @@ def test_concurrency_resources_queue_at_one_common_non_overlapping_slot() -> Non
     ).queue_wait_ns == 10
 
 
+def test_live_lease_audit_and_first_fit_do_not_rebuild_canonical_calendars(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    des, _host, _calendars, manager = _manager()
+    first = _task("indexed-first", total_bytes=8, transport=TransportKind.RDMA_GDR)
+    second = _task("indexed-second", total_bytes=8, transport=TransportKind.RDMA_GDR)
+    first_lease = manager.acquire(first, lease_id="lease:indexed-first", duration_ns=10)
+
+    def unexpected_canonical_projection(
+        _resource: ConcurrencyResource,
+    ) -> tuple[object, ...]:
+        raise AssertionError("live audit/first-fit rebuilt the canonical calendar")
+
+    monkeypatch.setattr(
+        ConcurrencyResource,
+        "reservations",
+        unexpected_canonical_projection,
+    )
+    manager.audit()
+    second_lease = manager.acquire(
+        second,
+        lease_id="lease:indexed-second",
+        duration_ns=5,
+    )
+
+    assert (first_lease.start_ns, first_lease.end_ns) == (0, 10)
+    assert (second_lease.start_ns, second_lease.end_ns) == (10, 15)
+    assert des.now_ns == 0
+
+
+def test_direct_reservation_audit_detects_missing_live_calendar_entry() -> None:
+    _des, _host, calendars, manager = _manager()
+    task = _task("indexed-tamper", total_bytes=8, transport=TransportKind.RDMA_GDR)
+    lease = manager.acquire(task, lease_id="lease:indexed-tamper", duration_ns=10)
+    reservation = lease.concurrency_reservations[0]
+
+    assert calendars[reservation.resource_id].cancel(reservation.reservation_id) == reservation
+    with pytest.raises(
+        TransferResourceError,
+        match="leased concurrency reservation diverged",
+    ):
+        manager.audit()
+
+
 def test_two_calendar_lanes_finish_simultaneously_and_release_both_leases() -> None:
     calendars = {
         resource_id: ConcurrencyResource(resource_id=resource_id, lanes=2)

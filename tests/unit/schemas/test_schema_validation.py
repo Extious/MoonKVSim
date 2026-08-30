@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from jsonschema import Draft202012Validator
+from jsonschema import Draft202012Validator, FormatChecker  # type: ignore[import-untyped]
 
 from moonkvsim.config import (
     SchemaValidationError,
@@ -16,7 +16,27 @@ from moonkvsim.config import (
     validate_instance,
     validate_requests_config,
     validate_run_manifest,
+    validate_trace_span,
 )
+from moonkvsim.config.validation import (
+    _format_checker,
+    _schema_errors,
+    _schema_validation_instance,
+    _schema_validator,
+    _source_hash_ids_schema_supports_elision,
+)
+
+
+class _DictSubclass(dict[str, Any]):
+    pass
+
+
+class _ListSubclass(list[int]):
+    pass
+
+
+class _IntSubclass(int):
+    pass
 
 
 def _requests() -> dict[str, Any]:
@@ -221,6 +241,37 @@ def _run_manifest() -> dict[str, Any]:
     }
 
 
+def _trace_span() -> dict[str, Any]:
+    fixture = (
+        Path(__file__).resolve().parents[2]
+        / "integration/fixtures/weka-real-shape-three-span.jsonl"
+    )
+    first_line = fixture.read_text(encoding="utf-8").splitlines()[0]
+    document = json.loads(first_line)
+    assert isinstance(document, dict)
+    return document
+
+
+def _fresh_multi_agent_schema_errors(instance: dict[str, Any]) -> tuple[str, ...]:
+    validator = Draft202012Validator(
+        load_schema("multi-agent-trace"),
+        format_checker=FormatChecker(),
+    )
+    errors = sorted(
+        validator.iter_errors(instance),
+        key=lambda error: (tuple(str(part) for part in error.absolute_path), error.message),
+    )
+    return tuple(
+        (
+            "$"
+            if not error.absolute_path
+            else "$." + ".".join(str(part) for part in error.absolute_path)
+        )
+        + f": {error.message}"
+        for error in errors
+    )
+
+
 @pytest.mark.parametrize(
     "schema_name",
     [
@@ -238,6 +289,139 @@ def test_schemas_are_valid_draft_2020_12(schema_name: str) -> None:
     schema = load_schema(schema_name)
     assert schema["$schema"] == "https://json-schema.org/draft/2020-12/schema"
     Draft202012Validator.check_schema(schema)
+
+
+def test_schema_validator_cache_uses_canonical_identity_and_one_format_checker() -> None:
+    canonical = _schema_validator("failure")
+
+    assert canonical is _schema_validator("failure.schema.json")
+    assert canonical is _schema_validator("moonkvsim.failure.v1")
+    assert canonical.format_checker is _format_checker()
+    assert _schema_validator("requests").format_checker is canonical.format_checker
+
+
+def test_cached_validator_reuse_preserves_error_order_and_has_no_state_leak() -> None:
+    invalid = _failure()
+    invalid["extra"] = True
+    invalid["events"][0]["ignored_typo"] = True
+    invalid["events"][0]["at_s"] = -1
+    expected = (
+        "$: Additional properties are not allowed ('extra' was unexpected)",
+        "$.events.0: Additional properties are not allowed ('ignored_typo' was unexpected)",
+        "$.events.0.at_s: -1 is less than the minimum of 0",
+    )
+
+    for _ in range(2):
+        with pytest.raises(SchemaValidationError) as captured:
+            validate_failure_config(invalid)
+        assert captured.value.messages == expected
+        validate_failure_config(_failure())
+
+
+def test_source_hash_ids_fast_path_schema_assumption_is_exact() -> None:
+    schema = load_schema("multi-agent-trace")
+    assert _source_hash_ids_schema_supports_elision(schema)
+
+    for keyword, value in (
+        ("minItems", 1),
+        ("uniqueItems", True),
+        ("contains", {"const": 0}),
+    ):
+        changed = copy.deepcopy(schema)
+        changed["properties"]["source_hash_ids"][keyword] = value
+        assert not _source_hash_ids_schema_supports_elision(changed)
+
+    root_constraint = copy.deepcopy(schema)
+    root_constraint["allOf"] = [
+        {"properties": {"source_hash_ids": {"minItems": 1}}}
+    ]
+    assert not _source_hash_ids_schema_supports_elision(root_constraint)
+
+    unrelated_change = copy.deepcopy(schema)
+    unrelated_change["description"] = "schema drift must disable the reviewed fast path"
+    assert not _source_hash_ids_schema_supports_elision(unrelated_change)
+
+
+def test_source_hash_ids_fast_path_does_not_mutate_or_replace_original_values() -> None:
+    span = _trace_span()
+    original = copy.deepcopy(span)
+    hash_ids = span["source_hash_ids"]
+
+    validation_instance = _schema_validation_instance(span, "multi-agent-trace")
+
+    assert validation_instance is not span
+    assert validation_instance["source_hash_ids"] == []
+    assert span == original
+    assert span["source_hash_ids"] is hash_ids
+    validate_trace_span(span)
+
+
+def test_source_hash_ids_fast_path_falls_back_for_container_subclasses() -> None:
+    dict_subclass = _DictSubclass(_trace_span())
+    assert _schema_validation_instance(dict_subclass, "multi-agent-trace") is dict_subclass
+
+    span = _trace_span()
+    hash_ids = _ListSubclass([0, 1])
+    span["source_hash_ids"] = hash_ids
+    assert _schema_validation_instance(span, "multi-agent-trace") is span
+
+
+def test_source_hash_ids_fast_path_semantics_use_the_original_list() -> None:
+    span = _trace_span()
+    span["source_hash_ids"] = [11, 12]
+    span["prompt_tokens"] = 64
+    span["total_model_tokens"] = span["prompt_tokens"] + span["output_tokens"]
+
+    assert _schema_errors(span, "multi-agent-trace") == []
+    with pytest.raises(
+        SchemaValidationError,
+        match=r"prompt_tokens: must equal len\(source_hash_ids\)",
+    ):
+        validate_trace_span(span)
+
+
+@pytest.mark.parametrize(
+    "source_hash_ids",
+    [
+        [],
+        [0],
+        [0, 1, 2**128],
+        [_IntSubclass(1)],
+        _ListSubclass([0, 1]),
+        [True],
+        [False],
+        [-1],
+        [0.0],
+        [1.0],
+        [-1.0],
+        [1.5],
+        ["1"],
+        [None],
+        [{}],
+        (0, 1),
+        None,
+        "not-an-array",
+    ],
+)
+def test_source_hash_ids_fast_path_matches_a_fresh_validator(
+    source_hash_ids: Any,
+) -> None:
+    span = _trace_span()
+    span["source_hash_ids"] = source_hash_ids
+    span["unexpected"] = True
+
+    assert tuple(_schema_errors(span, "multi-agent-trace")) == (
+        _fresh_multi_agent_schema_errors(span)
+    )
+
+
+def test_source_hash_ids_missing_field_matches_a_fresh_validator() -> None:
+    span = _trace_span()
+    del span["source_hash_ids"]
+
+    assert tuple(_schema_errors(span, "multi-agent-trace")) == (
+        _fresh_multi_agent_schema_errors(span)
+    )
 
 
 def test_valid_configs_and_manifest_pass() -> None:
