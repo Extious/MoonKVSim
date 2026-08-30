@@ -30,7 +30,7 @@ from moonkvsim.output.section16 import (
     project_event_rows,
 )
 from moonkvsim.simulation.journal import EventJournal
-from moonkvsim.simulation.ledger import CapacityResourceKind
+from moonkvsim.simulation.ledger import CapacityLedger, CapacityResourceKind
 
 HAS_PYARROW = importlib.util.find_spec("pyarrow") is not None
 
@@ -181,6 +181,30 @@ def test_request_and_workflow_metrics_use_only_simulated_boundaries() -> None:
     assert workflow["timing_complete"] is True
 
 
+def test_multi_request_workflow_marks_cross_stream_tpot_not_applicable() -> None:
+    [first] = derive_request_metric_rows(_timed_journal(), (_execution(),))
+    second = {
+        **first,
+        "agent_id": "agent-1",
+        "span_id": "span-1",
+        "request_id": "request-1",
+        "arrival_ns": 5,
+        "first_output_ns": 15,
+        "last_output_ns": 35,
+        "completion_ns": 45,
+    }
+
+    [workflow] = derive_workflow_metric_rows((first, second))
+
+    assert workflow["tpot_ns"] is None
+    assert workflow["tpot_applicable"] is False
+    assert workflow["tpot_complete"] is True
+    assert workflow["tpot_evidence"] == ("not_applicable_across_multiple_request_output_streams")
+    assert workflow["wct_ns"] == 45
+    assert workflow["timing_complete"] is True
+    assert workflow["missing_evidence"] == []
+
+
 def test_missing_ttft_and_tpot_are_null_with_explicit_evidence_flags() -> None:
     journal = EventJournal()
     journal.append(
@@ -328,6 +352,59 @@ def test_delta_replay_keeps_initial_and_same_timestamp_transient_boundaries() ->
     )
     with pytest.raises(OutputContractError, match="before-state mismatch"):
         derive_resource_snapshot_rows((reserve, inconsistent_release))
+
+
+def test_declared_initial_ledgers_make_untouched_accounts_and_resources_complete() -> None:
+    reserve, release = _resource_rows()
+    gpu = CapacityLedger(
+        resource_id="gpu-0.hbm",
+        resource_kind=CapacityResourceKind.GPU_HBM,
+        capacity_bytes=100,
+    )
+    store = CapacityLedger(
+        resource_id="store-0.dram",
+        resource_kind=CapacityResourceKind.STORE_DRAM,
+        capacity_bytes=200,
+        initial_accounts={"FIXED_RESERVE": 50},
+    )
+
+    snapshots = derive_resource_snapshot_rows(
+        (release, reserve),
+        initial_ledgers={gpu.resource_id: gpu, store.resource_id: store},
+    )
+
+    initial_store = [
+        row
+        for row in snapshots
+        if row["resource_id"] == store.resource_id and row["boundary_index"] == 0
+    ]
+    assert {row["account"]: row["account_bytes"] for row in initial_store} == {
+        "FIXED_RESERVE": 50,
+        "FREE": 150,
+    }
+    assert {row["timestamp_ns"] for row in initial_store} == {0}
+    assert {row["source_record_type"] for row in initial_store} == {"initial-capacity-ledger"}
+    assert all(row["snapshot_complete"] is True for row in snapshots)
+    assert all(row["unknown_account_bytes"] == 0 for row in snapshots)
+
+
+def test_declared_initial_ledgers_are_top_level_run_audit_truth_sources() -> None:
+    store = CapacityLedger(
+        resource_id="store-0.dram",
+        resource_kind=CapacityResourceKind.STORE_DRAM,
+        capacity_bytes=200,
+        initial_accounts={"FIXED_RESERVE": 50},
+    )
+
+    projection = build_section_16_projection(
+        journal=EventJournal(),
+        initial_ledgers={store.resource_id: store},
+    )
+
+    assert "initial-capacity-ledgers" in projection.document("capacity-audit.json")[
+        "truth_sources"
+    ]
+    assert "initial-capacity-ledgers" in projection.document("run-audit.json")["truth_sources"]
 
 
 def test_flow_path_is_exploded_once_per_hop_and_preserves_bytes() -> None:

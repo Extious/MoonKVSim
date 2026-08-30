@@ -629,6 +629,7 @@ class TraceRunResult:
             resource_rows=self.resource_rows,
             flow_rows=self.flow_rows,
             executions=self.trace_execution_projections(),
+            initial_ledgers=self.initial_ledgers,
             runner_documents={
                 "trace-audit.json": self.trace_audit_document(),
                 "context-coverage.json": self.context_coverage_document(),

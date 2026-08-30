@@ -51,6 +51,10 @@ EXPECTED_VLLM_VERSION = "1.2.2+aegiskv.sm89"
 EXPECTED_MODEL_ID = "Qwen/Qwen3-8B"
 EXPECTED_MODEL_REVISION = "b968826d9c46dd6066d109eabc6255188de91218"
 EXPECTED_INTERPRETER = Path("/home/comp/zhanzhao/Mooncake/aegiskv/.venv-vllm-sm89/bin/python")
+EXPECTED_CAPTURE_INTERPRETER = Path(
+    "/home/comp/zhanzhao/Mooncake/aegiskv/artifacts/python/"
+    "cpython-3.12.13-linux-x86_64-gnu/bin/python3.12"
+)
 REQUIRED_CLAIM_EXCLUSIONS = (
     "cuda",
     "model_execution",
@@ -720,7 +724,9 @@ def _audit_golden_document(document: Mapping[str, Any], *, root: Path) -> None:
         raise VLLMDifferentialError("vLLM golden version drift")
     if provenance.get("vllm_source_commit") != VLLM_SOURCE_COMMIT:
         raise VLLMDifferentialError("vLLM golden commit drift")
-    if provenance.get("interpreter") != str(EXPECTED_INTERPRETER.resolve()):
+    # The golden records the resolved capture interpreter.  Checking that
+    # fixed value must not depend on the capture venv existing on this host.
+    if provenance.get("interpreter") != str(EXPECTED_CAPTURE_INTERPRETER):
         raise VLLMDifferentialError("vLLM golden interpreter provenance drift")
     if provenance.get("device_execution") != "none_cpu_scheduler_only":
         raise VLLMDifferentialError("vLLM golden execution boundary drift")

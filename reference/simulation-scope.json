@@ -1,0 +1,33 @@
+{
+  "evidence": {
+    "calibrated_claim_allowed": false,
+    "formal_use_allowed": false,
+    "maximum_evidence_class": "E2",
+    "modeled_matrix_allowed": true,
+    "paper_result_allowed": false,
+    "physical_claim_allowed": false,
+    "timing_status": "modeled_preliminary_not_calibrated"
+  },
+  "execution": {
+    "cpu_metadata_des_allowed": true,
+    "real_gpu_execution_allowed": false,
+    "real_vllm_mooncake_execution_allowed": false,
+    "simulated_resource_model_allowed": true,
+    "slurm_submission_allowed": false,
+    "vanilla_aegiskv_matched_simulation_allowed": true
+  },
+  "global_clock": {
+    "kind": "single_monotonic_virtual_clock",
+    "unit": "nanosecond"
+  },
+  "schema": "moonkvsim.simulation-scope.v1",
+  "source_lock": {
+    "blockers_preserved": [
+      "SRC-BLOCK-001",
+      "SRC-BLOCK-002",
+      "SRC-BLOCK-003"
+    ],
+    "path": "reference/source-lock.json",
+    "sha256": "d122c926c41071bb1cf6049a3ff9fada836038cee5047881399f946750a9eaf1"
+  }
+}

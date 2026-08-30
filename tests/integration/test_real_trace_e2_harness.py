@@ -302,6 +302,41 @@ def test_fixture_replay_publishes_deterministic_complete_section_16_matrix(
     assert initial_hbm["RUNTIME_DYNAMIC"] == 0
     assert "UNATTRIBUTED_RESERVE" not in initial_hbm
 
+    projection = first.result.section_16_projection()
+    capacity_projection = projection.document("capacity-audit.json")
+    assert capacity_projection["snapshot_state_complete"] is True
+    assert capacity_projection["incomplete_resource_ids"] == []
+    assert capacity_projection["resource_count"] == len(first.result.initial_ledgers)
+    assert capacity_projection["truth_sources"] == [
+        "flow-rate-events",
+        "initial-capacity-ledgers",
+        "resource-ledger-deltas",
+    ]
+    assert "initial-capacity-ledgers" in projection.document("run-audit.json")["truth_sources"]
+    snapshot_rows = projection.table_rows("resource-ledger-snapshots.parquet")
+    assert all(row["snapshot_complete"] is True for row in snapshot_rows)
+    assert {
+        row["resource_id"] for row in snapshot_rows if row["boundary_index"] == 0
+    } == set(first.result.initial_ledgers)
+
+    request_rows = projection.table_rows("request-metrics.parquet")
+    assert all(row["timing_complete"] is True for row in request_rows)
+    assert projection.document("summary.json")["request_timing_complete_count"] == len(
+        request_rows
+    )
+
+    workflow_rows = projection.table_rows("workflow-metrics.parquet")
+    assert all(row["timing_complete"] is True for row in workflow_rows)
+    [multi_request_workflow] = [row for row in workflow_rows if row["request_count"] > 1]
+    assert multi_request_workflow["tpot_applicable"] is False
+    assert multi_request_workflow["tpot_complete"] is True
+    assert multi_request_workflow["tpot_evidence"] == (
+        "not_applicable_across_multiple_request_output_streams"
+    )
+    assert projection.document("summary.json")["workflow_timing_complete_count"] == len(
+        workflow_rows
+    )
+
 
 def test_harness_rejects_existing_output_and_unknown_config_key(
     tmp_path: Path,

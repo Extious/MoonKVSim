@@ -7,7 +7,23 @@
 > AegisKV 分支：`aegiskv`
 > 时间模型：单一全局虚拟时钟、离线离散事件模拟（DES）
 > AegisKV 设计权威：`benchmark/AegisKV/docs/patent/AegisKV专利交底书-final-version.docx`
-> 更新时间：2026-08-29
+> 更新时间：2026-08-30
+
+## 0. 交付范围修订：纯全局虚拟时钟模拟
+
+本项目的当前交付范围以用户在 2026-08-30 的明确要求为准：只实现和运行
+单一全局虚拟时钟驱动的离线元数据 DES，不执行任何真实 GPU、CUDA、Slurm、
+vLLM/Mooncake 端到端或组件物理校准实验。
+
+- 第 9 节“物理资源模型”表示模拟器内逐 GPU、HBM、DRAM、copy engine、NIC、
+  fabric 和传输 lane 的逻辑资源身份、容量账本与可用时间日历，不表示访问真实设备。
+- Vanilla/AegisKV 对比、故障、消融和敏感性实验均为 CPU 上的全局 DES 重放。
+- forward、传输和网络参数可以使用源码派生值或显式的 modeled/assumed 参数；每个
+  结果必须保留参数来源，并标记 `modeled/preliminary`、`not_calibrated`。
+- 当前 Definition of Done 的证据上限为 E2。E3 组件物理校准、E4 实机 matched
+  validation 和 E5 paper-ready claim 均不属于本次交付门槛。
+- 未完成的物理/正式 provenance blocker 必须保留，不得伪装为已解决；它们只禁止
+  calibrated、physical、formal 和 paper-ready 声明，不阻止明确限定为 E2 的模拟实验。
 
 ## 1. 执行摘要
 
@@ -798,18 +814,20 @@ predicted_forward_duration_ns
 
 如果选定 AIConfigurator profile 已包含 TP/PP collective 或某段通信，该部分必须在 profile manifest 中声明，MoonKVSim 不得再次计费。默认边界是：预测器负责一次 vLLM scheduler step 的 GPU forward（包括被该 profile 明确包含的模型内 collective），Mooncake KV 外部传输始终由 Transfer Engine 模型负责。
 
-预测值不能只作为一次 `schedule_after` 延迟：在 `[FORWARD_START, FORWARD_COMPLETE)` 内必须真实占用对应 rank 的 GPU compute resource，并根据 hardware profile 决定与 D2D/H2D/D2H、HBM bandwidth 和 collective 是否可重叠。KV transfer 导致的 forward slowdown 只能来自已声明并校准的共享资源/overlap matrix，不能既在 flow model 中竞争一次、又在 AIConfigurator duration 上重复加罚。
+预测值不能只作为一次 `schedule_after` 延迟：在 `[FORWARD_START, FORWARD_COMPLETE)` 内必须占用 GlobalDES 中对应 rank 的模拟 GPU compute resource，并根据 modeled profile 决定与 D2D/H2D/D2H、HBM bandwidth 和 collective 是否可重叠。KV transfer 导致的 forward slowdown 只能来自已声明且带 provenance 的共享资源/overlap matrix，不能既在 flow model 中竞争一次、又在 AIConfigurator duration 上重复加罚。
 
 KV 管理控制面也不是零成本。scheduler bookkeeping、prefix lookup、Master allocation、directory publish、Slack update、Lazy Refresh heap validation、eviction selection 和 failure fence 分别占用配置中的 CPU/RPC worker lane并产生事件；阻塞调用会延迟对应 state transition，异步调用只占资源而不阻塞 GPU。其 service-time profile 必须区分源码默认、实测拟合与 sensitivity-only。
 
-### 11.3 校准
+### 11.3 Modeled profile 与高等级证据边界
 
 - prefill 和 decode 分开；
 - 不直接继承 SGLSim HiCache scale；
 - 不使用一个全局 scale factor吸收 shape error；
 - 对 batch size、input length、past KV length 做 shape-aware 验证；
-- 保存 raw prediction、calibrated prediction、observed value 和 residual；
-- 未完成 vLLM 真机校准前，结果标记为 modeled/preliminary。
+- 当前交付保存 raw modeled prediction、参数来源和 sensitivity 结果，不生成虚假的
+  calibrated prediction、observed value 或 residual；
+- 所有当前结果标记为 `modeled/preliminary`、`not_calibrated`。真机校准只作为
+  E3 的未来证据路径，不属于当前执行计划。
 
 ## 12. Vanilla Mooncake 模型（`main`）
 
@@ -1641,14 +1659,14 @@ python/moonkvsim/aegiskv/
 - [ ] vLLM batch adapter；
 - [ ] prefill/decode预测；
 - [ ] profile fingerprint；
-- [ ] calibration output。
+- [ ] modeled profile/assumption manifest 与参数敏感性输出。
 
 验收：
 
 - predictor不依赖HiCache；
 - forward与I/O分开；
-- shape-aware误差报告完整；
-- 未校准结果明确标记preliminary。
+- shape-aware 输入、组合公式和参数来源可审计；
+- 未校准结果明确标记 `modeled/preliminary`，不得报告物理误差或准确率。
 
 ### M4：Mooncake Store baseline
 
@@ -1678,7 +1696,7 @@ python/moonkvsim/aegiskv/
 - pending/committed/staging/fragmentation可由ledger重建；
 - selected communication golden cases与外部模型/trace在声明容差内。
 
-### M5：Baseline GPU failure与端到端验证
+### M5：Baseline GPU failure与端到端 DES replay
 
 任务：
 
@@ -1687,8 +1705,8 @@ python/moonkvsim/aegiskv/
 - [ ] fence与reroute；
 - [ ] Store prefix load；
 - [ ] missing suffix recompute；
-- [ ] small physical validation；
-- [ ] baseline experiment smoke。
+- [ ] repeated source-frozen GlobalDES validation；
+- [ ] baseline simulation experiment smoke。
 - [ ] 真实multi-agent trace从短上下文到128K的端到端replay。
 
 验收：
@@ -1771,11 +1789,10 @@ python/moonkvsim/aegiskv/
 - 恢复过程和容量hold完整可审计。
 - recovery/abort后所有ledger和refcount回到合法状态。
 
-### M9：校准、实验和论文资产
+### M9：纯模拟实验和图像资产
 
 任务：
 
-- [ ] 组件级校准；
 - [ ] baseline/AegisKV matched runs；
 - [ ] GPU failure target/timing/rate matrix；
 - [ ] 8K/32K/64K/96K/128K真实上下文分桶与coverage audit；
@@ -1790,10 +1807,11 @@ python/moonkvsim/aegiskv/
 
 - 所有图由规范化结果自动生成；
 - 图中的每个点可追溯到manifest；
-- modeled、calibrated、physical evidence分开；
+- 所有结果明确限定为 modeled/preliminary E2，禁止 calibrated/physical claim；
 - 没有缺失cell或静默fallback；
 - 真实trace provenance、DAG、tokenizer和128K coverage gate通过；
-- formal cells的核心capacity/rate/overlap参数无`assumed`且`UNATTRIBUTED_RESERVE=0`；
+- 每个 capacity/rate/overlap 参数均有 source-derived 或 assumed provenance，且
+  `UNATTRIBUTED_RESERVE=0`；
 - 资源峰值由event boundary计算，图表采样不会隐藏瞬时reserve/staging峰值；
 - paper-ready gate单独审计。
 
@@ -1885,13 +1903,20 @@ golden/differential trace、KV block bytes、allocator state 与逐事件 ledger
 
 forward、transfer、Store、network、copy/CPU overlap 分别有物理测量；可以声称该参数区间内的资源时间占用经过校准。
 
+当前纯模拟交付不执行 E3。
+
 ### E4：端到端验证
 
 小规模真实vLLM+Mooncake与MoonKVSim matched；可以报告simulator accuracy。
 
+当前纯模拟交付不执行 E4。
+
 ### E5：论文实验
 
 完整matrix、重复、置信区间、audit和provenance通过；才可作为论文结论。
+
+当前交付可以运行完整的 modeled matrix 并生成图像，但其证据仍停留在 E2，
+不得因 matrix 完整而升级为 E5 或论文结论。
 
 任何低等级证据不得自动升级为高等级证据。
 
@@ -2006,6 +2031,8 @@ DP数量、Store nodes、网络带宽与性能。
 
 AIConfigurator、传输和端到端observed-vs-predicted误差。
 
+F12 需要 E3/E4 观测值，当前纯模拟交付不生成该图；其编号仅为未来高等级证据保留。
+
 ### F13：AegisKV 资源成本分解
 
 相对 matched Vanilla Mooncake，展示 AegisKV 额外 Peer-HBM byte-seconds、Store DRAM byte-seconds、staging peak、网络 byte-time、copy-engine busy time，以及节省的 recompute GPU time；同时给绝对值和增量，避免只报告收益不报告资源成本。
@@ -2019,6 +2046,10 @@ AIConfigurator、传输和端到端observed-vs-predicted误差。
 展示 workflow DAG规模、agent fan-out/fan-in、真实并发、context length分布，以及8K/32K/64K/96K/128K各bucket的样本数；叠加不同上下文下的HBM KV占用、Store DRAM占用、恢复tokens和WCT。图注必须明确128K是单次model context而不是workflow累计tokens。
 
 ## 23. 通信调研结论、校准与外部验证
+
+本节记录未来可选的 E3/E4 提升路径，不属于当前执行范围。当前实现只使用 C0
+源码/文档派生值或显式 assumed 参数，并对它们做 DES sensitivity；不启动 C1-C5
+中的 microbench、外部校准后端或实机任务。
 
 ### 23.1 采用方案
 
@@ -2125,7 +2156,7 @@ MoonKVSim 应自研与全局 DES 原生集成的 `flow_contention`，而不是�
 - [ ] event journal可byte-identical重建全部ledger；
 - [ ] baseline `GPU_FAILURE`/reroute可运行；
 - [ ] runtime不存在其他fault injector或隐藏随机failure；
-- [ ] 小规模端到端验证完成；
+- [ ] source-frozen 全局 DES 重复运行及 byte-identical 审计完成；
 - [ ] 发布`v0.1.0-mooncake-baseline`。
 
 ### 25.2 `aegiskv` 完成
@@ -2142,8 +2173,8 @@ MoonKVSim 应自研与全局 DES 原生集成的 `flow_contention`，而不是�
 - [ ] 相对baseline的HBM/DRAM/网络/copy-engine资源增量可重建；
 - [ ] matched baseline/AegisKV实验完成；
 - [ ] 所有matched实验使用同一真实trace span集合和128K coverage；
-- [ ] calibration和端到端验证通过；
-- [ ] 完整实验matrix和图像通过provenance audit。
+- [ ] 所有时延和性能字段保持 modeled/preliminary 且无物理准确性声明；
+- [ ] 完整纯模拟实验matrix和图像通过provenance audit。
 
 ## 26. 立即执行顺序
 
@@ -2157,12 +2188,16 @@ MoonKVSim 应自研与全局 DES 原生集成的 `flow_contention`，而不是�
 8. 用 toy workload验证稳定事件排序和逐事件守恒；toy数据只用于测试，不进入实验结果。
 9. 依照 source-map 实现 pinned vLLM scheduler/block manager，生成并核对 `kv-layout.json`，再接入 engine-neutral AIConfigurator adapter。
 10. 按 Mooncake 同名模块实现 DRAM-only Master/Client/Segment/Replica/Transfer Engine baseline。
-11. 用 C0-C4 阶梯完成通信参数、拥塞模型和外部 golden validation。
-12. 完成真实trace跨 DP Store reuse、128K context、baseline `GPU_FAILURE`/reroute 与小规模端到端验证。
+11. 用源码派生或显式 assumed 参数完成通信资源、拥塞模型和敏感性验证；不执行
+    C1-C5 校准阶梯。
+12. 完成真实trace跨 DP Store reuse、128K context、baseline `GPU_FAILURE`/reroute
+    与重复的端到端 GlobalDES replay。
 13. 发布 `v0.1.0-mooncake-baseline`；只有验收通过后才从该 tag 创建 `aegiskv`。
 14. 在 `aegiskv` 分支实现专利终稿的 normal path、GPU failure path、Peer-HBM/DRAM 独立 manager 与审计。
 15. 按 SOURCE_MANIFEST 从 Mooncake/SGLSim 精选迁移 `benchmark/AegisKV/docs|paper|experiments` 资产。
-16. 对真实trace执行matched实验、生成全部图像，并分别通过128K coverage、completeness、calibration、provenance 与 paper-ready gate。
+16. 对真实trace执行纯模拟 matched 实验、生成全部图像，并分别通过128K coverage、
+    completeness、determinism、provenance 与 modeled-scope gate；不得标记为 calibrated、
+    physical 或 paper-ready。
 
 ---
 

@@ -12,7 +12,8 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           python-version: "3.11"
-      - run: uv sync --extra dev
+      - run: uv sync --extra dev --extra trace
+      - run: uv run python scripts/audit_simulation_scope.py --json
       - run: uv run ruff check .
       - run: uv run mypy python/moonkvsim
       - run: uv run pytest

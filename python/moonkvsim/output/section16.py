@@ -44,6 +44,7 @@ from moonkvsim.output.records import (
     validate_flow_rate_sequence,
 )
 from moonkvsim.simulation.journal import EventJournal, JournalRecord
+from moonkvsim.simulation.ledger import CapacityLedger
 
 SECTION_16_SCHEMA_VERSION: Final = "moonkvsim.output.section-16-e2-projection.v1"
 MAX_MODEL_LEN_TOKENS: Final = 131_072
@@ -674,8 +675,12 @@ def derive_workflow_metric_rows(
             ttft_evidence = "missing_simulated_workflow_arrival_or_first_output"
             missing.append("workflow_ttft_simulated_boundaries")
 
-        tpot_applicable = output_tokens >= 2
-        if not tpot_applicable:
+        tpot_applicable = request_count == 1 and output_tokens >= 2
+        if request_count > 1:
+            tpot_ns = None
+            tpot_complete = True
+            tpot_evidence = "not_applicable_across_multiple_request_output_streams"
+        elif not tpot_applicable:
             tpot_ns = None
             tpot_complete = True
             tpot_evidence = "not_applicable_fewer_than_two_output_tokens"
@@ -689,8 +694,8 @@ def derive_workflow_metric_rows(
         else:
             tpot_ns = None
             tpot_complete = False
-            tpot_evidence = "not_defined_across_multiple_request_output_streams"
-            missing.append("workflow_tpot_cross_request_definition")
+            tpot_evidence = "missing_complete_single_request_output_event_sequence"
+            missing.append("workflow_tpot_complete_output_sequence")
 
         all_arrivals = len(arrivals) == request_count
         all_completions = len(completions) == request_count
@@ -761,12 +766,14 @@ def derive_workflow_metric_rows(
 
 def derive_resource_snapshot_rows(
     resource_rows: Sequence[ResourceLedgerDeltaRow],
+    *,
+    initial_ledgers: Mapping[str, CapacityLedger] | None = None,
 ) -> tuple[dict[str, Any], ...]:
-    """Replay known accounts and retain initial plus every delta boundary.
+    """Replay declared initial accounts and retain every delta boundary.
 
-    Untouched initial accounts cannot be named from delta rows.  Their aggregate
-    byte count is therefore reported as ``unknown_account_bytes`` and
-    ``snapshot_complete`` remains false instead of inventing an account name.
+    A runner can supply its pristine ledgers to name accounts that never appear
+    in a delta. Generic callers may omit them; that fallback remains explicitly
+    partial instead of inventing account names.
     """
 
     ordered = canonical_resource_ledger_delta_rows(resource_rows)
@@ -774,37 +781,58 @@ def derive_resource_snapshot_rows(
     for row in ordered:
         by_resource[row.resource_id].append(row)
 
+    declared_ledgers = dict(initial_ledgers or {})
+    for resource_id, ledger in declared_ledgers.items():
+        if resource_id != ledger.resource_id:
+            raise OutputContractError(
+                f"initial ledger key disagrees with resource ID: {resource_id}"
+            )
+
     snapshots: list[dict[str, Any]] = []
-    for resource_id, rows in sorted(by_resource.items()):
-        first = rows[0]
-        capacity_bytes = first.capacity_bytes
-        resource_kind = first.resource_kind.value
-        initial: dict[str, int] = {}
+    for resource_id in sorted(set(by_resource) | set(declared_ledgers)):
+        rows = by_resource.get(resource_id, [])
+        declared = declared_ledgers.get(resource_id)
+        if declared is not None:
+            capacity_bytes = declared.capacity_bytes
+            resource_kind = declared.resource_kind.value
+            initial = dict(declared.accounts)
+            initial_timestamp_ns = 0
+            initial_phase = "INITIAL_DECLARED"
+            initial_source = "initial-capacity-ledger"
+        else:
+            first = rows[0]
+            capacity_bytes = first.capacity_bytes
+            resource_kind = first.resource_kind.value
+            initial = {}
+            for row in rows:
+                initial.setdefault(row.account_from, row.from_before_bytes)
+                initial.setdefault(row.account_to, row.to_before_bytes)
+            initial_timestamp_ns = first.timestamp_ns
+            initial_phase = "INITIAL_RECONSTRUCTED"
+            initial_source = "resource-ledger-deltas"
         for row in rows:
             if row.capacity_bytes != capacity_bytes or row.resource_kind.value != resource_kind:
                 raise OutputContractError(
                     f"resource metadata changes during replay for {resource_id}"
                 )
-            initial.setdefault(row.account_from, row.from_before_bytes)
-            initial.setdefault(row.account_to, row.to_before_bytes)
         known_initial = sum(initial.values())
         if known_initial > capacity_bytes:
             raise OutputContractError(f"known initial accounts exceed capacity for {resource_id}")
         state = dict(initial)
         _append_snapshot_boundary(
             snapshots,
-            timestamp_ns=first.timestamp_ns,
+            timestamp_ns=initial_timestamp_ns,
             stable_sequence=None,
             delta_sequence=None,
             boundary_index=0,
             event_id=None,
             cause=None,
-            boundary_phase="INITIAL_RECONSTRUCTED",
+            boundary_phase=initial_phase,
             resource_id=resource_id,
             resource_kind=resource_kind,
             state=state,
             capacity_bytes=capacity_bytes,
-            source_record_type="resource-ledger-deltas",
+            source_record_type=initial_source,
         )
         for boundary_index, row in enumerate(rows, start=1):
             if (
@@ -960,6 +988,7 @@ def build_section_16_projection(
     resource_rows: Sequence[ResourceLedgerDeltaRow] = (),
     flow_rows: Sequence[FlowRateEventRow] = (),
     executions: Sequence[TraceExecutionProjection] = (),
+    initial_ledgers: Mapping[str, CapacityLedger] | None = None,
     runner_documents: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> Section16Projection:
     """Build all 19 artifacts without importing ``pyarrow`` or runner code.
@@ -979,7 +1008,10 @@ def build_section_16_projection(
     event_tables = project_event_rows(journal)
     request_rows = derive_request_metric_rows(journal, ordered_executions)
     workflow_rows = derive_workflow_metric_rows(request_rows)
-    snapshot_rows = derive_resource_snapshot_rows(ordered_resources)
+    snapshot_rows = derive_resource_snapshot_rows(
+        ordered_resources,
+        initial_ledgers=initial_ledgers,
+    )
     run_end_ns = journal.records[-1].timestamp_ns if journal.records else None
     utilization_rows = derive_resource_utilization_rows(
         snapshot_rows,
@@ -1517,7 +1549,10 @@ def _capacity_audit_document(
     flow_rows: Sequence[FlowRateEventRow],
     snapshot_rows: Sequence[Mapping[str, Any]],
 ) -> dict[str, Any]:
-    resource_ids = sorted({row.resource_id for row in resource_rows})
+    resource_ids = sorted(
+        {row.resource_id for row in resource_rows}
+        | {_mapping_string(row, "resource_id") for row in snapshot_rows}
+    )
     incomplete = sorted(
         {
             _mapping_string(row, "resource_id")
@@ -1525,12 +1560,27 @@ def _capacity_audit_document(
             if not _mapping_bool(row, "snapshot_complete")
         }
     )
+    has_declared_initial_state = any(
+        _mapping_string(row, "source_record_type") == "initial-capacity-ledger"
+        for row in snapshot_rows
+    )
+    truth_sources = ["flow-rate-events", "resource-ledger-deltas"]
+    if has_declared_initial_state:
+        truth_sources.append("initial-capacity-ledgers")
+    if incomplete:
+        snapshot_completeness_evidence = (
+            "untouched_initial_accounts_not_named_by_available_truth_sources"
+        )
+    elif has_declared_initial_state:
+        snapshot_completeness_evidence = "initial_capacity_ledgers_plus_delta_replay"
+    else:
+        snapshot_completeness_evidence = "all_capacity_accounts_observed_in_deltas"
     return {
         "schema": SECTION_16_SCHEMA_VERSION,
         "artifact": "capacity-audit.json",
         "status": "PASS",
         "valid": True,
-        "truth_sources": ["resource-ledger-deltas", "flow-rate-events"],
+        "truth_sources": sorted(truth_sources),
         "resource_delta_replay_valid": True,
         "flow_byte_conservation_valid": True,
         "resource_delta_count": len(resource_rows),
@@ -1539,11 +1589,7 @@ def _capacity_audit_document(
         "event_boundary_snapshots_preserved": True,
         "snapshot_state_complete": not incomplete,
         "incomplete_resource_ids": incomplete,
-        "snapshot_completeness_evidence": (
-            "all_capacity_accounts_observed_in_deltas"
-            if not incomplete
-            else "untouched_initial_accounts_not_named_by_delta_truth_source"
-        ),
+        "snapshot_completeness_evidence": snapshot_completeness_evidence,
     }
 
 
@@ -1556,6 +1602,19 @@ def _run_audit_document(
 ) -> dict[str, Any]:
     request_timing_complete = sum(_mapping_bool(row, "timing_complete") for row in request_rows)
     workflow_timing_complete = sum(_mapping_bool(row, "timing_complete") for row in workflow_rows)
+    capacity_truth_sources = capacity_audit.get("truth_sources")
+    if type(capacity_truth_sources) is not list or any(
+        not isinstance(item, str) or not item for item in capacity_truth_sources
+    ):
+        raise OutputContractError("capacity audit truth_sources must be an array of strings")
+    truth_sources = [
+        "canonical-event-journal",
+        "resource-ledger-deltas",
+        "flow-rate-events",
+        "explicit-trace-executions",
+    ]
+    if "initial-capacity-ledgers" in capacity_truth_sources:
+        truth_sources.insert(2, "initial-capacity-ledgers")
     schemas = {
         name: hashlib.sha256(
             _canonical_json_bytes(
@@ -1579,12 +1638,7 @@ def _run_audit_document(
         "evidence_class": "E2",
         "formal_use_allowed": False,
         "derived_only": True,
-        "truth_sources": [
-            "canonical-event-journal",
-            "resource-ledger-deltas",
-            "flow-rate-events",
-            "explicit-trace-executions",
-        ],
+        "truth_sources": truth_sources,
         "section_16": {
             "artifact_count": len(SECTION_16_ARTIFACTS),
             "expected_artifacts": list(SECTION_16_ARTIFACTS),

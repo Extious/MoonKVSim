@@ -219,11 +219,12 @@ def _inspect_parquet_fd(
     *,
     pyarrow: ModuleType,
     parquet: ModuleType,
-) -> tuple[str, int]:
+) -> tuple[str, int, dict[str, object]]:
     digest = _sha256_fd(descriptor)
     os.lseek(descriptor, 0, os.SEEK_SET)
     duplicate = os.dup(descriptor)
     declared_rows = -1
+    resource_ids: set[str] = set()
     try:
         with os.fdopen(duplicate, "rb", closefd=True) as stream:
             duplicate = -1
@@ -270,6 +271,12 @@ def _inspect_parquet_fd(
                             raise ComparisonError(
                                 f"{label} contains nulls in non-nullable {expected.name}"
                             )
+                    _validate_parquet_content(
+                        name,
+                        batch,
+                        label,
+                        resource_ids=resource_ids,
+                    )
                 if observed_rows != declared_rows:
                     raise ComparisonError(
                         f"{label} Parquet row count is unreadable or inconsistent: "
@@ -285,7 +292,86 @@ def _inspect_parquet_fd(
         if duplicate >= 0:
             os.close(duplicate)
     _assert_fd_unchanged(descriptor, initial, label)
-    return digest, declared_rows
+    return digest, declared_rows, {"resource_ids": sorted(resource_ids)}
+
+
+def _validate_parquet_content(
+    name: str,
+    batch: Any,
+    label: str,
+    *,
+    resource_ids: set[str],
+) -> None:
+    """Validate completeness claims against decoded rows, not JSON summaries."""
+
+    def values(column: str) -> list[Any]:
+        index = batch.schema.get_field_index(column)
+        if index < 0:
+            raise ComparisonError(f"{label} omits required content column {column}")
+        return list(batch.column(index).to_pylist())
+
+    if name == "resource-ledger-snapshots.parquet":
+        observed_ids = values("resource_id")
+        complete = values("snapshot_complete")
+        unknown = values("unknown_account_bytes")
+        known = values("known_account_bytes")
+        capacity = values("capacity_bytes")
+        for row_index, resource_id in enumerate(observed_ids):
+            if not isinstance(resource_id, str) or not resource_id:
+                raise ComparisonError(f"{label} row {row_index} has an invalid resource_id")
+            resource_ids.add(resource_id)
+            if complete[row_index] is not True or unknown[row_index] != 0:
+                raise ComparisonError(
+                    f"{label} row {row_index} contains an incomplete capacity snapshot"
+                )
+            if known[row_index] != capacity[row_index]:
+                raise ComparisonError(
+                    f"{label} row {row_index} complete snapshot does not cover capacity"
+                )
+    elif name == "request-metrics.parquet":
+        timing_complete = values("timing_complete")
+        ttft_complete = values("ttft_complete")
+        tpot_complete = values("tpot_complete")
+        e2e_complete = values("e2e_complete")
+        missing_evidence = values("missing_evidence")
+        observed_api_time = values("observed_api_time_used_as_simulated_time")
+        for row_index in range(batch.num_rows):
+            if (
+                timing_complete[row_index] is not True
+                or ttft_complete[row_index] is not True
+                or tpot_complete[row_index] is not True
+                or e2e_complete[row_index] is not True
+                or missing_evidence[row_index] != []
+            ):
+                raise ComparisonError(
+                    f"{label} row {row_index} contains incomplete request timing"
+                )
+            if observed_api_time[row_index] is not False:
+                raise ComparisonError(
+                    f"{label} row {row_index} uses observed API time as simulated time"
+                )
+    elif name == "workflow-metrics.parquet":
+        timing_complete = values("timing_complete")
+        ttft_complete = values("ttft_complete")
+        tpot_complete = values("tpot_complete")
+        wct_complete = values("wct_complete")
+        missing_evidence = values("missing_evidence")
+        observed_api_time = values("observed_api_time_used_as_simulated_time")
+        for row_index in range(batch.num_rows):
+            if (
+                timing_complete[row_index] is not True
+                or ttft_complete[row_index] is not True
+                or tpot_complete[row_index] is not True
+                or wct_complete[row_index] is not True
+                or missing_evidence[row_index] != []
+            ):
+                raise ComparisonError(
+                    f"{label} row {row_index} contains incomplete workflow timing"
+                )
+            if observed_api_time[row_index] is not False:
+                raise ComparisonError(
+                    f"{label} row {row_index} uses observed API time as simulated time"
+                )
 
 
 def _inspect_journal_fd(
@@ -561,6 +647,7 @@ def _row_count_mapping(value: object, label: str) -> dict[str, int]:
 def _validate_json_contracts(
     documents: Mapping[str, Mapping[str, Any]],
     parquet_rows: Mapping[str, int],
+    parquet_facts: Mapping[str, Mapping[str, object]],
     journal_count: int,
     run_label: str,
 ) -> str:
@@ -670,6 +757,16 @@ def _validate_json_contracts(
         raise ComparisonError(f"{run_label}/capacity-audit.json delta replay is invalid")
     if capacity.get("flow_byte_conservation_valid") is not True:
         raise ComparisonError(f"{run_label}/capacity-audit.json flow conservation is invalid")
+    if capacity.get("snapshot_state_complete") is not True:
+        raise ComparisonError(f"{run_label}/capacity-audit.json snapshot state is incomplete")
+    incomplete_resource_ids = _list(
+        capacity.get("incomplete_resource_ids"),
+        f"{run_label}/capacity-audit.json.incomplete_resource_ids",
+    )
+    if incomplete_resource_ids:
+        raise ComparisonError(
+            f"{run_label}/capacity-audit.json declares incomplete resource IDs"
+        )
     capacity_delta_count = _nonnegative_int(
         capacity.get("resource_delta_count"),
         f"{run_label}/capacity-audit.json.resource_delta_count",
@@ -682,6 +779,20 @@ def _validate_json_contracts(
         raise ComparisonError(f"{run_label}/capacity-audit.json resource-delta count differs")
     if capacity_flow_count != parquet_rows["flow-rate-events.parquet"]:
         raise ComparisonError(f"{run_label}/capacity-audit.json flow count differs")
+    capacity_resource_count = _nonnegative_int(
+        capacity.get("resource_count"),
+        f"{run_label}/capacity-audit.json.resource_count",
+    )
+    snapshot_facts = _mapping(
+        parquet_facts.get("resource-ledger-snapshots.parquet"),
+        f"{run_label}/resource-ledger-snapshots.parquet facts",
+    )
+    snapshot_resource_ids = _list(
+        snapshot_facts.get("resource_ids"),
+        f"{run_label}/resource-ledger-snapshots.parquet resource IDs",
+    )
+    if capacity_resource_count != len(snapshot_resource_ids):
+        raise ComparisonError(f"{run_label}/capacity-audit.json resource count differs")
 
     section = _mapping(run_audit.get("section_16"), f"{run_label}/run-audit.json.section_16")
     artifact_count = _nonnegative_int(
@@ -751,8 +862,10 @@ def _validate_json_contracts(
     workflow_complete = _nonnegative_int(
         timing.get("workflow_complete_count"), "workflow complete count"
     )
-    if request_complete > request_count or workflow_complete > workflow_count:
-        raise ComparisonError(f"{run_label}/run-audit.json timing complete counts exceed totals")
+    if request_complete != request_count:
+        raise ComparisonError(f"{run_label}/run-audit.json request timing is incomplete")
+    if workflow_complete != workflow_count:
+        raise ComparisonError(f"{run_label}/run-audit.json workflow timing is incomplete")
     if (
         timing.get("missing_values_are_null") is not True
         or timing.get("completeness_and_evidence_flags_present") is not True
@@ -787,12 +900,16 @@ def _validate_json_contracts(
     )
     if summary_request_complete != request_complete:
         raise ComparisonError(f"{run_label}/summary.json request timing count differs")
+    if summary_request_complete != summary_request_count:
+        raise ComparisonError(f"{run_label}/summary.json request timing is incomplete")
     summary_workflow_complete = _nonnegative_int(
         summary.get("workflow_timing_complete_count"),
         f"{run_label}/summary.json.workflow_timing_complete_count",
     )
     if summary_workflow_complete != workflow_complete:
         raise ComparisonError(f"{run_label}/summary.json workflow timing count differs")
+    if summary_workflow_complete != summary_workflow_count:
+        raise ComparisonError(f"{run_label}/summary.json workflow timing is incomplete")
     if summary.get("evidence_class") != "E2" or summary.get("formal_use_allowed") is not False:
         raise ComparisonError(f"{run_label}/summary.json evidence boundary differs")
     if summary.get("observed_api_time_used_as_simulated_time") is not False:
@@ -831,6 +948,7 @@ def inspect_run(path: Path) -> dict[str, object]:
         pyarrow, parquet = _load_pyarrow()
         identities: dict[str, str] = {}
         parquet_rows: dict[str, int] = {}
+        parquet_facts: dict[str, Mapping[str, object]] = {}
         documents: dict[str, Mapping[str, Any]] = {}
         journal_count: int | None = None
         for name in sorted(expected):
@@ -838,7 +956,7 @@ def inspect_run(path: Path) -> dict[str, object]:
             descriptor, initial = _open_regular_at(directory_fd, name, str(run))
             try:
                 if name in SECTION_16_PARQUET_ARTIFACTS:
-                    digest, row_count = _inspect_parquet_fd(
+                    digest, row_count, facts = _inspect_parquet_fd(
                         descriptor,
                         initial,
                         name,
@@ -848,6 +966,7 @@ def inspect_run(path: Path) -> dict[str, object]:
                     )
                     identities[name] = digest
                     parquet_rows[name] = row_count
+                    parquet_facts[name] = facts
                 elif name == "event-journal.jsonl":
                     digest, journal_count = _inspect_journal_fd(
                         descriptor,
@@ -867,6 +986,7 @@ def inspect_run(path: Path) -> dict[str, object]:
         source_fingerprint = _validate_json_contracts(
             documents,
             parquet_rows,
+            parquet_facts,
             journal_count,
             str(run),
         )

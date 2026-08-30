@@ -18,6 +18,7 @@ from moonkvsim.output.section16 import (
     build_section_16_projection,
 )
 from moonkvsim.simulation.journal import EventJournal
+from moonkvsim.simulation.ledger import CapacityLedger, CapacityResourceKind
 
 
 def _load_script() -> ModuleType:
@@ -139,6 +140,13 @@ def _write_run(path: Path, *, seed: str = "a", status: str = "PASS") -> str:
     projection = build_section_16_projection(
         journal=journal,
         executions=(execution,),
+        initial_ledgers={
+            "gpu-0.hbm": CapacityLedger(
+                resource_id="gpu-0.hbm",
+                resource_kind=CapacityResourceKind.GPU_HBM,
+                capacity_bytes=1024,
+            )
+        },
         runner_documents={
             "trace-audit.json": {"status": status},
             "run-audit.json": {
@@ -201,6 +209,24 @@ def _rewrite_empty_parquet(path: Path, defect: str) -> None:
     schema = pa.schema(fields, metadata=metadata)
     pq.write_table(
         pa.Table.from_arrays(arrays, schema=schema),
+        path,
+        compression="NONE",
+        use_dictionary=False,
+        write_statistics=False,
+    )
+
+
+def _rewrite_first_parquet_value(path: Path, column: str, value: object) -> None:
+    table = pq.read_table(path)
+    assert table.num_rows > 0
+    index = table.schema.get_field_index(column)
+    assert index >= 0
+    values = table.column(index).to_pylist()
+    values[0] = value
+    replacement = pa.chunked_array([pa.array(values, type=table.schema.field(index).type)])
+    changed = table.set_column(index, table.schema.field(index), replacement)
+    pq.write_table(
+        changed,
         path,
         compression="NONE",
         use_dictionary=False,
@@ -344,6 +370,118 @@ def test_compare_rejects_declared_parquet_row_count_drift(tmp_path: Path) -> Non
 
     with pytest.raises(SCRIPT.ComparisonError, match="row counts differ"):
         SCRIPT.compare_runs(first, second)
+
+
+@pytest.mark.parametrize(
+    ("snapshot_state_complete", "incomplete_resource_ids", "message"),
+    [
+        (False, [], "snapshot state is incomplete"),
+        (True, ["gpu-0.hbm"], "declares incomplete resource IDs"),
+    ],
+)
+def test_inspect_rejects_incomplete_capacity_snapshot(
+    tmp_path: Path,
+    snapshot_state_complete: bool,
+    incomplete_resource_ids: list[str],
+    message: str,
+) -> None:
+    run = tmp_path / "run"
+    _write_run(run)
+    capacity = _read_json(run / "capacity-audit.json")
+    capacity["snapshot_state_complete"] = snapshot_state_complete
+    capacity["incomplete_resource_ids"] = incomplete_resource_ids
+    _write_json(run / "capacity-audit.json", capacity)
+
+    with pytest.raises(SCRIPT.ComparisonError, match=message):
+        SCRIPT.inspect_run(run)
+
+
+def test_inspect_rejects_incomplete_workflow_timing(tmp_path: Path) -> None:
+    run = tmp_path / "run"
+    _write_run(run)
+    run_audit = _read_json(run / "run-audit.json")
+    run_audit["timing_metrics"]["workflow_complete_count"] = 0
+    _write_json(run / "run-audit.json", run_audit)
+    summary = _read_json(run / "summary.json")
+    summary["workflow_timing_complete_count"] = 0
+    _write_json(run / "summary.json", summary)
+
+    with pytest.raises(SCRIPT.ComparisonError, match="workflow timing is incomplete"):
+        SCRIPT.inspect_run(run)
+
+
+@pytest.mark.parametrize(
+    ("artifact", "column", "value", "message"),
+    [
+        (
+            "resource-ledger-snapshots.parquet",
+            "snapshot_complete",
+            False,
+            "incomplete capacity snapshot",
+        ),
+        (
+            "resource-ledger-snapshots.parquet",
+            "unknown_account_bytes",
+            1,
+            "incomplete capacity snapshot",
+        ),
+        (
+            "request-metrics.parquet",
+            "timing_complete",
+            False,
+            "incomplete request timing",
+        ),
+        (
+            "workflow-metrics.parquet",
+            "timing_complete",
+            False,
+            "incomplete workflow timing",
+        ),
+    ],
+)
+def test_inspect_rejects_incomplete_parquet_rows_even_when_json_claims_pass(
+    tmp_path: Path,
+    artifact: str,
+    column: str,
+    value: object,
+    message: str,
+) -> None:
+    run = tmp_path / "run"
+    _write_run(run)
+    _rewrite_first_parquet_value(run / artifact, column, value)
+
+    with pytest.raises(SCRIPT.ComparisonError, match=message):
+        SCRIPT.inspect_run(run)
+
+
+def test_inspect_cross_checks_capacity_resource_count_with_snapshot_rows(
+    tmp_path: Path,
+) -> None:
+    run = tmp_path / "run"
+    _write_run(run)
+    capacity = _read_json(run / "capacity-audit.json")
+    capacity["resource_count"] += 1
+    _write_json(run / "capacity-audit.json", capacity)
+    run_audit = _read_json(run / "run-audit.json")
+    run_audit["capacity"]["resource_count"] += 1
+    _write_json(run / "run-audit.json", run_audit)
+
+    with pytest.raises(SCRIPT.ComparisonError, match="resource count differs"):
+        SCRIPT.inspect_run(run)
+
+
+def test_inspect_rejects_incomplete_request_timing_json_claim(tmp_path: Path) -> None:
+    run = tmp_path / "run"
+    _write_run(run)
+    run_audit = _read_json(run / "run-audit.json")
+    run_audit["timing_metrics"]["request_complete_count"] = 0
+    _write_json(run / "run-audit.json", run_audit)
+    summary = _read_json(run / "summary.json")
+    summary["request_timing_complete_count"] = 0
+    _write_json(run / "summary.json", summary)
+
+    with pytest.raises(SCRIPT.ComparisonError, match="request timing is incomplete"):
+        SCRIPT.inspect_run(run)
 
 
 def test_compare_rejects_noncanonical_or_unparseable_journal(tmp_path: Path) -> None:

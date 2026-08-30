@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from moonkvsim.integration.vllm.differential import (
+    EXPECTED_INTERPRETER,
     GENERATOR_RELATIVE_PATH,
     GOLDEN_EVIDENCE_CLASS,
     GOLDEN_RELATIVE_PATH,
@@ -19,6 +20,21 @@ from moonkvsim.integration.vllm.differential import (
     load_vllm_scheduler_golden,
     repository_root,
 )
+
+
+def test_golden_verification_does_not_require_capture_venv_symlink(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    original_resolve = Path.resolve
+
+    def resolve_without_capture_venv(path: Path, strict: bool = False) -> Path:
+        if path == EXPECTED_INTERPRETER:
+            return path.absolute()
+        return original_resolve(path, strict=strict)
+
+    monkeypatch.setattr(Path, "resolve", resolve_without_capture_venv)
+
+    load_vllm_scheduler_golden()
 
 
 def test_pinned_vllm_scheduler_block_golden_matches_moonkvsim_exactly() -> None:

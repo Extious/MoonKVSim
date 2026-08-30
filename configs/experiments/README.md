@@ -108,16 +108,24 @@ uv run python scripts/run_vanilla_failure_trace_e2.py \
 `vanilla-weka-failure-e2-unresolved.template.json` is deliberately not a
 harness config: `runnable=false`, its timestamp and target contain literal
 `UNRESOLVED` sentinels, and strict loading rejects it. One clean,
-source-frozen no-failure diagnostic at commit `a094e9542ed6ab36d3d39e8ac5a543947ca70709`
-executed all 27 selected e094 spans and published a PASS 19-artifact E2 bundle.
-That bundle still reports `workflow_timing_complete_count=0` and
-`snapshot_state_complete=false`; PASS does not mean every projection view is
-complete.
-The deterministic selector used that single uncalibrated diagnostic to produce
+source-frozen diagnostic series at commit `2f4ffb8570bfaad24ea27d288e545a7351291e78`
+executed no-failure, near-128K, and fixed-failure pairs byte-identically. The
+corrected failure pair fenced and rerouted only the one active route; seven
+already finished routes were excluded. These bundles predate the final
+Section-16 completeness change and are regression evidence, not tag acceptance.
+The deterministic selector produced
 `reference/vanilla-weka-failure-point-selection.json` and the checked-in fixed
-failure config above. This is selector discovery, not repeated acceptance or
-E3/E4/E5 evidence. No accepted failure run or repeated no-failure/failure pair
-is claimed here.
+failure config above.
+
+The current projection emits pristine timestamp-zero capacity ledgers for every
+declared resource, including untouched accounts/resources. Cross-request TPOT
+is explicitly not applicable instead of being treated as missing; TTFT and WCT
+still require complete simulated boundaries. The strict comparator now rejects
+any bundle with an incomplete capacity snapshot, a non-empty incomplete-resource
+list, incomplete request/workflow timing, or contradictory decoded Parquet row
+flags. Final acceptance therefore requires all
+six bundles to be rerun on one clean final commit and compared there; no existing
+diagnostic bundle is promoted automatically.
 
 ## Caller-owned transfer resource plans
 
