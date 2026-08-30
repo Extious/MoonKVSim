@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from moonkvsim.aegiskv.experiment import (
     CellSpec,
     ModelParameters,
@@ -10,6 +12,8 @@ from moonkvsim.aegiskv.experiment import (
     ablation_variants,
     core_variants,
     derive_failure_schedule,
+    qwen3_8b_dp_deployment,
+    qwen3_8b_dp_only_contract,
     run_study_cell,
     sensitivity_variants,
     store_node_sensitivity_variants,
@@ -42,6 +46,32 @@ def test_protocol_enumerates_seven_systems_and_declared_variants() -> None:
     store_nodes = store_node_sensitivity_variants()
     assert [item.parameters.store_node_count for item in store_nodes] == [1, 2, 4]
     assert {item.suite for item in store_nodes} == {"store_node_sensitivity"}
+
+
+def test_qwen3_8b_dp_only_scope_is_fixed_and_machine_auditable() -> None:
+    contract = qwen3_8b_dp_only_contract()
+    deployment = ModelParameters(dp_count=8).to_dict()["model_deployment"]
+
+    assert contract["model"] == {
+        "id": "Qwen/Qwen3-8B",
+        "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+        "config_sha256": (
+            "f7c4eadfbbf522470667b797a3c89be2524832d2d599797248dc304fff447c30"
+        ),
+        "other_models_allowed": False,
+    }
+    assert contract["parallelism"] == {
+        "only_varied_dimension": "data_parallel_size",
+        "allowed_data_parallel_sizes": [2, 4, 8],
+        "tensor_parallel_size": 1,
+        "pipeline_parallel_size": 1,
+        "tensor_parallel_sensitivity_allowed": False,
+        "pipeline_parallel_sensitivity_allowed": False,
+    }
+    assert deployment == qwen3_8b_dp_deployment(8)
+    assert deployment["parallelism"]["data_parallel_size"] == 8
+    with pytest.raises(ValueError, match="dp_count"):
+        ModelParameters(dp_count=16)
 
 
 def test_store_transport_paths_charge_host_staging_only_when_explicit() -> None:

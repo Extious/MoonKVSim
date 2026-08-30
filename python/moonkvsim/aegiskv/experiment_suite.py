@@ -30,6 +30,8 @@ from moonkvsim.aegiskv.experiment import (
     ablation_variants,
     core_variants,
     derive_failure_schedule,
+    qwen3_8b_dp_deployment,
+    qwen3_8b_dp_only_contract,
     run_study_cell,
     sensitivity_variants,
 )
@@ -434,6 +436,7 @@ def build_protocol(selection: SuiteSelection, seeds: Sequence[int]) -> dict[str,
         "schema": f"{SCHEMA_VERSION}.protocol",
         "status": "PASS",
         "evidence": EVIDENCE_BOUNDARY,
+        "model_deployment_contract": qwen3_8b_dp_only_contract(),
         "global_clock": "single_global_virtual_clock",
         "failure_types": ["GPU_FAILURE"],
         "physical_or_slurm_path": False,
@@ -550,6 +553,9 @@ def _validate_result(result: StudyRunResult, spec: CellSpec) -> None:
         raise ExperimentSuiteError(f"result evidence boundary failed for {spec.run_id}")
     if payload.get("variant_fingerprint") != spec.variant.fingerprint:
         raise ExperimentSuiteError(f"variant fingerprint drifted for {spec.run_id}")
+    expected_deployment = qwen3_8b_dp_deployment(spec.variant.parameters.dp_count)
+    if payload.get("model_deployment") != expected_deployment:
+        raise ExperimentSuiteError(f"model/deployment scope drifted for {spec.run_id}")
     if payload.get("context_bucket") != spec.context_bucket:
         raise ExperimentSuiteError(f"context bucket drifted for {spec.run_id}")
     if payload.get("scenario") != spec.scenario.value:
@@ -615,6 +621,7 @@ def _row_for(
         "repetition": spec.repetition,
         "fresh_global_des_instance": True,
         "evidence": EVIDENCE_BOUNDARY,
+        "model_deployment": qwen3_8b_dp_deployment(spec.variant.parameters.dp_count),
         "bindings": {
             **matched_input,
             "matched_input_fingerprint": matched_input_fingerprint,
@@ -1108,6 +1115,7 @@ def run_e2_matrix(
         "schema": f"{SCHEMA_VERSION}.provenance",
         "status": "PASS",
         "evidence": EVIDENCE_BOUNDARY,
+        "model_deployment_contract": qwen3_8b_dp_only_contract(),
         "implementation": implementation.to_dict(),
         "implementation_fingerprint": implementation.fingerprint,
         "workload": workload.to_dict(),
@@ -1193,6 +1201,7 @@ def run_explicit_e2_matrix(
         "status": "PASS",
         "protocol_id": protocol_id,
         "evidence": EVIDENCE_BOUNDARY,
+        "model_deployment_contract": qwen3_8b_dp_only_contract(),
         "global_clock": "single_global_virtual_clock",
         "physical_or_slurm_path": False,
         "failure_types": ["GPU_FAILURE"],
@@ -1341,6 +1350,7 @@ def run_explicit_e2_matrix(
         "schema": f"{SCHEMA_VERSION}.focused_provenance",
         "status": "PASS",
         "evidence": EVIDENCE_BOUNDARY,
+        "model_deployment_contract": qwen3_8b_dp_only_contract(),
         "implementation": implementation.to_dict(),
         "implementation_fingerprint": implementation.fingerprint,
         "workload": workload.to_dict(),

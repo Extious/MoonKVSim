@@ -15,6 +15,8 @@ from moonkvsim.aegiskv.experiment import (
     Scenario,
     StudyRunResult,
     core_variants,
+    qwen3_8b_dp_deployment,
+    qwen3_8b_dp_only_contract,
     transport_sensitivity_variants,
 )
 from moonkvsim.aegiskv.experiment_statistics import confidence_summary
@@ -70,6 +72,7 @@ def _payload(spec: CellSpec) -> dict[str, Any]:
             )
         },
         "global_clock": {"kind": "single_global_virtual_clock"},
+        "model_deployment": qwen3_8b_dp_deployment(spec.variant.parameters.dp_count),
         "variant_fingerprint": spec.variant.fingerprint,
         "context_bucket": spec.context_bucket,
         "scenario": spec.scenario.value,
@@ -146,6 +149,7 @@ def test_protocol_defines_exact_default_cross_products() -> None:
     assert all_suites["suite_catalog"]["sensitivity"]["default_expected_row_count"] == 1_620
     assert core["execution"]["silent_fallback_allowed"] is False
     assert core["evidence"] == EVIDENCE_BOUNDARY
+    assert core["model_deployment_contract"] == qwen3_8b_dp_only_contract()
 
 
 def test_student_t_summary_uses_seed_count_not_determinism_repetitions() -> None:
@@ -238,6 +242,11 @@ def test_core_publication_has_420_rows_and_rejects_existing_target(
     assert rows == sorted(rows, key=lambda row: row["run_id"])
     assert all(row["evidence"] == EVIDENCE_BOUNDARY for row in rows)
     assert all(row["variant_config"] for row in rows)
+    assert all(
+        row["model_deployment"]
+        == qwen3_8b_dp_deployment(row["variant_config"]["parameters"]["dp_count"])
+        for row in rows
+    )
     assert all(pair["payload_sha256_exact_match"] for pair in pairs)
     assert all(pair["journal_sha256_exact_match"] for pair in pairs)
     assert completeness["status"] == "PASS"

@@ -69,6 +69,18 @@ from moonkvsim.workload.causal_trace import (
 
 SOURCE_BLOCK_TOKENS: Final = 64
 KV_BYTES_PER_SOURCE_BLOCK: Final = 9_437_184
+QWEN3_8B_MODEL_ID: Final = "Qwen/Qwen3-8B"
+QWEN3_8B_MODEL_REVISION: Final = "b968826d9c46dd6066d109eabc6255188de91218"
+QWEN3_8B_CONFIG_SHA256: Final = (
+    "f7c4eadfbbf522470667b797a3c89be2524832d2d599797248dc304fff447c30"
+)
+QWEN3_8B_NATIVE_LAYOUT_FINGERPRINT: Final = (
+    "616330f7a5e168edfad90d6e53dc8b754ef3f4c78925e80a49516e4f3f3d8d4f"
+)
+QWEN3_8B_YARN_128K_LAYOUT_FINGERPRINT: Final = (
+    "d9863189bf94c967e18d4926ecb1fc88cc26e7dcb1553eb69972afaff7dc7d4d"
+)
+ALLOWED_DP_COUNTS: Final = (2, 4, 8)
 GIB: Final = 1024**3
 FLOW_SLICE_POLICY_CHUNKS: Final = 8
 HBM_MODEL_WEIGHTS_ACCOUNT: Final = "MODEL_WEIGHTS"
@@ -119,6 +131,45 @@ class EvictionKind(StrEnum):
     LFU = "lfu"
     RANDOM_STABLE = "random_stable"
     SLACK_LANDLORD_VALUE = "slack_landlord_value"
+
+
+def qwen3_8b_dp_only_contract() -> dict[str, Any]:
+    """Return the immutable-by-construction model/deployment experiment contract."""
+
+    return {
+        "scope_id": "qwen3-8b-dp-only-tp1-pp1-v1",
+        "model": {
+            "id": QWEN3_8B_MODEL_ID,
+            "revision": QWEN3_8B_MODEL_REVISION,
+            "config_sha256": QWEN3_8B_CONFIG_SHA256,
+            "other_models_allowed": False,
+        },
+        "kv_layout": {
+            "bytes_per_64_source_tokens": KV_BYTES_PER_SOURCE_BLOCK,
+            "native_tp1_pp1_fingerprint": QWEN3_8B_NATIVE_LAYOUT_FINGERPRINT,
+            "proposed_yarn_128k_tp1_pp1_fingerprint": (
+                QWEN3_8B_YARN_128K_LAYOUT_FINGERPRINT
+            ),
+            "evidence": "source_derived_not_physically_calibrated",
+        },
+        "parallelism": {
+            "only_varied_dimension": "data_parallel_size",
+            "allowed_data_parallel_sizes": list(ALLOWED_DP_COUNTS),
+            "tensor_parallel_size": 1,
+            "pipeline_parallel_size": 1,
+            "tensor_parallel_sensitivity_allowed": False,
+            "pipeline_parallel_sensitivity_allowed": False,
+        },
+    }
+
+
+def qwen3_8b_dp_deployment(dp_count: int) -> dict[str, Any]:
+    """Bind one AegisKV cell to the fixed Qwen3-8B DP-only contract."""
+
+    contract = qwen3_8b_dp_only_contract()
+    parallelism = cast(dict[str, Any], contract["parallelism"])
+    parallelism["data_parallel_size"] = dp_count
+    return contract
 
 
 @dataclass(frozen=True, slots=True)
@@ -291,6 +342,10 @@ class ModelParameters:
         )
         if any(type(item) is not int or item <= 0 for item in positive):
             raise ValueError("modeled parameters must be positive integers")
+        if self.dp_count not in ALLOWED_DP_COUNTS:
+            raise ValueError(
+                f"Qwen3-8B DP-only experiments require dp_count in {ALLOWED_DP_COUNTS}"
+            )
         if (
             self.model_weights_bytes_per_gpu
             + self.runtime_fixed_bytes_per_gpu
@@ -313,6 +368,7 @@ class ModelParameters:
 
     def to_dict(self) -> dict[str, Any]:
         return {
+            "model_deployment": qwen3_8b_dp_deployment(self.dp_count),
             "dp_count": self.dp_count,
             "store_node_count": self.store_node_count,
             "physical_hbm_bytes_per_gpu": self.physical_hbm_bytes_per_gpu,
@@ -3912,6 +3968,7 @@ class _StudyRuntime:
                 "cuda_used": False,
                 "network_io_used": False,
             },
+            "model_deployment": qwen3_8b_dp_deployment(self.parameters.dp_count),
             "resource_model": {
                 "peer_hbm_resources": list(sorted(self.peer_pools)),
                 "store_dram_segments": list(self.store_segment_ids),
