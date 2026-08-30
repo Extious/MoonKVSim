@@ -298,8 +298,14 @@ class FlowContentionModel:
                 for resource_id, remaining in residual.items()
                 if remaining <= _EPSILON_RATE
             }
-            if not saturated:
-                saturated.add(bottleneck)
+            # The selected bottleneck is mathematically saturated even when
+            # floating-point division/multiplication leaves a few ulps of
+            # positive residual.  Previously, an already-saturated resource
+            # from an earlier round could keep this set non-empty and prevent
+            # the current bottleneck from being added.  If the remaining flows
+            # did not use that earlier resource, the allocator then falsely
+            # reported that it made no progress.
+            saturated.add(bottleneck)
             newly_satisfied = {
                 flow_id
                 for flow_id in unsatisfied

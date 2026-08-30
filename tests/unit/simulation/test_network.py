@@ -78,6 +78,24 @@ def test_many_flows_at_large_rate_trim_only_float_roundoff() -> None:
         model._assert_rate_invariants()
 
 
+def test_later_bottleneck_progresses_past_unrelated_saturated_resource() -> None:
+    capacity = 25_000_000_000.0
+    model = FlowContentionModel(
+        [RateResource("small", 1.0), RateResource("large", capacity)]
+    )
+    model.add_flow(flow("small-only", path=("small",)), now_ns=0)
+
+    for index in range(11):
+        model.add_flow(flow(f"large-{index:02d}", path=("large",)), now_ns=0)
+
+    rates = model.rates()
+    assert rates["small-only"] == 1.0
+    assert math.fsum(rates[f"large-{index:02d}"] for index in range(11)) <= capacity
+    assert math.fsum(rates[f"large-{index:02d}"] for index in range(11)) == pytest.approx(
+        capacity
+    )
+
+
 def test_add_flow_recompute_failure_restores_previous_state(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
