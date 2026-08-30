@@ -178,13 +178,26 @@ closure and paper-ready evidence remain open.
   report conservative two-sided 95% Student-t intervals. Fourteen preliminary
   SVGs (F1--F11 and F13--F15) pass provenance audit; F12 is explicitly excluded
   because physical calibration is outside the requested simulation-only scope.
+- M9 fluid-core follow-up: seven core systems over the same five buckets and
+  two scenarios, two seeds, and exact A/B repetitions produced 280 rows and
+  140 pairs. Transfers now use sliced work-conserving weighted max-min fluid
+  contention; every GPU exposes a closed event-boundary HBM account stack.
+  Three focused SVGs expose HBM occupancy, fluid resource utilization, and
+  recovery reserve/staging without upgrading the E2 evidence class.
 
 The canonical matrix is
 `benchmark/AegisKV/experiments/e2-initial-v1/`; the figure set is
 `benchmark/AegisKV/experiments/figures/e2-initial-v1/`; and the bounded initial
 interpretation is in `benchmark/AegisKV/experiments/INITIAL_REPORT.md`.
 
+The fluid-core matrix is
+`benchmark/AegisKV/experiments/e2-fluid-core-v2/`; its focused figures are in
+`benchmark/AegisKV/experiments/figures/e2-fluid-core-v2/`; and its bounded
+interpretation is in `benchmark/AegisKV/experiments/FLUID_CORE_V2_REPORT.md`.
+
 This initial release is not paper-ready. The current experiment harness still
-uses aligned resource-interval contention rather than the full topology-sliced
-work-conserving fluid backend, does not model every TP/PP/Store-node dimension,
-and does not establish physical timing accuracy.
+does not model every TP/PP/Store-node sensitivity dimension and does not
+establish physical timing accuracy. The branch-local harness now supports
+explicit GDR and Host-staged Store paths with Host DRAM staging/source-pin
+transactions, but those new transport modes still require a separately frozen
+matched matrix before they may be interpreted as results.

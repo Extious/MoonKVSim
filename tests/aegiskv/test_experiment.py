@@ -14,6 +14,7 @@ from moonkvsim.aegiskv.experiment import (
     sensitivity_variants,
 )
 from moonkvsim.aegiskv.experiment_workload import load_experiment_records
+from moonkvsim.store.transfer_engine import TransportKind
 
 
 def _committed_records() -> list[dict[str, object]]:
@@ -29,6 +30,57 @@ def test_protocol_enumerates_seven_systems_and_declared_variants() -> None:
     assert {item.suite for item in core_variants()} == {"core"}
     assert {item.suite for item in ablation_variants()} == {"ablation"}
     assert {item.suite for item in sensitivity_variants()} == {"sensitivity"}
+
+
+def test_store_transport_paths_charge_host_staging_only_when_explicit() -> None:
+    records = _committed_records()
+    for transport in (
+        TransportKind.RDMA_GDR,
+        TransportKind.RDMA_HOST_STAGED,
+        TransportKind.TCP_HOST_STAGED,
+    ):
+        parameters = ModelParameters(store_transport=transport)
+        result = run_study_cell(
+            records,
+            CellSpec(
+                variant=core_variants(parameters)[3],
+                context_bucket="8k",
+                scenario=Scenario.NO_FAILURE,
+                seed=9,
+                repetition="A",
+            ),
+        )
+        store_transfers = [
+            item
+            for item in result.representative["transfers"]
+            if item["cause"].startswith("AEGIS_STORE_DRAM_")
+        ]
+        assert store_transfers
+        assert {item["transport"] for item in store_transfers} == {transport.value}
+        resource_cost = result.payload["metrics"]["resource_cost"]
+        assert resource_cost["source_pin_acquire_count"] >= len(store_transfers)
+        assert resource_cost["source_pin_count_final"] == 0
+        host_stacks = resource_cost["host_dram_staging_by_gpu"]
+        assert all(item["valid"] for item in host_stacks.values())
+        assert all(
+            item["final_accounts"]["TRANSFER_STAGING"] == 0
+            for item in host_stacks.values()
+        )
+        if transport is TransportKind.RDMA_GDR:
+            assert resource_cost["host_dram_staging_peak_bytes"] == 0
+            assert resource_cost["host_staging_acquire_count"] == 0
+            assert all(
+                item["source_host_staging_resource_id"] is None
+                and item["destination_host_staging_resource_id"] is None
+                for item in store_transfers
+            )
+        else:
+            assert resource_cost["host_dram_staging_peak_bytes"] > 0
+            assert resource_cost["host_staging_acquire_count"] == len(store_transfers)
+            assert all(
+                item["source_host_staging_resource_id"] is not None
+                for item in store_transfers
+            )
 
 
 def test_sensitivity_catalog_binds_fabric_and_control_delay_parameters() -> None:

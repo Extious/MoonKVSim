@@ -82,6 +82,7 @@ HBM_RECOVERY_RESERVED_ACCOUNT: Final = "RECOVERY_DEST_RESERVED"
 HBM_TRANSFER_STAGING_ACCOUNT: Final = "TRANSFER_STAGING"
 HBM_FRAGMENTATION_ACCOUNT: Final = "ALLOCATOR_FRAGMENTATION"
 HBM_UNATTRIBUTED_ACCOUNT: Final = "UNATTRIBUTED_RESERVE"
+HOST_TRANSFER_STAGING_ACCOUNT: Final = "TRANSFER_STAGING"
 AIMD_PARAMETERS: Final = AIMDParameters(
     minimum_fraction=Decimal("0.25"),
     maximum_fraction=Decimal("0.90"),
@@ -259,6 +260,9 @@ class ModelParameters:
     store_budget_bytes: int = 64 * GIB
     peer_bandwidth_bytes_per_second: int = 100_000_000_000
     store_bandwidth_bytes_per_second: int = 25_000_000_000
+    host_staging_bandwidth_bytes_per_second: int = 16_000_000_000
+    host_staging_capacity_bytes_per_node: int = 32 * GIB
+    store_transport: TransportKind = TransportKind.RDMA_GDR
     transfer_setup_ns: int = 250_000
     failure_detection_ns: int = 5_000_000
     reroute_ns: int = 1_000_000
@@ -275,6 +279,8 @@ class ModelParameters:
             self.store_budget_bytes,
             self.peer_bandwidth_bytes_per_second,
             self.store_bandwidth_bytes_per_second,
+            self.host_staging_bandwidth_bytes_per_second,
+            self.host_staging_capacity_bytes_per_node,
             self.transfer_setup_ns,
             self.failure_detection_ns,
             self.policy_chunk_tokens,
@@ -290,6 +296,12 @@ class ModelParameters:
             raise ValueError("fixed HBM accounts and Peer budget exceed physical HBM")
         if self.reroute_ns < 0:
             raise ValueError("reroute_ns must be non-negative")
+        if self.store_transport not in {
+            TransportKind.RDMA_GDR,
+            TransportKind.RDMA_HOST_STAGED,
+            TransportKind.TCP_HOST_STAGED,
+        }:
+            raise ValueError("Store transport must be a supported network path")
         if self.policy_chunk_tokens % SOURCE_BLOCK_TOKENS:
             raise ValueError("policy chunks must align to 64-token source blocks")
         if not 1 <= self.failure_progress_per_mille <= 999:
@@ -305,6 +317,13 @@ class ModelParameters:
             "store_budget_bytes": self.store_budget_bytes,
             "peer_bandwidth_bytes_per_second": self.peer_bandwidth_bytes_per_second,
             "store_bandwidth_bytes_per_second": self.store_bandwidth_bytes_per_second,
+            "host_staging_bandwidth_bytes_per_second": (
+                self.host_staging_bandwidth_bytes_per_second
+            ),
+            "host_staging_capacity_bytes_per_node": (
+                self.host_staging_capacity_bytes_per_node
+            ),
+            "store_transport": self.store_transport.value,
             "transfer_setup_ns": self.transfer_setup_ns,
             "failure_detection_ns": self.failure_detection_ns,
             "reroute_ns": self.reroute_ns,
@@ -1073,6 +1092,25 @@ class _StudyRuntime:
             ]
             for gpu_id, ledger in sorted(self.hbm_ledgers.items())
         }
+        self.host_staging_ledgers = {
+            gpu_id: CapacityLedger(
+                resource_id=f"host:{gpu_id}",
+                resource_kind=CapacityResourceKind.HOST_DRAM,
+                capacity_bytes=self.parameters.host_staging_capacity_bytes_per_node,
+                initial_accounts={HOST_TRANSFER_STAGING_ACCOUNT: 0},
+            )
+            for gpu_id in self.gpu_ids
+        }
+        self.host_staging_timelines = {
+            gpu_id: [
+                _capacity_ledger_snapshot(
+                    ledger,
+                    timestamp_ns=0,
+                    cause="INITIAL_HOST_DRAM_ACCOUNTS",
+                )
+            ]
+            for gpu_id, ledger in sorted(self.host_staging_ledgers.items())
+        }
         self.compute = {
             gpu_id: ConcurrencyResource(resource_id=f"{gpu_id}.compute", lanes=1)
             for gpu_id in self.gpu_ids
@@ -1088,6 +1126,15 @@ class _StudyRuntime:
                 f"{gpu_id}.hbm-rate": RateResource(
                     resource_id=f"{gpu_id}.hbm-rate",
                     capacity_bytes_per_second=hbm_path_rate,
+                )
+                for gpu_id in self.gpu_ids
+            },
+            **{
+                f"{gpu_id}.host-rate": RateResource(
+                    resource_id=f"{gpu_id}.host-rate",
+                    capacity_bytes_per_second=float(
+                        self.parameters.host_staging_bandwidth_bytes_per_second
+                    ),
                 )
                 for gpu_id in self.gpu_ids
             },
@@ -1160,6 +1207,10 @@ class _StudyRuntime:
         self.pending_puts: dict[str, _PendingPut] = {}
         self.pending_recovery_transfers: dict[str, _PendingRecoveryTransfer] = {}
         self.recovery_transfer_ids_by_span: dict[str, set[str]] = {}
+        self.active_host_staging: dict[str, tuple[str, int]] = {}
+        self.active_source_pins: dict[str, dict[str, Any]] = {}
+        self.source_pin_acquire_count = 0
+        self.host_staging_acquire_count = 0
         self.transfers: list[dict[str, Any]] = []
         self._transfer_by_id: dict[str, dict[str, Any]] = {}
         self.failure_events: list[dict[str, Any]] = []
@@ -1210,6 +1261,8 @@ class _StudyRuntime:
             or self.pending_puts
             or self.pending_recovery_transfers
             or self.recovery_transfer_ids_by_span
+            or self.active_host_staging
+            or self.active_source_pins
             or any(
                 record.get("status") == "PENDING" for record in self.transfers
             )
@@ -1238,6 +1291,10 @@ class _StudyRuntime:
             "gpu_hbm_timelines": {
                 gpu_id: timeline
                 for gpu_id, timeline in sorted(self.hbm_timelines.items())
+            },
+            "host_dram_timelines": {
+                gpu_id: timeline
+                for gpu_id, timeline in sorted(self.host_staging_timelines.items())
             },
             "peer_hbm_timeline": _aggregate_pool_timeline(self.peer_pools),
             "peer_hbm_timelines": {
@@ -1322,6 +1379,36 @@ class _StudyRuntime:
                 raise ExperimentError(f"transfer staging ownership diverged on {gpu_id}")
             if self.hbm_timelines[gpu_id][-1]["accounts"] != accounts:
                 raise ExperimentError(f"HBM event-boundary timeline is stale on {gpu_id}")
+        active_staging_by_resource: Counter[str] = Counter()
+        for resource_id, staging_bytes in self.active_host_staging.values():
+            active_staging_by_resource[resource_id] += staging_bytes
+        for gpu_id, ledger in self.host_staging_ledgers.items():
+            accounts = ledger.accounts
+            if set(accounts) != {HOST_TRANSFER_STAGING_ACCOUNT, FREE_ACCOUNT}:
+                raise ExperimentError(f"Host DRAM account stack is incomplete on {gpu_id}")
+            if sum(accounts.values()) != ledger.capacity_bytes:
+                raise ExperimentError(f"Host DRAM account stack does not conserve on {gpu_id}")
+            if accounts[HOST_TRANSFER_STAGING_ACCOUNT] != active_staging_by_resource[
+                ledger.resource_id
+            ]:
+                raise ExperimentError(f"Host staging ownership diverged on {gpu_id}")
+            if self.host_staging_timelines[gpu_id][-1]["accounts"] != accounts:
+                raise ExperimentError(
+                    f"Host DRAM event-boundary timeline is stale on {gpu_id}"
+                )
+        active_transfer_ids = {
+            transfer_id
+            for transfer_id, pending in self.pending_puts.items()
+            if pending.started and pending.task.status is TransferStatus.PENDING
+        } | {
+            transfer_id
+            for transfer_id, pending in self.pending_recovery_transfers.items()
+            if pending.task.status is TransferStatus.PENDING
+        }
+        if set(self.active_source_pins) != active_transfer_ids:
+            raise ExperimentError("source pin ownership diverged from active transfers")
+        if set(self.active_host_staging) - set(self.active_source_pins):
+            raise ExperimentError("Host staging exists without a source pin")
         for gpu_id, pool in self.peer_pools.items():
             if pool.occupied_bytes + pool.pending_bytes > pool.capacity_bytes:
                 raise ExperimentError(f"Peer-HBM capacity invariant failed on {gpu_id}")
@@ -1558,6 +1645,148 @@ class _StudyRuntime:
                 timestamp_ns=self.des.now_ns,
                 cause=cause,
             )
+        )
+
+    def _commit_host_staging_move(
+        self,
+        *,
+        resource_id: str,
+        account_from: str,
+        account_to: str,
+        delta_bytes: int,
+        cause: str,
+        transfer_id: str,
+    ) -> None:
+        if delta_bytes <= 0:
+            raise ExperimentError("Host staging transaction must move positive bytes")
+        try:
+            gpu_id, ledger = next(
+                (gpu_id, ledger)
+                for gpu_id, ledger in self.host_staging_ledgers.items()
+                if ledger.resource_id == resource_id
+            )
+        except StopIteration as error:
+            raise ExperimentError(f"unknown Host staging resource: {resource_id}") from error
+        transaction_id = self._next_id(f"host-transaction:{resource_id}:{cause}")
+        try:
+            ResourceTransaction(
+                event_id=transaction_id,
+                timestamp_ns=self.des.now_ns,
+                cause=cause,
+                allocation_deltas=[
+                    AllocationDelta(
+                        resource_id=resource_id,
+                        account_from=account_from,
+                        account_to=account_to,
+                        delta_bytes=delta_bytes,
+                        allocation_id=f"host-staging:{transfer_id}",
+                        transfer_id=transfer_id,
+                    )
+                ],
+            ).commit({resource_id: ledger}, journal=self.des.journal)
+        except (KeyError, ValueError, RuntimeError) as error:
+            raise ExperimentError(
+                f"Host staging transaction failed on {resource_id}: {cause}"
+            ) from error
+        self.host_staging_timelines[gpu_id].append(
+            _capacity_ledger_snapshot(
+                ledger,
+                timestamp_ns=self.des.now_ns,
+                cause=cause,
+            )
+        )
+
+    def _acquire_transfer_overlays(self, task: TransferTask) -> None:
+        transfer_id = task.metadata.transfer_id
+        if transfer_id in self.active_source_pins or transfer_id in self.active_host_staging:
+            raise ExperimentError("transfer overlays were acquired twice")
+        self.active_source_pins[transfer_id] = {
+            "source_resource_id": task.metadata.source.resource_id,
+            "object_id": task.metadata.object_id,
+            "bytes": task.metadata.total_bytes,
+            "acquired_ns": self.des.now_ns,
+        }
+        self.source_pin_acquire_count += 1
+        self.des.journal.append(
+            self.des.now_ns,
+            "AEGIS_TRANSFER_SOURCE_PIN_ACQUIRED",
+            {
+                "transfer_id": transfer_id,
+                **self.active_source_pins[transfer_id],
+                "capacity_double_charge": False,
+            },
+        )
+        staging_resource_ids = tuple(
+            resource_id
+            for resource_id in (
+                task.metadata.path.source_host_staging_resource_id,
+                task.metadata.path.destination_host_staging_resource_id,
+            )
+            if resource_id is not None
+        )
+        if not staging_resource_ids:
+            return
+        if len(staging_resource_ids) != 1:
+            del self.active_source_pins[transfer_id]
+            raise ExperimentError("Aegis E2 path requires exactly one Host staging resource")
+        staging_bytes = max(item.length_bytes for item in task.slices)
+        resource_id = staging_resource_ids[0]
+        try:
+            self._commit_host_staging_move(
+                resource_id=resource_id,
+                account_from=FREE_ACCOUNT,
+                account_to=HOST_TRANSFER_STAGING_ACCOUNT,
+                delta_bytes=staging_bytes,
+                cause="AEGIS_HOST_STAGING_ACQUIRE",
+                transfer_id=transfer_id,
+            )
+        except Exception:
+            del self.active_source_pins[transfer_id]
+            raise
+        self.active_host_staging[transfer_id] = (resource_id, staging_bytes)
+        self.host_staging_acquire_count += 1
+
+    def _release_transfer_overlays(self, task: TransferTask, *, reason: str) -> None:
+        transfer_id = task.metadata.transfer_id
+        pin = self.active_source_pins.pop(transfer_id, None)
+        if pin is None:
+            raise ExperimentError("transfer source pin is missing at release")
+        staging = self.active_host_staging.pop(transfer_id, None)
+        if staging is not None:
+            resource_id, staging_bytes = staging
+            self._commit_host_staging_move(
+                resource_id=resource_id,
+                account_from=HOST_TRANSFER_STAGING_ACCOUNT,
+                account_to=FREE_ACCOUNT,
+                delta_bytes=staging_bytes,
+                cause="AEGIS_HOST_STAGING_RELEASE",
+                transfer_id=transfer_id,
+            )
+        self.des.journal.append(
+            self.des.now_ns,
+            "AEGIS_TRANSFER_SOURCE_PIN_RELEASED",
+            {
+                "transfer_id": transfer_id,
+                **pin,
+                "reason": reason,
+                "capacity_double_charge": False,
+            },
+        )
+
+    def _bind_transfer_task_metadata(self, task: TransferTask) -> None:
+        record = self._transfer_by_id[task.metadata.transfer_id]
+        record.update(
+            {
+                "transport": task.metadata.path.transport.value,
+                "rate_resource_ids": list(task.metadata.path.rate_resource_ids),
+                "source_host_staging_resource_id": (
+                    task.metadata.path.source_host_staging_resource_id
+                ),
+                "destination_host_staging_resource_id": (
+                    task.metadata.path.destination_host_staging_resource_id
+                ),
+                "source_pin_required": True,
+            }
         )
 
     def _sync_peer_hbm_ledger(self, gpu_id: str, *, cause: str) -> None:
@@ -1924,24 +2153,41 @@ class _StudyRuntime:
                 if target_is_store
                 else _experiment_gpu_location(target_id)
             )
+            store_transport = self.parameters.store_transport
+            staged = store_transport in {
+                TransportKind.RDMA_HOST_STAGED,
+                TransportKind.TCP_HOST_STAGED,
+            }
+            gpu_id = target_id if source_is_store else source_id
+            store_rate_resources = (
+                (
+                    "store-0.dram-rate",
+                    "store-fabric-rate",
+                    *(
+                        (f"{gpu_id}.host-rate",)
+                        if staged
+                        else ()
+                    ),
+                    f"{target_id}.hbm-rate",
+                )
+                if source_is_store
+                else (
+                    f"{source_id}.hbm-rate",
+                    *(
+                        (f"{gpu_id}.host-rate",)
+                        if staged
+                        else ()
+                    ),
+                    "store-fabric-rate",
+                    "store-0.dram-rate",
+                )
+            )
             path = TopologyPath(
                 path_id=f"path:{transfer_id}",
                 source_kind=source.kind,
                 destination_kind=target.kind,
-                transport=TransportKind.RDMA_GDR,
-                rate_resource_ids=(
-                    (
-                        "store-0.dram-rate"
-                        if source_is_store
-                        else f"{source_id}.hbm-rate"
-                    ),
-                    "store-fabric-rate",
-                    (
-                        "store-0.dram-rate"
-                        if target_is_store
-                        else f"{target_id}.hbm-rate"
-                    ),
-                ),
+                transport=store_transport,
+                rate_resource_ids=store_rate_resources,
                 concurrency_resource_ids=(),
                 source_endpoint=source.endpoint,
                 destination_endpoint=target.endpoint,
@@ -1951,6 +2197,12 @@ class _StudyRuntime:
                 destination_numa_node_id=target.numa_node_id,
                 source_hca_id=f"hca:{source.node_id}",
                 destination_hca_id=f"hca:{target.node_id}",
+                source_host_staging_resource_id=(
+                    f"host:{source_id}" if staged and not source_is_store else None
+                ),
+                destination_host_staging_resource_id=(
+                    f"host:{target_id}" if staged and source_is_store else None
+                ),
             )
             opcode = TransferOpcode.READ if source_is_store else TransferOpcode.WRITE
         metadata = TransferMetadata(
@@ -2083,6 +2335,7 @@ class _StudyRuntime:
                     flow_slice_count=len(task.slices),
                 )
             )
+            self._bind_transfer_task_metadata(task)
         except Exception:
             self.des.cancel(start_handle, reason="TRANSFER_RECORD_CREATE_FAILED")
             del self.pending_puts[transfer_id]
@@ -2111,11 +2364,17 @@ class _StudyRuntime:
         pending.handle = None
         pending.started = True
         try:
+            self._acquire_transfer_overlays(pending.task)
             self.transfer_runtime.start_task(
                 pending.task,
                 on_terminal=self._on_protection_task_terminal,
             )
         except Exception:
+            if transfer_id in self.active_source_pins:
+                self._release_transfer_overlays(
+                    pending.task,
+                    reason="FLOW_START_FAILED",
+                )
             pool = (
                 self.peer_pools[pending.target_gpu_id]
                 if pending.target_gpu_id is not None
@@ -2152,6 +2411,10 @@ class _StudyRuntime:
         if pending is None or pending.task is not task:
             raise ExperimentError("protection flow terminal callback lost its owner")
         if task.status is TransferStatus.COMPLETED:
+            self._release_transfer_overlays(
+                task,
+                reason="FLOW_SERVICE_COMPLETED",
+            )
             self._finish_fluid_service_record(transfer_id, task=task)
             pending.handle = self.des.schedule_at(
                 self.des.now_ns,
@@ -2299,6 +2562,10 @@ class _StudyRuntime:
                     raise ExperimentError("active protection owner has a terminal task")
                 self.transfer_runtime.abort_task(
                     transfer_id,
+                    reason="GPU_FAILURE_SOURCE_OR_DESTINATION_DEPENDENCY",
+                )
+                self._release_transfer_overlays(
+                    pending.task,
                     reason="GPU_FAILURE_SOURCE_OR_DESTINATION_DEPENDENCY",
                 )
             destination_pool = (
@@ -2702,6 +2969,7 @@ class _StudyRuntime:
                     flow_slice_count=len(task.slices),
                 )
             )
+            self._bind_transfer_task_metadata(task)
         if recovery_transfer_ids:
             self.recovery_transfer_ids_by_span[execution.metadata.span_id] = (
                 recovery_transfer_ids
@@ -2753,11 +3021,17 @@ class _StudyRuntime:
         )
         execution.hbm_staging_bytes += pending.staging_bytes
         try:
+            self._acquire_transfer_overlays(pending.task)
             self.transfer_runtime.start_task(
                 pending.task,
                 on_terminal=self._on_recovery_task_terminal,
             )
         except Exception:
+            if transfer_id in self.active_source_pins:
+                self._release_transfer_overlays(
+                    pending.task,
+                    reason="RECOVERY_FLOW_START_FAILED",
+                )
             self._commit_hbm_moves(
                 pending.target_gpu_id,
                 [
@@ -2787,6 +3061,10 @@ class _StudyRuntime:
             raise ExperimentError("recovery flow terminal callback lost its owner")
         if task.status is not TransferStatus.COMPLETED:
             raise ExperimentError("recovery flow did not complete successfully")
+        self._release_transfer_overlays(
+            task,
+            reason="RECOVERY_FLOW_SERVICE_COMPLETED",
+        )
         self._finish_fluid_service_record(transfer_id, task=task)
         self._commit_transfer(transfer_id)
         execution = self.executions[pending.span_id]
@@ -3270,6 +3548,12 @@ class _StudyRuntime:
             gpu_id: _summarize_hbm_timeline(self.hbm_ledgers[gpu_id], timeline)
             for gpu_id, timeline in sorted(self.hbm_timelines.items())
         }
+        host_dram_by_gpu = {
+            gpu_id: _summarize_hbm_timeline(
+                self.host_staging_ledgers[gpu_id], timeline
+            )
+            for gpu_id, timeline in sorted(self.host_staging_timelines.items())
+        }
         transfer_accounting = _aggregate_transfer_accounting(self.transfers)
         metrics = {
             "virtual_end_ns": end_ns,
@@ -3326,6 +3610,14 @@ class _StudyRuntime:
                     item["peak_account_bytes"][HBM_TRANSFER_STAGING_ACCOUNT]
                     for item in hbm_by_gpu.values()
                 ),
+                "host_dram_staging_by_gpu": host_dram_by_gpu,
+                "host_dram_staging_peak_bytes": max(
+                    item["peak_account_bytes"][HOST_TRANSFER_STAGING_ACCOUNT]
+                    for item in host_dram_by_gpu.values()
+                ),
+                "host_staging_acquire_count": self.host_staging_acquire_count,
+                "source_pin_acquire_count": self.source_pin_acquire_count,
+                "source_pin_count_final": len(self.active_source_pins),
                 "store_dram_by_segment": {
                     "store-0:segment-0": {
                         "capacity_bytes": self.store_pool.capacity_bytes,
@@ -3456,6 +3748,13 @@ class _StudyRuntime:
             "resource_model": {
                 "peer_hbm_resources": list(sorted(self.peer_pools)),
                 "store_dram_segments": ["store-0:segment-0"],
+                "host_dram_staging_resources": [
+                    ledger.resource_id
+                    for _, ledger in sorted(self.host_staging_ledgers.items())
+                ],
+                "store_transport": self.parameters.store_transport.value,
+                "host_staging_capacity_transactions": True,
+                "source_pin_overlay_without_double_charge": True,
                 "communication_backend": "flow_contention",
                 "fairness": "weighted_max_min_work_conserving",
                 "flow_clock": "shared_global_des_now_ns",

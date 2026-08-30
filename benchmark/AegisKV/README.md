@@ -22,6 +22,13 @@ The first complete E2 simulation bundle is available at
 pairs across three seeds. The offline matrix/figure audit passes; F12 is
 explicitly excluded because no physical calibration experiment was requested.
 
+The follow-up fluid-core preview is available at
+`experiments/e2-fluid-core-v2/`, with three focused resource/recovery figures at
+`experiments/figures/e2-fluid-core-v2/` and interpretation in
+`experiments/FLUID_CORE_V2_REPORT.md`. It uses work-conserving weighted max-min
+fluid contention and event-boundary per-GPU HBM account stacks. It remains E2,
+modeled/preliminary, and not calibrated.
+
 Verify the current design bundle from the repository root:
 
 ```bash
@@ -35,4 +42,8 @@ Audit the initial GlobalDES results and figures:
 .venv/bin/python scripts/audit_aegiskv_e2_artifacts.py \
   --matrix-dir benchmark/AegisKV/experiments/e2-initial-v1 \
   --figure-dir benchmark/AegisKV/experiments/figures/e2-initial-v1
+
+.venv/bin/python scripts/audit_aegiskv_fluid_preview.py \
+  --matrix-dir benchmark/AegisKV/experiments/e2-fluid-core-v2 \
+  --figure-dir benchmark/AegisKV/experiments/figures/e2-fluid-core-v2
 ```
