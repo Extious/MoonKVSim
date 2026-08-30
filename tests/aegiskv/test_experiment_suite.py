@@ -15,6 +15,7 @@ from moonkvsim.aegiskv.experiment import (
     Scenario,
     StudyRunResult,
     core_variants,
+    transport_sensitivity_variants,
 )
 from moonkvsim.aegiskv.experiment_statistics import confidence_summary
 from moonkvsim.aegiskv.experiment_suite import (
@@ -27,6 +28,7 @@ from moonkvsim.aegiskv.experiment_suite import (
     execute_fresh_pair,
     load_frozen_workload,
     run_e2_matrix,
+    run_explicit_e2_matrix,
 )
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -272,6 +274,47 @@ def test_core_publication_has_420_rows_and_rejects_existing_target(
             seeds=(0, 1, 2),
             jobs=1,
         )
+
+
+def test_focused_transport_publication_shares_logical_failure_schedule(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(suite, "derive_failure_schedule", _fake_schedule)
+    monkeypatch.setattr(suite, "run_study_cell", _fake_run)
+    output = tmp_path / "transport-matrix"
+    variants = transport_sensitivity_variants()
+
+    manifest = run_explicit_e2_matrix(
+        ({"record": "fake"},),
+        variants=variants,
+        workload=_workload(),
+        implementation=_implementation(),
+        output_dir=output,
+        protocol_id="test-transport",
+        representative_variant_id=variants[-1].variant_id,
+        seeds=(0,),
+        jobs=1,
+    )
+
+    rows = _jsonl(output / "results.jsonl")
+    schedules = _jsonl(output / "failure-schedules.jsonl")
+    assert manifest["result_count"] == 60
+    assert manifest["pair_count"] == 30
+    assert len(schedules) == 5
+    assert all(item["shared_across_variant_parameters"] for item in schedules)
+    failure_bindings: dict[tuple[str, int], set[str]] = {}
+    for row in rows:
+        if row["scenario"] != "gpu_failure":
+            continue
+        key = (row["context_bucket"], row["seed"])
+        failure_bindings.setdefault(key, set()).add(
+            row["bindings"]["failure_binding_fingerprint"]
+        )
+    assert all(len(values) == 1 for values in failure_bindings.values())
+    representative = json.loads(
+        (output / "representative-run.json").read_text(encoding="utf-8")
+    )
+    assert representative["variant_config"]["variant_id"] == variants[-1].variant_id
 
 
 def test_pair_fails_closed_if_fresh_journals_differ(

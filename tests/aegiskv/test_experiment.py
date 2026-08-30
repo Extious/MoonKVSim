@@ -12,6 +12,7 @@ from moonkvsim.aegiskv.experiment import (
     derive_failure_schedule,
     run_study_cell,
     sensitivity_variants,
+    transport_sensitivity_variants,
 )
 from moonkvsim.aegiskv.experiment_workload import load_experiment_records
 from moonkvsim.store.transfer_engine import TransportKind
@@ -30,6 +31,13 @@ def test_protocol_enumerates_seven_systems_and_declared_variants() -> None:
     assert {item.suite for item in core_variants()} == {"core"}
     assert {item.suite for item in ablation_variants()} == {"ablation"}
     assert {item.suite for item in sensitivity_variants()} == {"sensitivity"}
+    transport = transport_sensitivity_variants()
+    assert [item.parameters.store_transport for item in transport] == [
+        TransportKind.RDMA_GDR,
+        TransportKind.RDMA_HOST_STAGED,
+        TransportKind.TCP_HOST_STAGED,
+    ]
+    assert {item.suite for item in transport} == {"transport_sensitivity"}
 
 
 def test_store_transport_paths_charge_host_staging_only_when_explicit() -> None:

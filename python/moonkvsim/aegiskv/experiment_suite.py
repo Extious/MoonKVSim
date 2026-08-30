@@ -1142,3 +1142,237 @@ def run_e2_matrix(
         statistics=statistics,
         representative=representatives[0],
     )
+
+
+def run_explicit_e2_matrix(
+    records: Sequence[Mapping[str, Any]],
+    *,
+    variants: Sequence[ExperimentVariant],
+    workload: WorkloadBinding,
+    implementation: ImplementationBinding,
+    output_dir: Path,
+    protocol_id: str,
+    representative_variant_id: str,
+    seeds: Sequence[int],
+    jobs: int = 1,
+    worker_workload_path: Path | None = None,
+) -> dict[str, Any]:
+    """Publish a versioned focused matrix without mutating the v1 suite catalog.
+
+    Focused sweeps share one logical failure schedule per bucket/seed across all
+    candidate parameters.  The schedule is request-progress based, so each
+    candidate resolves its own absolute virtual timestamp on its fresh DES.
+    """
+
+    if output_dir.exists():
+        raise ExperimentSuiteError(f"existing output target is forbidden: {output_dir}")
+    if type(jobs) is not int or jobs <= 0:
+        raise ExperimentSuiteError("jobs must be a positive integer")
+    if not protocol_id or not representative_variant_id:
+        raise ExperimentSuiteError("focused protocol identifiers must be non-empty")
+    canonical_seeds = normalize_seeds(seeds)
+    canonical_variants = tuple(variants)
+    if not canonical_variants:
+        raise ExperimentSuiteError("focused matrix requires at least one variant")
+    variant_keys = [(item.suite, item.variant_id) for item in canonical_variants]
+    if len(set(variant_keys)) != len(variant_keys):
+        raise ExperimentSuiteError("focused matrix variant IDs are not unique")
+    if len({item.fingerprint for item in canonical_variants}) != len(canonical_variants):
+        raise ExperimentSuiteError("focused matrix variant fingerprints are not unique")
+    if representative_variant_id not in {item.variant_id for item in canonical_variants}:
+        raise ExperimentSuiteError("focused representative variant is absent")
+
+    expected_pairs = (
+        len(canonical_variants)
+        * len(CONTEXT_BUCKET_NAMES)
+        * len(SCENARIOS)
+        * len(canonical_seeds)
+    )
+    protocol: dict[str, Any] = {
+        "schema": f"{SCHEMA_VERSION}.focused_protocol",
+        "status": "PASS",
+        "protocol_id": protocol_id,
+        "evidence": EVIDENCE_BOUNDARY,
+        "global_clock": "single_global_virtual_clock",
+        "physical_or_slurm_path": False,
+        "failure_types": ["GPU_FAILURE"],
+        "failure_schedule_contract": (
+            "same_focus_span_target_gpu_and_request_progress_per_bucket_seed"
+        ),
+        "execution": {
+            "variant_ids": [item.variant_id for item in canonical_variants],
+            "context_buckets": list(CONTEXT_BUCKET_NAMES),
+            "scenarios": [item.value for item in SCENARIOS],
+            "seeds": list(canonical_seeds),
+            "repetitions": list(REPETITIONS),
+            "expected_pair_count": expected_pairs,
+            "expected_row_count": expected_pairs * len(REPETITIONS),
+            "fresh_global_des_per_repetition": True,
+            "silent_fallback_allowed": False,
+        },
+    }
+    protocol["fingerprint"] = sha256_json(protocol)
+    protocol_fingerprint = str(protocol["fingerprint"])
+
+    schedule_variant = canonical_variants[0]
+    schedule_parameter_fp = _parameter_fingerprint(schedule_variant)
+    schedule_tasks = tuple(
+        _ScheduleTask(schedule_parameter_fp, schedule_variant, bucket, seed)
+        for seed in canonical_seeds
+        for bucket in CONTEXT_BUCKET_NAMES
+    )
+    frozen_schedules = _freeze_schedules(
+        records,
+        schedule_tasks,
+        jobs=jobs,
+        worker_workload_path=worker_workload_path,
+        workload=workload,
+    )
+    schedules_by_bucket_seed = {
+        (item.context_bucket, item.seed): item for item in frozen_schedules.values()
+    }
+    if len(schedules_by_bucket_seed) != len(CONTEXT_BUCKET_NAMES) * len(canonical_seeds):
+        raise ExperimentSuiteError("focused failure schedule coverage is incomplete")
+
+    pair_tasks: list[_PairTask] = []
+    first_seed = min(canonical_seeds)
+    for variant in canonical_variants:
+        for bucket in CONTEXT_BUCKET_NAMES:
+            for scenario in SCENARIOS:
+                for seed in canonical_seeds:
+                    schedule: FailureSchedule | None = None
+                    failure_binding = NO_FAILURE_SCHEDULE_FINGERPRINT
+                    if scenario is Scenario.GPU_FAILURE:
+                        frozen = schedules_by_bucket_seed[(bucket, seed)]
+                        schedule = frozen.schedule
+                        failure_binding = sha256_json(
+                            {
+                                "protocol_fingerprint": protocol_fingerprint,
+                                "failure_schedule_fingerprint": schedule.fingerprint,
+                                "shared_across_variant_parameters": True,
+                            }
+                        )
+                    pair_tasks.append(
+                        _PairTask(
+                            variant=variant,
+                            context_bucket=bucket,
+                            scenario=scenario,
+                            seed=seed,
+                            failure_schedule=schedule,
+                            failure_binding_fingerprint=failure_binding,
+                            implementation=implementation,
+                            workload=workload,
+                            protocol_fingerprint=protocol_fingerprint,
+                            capture_representative=(
+                                variant.variant_id == representative_variant_id
+                                and bucket == "128k"
+                                and scenario is Scenario.GPU_FAILURE
+                                and seed == first_seed
+                            ),
+                        )
+                    )
+    executions = _run_pairs(
+        records,
+        pair_tasks,
+        jobs=jobs,
+        worker_workload_path=worker_workload_path,
+        workload=workload,
+    )
+    rows = sorted(
+        (row for execution in executions for row in execution.rows),
+        key=lambda row: str(row["run_id"]),
+    )
+    pair_audits = sorted(
+        (execution.audit for execution in executions),
+        key=lambda audit: str(audit["pair_id"]),
+    )
+    representatives = [
+        execution.representative
+        for execution in executions
+        if execution.representative is not None
+    ]
+    if len(representatives) != 1:
+        raise ExperimentSuiteError(
+            f"expected exactly one focused representative, found {len(representatives)}"
+        )
+    completeness = _completeness(
+        rows,
+        pair_audits,
+        canonical_variants,
+        canonical_seeds,
+        protocol,
+    )
+    statistics = build_statistics(
+        rows,
+        seeds=canonical_seeds,
+        evidence=EVIDENCE_BOUNDARY,
+    )
+    schedule_documents = []
+    for (bucket, seed), frozen in sorted(schedules_by_bucket_seed.items()):
+        binding = sha256_json(
+            {
+                "protocol_fingerprint": protocol_fingerprint,
+                "failure_schedule_fingerprint": frozen.schedule.fingerprint,
+                "shared_across_variant_parameters": True,
+            }
+        )
+        schedule_documents.append(
+            {
+                "schema": f"{SCHEMA_VERSION}.focused_failure_schedule",
+                "status": "PASS",
+                "context_bucket": bucket,
+                "seed": seed,
+                "failure_schedule_fingerprint": frozen.schedule.fingerprint,
+                "failure_binding_fingerprint": binding,
+                "shared_across_variant_parameters": True,
+                "schedule": frozen.schedule.to_dict(),
+                "used_by_variants": [
+                    {
+                        "suite": variant.suite,
+                        "variant_id": variant.variant_id,
+                        "variant_fingerprint": variant.fingerprint,
+                    }
+                    for variant in canonical_variants
+                ],
+                "evidence": EVIDENCE_BOUNDARY,
+            }
+        )
+    provenance: dict[str, Any] = {
+        "schema": f"{SCHEMA_VERSION}.focused_provenance",
+        "status": "PASS",
+        "evidence": EVIDENCE_BOUNDARY,
+        "implementation": implementation.to_dict(),
+        "implementation_fingerprint": implementation.fingerprint,
+        "workload": workload.to_dict(),
+        "workload_fingerprint": workload.fingerprint,
+        "protocol_fingerprint": protocol_fingerprint,
+        "variant_fingerprints": {
+            f"{variant.suite}:{variant.variant_id}": variant.fingerprint
+            for variant in canonical_variants
+        },
+        "failure_binding_fingerprints": sorted(
+            {item["failure_binding_fingerprint"] for item in schedule_documents}
+        ),
+        "execution": {
+            "engine": "GlobalDES",
+            "clock": "single_global_virtual_clock",
+            "parallel_worker_processes": jobs,
+            "fresh_global_des_per_repetition": True,
+            "canonical_result_sort_key": "run_id",
+            "wall_clock_measurements_recorded": False,
+            "physical_components_executed": False,
+            "slurm_used": False,
+        },
+    }
+    provenance["fingerprint"] = sha256_json(provenance)
+    return _publish(
+        output_dir,
+        rows=rows,
+        pair_audits=pair_audits,
+        schedules=schedule_documents,
+        completeness=completeness,
+        provenance=provenance,
+        protocol=protocol,
+        statistics=statistics,
+        representative=cast(Mapping[str, Any], representatives[0]),
+    )

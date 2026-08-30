@@ -4107,6 +4107,30 @@ def sensitivity_variants(
     return tuple(variants)
 
 
+def transport_sensitivity_variants(
+    parameters: ModelParameters = DEFAULT_PARAMETERS,
+) -> tuple[ExperimentVariant, ...]:
+    """Return an isolated Store-path sweep without changing the v1 catalog."""
+
+    full = SYSTEM_PROFILES[SystemId.AEGIS_UNIFIED]
+    return tuple(
+        ExperimentVariant(
+            suite="transport_sensitivity",
+            variant_id=f"store_transport={transport.value}",
+            profile=full,
+            parameters=replace(parameters, store_transport=transport),
+            interpretation=(
+                "modeled_store_transport_path_sensitivity_not_physical_bandwidth"
+            ),
+        )
+        for transport in (
+            TransportKind.RDMA_GDR,
+            TransportKind.RDMA_HOST_STAGED,
+            TransportKind.TCP_HOST_STAGED,
+        )
+    )
+
+
 def _common_active_ranges(
     oracle_details: Sequence[Mapping[str, Mapping[str, Any]]],
     *,
