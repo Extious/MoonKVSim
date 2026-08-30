@@ -91,7 +91,8 @@ embeds its run IDs and payload hashes.
 
 - two seeds are insufficient for a stable inferential claim;
 - rates are modeled assumptions and are not calibrated to a physical platform;
-- Store-node count and TP/PP topology remain unparameterized;
+- the later `e2-store-nodes-v1` supplement parameterizes Store-node count under
+  a fixed total capacity; TP/PP topology remains unparameterized;
 - primary KV layout remains the declared Qwen3-8B TP1/PP1 source-derived layout;
 - source hash-block coverage is not tokenizer-equivalent 128K evidence;
 - F12 simulator accuracy remains intentionally unavailable;

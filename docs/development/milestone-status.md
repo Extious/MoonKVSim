@@ -162,6 +162,10 @@ validation remain higher-evidence limitations outside the E2-only DoD.
 Status: initial E2 simulation release completed on `aegiskv`; broader plan
 closure and paper-ready evidence remain open.
 
+Current repository gate: `757 passed, 1 skipped`; Ruff PASS; strict mypy PASS
+for 94 source files. These are implementation and artifact-integrity gates, not
+calibration or physical-performance evidence.
+
 - M6: the tag-derived branch, immutable patent, provenance manifest, contract,
   27-clause runtime evidence, and automated audits are present. Manual patent
   review remains pending.
@@ -188,6 +192,11 @@ closure and paper-ready evidence remain open.
   have a separate five-bucket, two-scenario, two-seed matrix with 120 rows and
   60 exact A/B pairs. Host staging/source-pin lifecycles are ledger-audited and
   F17 exposes WCT, network byte-time, and Host staging without a physical claim.
+- M9 Store-node follow-up: one, two, and four physical Store segments now have
+  independent DRAM ledgers and modeled fabric resources under a fixed 64-GiB
+  total capacity budget. The five-bucket, two-scenario, two-seed matrix has 120
+  rows and 60 exact A/B pairs. F18 exposes WCT delta, modeled network byte-time,
+  and 128K recovery composition without claiming a physical scale-out result.
 
 The canonical matrix is
 `benchmark/AegisKV/experiments/e2-initial-v1/`; the figure set is
@@ -204,9 +213,15 @@ The Store-transport matrix is
 `benchmark/AegisKV/experiments/figures/e2-transport-v1/`; and its bounded
 interpretation is in `benchmark/AegisKV/experiments/TRANSPORT_V1_REPORT.md`.
 
+The multi-Store-node matrix is
+`benchmark/AegisKV/experiments/e2-store-nodes-v1/`; F18 is in
+`benchmark/AegisKV/experiments/figures/e2-store-nodes-v1/`; and its bounded
+interpretation is in
+`benchmark/AegisKV/experiments/STORE_NODE_V1_REPORT.md`.
+
 This initial release is not paper-ready. The current experiment harness still
-does not model every TP/PP/Store-node sensitivity dimension and does not
-establish physical timing accuracy. The branch-local harness now supports
-explicit GDR and Host-staged Store paths with Host DRAM staging/source-pin
-transactions. The focused matched transport matrix is complete; TP/PP and
-multiple Store-node sensitivities remain open.
+does not model TP/PP sensitivity and does not establish physical timing
+accuracy. The branch-local harness now supports explicit GDR and Host-staged
+Store paths with Host DRAM staging/source-pin transactions, plus sharded
+multi-node Store placement and ledgers. The focused transport and Store-node
+matrices are complete; TP/PP sensitivity remains open.

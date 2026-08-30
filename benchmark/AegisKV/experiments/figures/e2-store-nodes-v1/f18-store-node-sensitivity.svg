@@ -1,0 +1,171 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="800" viewBox="0 0 1320 800" role="img">
+  <title>Store-node scaling under modeled GlobalDES contention</title>
+  <style>text{font-family:DejaVu Sans,Arial,sans-serif;fill:#111827}.title{font-size:26px;font-weight:700}.sub{font-size:13px;fill:#475569}.panel{font-size:15px;font-weight:700}.tick{font-size:11px;fill:#475569}.label{font-size:12px;font-weight:650}.footer{font-size:13px;font-weight:700;fill:#991b1b}</style>
+  <rect x="0" y="0" width="1320" height="800" fill="#ffffff" />
+  <text x="44" y="40" class="title">Store-node scaling under modeled GlobalDES contention</text>
+  <text x="44" y="66" class="sub">Fixed 64-GiB total Store budget · GPU_FAILURE · seeds 0/1 · A/B exact</text>
+  <rect x="44" y="105" width="390" height="560" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+  <rect x="465" y="105" width="390" height="560" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+  <rect x="886" y="105" width="390" height="560" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+  <text x="62" y="136" class="panel">A  Whole-workload WCT delta vs 1 node (%)</text>
+  <text x="483" y="136" class="panel">B  Network byte-time ratio vs 1 node</text>
+  <text x="904" y="136" class="panel">C  128K recovery token composition</text>
+  <line x1="82" y1="585.0" x2="402" y2="585.0" stroke="#e2e8f0" stroke-width="1" />
+  <text x="44" y="589.0" class="tick">-0.02</text>
+  <line x1="82" y1="559.375" x2="402" y2="559.375" stroke="#94a3b8" stroke-width="1.5" />
+  <text x="44" y="563.375" class="tick">0.00</text>
+  <line x1="82" y1="431.25" x2="402" y2="431.25" stroke="#e2e8f0" stroke-width="1" />
+  <text x="44" y="435.25" class="tick">0.10</text>
+  <line x1="82" y1="303.125" x2="402" y2="303.125" stroke="#e2e8f0" stroke-width="1" />
+  <text x="44" y="307.125" class="tick">0.20</text>
+  <line x1="82" y1="175.0" x2="402" y2="175.0" stroke="#e2e8f0" stroke-width="1" />
+  <text x="44" y="179.0" class="tick">0.30</text>
+  <text x="72.0" y="607" class="tick">8k</text>
+  <text x="493.0" y="607" class="tick">8k</text>
+  <line x1="82.0" y1="514.9181346962628" x2="82.0" y2="406.49706043947833" stroke="#7c3aed" stroke-width="2" />
+  <g data-point-id="wct:store_node_count=2:8k" data-run-ids="store_node_sensitivity:store_node_count=2:8k:gpu_failure:seed-0:repeat-A;store_node_sensitivity:store_node_count=2:8k:gpu_failure:seed-1:repeat-A" data-result-hashes="7a78ed29a301d9d85ef8daf1e597a77d0b34256b3aa274eb7ca2f539626732a3;a2569ed628e6aa76ee6fc688c38e21717e5dd3bf6a465bfa683965fc31842cba">
+    <circle cx="82.0" cy="460.7075975678705" r="4.5" fill="#7c3aed" />
+  </g>
+  <line x1="503.0" y1="323.7241535064283" x2="503.0" y2="289.0277725474071" stroke="#7c3aed" stroke-width="2" />
+  <g data-point-id="network:store_node_count=2:8k" data-run-ids="store_node_sensitivity:store_node_count=2:8k:gpu_failure:seed-0:repeat-A;store_node_sensitivity:store_node_count=2:8k:gpu_failure:seed-1:repeat-A" data-result-hashes="7a78ed29a301d9d85ef8daf1e597a77d0b34256b3aa274eb7ca2f539626732a3;a2569ed628e6aa76ee6fc688c38e21717e5dd3bf6a465bfa683965fc31842cba">
+    <circle cx="503.0" cy="306.3759630269177" r="4.5" fill="#7c3aed" />
+  </g>
+  <line x1="82.0" y1="501.5708097459863" x2="82.0" y2="398.37813502384734" stroke="#dc2626" stroke-width="2" />
+  <g data-point-id="wct:store_node_count=4:8k" data-run-ids="store_node_sensitivity:store_node_count=4:8k:gpu_failure:seed-0:repeat-A;store_node_sensitivity:store_node_count=4:8k:gpu_failure:seed-1:repeat-A" data-result-hashes="fe79ea3c7fd86d0a62568db35774b5b71354a400a7be048b44c03c0208927303;0b6fd15effd89138b7e7b7b4d00a4c86c4c021f852d2b755c58a492b8cb1453f">
+    <circle cx="82.0" cy="449.9744723849168" r="4.5" fill="#dc2626" />
+  </g>
+  <line x1="503.0" y1="501.28062228599794" x2="503.0" y2="468.8680923557476" stroke="#dc2626" stroke-width="2" />
+  <g data-point-id="network:store_node_count=4:8k" data-run-ids="store_node_sensitivity:store_node_count=4:8k:gpu_failure:seed-0:repeat-A;store_node_sensitivity:store_node_count=4:8k:gpu_failure:seed-1:repeat-A" data-result-hashes="fe79ea3c7fd86d0a62568db35774b5b71354a400a7be048b44c03c0208927303;0b6fd15effd89138b7e7b7b4d00a4c86c4c021f852d2b755c58a492b8cb1453f">
+    <circle cx="503.0" cy="485.07435732087276" r="4.5" fill="#dc2626" />
+  </g>
+  <text x="152.0" y="607" class="tick">32k</text>
+  <text x="573.0" y="607" class="tick">32k</text>
+  <line x1="162.0" y1="562.3707780942101" x2="162.0" y2="377.1975923646693" stroke="#7c3aed" stroke-width="2" />
+  <g data-point-id="wct:store_node_count=2:32k" data-run-ids="store_node_sensitivity:store_node_count=2:32k:gpu_failure:seed-0:repeat-A;store_node_sensitivity:store_node_count=2:32k:gpu_failure:seed-1:repeat-A" data-result-hashes="9bd063f3681d0a3bdc82e40e1cb05f533495b00c453446ad8eb793c0d0ec1a90;670f5103807dc15d435b3f68f503e24d94d757f59f78fc8d50125362b7175c64">
+    <circle cx="162.0" cy="469.7841852294397" r="4.5" fill="#7c3aed" />
+  </g>
+  <line x1="583.0" y1="335.5351432442518" x2="583.0" y2="326.75741954562767" stroke="#7c3aed" stroke-width="2" />
+  <g data-point-id="network:store_node_count=2:32k" data-run-ids="store_node_sensitivity:store_node_count=2:32k:gpu_failure:seed-0:repeat-A;store_node_sensitivity:store_node_count=2:32k:gpu_failure:seed-1:repeat-A" data-result-hashes="9bd063f3681d0a3bdc82e40e1cb05f533495b00c453446ad8eb793c0d0ec1a90;670f5103807dc15d435b3f68f503e24d94d757f59f78fc8d50125362b7175c64">
+    <circle cx="583.0" cy="331.1462813949397" r="4.5" fill="#7c3aed" />
+  </g>
+  <line x1="162.0" y1="529.5885993095984" x2="162.0" y2="399.8950010545974" stroke="#dc2626" stroke-width="2" />
+  <g data-point-id="wct:store_node_count=4:32k" data-run-ids="store_node_sensitivity:store_node_count=4:32k:gpu_failure:seed-0:repeat-A;store_node_sensitivity:store_node_count=4:32k:gpu_failure:seed-1:repeat-A" data-result-hashes="26b23d33d696a78541b48ba084d21c622bebd1a4e196abc77534f844f1388d36;98c23db9bcc624ee1a4e33aef0f7799e9678cc40da314680cc776f239102b2e6">
+    <circle cx="162.0" cy="464.7418001820979" r="4.5" fill="#dc2626" />
+  </g>
+  <line x1="583.0" y1="513.7966690218602" x2="583.0" y2="505.6376705679756" stroke="#dc2626" stroke-width="2" />
+  <g data-point-id="network:store_node_count=4:32k" data-run-ids="store_node_sensitivity:store_node_count=4:32k:gpu_failure:seed-0:repeat-A;store_node_sensitivity:store_node_count=4:32k:gpu_failure:seed-1:repeat-A" data-result-hashes="26b23d33d696a78541b48ba084d21c622bebd1a4e196abc77534f844f1388d36;98c23db9bcc624ee1a4e33aef0f7799e9678cc40da314680cc776f239102b2e6">
+    <circle cx="583.0" cy="509.7171697949179" r="4.5" fill="#dc2626" />
+  </g>
+  <text x="232.0" y="607" class="tick">64k</text>
+  <text x="653.0" y="607" class="tick">64k</text>
+  <line x1="242.0" y1="576.6604537139416" x2="242.0" y2="415.5331392532047" stroke="#7c3aed" stroke-width="2" />
+  <g data-point-id="wct:store_node_count=2:64k" data-run-ids="store_node_sensitivity:store_node_count=2:64k:gpu_failure:seed-0:repeat-A;store_node_sensitivity:store_node_count=2:64k:gpu_failure:seed-1:repeat-A" data-result-hashes="8856572c35381c15281f38fce0ae975e90dec122fe743e193c6b73a36fe65b9e;200208ed43c923af2702bbae1612174c35bb854ad29ebcf3524b6bc260c8a443">
+    <circle cx="242.0" cy="496.09679648357314" r="4.5" fill="#7c3aed" />
+  </g>
+  <line x1="663.0" y1="335.1186764382975" x2="663.0" y2="306.4051623874072" stroke="#7c3aed" stroke-width="2" />
+  <g data-point-id="network:store_node_count=2:64k" data-run-ids="store_node_sensitivity:store_node_count=2:64k:gpu_failure:seed-0:repeat-A;store_node_sensitivity:store_node_count=2:64k:gpu_failure:seed-1:repeat-A" data-result-hashes="8856572c35381c15281f38fce0ae975e90dec122fe743e193c6b73a36fe65b9e;200208ed43c923af2702bbae1612174c35bb854ad29ebcf3524b6bc260c8a443">
+    <circle cx="663.0" cy="320.76191941285236" r="4.5" fill="#7c3aed" />
+  </g>
+  <line x1="242.0" y1="537.9545976549607" x2="242.0" y2="396.36960988722205" stroke="#dc2626" stroke-width="2" />
+  <g data-point-id="wct:store_node_count=4:64k" data-run-ids="store_node_sensitivity:store_node_count=4:64k:gpu_failure:seed-0:repeat-A;store_node_sensitivity:store_node_count=4:64k:gpu_failure:seed-1:repeat-A" data-result-hashes="bf7db1d41c5be5befb257b9f12f33e6a2295ff5d0302fd2fda079cf518881d8d;aa9a60ef3b01aa601a1ba0aada5f7ce7170f8be44607a5969570a669d09bc92d">
+    <circle cx="242.0" cy="467.16210377109144" r="4.5" fill="#dc2626" />
+  </g>
+  <line x1="663.0" y1="520.1936709920839" x2="663.0" y2="470.4225480158555" stroke="#dc2626" stroke-width="2" />
+  <g data-point-id="network:store_node_count=4:64k" data-run-ids="store_node_sensitivity:store_node_count=4:64k:gpu_failure:seed-0:repeat-A;store_node_sensitivity:store_node_count=4:64k:gpu_failure:seed-1:repeat-A" data-result-hashes="bf7db1d41c5be5befb257b9f12f33e6a2295ff5d0302fd2fda079cf518881d8d;aa9a60ef3b01aa601a1ba0aada5f7ce7170f8be44607a5969570a669d09bc92d">
+    <circle cx="663.0" cy="495.3081095039697" r="4.5" fill="#dc2626" />
+  </g>
+  <text x="312.0" y="607" class="tick">96k</text>
+  <text x="733.0" y="607" class="tick">96k</text>
+  <line x1="322.0" y1="539.8047683959848" x2="322.0" y2="203.90982746697296" stroke="#7c3aed" stroke-width="2" />
+  <g data-point-id="wct:store_node_count=2:96k" data-run-ids="store_node_sensitivity:store_node_count=2:96k:gpu_failure:seed-0:repeat-A;store_node_sensitivity:store_node_count=2:96k:gpu_failure:seed-1:repeat-A" data-result-hashes="cc258a86b3878b6bd061ab53b37bd41cbd9d66a131b93aa9d7639857ae417d8e;1a1a3a94c36bac3fead5f66d505a069db9c079521cbc99f67dbc49a34c6d8f23">
+    <circle cx="322.0" cy="371.8572979314789" r="4.5" fill="#7c3aed" />
+  </g>
+  <line x1="743.0" y1="346.21792371191395" x2="743.0" y2="250.53938308476484" stroke="#7c3aed" stroke-width="2" />
+  <g data-point-id="network:store_node_count=2:96k" data-run-ids="store_node_sensitivity:store_node_count=2:96k:gpu_failure:seed-0:repeat-A;store_node_sensitivity:store_node_count=2:96k:gpu_failure:seed-1:repeat-A" data-result-hashes="cc258a86b3878b6bd061ab53b37bd41cbd9d66a131b93aa9d7639857ae417d8e;1a1a3a94c36bac3fead5f66d505a069db9c079521cbc99f67dbc49a34c6d8f23">
+    <circle cx="743.0" cy="298.3786533983394" r="4.5" fill="#7c3aed" />
+  </g>
+  <line x1="322.0" y1="521.4002750259942" x2="322.0" y2="291.40250411393225" stroke="#dc2626" stroke-width="2" />
+  <g data-point-id="wct:store_node_count=4:96k" data-run-ids="store_node_sensitivity:store_node_count=4:96k:gpu_failure:seed-0:repeat-A;store_node_sensitivity:store_node_count=4:96k:gpu_failure:seed-1:repeat-A" data-result-hashes="4736c17bafe9b595fe714e10352ff718537a3b30d2b8d4fee8b8f8d62d63d092;d62d934a52d4ce17d2f864116b14aed90cc283d45830dbba259a4f647d93654b">
+    <circle cx="322.0" cy="406.4013895699632" r="4.5" fill="#dc2626" />
+  </g>
+  <line x1="743.0" y1="517.9840007029372" x2="743.0" y2="460.3261189126698" stroke="#dc2626" stroke-width="2" />
+  <g data-point-id="network:store_node_count=4:96k" data-run-ids="store_node_sensitivity:store_node_count=4:96k:gpu_failure:seed-0:repeat-A;store_node_sensitivity:store_node_count=4:96k:gpu_failure:seed-1:repeat-A" data-result-hashes="4736c17bafe9b595fe714e10352ff718537a3b30d2b8d4fee8b8f8d62d63d092;d62d934a52d4ce17d2f864116b14aed90cc283d45830dbba259a4f647d93654b">
+    <circle cx="743.0" cy="489.15505980780347" r="4.5" fill="#dc2626" />
+  </g>
+  <text x="392.0" y="607" class="tick">128k</text>
+  <text x="813.0" y="607" class="tick">128k</text>
+  <line x1="402.0" y1="533.5225482650557" x2="402.0" y2="373.34090634005884" stroke="#7c3aed" stroke-width="2" />
+  <g data-point-id="wct:store_node_count=2:128k" data-run-ids="store_node_sensitivity:store_node_count=2:128k:gpu_failure:seed-0:repeat-A;store_node_sensitivity:store_node_count=2:128k:gpu_failure:seed-1:repeat-A" data-result-hashes="86041c7f8ae1c51c15bc48e84a0749c5d716d09da119f2facb3a2778a50b8468;13e6b0a5a934b2af8671700c4972bde0176512c2a3bb1ce5543d9dc3330b1230">
+    <circle cx="402.0" cy="453.4317273025573" r="4.5" fill="#7c3aed" />
+  </g>
+  <line x1="823.0" y1="370.28337589454884" x2="823.0" y2="336.4454225947128" stroke="#7c3aed" stroke-width="2" />
+  <g data-point-id="network:store_node_count=2:128k" data-run-ids="store_node_sensitivity:store_node_count=2:128k:gpu_failure:seed-0:repeat-A;store_node_sensitivity:store_node_count=2:128k:gpu_failure:seed-1:repeat-A" data-result-hashes="86041c7f8ae1c51c15bc48e84a0749c5d716d09da119f2facb3a2778a50b8468;13e6b0a5a934b2af8671700c4972bde0176512c2a3bb1ce5543d9dc3330b1230">
+    <circle cx="823.0" cy="353.3643992446308" r="4.5" fill="#7c3aed" />
+  </g>
+  <line x1="402.0" y1="534.3157750188019" x2="402.0" y2="401.5763664331296" stroke="#dc2626" stroke-width="2" />
+  <g data-point-id="wct:store_node_count=4:128k" data-run-ids="store_node_sensitivity:store_node_count=4:128k:gpu_failure:seed-0:repeat-A;store_node_sensitivity:store_node_count=4:128k:gpu_failure:seed-1:repeat-A" data-result-hashes="631ce72e415f9bd319d2be61970a86ddba316d70b2538f3b819a02ebbe8a05e4;1ea28176f526897fba7cea2111e6f4df65bcce033aa042e282dda04a622ff1a8">
+    <circle cx="402.0" cy="467.94607072596574" r="4.5" fill="#dc2626" />
+  </g>
+  <line x1="823.0" y1="530.8505037807911" x2="823.0" y2="510.7327568641448" stroke="#dc2626" stroke-width="2" />
+  <g data-point-id="network:store_node_count=4:128k" data-run-ids="store_node_sensitivity:store_node_count=4:128k:gpu_failure:seed-0:repeat-A;store_node_sensitivity:store_node_count=4:128k:gpu_failure:seed-1:repeat-A" data-result-hashes="631ce72e415f9bd319d2be61970a86ddba316d70b2538f3b819a02ebbe8a05e4;1ea28176f526897fba7cea2111e6f4df65bcce033aa042e282dda04a622ff1a8">
+    <circle cx="823.0" cy="520.7916303224679" r="4.5" fill="#dc2626" />
+  </g>
+  <line x1="82.0" y1="460.7075975678705" x2="162.0" y2="469.7841852294397" stroke="#7c3aed" stroke-width="2" />
+  <line x1="162.0" y1="469.7841852294397" x2="242.0" y2="496.09679648357314" stroke="#7c3aed" stroke-width="2" />
+  <line x1="242.0" y1="496.09679648357314" x2="322.0" y2="371.8572979314789" stroke="#7c3aed" stroke-width="2" />
+  <line x1="322.0" y1="371.8572979314789" x2="402.0" y2="453.4317273025573" stroke="#7c3aed" stroke-width="2" />
+  <line x1="503.0" y1="306.3759630269177" x2="583.0" y2="331.1462813949397" stroke="#7c3aed" stroke-width="2" />
+  <line x1="583.0" y1="331.1462813949397" x2="663.0" y2="320.76191941285236" stroke="#7c3aed" stroke-width="2" />
+  <line x1="663.0" y1="320.76191941285236" x2="743.0" y2="298.3786533983394" stroke="#7c3aed" stroke-width="2" />
+  <line x1="743.0" y1="298.3786533983394" x2="823.0" y2="353.3643992446308" stroke="#7c3aed" stroke-width="2" />
+  <line x1="82.0" y1="449.9744723849168" x2="162.0" y2="464.7418001820979" stroke="#dc2626" stroke-width="2" />
+  <line x1="162.0" y1="464.7418001820979" x2="242.0" y2="467.16210377109144" stroke="#dc2626" stroke-width="2" />
+  <line x1="242.0" y1="467.16210377109144" x2="322.0" y2="406.4013895699632" stroke="#dc2626" stroke-width="2" />
+  <line x1="322.0" y1="406.4013895699632" x2="402.0" y2="467.94607072596574" stroke="#dc2626" stroke-width="2" />
+  <line x1="503.0" y1="485.07435732087276" x2="583.0" y2="509.7171697949179" stroke="#dc2626" stroke-width="2" />
+  <line x1="583.0" y1="509.7171697949179" x2="663.0" y2="495.3081095039697" stroke="#dc2626" stroke-width="2" />
+  <line x1="663.0" y1="495.3081095039697" x2="743.0" y2="489.15505980780347" stroke="#dc2626" stroke-width="2" />
+  <line x1="743.0" y1="489.15505980780347" x2="823.0" y2="520.7916303224679" stroke="#dc2626" stroke-width="2" />
+  <line x1="503" y1="585.0" x2="823" y2="585.0" stroke="#e2e8f0" stroke-width="1" />
+  <text x="468" y="589.0" class="tick">0.3x</text>
+  <line x1="503" y1="503.0" x2="823" y2="503.0" stroke="#e2e8f0" stroke-width="1" />
+  <text x="468" y="507.0" class="tick">0.4x</text>
+  <line x1="503" y1="421.0" x2="823" y2="421.0" stroke="#e2e8f0" stroke-width="1" />
+  <text x="468" y="425.0" class="tick">0.5x</text>
+  <line x1="503" y1="339.0" x2="823" y2="339.0" stroke="#e2e8f0" stroke-width="1" />
+  <text x="468" y="343.0" class="tick">0.6x</text>
+  <line x1="503" y1="257.0" x2="823" y2="257.0" stroke="#e2e8f0" stroke-width="1" />
+  <text x="468" y="261.0" class="tick">0.7x</text>
+  <line x1="503" y1="175.0" x2="823" y2="175.0" stroke="#e2e8f0" stroke-width="1" />
+  <text x="468" y="179.0" class="tick">0.8x</text>
+  <line x1="930" y1="585.0" x2="1230" y2="585.0" stroke="#e2e8f0" stroke-width="1" />
+  <text x="886" y="589.0" class="tick">0K</text>
+  <line x1="930" y1="484.0769230769231" x2="1230" y2="484.0769230769231" stroke="#e2e8f0" stroke-width="1" />
+  <text x="886" y="488.0769230769231" class="tick">32K</text>
+  <line x1="930" y1="383.15384615384613" x2="1230" y2="383.15384615384613" stroke="#e2e8f0" stroke-width="1" />
+  <text x="886" y="387.15384615384613" class="tick">64K</text>
+  <line x1="930" y1="282.2307692307692" x2="1230" y2="282.2307692307692" stroke="#e2e8f0" stroke-width="1" />
+  <text x="886" y="286.2307692307692" class="tick">96K</text>
+  <line x1="930" y1="181.30769230769226" x2="1230" y2="181.30769230769226" stroke="#e2e8f0" stroke-width="1" />
+  <text x="886" y="185.30769230769226" class="tick">128K</text>
+  <rect x="956" y="512.3353846153847" width="56" height="72.66461538461537" fill="#16a34a" rx="4" />
+  <rect x="956" y="192.611076923077" width="56" height="319.72430769230766" fill="#f59e0b" rx="4" />
+  <text x="964" y="607" class="tick">1 node</text>
+  <rect x="1054" y="531.7126153846153" width="56" height="53.28738461538462" fill="#16a34a" rx="4" />
+  <rect x="1054" y="192.6110769230769" width="56" height="339.10153846153844" fill="#f59e0b" rx="4" />
+  <text x="1062" y="607" class="tick">2 node</text>
+  <rect x="1152" y="518.7944615384615" width="56" height="66.20553846153847" fill="#16a34a" rx="4" />
+  <rect x="1152" y="192.6110769230769" width="56" height="326.1833846153846" fill="#f59e0b" rx="4" />
+  <text x="1160" y="607" class="tick">4 node</text>
+  <rect x="902" y="620" width="16" height="8" fill="#16a34a" />
+  <text x="925" y="630" class="tick">restored</text>
+  <rect x="1005" y="620" width="16" height="8" fill="#f59e0b" />
+  <text x="1028" y="630" class="tick">recomputed</text>
+  <rect x="78" y="620" width="16" height="8" fill="#7c3aed" />
+  <text x="101" y="630" class="tick">2 Store nodes</text>
+  <rect x="253" y="620" width="16" height="8" fill="#dc2626" />
+  <text x="276" y="630" class="tick">4 Store nodes</text>
+  <text x="44" y="732" class="footer">E2 modeled/preliminary · GlobalDES only · not calibrated · no physical experiment</text>
+  <text x="44" y="758" class="sub">Total Store capacity is fixed; whiskers are seed-0/1 range; repeat B is replay.</text>
+</svg>

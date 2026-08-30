@@ -8,7 +8,8 @@ The implementation contract is [MOONKVSIM_PLAN.md](MOONKVSIM_PLAN.md). The
 tagged Vanilla M0--M5 baseline and the first AegisKV M6--M9 simulation release
 are present. The AegisKV release contains a 2,760-row matched matrix, an
 additional 280-row fluid-contention core preview, a 120-row Store-transport
-sweep, and preliminary SVG paper figures. The current delivery scope
+sweep, a 120-row fixed-capacity multi-Store-node sweep, and preliminary SVG
+paper figures. The current delivery scope
 intentionally stops at E2 modeled simulation; E3 physical calibration, E4
 real-system matching, and E5/paper-ready claims are out of scope.
 

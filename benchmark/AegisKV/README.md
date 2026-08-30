@@ -36,6 +36,14 @@ The focused Store-transport matrix is available at
 Host-staged paths over all five context buckets without invoking a physical
 network.
 
+The focused multi-Store-node matrix is available at
+`experiments/e2-store-nodes-v1/`, with audited figure F18 at
+`experiments/figures/e2-store-nodes-v1/` and interpretation in
+`experiments/STORE_NODE_V1_REPORT.md`. It compares one, two, and four modeled
+Store nodes under a fixed 64-GiB total capacity budget. Its endpoint rates and
+results remain uncalibrated E2 assumptions rather than physical scale-out
+evidence.
+
 Verify the current design bundle from the repository root:
 
 ```bash
@@ -57,4 +65,8 @@ Audit the initial GlobalDES results and figures:
 .venv/bin/python scripts/audit_aegiskv_transport_preview.py \
   --matrix-dir benchmark/AegisKV/experiments/e2-transport-v1 \
   --figure-dir benchmark/AegisKV/experiments/figures/e2-transport-v1
+
+.venv/bin/python scripts/audit_aegiskv_store_node_preview.py \
+  --matrix-dir benchmark/AegisKV/experiments/e2-store-nodes-v1 \
+  --figure-dir benchmark/AegisKV/experiments/figures/e2-store-nodes-v1
 ```
