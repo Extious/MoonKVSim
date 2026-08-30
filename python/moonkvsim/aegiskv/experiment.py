@@ -260,6 +260,7 @@ class ModelParameters:
     store_budget_bytes: int = 64 * GIB
     peer_bandwidth_bytes_per_second: int = 100_000_000_000
     store_bandwidth_bytes_per_second: int = 25_000_000_000
+    tcp_store_bandwidth_bytes_per_second: int = 8_000_000_000
     host_staging_bandwidth_bytes_per_second: int = 16_000_000_000
     host_staging_capacity_bytes_per_node: int = 32 * GIB
     store_transport: TransportKind = TransportKind.RDMA_GDR
@@ -279,6 +280,7 @@ class ModelParameters:
             self.store_budget_bytes,
             self.peer_bandwidth_bytes_per_second,
             self.store_bandwidth_bytes_per_second,
+            self.tcp_store_bandwidth_bytes_per_second,
             self.host_staging_bandwidth_bytes_per_second,
             self.host_staging_capacity_bytes_per_node,
             self.transfer_setup_ns,
@@ -317,6 +319,9 @@ class ModelParameters:
             "store_budget_bytes": self.store_budget_bytes,
             "peer_bandwidth_bytes_per_second": self.peer_bandwidth_bytes_per_second,
             "store_bandwidth_bytes_per_second": self.store_bandwidth_bytes_per_second,
+            "tcp_store_bandwidth_bytes_per_second": (
+                self.tcp_store_bandwidth_bytes_per_second
+            ),
             "host_staging_bandwidth_bytes_per_second": (
                 self.host_staging_bandwidth_bytes_per_second
             ),
@@ -1148,6 +1153,12 @@ class _StudyRuntime:
                 resource_id="store-fabric-rate",
                 capacity_bytes_per_second=float(
                     self.parameters.store_bandwidth_bytes_per_second
+                ),
+            ),
+            "store-tcp-fabric-rate": RateResource(
+                resource_id="store-tcp-fabric-rate",
+                capacity_bytes_per_second=float(
+                    self.parameters.tcp_store_bandwidth_bytes_per_second
                 ),
             ),
             "store-0.dram-rate": RateResource(
@@ -2159,10 +2170,15 @@ class _StudyRuntime:
                 TransportKind.TCP_HOST_STAGED,
             }
             gpu_id = target_id if source_is_store else source_id
+            store_fabric_resource_id = (
+                "store-tcp-fabric-rate"
+                if store_transport is TransportKind.TCP_HOST_STAGED
+                else "store-fabric-rate"
+            )
             store_rate_resources = (
                 (
                     "store-0.dram-rate",
-                    "store-fabric-rate",
+                    store_fabric_resource_id,
                     *(
                         (f"{gpu_id}.host-rate",)
                         if staged
@@ -2178,7 +2194,7 @@ class _StudyRuntime:
                         if staged
                         else ()
                     ),
-                    "store-fabric-rate",
+                    store_fabric_resource_id,
                     "store-0.dram-rate",
                 )
             )
@@ -3765,6 +3781,7 @@ class _StudyRuntime:
                 "fabric_resources": [
                     "peer-fabric-rate",
                     "store-fabric-rate",
+                    "store-tcp-fabric-rate",
                 ],
                 "rate_resources": {
                     resource_id: resource.capacity_bytes_per_second

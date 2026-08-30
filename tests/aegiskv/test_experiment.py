@@ -89,6 +89,15 @@ def test_store_transport_paths_charge_host_staging_only_when_explicit() -> None:
                 item["source_host_staging_resource_id"] is not None
                 for item in store_transfers
             )
+            expected_fabric = (
+                "store-tcp-fabric-rate"
+                if transport is TransportKind.TCP_HOST_STAGED
+                else "store-fabric-rate"
+            )
+            assert all(
+                expected_fabric in item["rate_resource_ids"]
+                for item in store_transfers
+            )
 
 
 def test_sensitivity_catalog_binds_fabric_and_control_delay_parameters() -> None:
