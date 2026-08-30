@@ -25,7 +25,7 @@ from moonkvsim.aegiskv.experiment_suite import (
 )
 
 ROOT = Path(__file__).resolve().parents[2]
-AUDIT_PATH = ROOT / "scripts/audit_aegiskv_e2_artifacts.py"
+AUDIT_PATH = ROOT / "benchmark/AegisKV/experiments/scripts/audit_aegiskv_e2_artifacts.py"
 
 
 def _load_audit() -> ModuleType:
@@ -117,7 +117,11 @@ def _payload(spec: CellSpec) -> dict[str, Any]:
             "copy_engines": ["copy-0"],
             "fabric_resources": ["fabric-0"],
             "rate_resources": {"fabric-0": 100.0},
-            "gpu_hbm_capacity_bytes_per_gpu": 80 * 1024**3,
+            "gpu_sku": "NVIDIA-A100-40GB",
+            "topology": "single_node",
+            "node_count": 1,
+            "gpu_node_id": "node-inference-0",
+            "gpu_hbm_capacity_bytes_per_gpu": 40 * 1024**3,
             "gpu_hbm_account_stack": ["FREE"],
             "gpu_hbm_event_boundary_snapshots": True,
             "per_gpu_peer_hbm_quota_enforced": True,
@@ -459,6 +463,44 @@ def bundle(
 ) -> Bundle:
     monkeypatch.setattr(suite, "derive_failure_schedule", _fake_schedule)
     monkeypatch.setattr(suite, "run_study_cell", _fake_run)
+    config_source = tmp_path / "config-source"
+    config_source.mkdir()
+    _write_json(
+        config_source / "requests.json",
+        {
+            "schema": "moonkvsim.aegiskv.requests.v1",
+            "workload": {
+                "frozen_artifact": {
+                    "sha256": "c" * 64,
+                    "record_count": 1,
+                    "semantic_fingerprint": "d" * 64,
+                }
+            },
+        },
+    )
+    _write_json(
+        config_source / "failure.json",
+        {
+            "schema": "moonkvsim.aegiskv.failure.v1",
+            "allowed_types": ["GPU_FAILURE"],
+            "type": "GPU_FAILURE",
+            "repair": {"enabled": False},
+        },
+    )
+    _write_json(
+        config_source / "engine.json",
+        {
+            "schema": "moonkvsim.aegiskv.engine.v1",
+            "scope_id": "qwen3-8b-dp8-a100-40gb-single-node-v1",
+            "parallelism": {
+                "data_parallel_size": 8,
+                "allowed_data_parallel_sizes": [8],
+                "tensor_parallel_size": 1,
+                "pipeline_parallel_size": 1,
+            },
+            "hardware": {"physical_hbm_bytes_per_gpu": 40 * 1024**3},
+        },
+    )
     matrix_dir = tmp_path / "matrix"
     run_e2_matrix(
         ({"record": "fake"},),
@@ -468,6 +510,7 @@ def bundle(
         selection="all",
         seeds=(0,),
         jobs=1,
+        config_snapshot_dir=config_source,
     )
     figure_dir = tmp_path / "figures"
     _write_figures(matrix_dir, figure_dir)
@@ -571,8 +614,9 @@ def test_complete_bundle_passes_and_cli_emits_canonical_json(
     report = AUDIT.audit_artifacts(bundle.matrix, bundle.figures)
     assert report["status"] == "PASS"
     assert report["matrix"]["artifact_count"] == 8
-    assert report["matrix"]["result_count"] == 920
-    assert report["matrix"]["pair_count"] == 460
+    assert report["matrix"]["result_count"] == 860
+    assert report["matrix"]["pair_count"] == 430
+    assert report["matrix"]["config_snapshot_binding"] == "manifest_bound"
     assert report["figures"]["required_svg_count"] == 14
     assert report["figures"]["excluded_figure_ids"] == ["F12"]
     assert report["evidence"]["class"] == "E2"

@@ -80,8 +80,14 @@ QWEN3_8B_NATIVE_LAYOUT_FINGERPRINT: Final = (
 QWEN3_8B_YARN_128K_LAYOUT_FINGERPRINT: Final = (
     "d9863189bf94c967e18d4926ecb1fc88cc26e7dcb1553eb69972afaff7dc7d4d"
 )
-ALLOWED_DP_COUNTS: Final = (2, 4, 8)
+LOCKED_DP_COUNT: Final = 8
+ALLOWED_DP_COUNTS: Final = (LOCKED_DP_COUNT,)
 GIB: Final = 1024**3
+A100_40GB_HBM_BYTES: Final = 40 * GIB
+GPU_SKU: Final = "NVIDIA-A100-40GB"
+INFERENCE_NODE_ID: Final = "node-inference-0"
+INFERENCE_NUMA_NODE_ID: Final = "numa:node-inference-0:0"
+TOPOLOGY: Final = "single_node"
 FLOW_SLICE_POLICY_CHUNKS: Final = 8
 HBM_MODEL_WEIGHTS_ACCOUNT: Final = "MODEL_WEIGHTS"
 HBM_RUNTIME_FIXED_ACCOUNT: Final = "RUNTIME_FIXED"
@@ -134,10 +140,10 @@ class EvictionKind(StrEnum):
 
 
 def qwen3_8b_dp_only_contract() -> dict[str, Any]:
-    """Return the immutable-by-construction model/deployment experiment contract."""
+    """Return the immutable Qwen3-8B DP=8 single-node A100-40GB contract."""
 
     return {
-        "scope_id": "qwen3-8b-dp-only-tp1-pp1-v1",
+        "scope_id": "qwen3-8b-dp8-a100-40gb-single-node-v1",
         "model": {
             "id": QWEN3_8B_MODEL_ID,
             "revision": QWEN3_8B_MODEL_REVISION,
@@ -153,23 +159,33 @@ def qwen3_8b_dp_only_contract() -> dict[str, Any]:
             "evidence": "source_derived_not_physically_calibrated",
         },
         "parallelism": {
-            "only_varied_dimension": "data_parallel_size",
+            "data_parallel_size": LOCKED_DP_COUNT,
             "allowed_data_parallel_sizes": list(ALLOWED_DP_COUNTS),
+            "data_parallel_sensitivity_allowed": False,
             "tensor_parallel_size": 1,
             "pipeline_parallel_size": 1,
             "tensor_parallel_sensitivity_allowed": False,
             "pipeline_parallel_sensitivity_allowed": False,
         },
+        "hardware": {
+            "gpu_sku": GPU_SKU,
+            "gpu_count": LOCKED_DP_COUNT,
+            "node_count": 1,
+            "topology": TOPOLOGY,
+            "physical_hbm_bytes_per_gpu": A100_40GB_HBM_BYTES,
+            "evidence": "modeled_not_physically_calibrated",
+        },
     }
 
 
 def qwen3_8b_dp_deployment(dp_count: int) -> dict[str, Any]:
-    """Bind one AegisKV cell to the fixed Qwen3-8B DP-only contract."""
+    """Bind one AegisKV cell to the locked Qwen3-8B DP=8 A100-40GB contract."""
 
-    contract = qwen3_8b_dp_only_contract()
-    parallelism = cast(dict[str, Any], contract["parallelism"])
-    parallelism["data_parallel_size"] = dp_count
-    return contract
+    if dp_count != LOCKED_DP_COUNT:
+        raise ValueError(
+            f"Qwen3-8B experiments require dp_count={LOCKED_DP_COUNT}, got {dp_count}"
+        )
+    return qwen3_8b_dp_only_contract()
 
 
 @dataclass(frozen=True, slots=True)
@@ -303,12 +319,12 @@ SYSTEM_PROFILES: Final[dict[SystemId, SystemProfile]] = {
 
 @dataclass(frozen=True, slots=True)
 class ModelParameters:
-    dp_count: int = 4
+    dp_count: int = LOCKED_DP_COUNT
     store_node_count: int = 1
-    physical_hbm_bytes_per_gpu: int = 80 * GIB
+    physical_hbm_bytes_per_gpu: int = A100_40GB_HBM_BYTES
     model_weights_bytes_per_gpu: int = 16 * GIB
-    runtime_fixed_bytes_per_gpu: int = 8 * GIB
-    peer_budget_bytes_per_gpu: int = 8 * GIB
+    runtime_fixed_bytes_per_gpu: int = 2 * GIB
+    peer_budget_bytes_per_gpu: int = 4 * GIB
     store_budget_bytes: int = 64 * GIB
     peer_bandwidth_bytes_per_second: int = 100_000_000_000
     store_bandwidth_bytes_per_second: int = 25_000_000_000
@@ -344,7 +360,12 @@ class ModelParameters:
             raise ValueError("modeled parameters must be positive integers")
         if self.dp_count not in ALLOWED_DP_COUNTS:
             raise ValueError(
-                f"Qwen3-8B DP-only experiments require dp_count in {ALLOWED_DP_COUNTS}"
+                f"Qwen3-8B experiments require dp_count={LOCKED_DP_COUNT}"
+            )
+        if self.physical_hbm_bytes_per_gpu != A100_40GB_HBM_BYTES:
+            raise ValueError(
+                "Qwen3-8B experiments lock each GPU to modeled A100-40GB HBM "
+                f"({A100_40GB_HBM_BYTES} bytes)"
             )
         if (
             self.model_weights_bytes_per_gpu
@@ -371,6 +392,9 @@ class ModelParameters:
             "model_deployment": qwen3_8b_dp_deployment(self.dp_count),
             "dp_count": self.dp_count,
             "store_node_count": self.store_node_count,
+            "gpu_sku": GPU_SKU,
+            "topology": TOPOLOGY,
+            "node_count": 1,
             "physical_hbm_bytes_per_gpu": self.physical_hbm_bytes_per_gpu,
             "model_weights_bytes_per_gpu": self.model_weights_bytes_per_gpu,
             "runtime_fixed_bytes_per_gpu": self.runtime_fixed_bytes_per_gpu,
@@ -1986,6 +2010,35 @@ class _StudyRuntime:
         if ledger.bytes_in(UNAVAILABLE_CAPACITY_ACCOUNT) != ledger.capacity_bytes:
             raise ExperimentError("failed GPU HBM ledger is not fully unavailable")
 
+    def _reclaim_hbm_free_bytes(self, gpu_id: str, allocated_bytes: int) -> None:
+        """Free modeled A100-40GB HBM so a same-GPU reservation can proceed."""
+
+        ledger = self.hbm_ledgers[gpu_id]
+        inactive_bytes = ledger.bytes_in(HBM_INACTIVE_REUSABLE_ACCOUNT)
+        if inactive_bytes:
+            self._commit_hbm_moves(
+                gpu_id,
+                [(HBM_INACTIVE_REUSABLE_ACCOUNT, FREE_ACCOUNT, inactive_bytes)],
+                cause="REQUEST_PRIMARY_KV_RECLAIM_INACTIVE",
+            )
+        shortfall = allocated_bytes - ledger.bytes_in(FREE_ACCOUNT)
+        if shortfall <= 0:
+            return
+        pool = self.peer_pools[gpu_id]
+        bytes_to_free = min(shortfall, pool.occupied_bytes)
+        if bytes_to_free <= 0:
+            return
+        new_capacity = pool.occupied_bytes + pool.pending_bytes - bytes_to_free
+        pool.set_capacity(
+            new_capacity,
+            now_ns=self.des.now_ns,
+            cause="REQUEST_PRIMARY_KV_RECLAIM_PEER",
+        )
+        self._sync_peer_hbm_ledger(
+            gpu_id,
+            cause="REQUEST_PRIMARY_KV_RECLAIM_PEER",
+        )
+
     def _on_hbm_primary_allocate(
         self, event: ScheduledEvent, _des: GlobalDES
     ) -> None:
@@ -2002,6 +2055,7 @@ class _StudyRuntime:
         ):
             raise ExperimentError("primary-HBM allocation owner is invalid")
         allocated_bytes = _tokens_to_allocated_bytes(execution.metadata.prompt_tokens)
+        self._reclaim_hbm_free_bytes(gpu_id, allocated_bytes)
         self._commit_hbm_moves(
             gpu_id,
             [(FREE_ACCOUNT, HBM_ACTIVE_PRIMARY_ACCOUNT, allocated_bytes)],
@@ -2317,12 +2371,18 @@ class _StudyRuntime:
             opcode = TransferOpcode.WRITE
         else:
             source = (
-                _experiment_store_location(source_id)
+                _experiment_store_location(
+                    source_id,
+                    colocated_node_id=self._store_node_id(),
+                )
                 if source_is_store
                 else _experiment_gpu_location(source_id)
             )
             target = (
-                _experiment_store_location(target_id)
+                _experiment_store_location(
+                    target_id,
+                    colocated_node_id=self._store_node_id(),
+                )
                 if target_is_store
                 else _experiment_gpu_location(target_id)
             )
@@ -3206,6 +3266,7 @@ class _StudyRuntime:
         ):
             raise ExperimentError("failed GPU reached a recovery flow start")
         execution = self.executions[pending.span_id]
+        self._reclaim_hbm_free_bytes(pending.target_gpu_id, pending.staging_bytes)
         self._commit_hbm_moves(
             pending.target_gpu_id,
             [
@@ -4003,6 +4064,10 @@ class _StudyRuntime:
                         self.transfer_rate_resources.items()
                     )
                 },
+                "gpu_sku": GPU_SKU,
+                "topology": TOPOLOGY,
+                "node_count": 1,
+                "gpu_node_id": INFERENCE_NODE_ID,
                 "gpu_hbm_capacity_bytes_per_gpu": (
                     self.parameters.physical_hbm_bytes_per_gpu
                 ),
@@ -4094,6 +4159,11 @@ class _StudyRuntime:
         value = f"study:{self._event_sequence:08d}:{suffix}"
         self._event_sequence += 1
         return value
+
+    def _store_node_id(self) -> str | None:
+        if self.parameters.store_node_count == 1:
+            return INFERENCE_NODE_ID
+        return None
 
 
 def run_study_cell(
@@ -4296,7 +4366,6 @@ def sensitivity_variants(
         ("store_budget_gib", (32, 64, 128)),
         ("store_bandwidth_gbps", (12, 25, 50)),
         ("peer_fabric_bandwidth_gbps", (50, 100, 200)),
-        ("dp_count", (2, 4, 8)),
         ("failure_progress_percent", (10, 50, 90)),
         ("detection_delay_ms", (1, 5, 20)),
         ("reroute_delay_ms", (0, 1, 5)),
@@ -4317,8 +4386,6 @@ def sensitivity_variants(
                 updated = replace(
                     parameters, peer_bandwidth_bytes_per_second=value * 1_000_000_000
                 )
-            elif dimension == "dp_count":
-                updated = replace(parameters, dp_count=value)
             elif dimension == "failure_progress_percent":
                 updated = replace(parameters, failure_progress_per_mille=value * 10)
             elif dimension == "detection_delay_ms":
@@ -4602,22 +4669,24 @@ def _experiment_gpu_location(gpu_id: str) -> MemoryLocation:
         raise ExperimentError("experiment GPU location requires a physical gpu-* ID")
     return MemoryLocation(
         resource_id=f"hbm:{gpu_id}",
-        node_id="node-inference-0",
-        numa_node_id="numa:node-inference-0:0",
+        node_id=INFERENCE_NODE_ID,
+        numa_node_id=INFERENCE_NUMA_NODE_ID,
         kind=MemoryKind.GPU_HBM,
         endpoint=f"gpu://{gpu_id}",
         gpu_id=gpu_id,
     )
 
 
-def _experiment_store_location(segment_id: str) -> MemoryLocation:
+def _experiment_store_location(
+    segment_id: str, *, colocated_node_id: str | None = None
+) -> MemoryLocation:
     if not segment_id.startswith("store-") or ":segment-" not in segment_id:
         raise ExperimentError("experiment Store location requires a store segment ID")
-    node_id = segment_id.split(":", 1)[0]
+    node_id = colocated_node_id or f"node-{segment_id.split(':', 1)[0]}"
     return MemoryLocation(
         resource_id=segment_id,
-        node_id=f"node-{node_id}",
-        numa_node_id=f"numa:node-{node_id}:0",
+        node_id=node_id,
+        numa_node_id=f"numa:{node_id}:0",
         kind=MemoryKind.STORE_DRAM,
         endpoint=f"rdma://{segment_id.replace(':', '/')}",
     )

@@ -105,17 +105,10 @@ means a selected E2 semantic subset, never full Store/TE parity.
   card is not an experiment pass: the exact candidate still requires physical
   long- and short-context validation on pinned vLLM revision
   `644d8a7cd05ed4ecd1cd188e3c05b4bbd074f504` and target hardware.
-- `scripts/physical/qwen3_8b_vllm_context_probe.py` and its Slurm wrapper provide
-  a fail-closed, offline, one-L40S functional diagnostic. Before model loading it
-  verifies every locked installed-vLLM semantic file, locked model/tokenizer
-  inputs, and SHA-addressed weight shards; it binds the executed staged Python
-  copy and the actual Slurm-spooled wrapper. It then requests matched native and
-  static-YaRN 8,192-token prompts plus exactly 131,071 prompt tokens and one
-  generated token, with pre/post process checks limited to the assigned visible
-  GPU. A canonical PASS has not yet been recorded. Even a future PASS remains
-  `physical_functional_only`: timings are telemetry, the synthetic prompt is not
-  a short-context quality test, and the probe never edits `source-lock.json` or
-  upgrades an E-level evidence class.
+- Physical YaRN/context-probe validation is outside the current E2
+  simulation-only delivery. The candidate remains `proposed_unvalidated`; a
+  future physical PASS would still be `physical_functional_only` and would not
+  upgrade an E-level evidence class by itself.
 - The Weka trace is an untracked, SHA-locked source artifact. Its lengths use
   `source_hash_blocks_64`; it is not Qwen-tokenizer-exact input. Reviewed
   publisher-authored sources do not disclose its exact capture start/end, so

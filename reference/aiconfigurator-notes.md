@@ -25,10 +25,8 @@ scale factor, and residual reports whose profile/phase/shape/counts or
 threshold result do not match the selection. Unsupported/preliminary state is
 recorded only in the support audit, not in the formal selection schema.
 
-No target calibration bundle exists. The exact next physical step is the
-forward-only, phase/shape-separated L40S/A100 plan in
-`scripts/physical/aiconfigurator_vllm_forward_calibration_plan.md`; it is
-planned and unexecuted, so M3 remains below E3.
+No target calibration bundle exists. Physical forward calibration is outside
+the current E2 simulation-only delivery, so M3 remains below E3.
 
 The local Qwen3-8B cache provides revision
 `b968826d9c46dd6066d109eabc6255188de91218`; its tokenizer and embedded chat

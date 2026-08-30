@@ -28,7 +28,7 @@ from moonkvsim.common.hash import canonical_json_bytes
 from moonkvsim.output.section16 import SECTION_16_ARTIFACTS
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
-BASE_CONFIG = REPOSITORY_ROOT / "configs/experiments/vanilla-weka-e2-smoke.json"
+BASE_CONFIG = REPOSITORY_ROOT / "tests/fixtures/vanilla-e2/vanilla-weka-e2-smoke.json"
 FIXTURE = Path(__file__).parent / "fixtures/weka-real-shape-three-span.jsonl"
 
 
@@ -883,7 +883,8 @@ def test_transfer_resource_schema_requires_positive_lanes_and_capacity(
 
 def test_unresolved_failure_template_is_deliberately_not_runnable() -> None:
     template = (
-        REPOSITORY_ROOT / "configs/experiments/vanilla-weka-failure-e2-unresolved.template.json"
+        REPOSITORY_ROOT
+        / "tests/fixtures/vanilla-e2/vanilla-weka-failure-e2-unresolved.template.json"
     )
 
     with pytest.raises(E2HarnessError, match="schema validation failed"):

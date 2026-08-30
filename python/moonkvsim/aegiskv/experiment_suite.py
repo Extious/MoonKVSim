@@ -22,9 +22,11 @@ from pathlib import Path
 from typing import Any, Final, Literal, cast
 
 from moonkvsim.aegiskv.experiment import (
+    DEFAULT_PARAMETERS,
     CellSpec,
     ExperimentVariant,
     FailureSchedule,
+    ModelParameters,
     Scenario,
     StudyRunResult,
     ablation_variants,
@@ -90,7 +92,6 @@ EXPECTED_VARIANT_IDS: Final[dict[str, tuple[str, ...]]] = {
             ("store_budget_gib", (32, 64, 128)),
             ("store_bandwidth_gbps", (12, 25, 50)),
             ("peer_fabric_bandwidth_gbps", (50, 100, 200)),
-            ("dp_count", (2, 4, 8)),
             ("failure_progress_percent", (10, 50, 90)),
             ("detection_delay_ms", (1, 5, 20)),
             ("reroute_delay_ms", (0, 1, 5)),
@@ -102,8 +103,8 @@ EXPECTED_VARIANT_IDS: Final[dict[str, tuple[str, ...]]] = {
 DEFAULT_EXPECTED_ROWS: Final = {
     "core": 420,
     "ablation": 720,
-    "sensitivity": 1_620,
-    "all": 2_760,
+    "sensitivity": 1_440,
+    "all": 2_580,
 }
 NO_FAILURE_SCHEDULE_FINGERPRINT: Final = sha256_json(
     {"scenario": Scenario.NO_FAILURE.value, "failure_schedule": None}
@@ -344,13 +345,16 @@ def load_frozen_workload(
     return records, binding, manifest
 
 
-def _variants_for(suite_name: str) -> tuple[ExperimentVariant, ...]:
+def _variants_for(
+    suite_name: str,
+    parameters: ModelParameters = DEFAULT_PARAMETERS,
+) -> tuple[ExperimentVariant, ...]:
     if suite_name == "core":
-        variants = core_variants()
+        variants = core_variants(parameters)
     elif suite_name == "ablation":
-        variants = ablation_variants()
+        variants = ablation_variants(parameters)
     elif suite_name == "sensitivity":
-        variants = sensitivity_variants()
+        variants = sensitivity_variants(parameters)
     else:
         raise ExperimentSuiteError(f"unknown suite: {suite_name}")
     actual_ids = tuple(variant.variant_id for variant in variants)
@@ -366,16 +370,19 @@ def _variants_for(suite_name: str) -> tuple[ExperimentVariant, ...]:
     return variants
 
 
-def selected_variants(selection: SuiteSelection) -> tuple[ExperimentVariant, ...]:
+def selected_variants(
+    selection: SuiteSelection,
+    parameters: ModelParameters = DEFAULT_PARAMETERS,
+) -> tuple[ExperimentVariant, ...]:
     """Return the exact variant catalog selected by ``core`` or ``all``."""
 
     if selection == "core":
-        return _variants_for("core")
+        return _variants_for("core", parameters)
     if selection == "all":
         return (
-            *_variants_for("core"),
-            *_variants_for("ablation"),
-            *_variants_for("sensitivity"),
+            *_variants_for("core", parameters),
+            *_variants_for("ablation", parameters),
+            *_variants_for("sensitivity", parameters),
         )
     raise ExperimentSuiteError(f"unknown suite selection: {selection}")
 
@@ -977,6 +984,7 @@ def _publish(
     protocol: Mapping[str, Any],
     statistics: Mapping[str, Any],
     representative: Mapping[str, Any],
+    config_snapshot_dir: Path | None = None,
 ) -> dict[str, Any]:
     if output_dir.exists():
         raise ExperimentSuiteError(f"existing output target is forbidden: {output_dir}")
@@ -991,6 +999,34 @@ def _publish(
         _write_json(staging / "protocol.json", protocol)
         _write_json(staging / "statistics.json", statistics)
         _write_json(staging / "representative-run.json", representative)
+        config_snapshot: dict[str, Any] | None = None
+        if config_snapshot_dir is not None:
+            config_names = ("requests.json", "failure.json", "engine.json")
+            if config_snapshot_dir.is_symlink() or not config_snapshot_dir.is_dir():
+                raise ExperimentSuiteError("config snapshot source must be a regular directory")
+            actual_config_names = {path.name for path in config_snapshot_dir.iterdir()}
+            if actual_config_names != set(config_names):
+                raise ExperimentSuiteError(
+                    "config snapshot source must contain exactly requests.json, "
+                    "failure.json, and engine.json"
+                )
+            snapshot_dir = staging / "configs"
+            snapshot_dir.mkdir()
+            for name in config_names:
+                source = config_snapshot_dir / name
+                if source.is_symlink() or not source.is_file():
+                    raise ExperimentSuiteError(f"config snapshot source is invalid: {source}")
+                shutil.copy2(source, snapshot_dir / name)
+            config_snapshot = {
+                "directory": "configs",
+                "files": {
+                    name: {
+                        "sha256": _sha256_file(snapshot_dir / name),
+                        "size_bytes": (snapshot_dir / name).stat().st_size,
+                    }
+                    for name in config_names
+                },
+            }
         artifact_names = (
             "results.jsonl",
             "pair-audit.jsonl",
@@ -1031,6 +1067,8 @@ def _publish(
             "provenance_fingerprint": provenance["fingerprint"],
             "statistics_fingerprint": statistics["fingerprint"],
         }
+        if config_snapshot is not None:
+            manifest["config_snapshot"] = config_snapshot
         manifest["fingerprint"] = sha256_json(manifest)
         _write_json(staging / "manifest.json", manifest)
         if output_dir.exists():
@@ -1055,6 +1093,8 @@ def run_e2_matrix(
     seeds: Sequence[int] = DEFAULT_SEEDS,
     jobs: int = 1,
     worker_workload_path: Path | None = None,
+    parameters: ModelParameters = DEFAULT_PARAMETERS,
+    config_snapshot_dir: Path | None = None,
 ) -> dict[str, Any]:
     """Execute, audit, and atomically publish an explicit GlobalDES E2 matrix."""
 
@@ -1063,7 +1103,7 @@ def run_e2_matrix(
     if type(jobs) is not int or jobs <= 0:
         raise ExperimentSuiteError("jobs must be a positive integer")
     canonical_seeds = normalize_seeds(seeds)
-    variants = selected_variants(selection)
+    variants = selected_variants(selection, parameters=parameters)
     protocol = build_protocol(selection, canonical_seeds)
     protocol_fingerprint = str(protocol["fingerprint"])
     schedule_tasks = _schedule_tasks(variants, canonical_seeds)
@@ -1149,6 +1189,7 @@ def run_e2_matrix(
         protocol=protocol,
         statistics=statistics,
         representative=representatives[0],
+        config_snapshot_dir=config_snapshot_dir,
     )
 
 
@@ -1164,6 +1205,7 @@ def run_explicit_e2_matrix(
     seeds: Sequence[int],
     jobs: int = 1,
     worker_workload_path: Path | None = None,
+    config_snapshot_dir: Path | None = None,
 ) -> dict[str, Any]:
     """Publish a versioned focused matrix without mutating the v1 suite catalog.
 
@@ -1385,4 +1427,5 @@ def run_explicit_e2_matrix(
         protocol=protocol,
         statistics=statistics,
         representative=cast(Mapping[str, Any], representatives[0]),
+        config_snapshot_dir=config_snapshot_dir,
     )

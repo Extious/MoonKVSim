@@ -32,7 +32,7 @@ def _committed_records() -> list[dict[str, object]]:
 def test_protocol_enumerates_seven_systems_and_declared_variants() -> None:
     assert [item.variant_id for item in core_variants()] == [item.value for item in SystemId]
     assert len(ablation_variants()) == 12
-    assert len(sensitivity_variants()) == 27
+    assert len(sensitivity_variants()) == 24
     assert {item.suite for item in core_variants()} == {"core"}
     assert {item.suite for item in ablation_variants()} == {"ablation"}
     assert {item.suite for item in sensitivity_variants()} == {"sensitivity"}
@@ -61,17 +61,28 @@ def test_qwen3_8b_dp_only_scope_is_fixed_and_machine_auditable() -> None:
         "other_models_allowed": False,
     }
     assert contract["parallelism"] == {
-        "only_varied_dimension": "data_parallel_size",
-        "allowed_data_parallel_sizes": [2, 4, 8],
+        "data_parallel_size": 8,
+        "allowed_data_parallel_sizes": [8],
+        "data_parallel_sensitivity_allowed": False,
         "tensor_parallel_size": 1,
         "pipeline_parallel_size": 1,
         "tensor_parallel_sensitivity_allowed": False,
         "pipeline_parallel_sensitivity_allowed": False,
     }
+    assert contract["hardware"] == {
+        "gpu_sku": "NVIDIA-A100-40GB",
+        "gpu_count": 8,
+        "node_count": 1,
+        "topology": "single_node",
+        "physical_hbm_bytes_per_gpu": 40 * 1024**3,
+        "evidence": "modeled_not_physically_calibrated",
+    }
     assert deployment == qwen3_8b_dp_deployment(8)
     assert deployment["parallelism"]["data_parallel_size"] == 8
     with pytest.raises(ValueError, match="dp_count"):
         ModelParameters(dp_count=16)
+    with pytest.raises(ValueError, match="A100-40GB"):
+        ModelParameters(physical_hbm_bytes_per_gpu=80 * 1024**3)
 
 
 def test_store_transport_paths_charge_host_staging_only_when_explicit() -> None:
@@ -187,7 +198,9 @@ def test_four_store_nodes_partition_capacity_and_restore_from_multiple_segments(
         for item in first.representative["transfers"]
         if item["cause"] == "AEGIS_RECOVERY_STORE_DRAM"
     ]
-    assert {item["source"] for item in recovery} == set(store_segments)
+    assert recovery
+    assert {item["source"] for item in recovery} <= set(store_segments)
+    assert len({item["source"] for item in recovery}) >= 2
     for item in recovery:
         node_id = item["source"].split(":", 1)[0]
         assert f"{node_id}.dram-rate" in item["rate_resource_ids"]
@@ -408,9 +421,9 @@ def test_no_failure_recompute_has_no_protection_or_failure() -> None:
     assert result.payload["output_audit"]["duplicate_or_missing_tokens"] == 0
 
 
-def test_dp2_128k_uses_same_logical_failure_trigger_across_core_systems() -> None:
+def test_dp8_128k_uses_same_logical_failure_trigger_across_core_systems() -> None:
     records = _committed_records()
-    parameters = ModelParameters(dp_count=2)
+    parameters = ModelParameters(dp_count=8)
     for seed in (0, 7):
         schedule = derive_failure_schedule(
             records,

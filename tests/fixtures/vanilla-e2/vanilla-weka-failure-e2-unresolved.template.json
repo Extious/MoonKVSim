@@ -1,0 +1,37 @@
+{
+  "schema": "moonkvsim.vanilla-trace-e2-failure-unresolved-template.v1",
+  "runnable": false,
+  "base_config": "tests/fixtures/vanilla-e2/vanilla-weka-e2-smoke.json",
+  "evidence_boundary": "E2_real_trace_shape_vanilla_baseline_uncalibrated",
+  "formal_use_allowed": false,
+  "materialization_gate": "replace every UNRESOLVED failure value from a clean-code no-failure diagnostic, emit a complete harness config using the base config's explicit RDMA_GDR rate/copy/QP resource plan, and pass strict schema and semantic validation",
+  "failure_override": {
+    "enabled": true,
+    "mode": "fixed_virtual_time_gpu_fail_stop",
+    "parameter_source": "assumed",
+    "calibration_status": "not_calibrated",
+    "formal_use_allowed": false,
+    "random_selection": false,
+    "implicit_fallback": false,
+    "events": [
+      {
+        "failure_id": "weka-reused-prefix-post-output-failure-0",
+        "type": "GPU_FAILURE",
+        "at_ns": "UNRESOLVED_AFTER_CLEAN_NO_FAILURE_DIAGNOSTIC",
+        "detection_delay_ns": 0,
+        "target": "UNRESOLVED_EXACT_REPLICA_GPU_HBM_TUPLE",
+        "repair_after_ns": null,
+        "semantics": "fail_stop_hbm_lost"
+      }
+    ]
+  },
+  "transfer_resource_base_binding": {
+    "config": "tests/fixtures/vanilla-e2/vanilla-weka-e2-smoke.json#network",
+    "transport": "RDMA_GDR",
+    "host_staging_charge": false,
+    "required_bindings": "per-DP PUT/GET actual source copy lane, destination copy lane, and endpoint QP lane",
+    "parameter_source": "assumed",
+    "calibration_status": "not_calibrated",
+    "formal_use_allowed": false
+  }
+}

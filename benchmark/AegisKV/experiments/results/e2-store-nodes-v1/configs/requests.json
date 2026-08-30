@@ -1,0 +1,68 @@
+{
+  "schema": "moonkvsim.aegiskv.requests.v1",
+  "seed": {
+    "matrix_seeds": [0, 1, 2],
+    "usage": "tie_break_gpu_target_and_failure_sampling_only",
+    "does_not_alter": [
+      "request_text",
+      "causal_dag",
+      "token_lengths"
+    ]
+  },
+  "arrival": {
+    "mode": "causal_trace_replay",
+    "request_rate": null,
+    "max_concurrency": null,
+    "closed_loop": true,
+    "preserve_agent_dag": true,
+    "preserve_recorded_tool_delay": true
+  },
+  "workload": {
+    "kind": "real_multi_agent_trace",
+    "dataset": "semianalysisai/cc-traces-weka-062126",
+    "license": "Apache-2.0",
+    "token_count_mode": "source_hash_blocks_64",
+    "derive_prefix_sharing_from_source_hash_ids": true,
+    "frozen_artifact": {
+      "path": "benchmark/AegisKV/experiments/workloads/weka-e2-two-workflow-shapes.jsonl",
+      "manifest_path": "benchmark/AegisKV/experiments/workloads/weka-e2-two-workflow-manifest.json",
+      "record_count": 117,
+      "sha256": "293cce4c2ad133c4e4d114ff2890b6d55aebf3ec13bf4f1945bc219026c52574",
+      "semantic_fingerprint": "7b7d5e6572ce77c13187865ee23ed9441ff46eaa73b23a018b4d555c1ad6fc70"
+    },
+    "source": {
+      "normalized_record_count": 46142,
+      "normalized_sha256": "0a1c37deea32f2c393ba7d8d2d9a7c5629854b874b01ace8953140ad889f6d54",
+      "normalizer_version": "moonkvsim.weka.v1.1",
+      "collection_interval": "not_disclosed_by_reviewed_public_sources",
+      "content_availability": "source_hash_ids_only",
+      "target_tokenizer_equivalence": false
+    },
+    "selection": {
+      "kind": "complete_workflows_frozen_by_id",
+      "workflow_ids": [
+        "002001296e8a8c38ad9d7cc436d691afc602",
+        "0196085d85d2075a50b74cd8795ffbdcea9a"
+      ],
+      "no_truncation": true,
+      "no_padding": true,
+      "no_synthesis": true,
+      "no_span_slicing": true,
+      "no_cross_workflow_concatenation": true
+    }
+  },
+  "trace_token_count": {
+    "mode": "source_hash_blocks_64",
+    "source_block_size_tokens": 64,
+    "hash_id_scope": "within_workflow_only",
+    "target_tokenizer_equivalence": false
+  },
+  "context": {
+    "max_model_len_tokens": 131072,
+    "required_observed_context_buckets": ["8k", "32k", "64k", "96k", "128k"],
+    "require_real_128k_samples": true,
+    "overflow_policy": "fail",
+    "truncation_policy": "forbid",
+    "synthetic_padding": "forbid"
+  }
+}

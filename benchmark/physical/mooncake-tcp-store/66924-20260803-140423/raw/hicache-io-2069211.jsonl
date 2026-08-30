@@ -1,1 +1,0 @@
-{"bytes": 141557760, "duration_us": 219110.026, "end_unix_ns": 1785737726372954750, "objects": 30, "operation": "prefetch", "pid": 2069211, "start_unix_ns": 1785737726151616724, "status": "ok", "thread": "Thread-10 (prefetch_io_aux_func)"}

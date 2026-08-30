@@ -159,7 +159,7 @@ FIGURES: Final = (
     _FigureSpec("F8", "coverage-recompute", "Protection coverage and recomputation"),
     _FigureSpec("F9", "policy-ablation", "Policy ablations"),
     _FigureSpec("F10", "budget-sensitivity", "Peer-HBM and Store budget sensitivity"),
-    _FigureSpec("F11", "scale", "Modeled scale sensitivity"),
+    _FigureSpec("F11", "scale", "Modeled intra-node bandwidth and control-delay sensitivity"),
     _FigureSpec("F13", "resource-cost", "AegisKV resource-cost decomposition"),
     _FigureSpec("F14", "peak-mean", "Resource peak and time-weighted mean"),
     _FigureSpec("F15", "trace-coverage", "Real multi-agent trace five-bucket coverage"),
@@ -2237,8 +2237,7 @@ def _scale_sensitivity(rows: Sequence[MatrixRow], spec: _FigureSpec) -> _Rendere
         and row.scenario == "gpu_failure"
         and row.repetition == "A"
         and (
-            row.variant_id.startswith("dp_count=")
-            or row.variant_id.startswith("store_bandwidth_gbps=")
+            row.variant_id.startswith("store_bandwidth_gbps=")
             or row.variant_id.startswith("peer_fabric_bandwidth_gbps=")
             or row.variant_id.startswith("detection_delay_ms=")
             or row.variant_id.startswith("reroute_delay_ms=")
@@ -2248,12 +2247,11 @@ def _scale_sensitivity(rows: Sequence[MatrixRow], spec: _FigureSpec) -> _Rendere
         raise FigureInputError("F11 requires sensitivity-suite rows")
     canvas = _Canvas(
         spec.title,
-        "Separate scale, bandwidth, and control-delay axes; bucket color; seed jitter",
+        "Separate bandwidth and control-delay axes; bucket color; seed jitter",
     )
     _bucket_legend(canvas)
     declared_seeds = sorted({row.seed for row in selected})
     dimensions: tuple[tuple[str, str, Callable[[MatrixRow], float]], ...] = (
-        ("DP replicas", "dp_count=", lambda row: _parameter(row, "dp_count")),
         (
             "Store bandwidth (GB/s)",
             "store_bandwidth_gbps=",
@@ -2286,9 +2284,9 @@ def _scale_sensitivity(rows: Sequence[MatrixRow], spec: _FigureSpec) -> _Rendere
         ),
     )
     bindings: list[PointBinding] = []
-    panel_width = 210.0
+    panel_width = 250.0
     panel_height = 210.0
-    panel_lefts = (30.0, 260.0, 490.0, 720.0, 950.0)
+    panel_lefts = (40.0, 330.0, 620.0, 910.0)
     panel_tops = (105.0, 370.0)
     point_index = 0
     for dimension_index, (dimension_label, prefix, x_getter) in enumerate(dimensions):
@@ -2393,7 +2391,7 @@ def _scale_sensitivity(rows: Sequence[MatrixRow], spec: _FigureSpec) -> _Rendere
         canvas.serialize(),
         tuple(bindings),
         (
-            "dp_store_peer_fabric_detection_and_reroute_use_separate_axes",
+            "store_peer_fabric_detection_and_reroute_use_separate_axes",
             "store_node_count_not_parameterized_in_canonical_E2_matrix",
             "one_at_a_time_sensitivity_repeat_A_across_all_declared_seeds",
             "bucket_is_color_encoded_and_seed_uses_deterministic_horizontal_jitter",

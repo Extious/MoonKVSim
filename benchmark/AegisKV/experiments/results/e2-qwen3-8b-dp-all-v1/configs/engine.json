@@ -1,0 +1,79 @@
+{
+  "schema": "moonkvsim.aegiskv.engine.v1",
+  "scope_id": "qwen3-8b-dp-only-tp1-pp1-v1",
+  "model": {
+    "id": "Qwen/Qwen3-8B",
+    "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+    "config_sha256": "f7c4eadfbbf522470667b797a3c89be2524832d2d599797248dc304fff447c30",
+    "dtype": "bf16",
+    "kv_dtype": "bf16",
+    "kv_layout": {
+      "native_path": "configs/resolved/qwen3-8b/native-tp1-pp1/kv-layout.json",
+      "proposed_yarn_128k_path": "configs/resolved/qwen3-8b/proposed-yarn-128k-tp1-pp1/kv-layout.json",
+      "bytes_per_64_source_tokens": 9437184
+    }
+  },
+  "parallelism": {
+    "data_parallel_size": 8,
+    "allowed_data_parallel_sizes": [
+      2,
+      4,
+      8
+    ],
+    "tensor_parallel_size": 1,
+    "pipeline_parallel_size": 1
+  },
+  "hardware": {
+    "gpu_sku": "modeled-80gib-hbm",
+    "gpu_count": 8,
+    "node_count": 1,
+    "topology": "single_node",
+    "inference_node_id": "node-inference-0",
+    "physical_hbm_bytes_per_gpu": 85899345920
+  },
+  "memory": {
+    "model_weights_bytes_per_gpu": 17179869184,
+    "runtime_fixed_bytes_per_gpu": 8589934592,
+    "peer_budget_bytes_per_gpu": 8589934592,
+    "store_budget_bytes": 68719476736,
+    "host_staging_capacity_bytes_per_node": 34359738368
+  },
+  "store": {
+    "kind": "mooncake_dram",
+    "node_count": 1,
+    "colocated_with_inference": true
+  },
+  "network": {
+    "store_transport": "RDMA_GDR",
+    "peer_bandwidth_bytes_per_second": 100000000000,
+    "store_bandwidth_bytes_per_second": 25000000000,
+    "tcp_store_bandwidth_bytes_per_second": 8000000000,
+    "host_staging_bandwidth_bytes_per_second": 16000000000,
+    "transfer_setup_ns": 250000
+  },
+  "control": {
+    "failure_detection_ns": 5000000,
+    "reroute_ns": 1000000,
+    "policy_chunk_tokens": 1024,
+    "failure_progress_per_mille": 100
+  },
+  "predictor": {
+    "kind": "aiconfigurator",
+    "status": "unsupported_for_target_profile",
+    "residual_thresholds_path": "configs/aiconfigurator/qwen3-8b-l40s-native-40960/residual-thresholds.json",
+    "formal_use_allowed": false,
+    "note": "AIConfigurator is not bound as a formal E2 predictor; cell timings use modeled assumed rates"
+  },
+  "evidence": {
+    "class": "E2",
+    "scope": "modeled/preliminary",
+    "calibration": "not_calibrated",
+    "physical_execution": false,
+    "paper_ready": false
+  },
+  "snapshot": {
+    "kind": "reconstructed_from_published_bundle",
+    "result_id": "e2-qwen3-8b-dp-all-v1",
+    "note": "Reconstructed snapshot of the published 2,760-row matrix. That run swept DP={2,4,8} on modeled 80 GiB HBM and is superseded by the DP=8 A100-40GB lock in experiments/configs/engine.json."
+  }
+}

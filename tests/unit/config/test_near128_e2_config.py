@@ -14,8 +14,8 @@ from moonkvsim.baseline.trace_runner import TraceSelection, load_trace_run_input
 from moonkvsim.common.hash import canonical_json_bytes
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
-SMOKE_CONFIG = REPOSITORY_ROOT / "configs/experiments/vanilla-weka-e2-smoke.json"
-NEAR128_CONFIG = REPOSITORY_ROOT / "configs/experiments/vanilla-weka-near128-e2.json"
+SMOKE_CONFIG = REPOSITORY_ROOT / "tests/fixtures/vanilla-e2/vanilla-weka-e2-smoke.json"
+NEAR128_CONFIG = REPOSITORY_ROOT / "tests/fixtures/vanilla-e2/vanilla-weka-near128-e2.json"
 HARNESS_SCHEMA = REPOSITORY_ROOT / "schemas/vanilla-trace-e2-harness.schema.json"
 WORKFLOW_ID = "0e4206535a79f980e2b1091181202ea987fe"
 TRACE_SHA256 = "0a1c37deea32f2c393ba7d8d2d9a7c5629854b874b01ace8953140ad889f6d54"

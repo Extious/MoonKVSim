@@ -14,7 +14,7 @@ from moonkvsim.aegiskv.store_node_preview_figures import (
 )
 
 ROOT = Path(__file__).resolve().parents[2]
-MATRIX = ROOT / "benchmark/AegisKV/experiments/e2-store-nodes-v1"
+MATRIX = ROOT / "benchmark/AegisKV/experiments/results/e2-store-nodes-v1"
 GENERATOR = ROOT / "python/moonkvsim/aegiskv/store_node_preview_figures.py"
 
 

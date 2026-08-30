@@ -14,7 +14,7 @@ from moonkvsim.aegiskv.transport_preview_figures import (
 )
 
 ROOT = Path(__file__).resolve().parents[2]
-MATRIX = ROOT / "benchmark/AegisKV/experiments/e2-transport-v1"
+MATRIX = ROOT / "benchmark/AegisKV/experiments/results/e2-transport-v1"
 GENERATOR = ROOT / "python/moonkvsim/aegiskv/transport_preview_figures.py"
 
 

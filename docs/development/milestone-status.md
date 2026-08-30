@@ -182,14 +182,14 @@ calibration or physical-performance evidence.
   report conservative two-sided 95% Student-t intervals. Fourteen preliminary
   SVGs (F1--F11 and F13--F15) pass provenance audit; F12 is explicitly excluded
   because physical calibration is outside the requested simulation-only scope.
-- M9 current Qwen3-8B DP-only release: the complete 46-variant matrix was rerun
-  on the latest fluid-contention, per-GPU HBM-ledger, Host-staging, and
-  multi-Store-capable implementation. It again contains 2,760 rows and 1,380
-  exact A/B pairs, now with a machine-audited `Qwen/Qwen3-8B` model revision,
-  TP=1, PP=1, and DP-only sensitivity over {2, 4, 8} in every protocol,
-  provenance document, row, parameter object, and payload. Fourteen regenerated
-  SVGs and their point bindings pass the upgraded offline audit; F12 remains
-  excluded.
+- M9 current Qwen3-8B lock: the harness now admits only DP=8 on a modeled
+  single-node host with eight A100-40GB GPUs (40 GiB HBM each). DP is no longer
+  a sensitivity dimension. The last published 2,760-row `e2-qwen3-8b-dp-all-v1`
+  bundle remains a superseded 80-GiB DP={2,4,8} snapshot until a replacement
+  DP=8 A100-40GB matrix is published. F12 remains excluded.
+  The three config files stored with migrated historical bundles are
+  reconstructed, row-checked snapshots rather than retroactive manifest
+  bindings. The next matrix publisher atomically binds all three hashes.
 - M9 fluid-core follow-up: seven core systems over the same five buckets and
   two scenarios, two seeds, and exact A/B repetitions produced 280 rows and
   140 pairs. Transfers now use sliced work-conserving weighted max-min fluid
@@ -207,33 +207,35 @@ calibration or physical-performance evidence.
   and 128K recovery composition without claiming a physical scale-out result.
 
 The current canonical matrix is
-`benchmark/AegisKV/experiments/e2-qwen3-8b-dp-all-v1/`; the figure set is
-`benchmark/AegisKV/experiments/figures/e2-qwen3-8b-dp-all-v1/`; and the bounded
-interpretation is in
-`benchmark/AegisKV/experiments/QWEN3_8B_DP_ALL_V1_REPORT.md`.
+`benchmark/AegisKV/experiments/results/e2-qwen3-8b-dp-all-v1/`; the figure set is
+`benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/`; and the
+bounded interpretation is in
+`benchmark/AegisKV/experiments/results/e2-qwen3-8b-dp-all-v1/QWEN3_8B_DP_ALL_V1_REPORT.md`.
 `e2-initial-v1` is retained as a superseded legacy release.
 
 The fluid-core matrix is
-`benchmark/AegisKV/experiments/e2-fluid-core-v2/`; its focused figures are in
-`benchmark/AegisKV/experiments/figures/e2-fluid-core-v2/`; and its bounded
-interpretation is in `benchmark/AegisKV/experiments/FLUID_CORE_V2_REPORT.md`.
+`benchmark/AegisKV/experiments/results/e2-fluid-core-v2/`; its focused figures
+are in `benchmark/AegisKV/experiments/results/figures/e2-fluid-core-v2/`; and
+its bounded interpretation is in
+`benchmark/AegisKV/experiments/results/e2-fluid-core-v2/FLUID_CORE_V2_REPORT.md`.
 
 The Store-transport matrix is
-`benchmark/AegisKV/experiments/e2-transport-v1/`; F17 is in
-`benchmark/AegisKV/experiments/figures/e2-transport-v1/`; and its bounded
-interpretation is in `benchmark/AegisKV/experiments/TRANSPORT_V1_REPORT.md`.
+`benchmark/AegisKV/experiments/results/e2-transport-v1/`; F17 is in
+`benchmark/AegisKV/experiments/results/figures/e2-transport-v1/`; and its
+bounded interpretation is in
+`benchmark/AegisKV/experiments/results/e2-transport-v1/TRANSPORT_V1_REPORT.md`.
 
 The multi-Store-node matrix is
-`benchmark/AegisKV/experiments/e2-store-nodes-v1/`; F18 is in
-`benchmark/AegisKV/experiments/figures/e2-store-nodes-v1/`; and its bounded
-interpretation is in
-`benchmark/AegisKV/experiments/STORE_NODE_V1_REPORT.md`.
+`benchmark/AegisKV/experiments/results/e2-store-nodes-v1/`; F18 is in
+`benchmark/AegisKV/experiments/results/figures/e2-store-nodes-v1/`; and its
+bounded interpretation is in
+`benchmark/AegisKV/experiments/results/e2-store-nodes-v1/STORE_NODE_V1_REPORT.md`.
 
 This initial release is not paper-ready. By current scope, the experiment
-harness intentionally fixes TP=1 and PP=1, varies only DP, and uses only
-Qwen3-8B; TP/PP sensitivity is no longer a completion requirement. It does not
-establish physical timing accuracy. The branch-local harness supports explicit
-GDR and Host-staged Store paths with Host DRAM staging/source-pin transactions,
-plus sharded
-multi-node Store placement and ledgers. The focused transport and Store-node
-matrices remain E2-only supplements.
+harness intentionally fixes Qwen3-8B, DP=8, TP=1, PP=1, and a modeled
+single-node 8x A100-40GB host; TP/PP/DP sensitivity is no longer a completion
+requirement. It does not establish physical timing accuracy. The branch-local
+harness supports explicit GDR and Host-staged Store paths with Host DRAM
+staging/source-pin transactions, plus sharded multi-node Store placement and
+ledgers. The focused transport and Store-node matrices remain E2-only
+supplements.

@@ -1197,6 +1197,10 @@ schema 对其他 failure type 必须 fail-closed 拒绝，而不是忽略或降�
 
 ### 15.3 `deployment.json`
 
+AegisKV 实验树将这一层落盘为
+`benchmark/AegisKV/experiments/configs/engine.json`。计划正文仍使用
+`deployment.json` 作为该层的历史名称。
+
 负责部署层：
 
 ```json

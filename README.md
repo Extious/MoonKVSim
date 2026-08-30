@@ -6,13 +6,12 @@ one monotonic global virtual clock.
 
 The implementation contract is [MOONKVSIM_PLAN.md](MOONKVSIM_PLAN.md). The
 tagged Vanilla M0--M5 baseline and the first AegisKV M6--M9 simulation release
-are present. The current AegisKV release contains a Qwen3-8B-only, DP-only
-2,760-row matched matrix on the latest fluid-contention/HBM-ledger model, plus
-the earlier focused Store-transport and fixed-capacity multi-Store-node sweeps
-and preliminary SVG paper figures. TP and PP are fixed at one and are not
-experimental dimensions. The current delivery scope
-intentionally stops at E2 modeled simulation; E3 physical calibration, E4
-real-system matching, and E5/paper-ready claims are out of scope.
+are present. The current AegisKV experiment lock is Qwen3-8B, DP=8, and one modeled
+single-node host with eight A100-40GB GPUs. TP and PP stay fixed at one. The
+published 2,760-row DP={2,4,8} matrix remains a superseded 80-GiB snapshot.
+The current delivery scope intentionally stops at E2 modeled simulation; E3
+physical calibration, E4 real-system matching, and E5/paper-ready claims are
+out of scope.
 
 Current gate-by-gate evidence is tracked in
 [docs/development/milestone-status.md](docs/development/milestone-status.md).
@@ -54,9 +53,9 @@ uv run mypy python/moonkvsim
   may not claim hardware accuracy, calibrated performance, or paper readiness.
 - The machine-readable boundary is `reference/simulation-scope.json`.
 
-Historical helpers under `scripts/physical/` are retained only as out-of-scope
-higher-evidence references. They are neither invoked nor required by the E2
-delivery gate.
+AegisKV paper and experiment assets live under `benchmark/AegisKV`. The
+simulator library itself is everything outside that directory. Model and
+AIConfigurator inputs remain under `configs/`.
 
 The simulator CLI is installed as `moonkv-sim`. Raw traces remain in their
 access-controlled source location; manifests record hashes and provenance.

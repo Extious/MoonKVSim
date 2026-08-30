@@ -14,7 +14,7 @@ from moonkvsim.aegiskv.fluid_preview_figures import (
 )
 
 ROOT = Path(__file__).resolve().parents[2]
-MATRIX = ROOT / "benchmark/AegisKV/experiments/e2-fluid-core-v2"
+MATRIX = ROOT / "benchmark/AegisKV/experiments/results/e2-fluid-core-v2"
 
 
 def test_fluid_core_preview_is_deterministic_source_bound_and_offline(

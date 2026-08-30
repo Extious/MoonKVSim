@@ -162,9 +162,9 @@ def _row(
     seed: int = 7,
 ) -> dict[str, Any]:
     payload = _payload(bucket=bucket, scenario=scenario, ordinal=ordinal, seed=seed)
-    dp_count = int(variant_id.split("=", 1)[1]) if variant_id.startswith("dp_count=") else 4
+    dp_count = 8
     peer_budget_gib = (
-        int(variant_id.split("=", 1)[1]) if variant_id.startswith("peer_budget_gib=") else 8
+        int(variant_id.split("=", 1)[1]) if variant_id.startswith("peer_budget_gib=") else 4
     )
     store_budget_gib = (
         int(variant_id.split("=", 1)[1]) if variant_id.startswith("store_budget_gib=") else 64
@@ -185,6 +185,7 @@ def _row(
     )
     parameters = {
         "dp_count": dp_count,
+        "physical_hbm_bytes_per_gpu": 40 * 1024**3,
         "peer_budget_bytes_per_gpu": peer_budget_gib * 1024**3,
         "store_budget_bytes": store_budget_gib * 1024**3,
         "peer_bandwidth_bytes_per_second": peer_bandwidth_gbps * 1_000_000_000,

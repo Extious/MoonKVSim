@@ -143,10 +143,10 @@ def test_protocol_defines_exact_default_cross_products() -> None:
 
     assert core["execution"]["expected_row_count"] == 420
     assert core["execution"]["expected_pair_count"] == 210
-    assert all_suites["execution"]["expected_row_count"] == 2_760
-    assert all_suites["execution"]["expected_pair_count"] == 1_380
+    assert all_suites["execution"]["expected_row_count"] == 2_580
+    assert all_suites["execution"]["expected_pair_count"] == 1_290
     assert all_suites["suite_catalog"]["ablation"]["default_expected_row_count"] == 720
-    assert all_suites["suite_catalog"]["sensitivity"]["default_expected_row_count"] == 1_620
+    assert all_suites["suite_catalog"]["sensitivity"]["default_expected_row_count"] == 1_440
     assert core["execution"]["silent_fallback_allowed"] is False
     assert core["evidence"] == EVIDENCE_BOUNDARY
     assert core["model_deployment_contract"] == qwen3_8b_dp_only_contract()
@@ -228,6 +228,7 @@ def test_core_publication_has_420_rows_and_rejects_existing_target(
         selection="core",
         seeds=(0, 1, 2),
         jobs=1,
+        config_snapshot_dir=ROOT / "benchmark/AegisKV/experiments/configs",
     )
 
     rows = _jsonl(output / "results.jsonl")
@@ -271,6 +272,16 @@ def test_core_publication_has_420_rows_and_rejects_existing_target(
     assert [sample["value"] for sample in network_group["samples"]] == [70, 70, 70]
     assert manifest["statistics_fingerprint"] == statistics["fingerprint"]
     assert "statistics.json" in manifest["artifact_hashes"]
+    assert manifest["config_snapshot"]["directory"] == "configs"
+    assert set(manifest["config_snapshot"]["files"]) == {
+        "requests.json",
+        "failure.json",
+        "engine.json",
+    }
+    for name, descriptor in manifest["config_snapshot"]["files"].items():
+        snapshot = output / "configs" / name
+        assert descriptor["size_bytes"] == snapshot.stat().st_size
+        assert descriptor["sha256"] == hashlib.sha256(snapshot.read_bytes()).hexdigest()
     assert (output / "manifest.json").is_file()
 
     with pytest.raises(ExperimentSuiteError, match="existing output target"):

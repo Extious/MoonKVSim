@@ -17,4 +17,6 @@ traces/raw/**
 traces/normalized/**
 !traces/normalized/.gitkeep
 benchmark/**/results/**
+!benchmark/AegisKV/experiments/results/
+!benchmark/AegisKV/experiments/results/**
 benchmarks/results/**

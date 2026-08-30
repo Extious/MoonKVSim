@@ -292,7 +292,7 @@ def build_support_audit(root: Path) -> dict[str, Any]:
             ],
         },
         "next_step": {
-            "plan": "scripts/physical/aiconfigurator_vllm_forward_calibration_plan.md",
+            "status": "physical_calibration_out_of_current_scope",
             "required_output_schema": "moonkvsim.aiconfigurator-profile-selection.v1",
             "selection_schema": "schemas/predictor-profile-selection.schema.json",
             "calibration_method": "phase_shape_residual_table",

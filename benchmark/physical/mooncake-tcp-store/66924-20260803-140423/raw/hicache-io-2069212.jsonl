@@ -1,2 +1,0 @@
-{"bytes": 150994944, "duration_us": 134680.905, "end_unix_ns": 1785737699713420477, "objects": 32, "operation": "backup", "pid": 2069212, "start_unix_ns": 1785737699577125530, "status": "ok", "thread": "Thread-5 (backup_thread_func)"}
-{"bytes": 141557760, "duration_us": 161515.801, "end_unix_ns": 1785737754421154849, "objects": 30, "operation": "prefetch", "pid": 2069212, "start_unix_ns": 1785737754250955077, "status": "ok", "thread": "Thread-13 (prefetch_io_aux_func)"}
