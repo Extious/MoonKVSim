@@ -1,0 +1,68 @@
+{
+  "archive": {
+    "bundle_root": "/var/tmp/zhanzhao/moonkvsim-frozen/f2684c2b692c381f9e7db24ef808deb7551d62fc/bundles",
+    "copy_validation": "strict_section16_comparator_passed_after_cross_filesystem_copy",
+    "original_run_root": "/tmp/moonkvsim-final-f2684c2.tNlw17"
+  },
+  "baseline": {
+    "commit": "f2684c2b692c381f9e7db24ef808deb7551d62fc",
+    "tag": "v0.1.0-mooncake-baseline",
+    "tag_object": "a1d5041f0ad972541c9f2a518237f22d57b470a3",
+    "tree": "f2613f45c15421f49f526ed86c77fc3b5ad63b73"
+  },
+  "evidence": {
+    "calibration_status": "not_calibrated",
+    "class": "E2",
+    "formal_use_allowed": false,
+    "mode": "cpu_metadata_only_single_global_virtual_clock",
+    "physical_timing_claim_allowed": false,
+    "result_status": "modeled/preliminary"
+  },
+  "limitations": [
+    "filesystem_comparison_cannot_by_itself_prove_independent_execution",
+    "SRC-BLOCK-001",
+    "SRC-BLOCK-002",
+    "SRC-BLOCK-003"
+  ],
+  "scenarios": {
+    "failure": {
+      "aggregate_sha256": "65a927e4937bd9cdbf2df082b6b9e05356aa1523889e168ccaf536751a421595",
+      "artifact_count": 19,
+      "directories": [
+        "failure-a",
+        "failure-b"
+      ],
+      "semantic_source_fingerprint": "5afe027db9ccc1ec4b823c5ee741fa49983017598ad7880d9e321dc612bebfea",
+      "status": "PASS"
+    },
+    "near128": {
+      "aggregate_sha256": "f44c288a2a6223e2b64b1edc0c0d18cc42de1a786a816a905d8b17e4baf4afc7",
+      "artifact_count": 19,
+      "directories": [
+        "near128-a",
+        "near128-b"
+      ],
+      "max_total_context_tokens": 130795,
+      "padded_request_count": 0,
+      "semantic_source_fingerprint": "0009d76729da114cef0586661d7b5b94c89499afe5e6d886f3b98a8c4dcac9da",
+      "status": "PASS",
+      "truncated_request_count": 0
+    },
+    "nofail": {
+      "aggregate_sha256": "1f70a3a6fed4c7099ad44fe4eaec47ed800b9d85604ed4cb69e6de9c9b56a038",
+      "artifact_count": 19,
+      "directories": [
+        "nofail-a",
+        "nofail-b"
+      ],
+      "semantic_source_fingerprint": "b8636cb14dfda5366c9f0424d17b05cbd5531d7456118471afc616ca3c7ed49e",
+      "status": "PASS"
+    }
+  },
+  "schema": "moonkvsim.aegiskv.baseline-tag-evidence.v1",
+  "trace": {
+    "normalized_sha256": "0a1c37deea32f2c393ba7d8d2d9a7c5629854b874b01ace8953140ad889f6d54",
+    "synthetic": false,
+    "token_count_mode": "source_hash_blocks_64"
+  }
+}

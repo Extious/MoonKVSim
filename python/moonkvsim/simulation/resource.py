@@ -72,6 +72,42 @@ class ConcurrencyResource:
         self._assert_no_overlap(reservation.lane)
         return reservation
 
+    def cancel_from(self, reservation_id: str, *, timestamp_ns: int) -> Reservation | None:
+        """Cancel only the unserved suffix while preserving elapsed history.
+
+        Global-DES failure handlers use this operation after virtual time has
+        advanced into a reservation.  Removing the entire interval would erase
+        already consumed resource time and could create phantom free history.
+        The return value is the original planned reservation; ``reservation``
+        exposes the retained elapsed prefix, if any.
+        """
+
+        if timestamp_ns < 0:
+            raise ValueError("timestamp_ns must be non-negative")
+        reservation = self._by_id.get(reservation_id)
+        if reservation is None:
+            return None
+        if timestamp_ns >= reservation.end_ns:
+            return reservation
+        self._intervals[reservation.lane].remove(reservation)
+        self._by_id.pop(reservation_id)
+        if timestamp_ns > reservation.start_ns:
+            elapsed = Reservation(
+                reservation_id=reservation.reservation_id,
+                resource_id=reservation.resource_id,
+                lane=reservation.lane,
+                start_ns=reservation.start_ns,
+                end_ns=timestamp_ns,
+                cause=reservation.cause,
+            )
+            self._intervals[reservation.lane].append(elapsed)
+            self._intervals[reservation.lane].sort(
+                key=lambda item: (item.start_ns, item.end_ns, item.reservation_id)
+            )
+            self._by_id[reservation_id] = elapsed
+        self._assert_no_overlap(reservation.lane)
+        return reservation
+
     def reservation(self, reservation_id: str) -> Reservation | None:
         """Return one immutable reservation without rebuilding calendar order."""
 
@@ -93,6 +129,13 @@ class ConcurrencyResource:
                 key=lambda item: (item.start_ns, item.lane, item.reservation_id),
             )
         )
+
+    def earliest_start(self, *, ready_ns: int, duration_ns: int) -> int:
+        """Return the first time any lane can serve an interval without mutation."""
+
+        if ready_ns < 0 or duration_ns <= 0:
+            raise ValueError("ready_ns must be non-negative and duration_ns positive")
+        return min(self._first_fit(lane, ready_ns, duration_ns) for lane in range(self.lanes))
 
     def _first_fit(self, lane: int, ready_ns: int, duration_ns: int) -> int:
         candidate = ready_ns

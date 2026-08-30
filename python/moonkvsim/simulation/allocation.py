@@ -17,6 +17,7 @@ class AllocationState(StrEnum):
 class AllocationRole(StrEnum):
     ACTIVE_PRIMARY = "ACTIVE_PRIMARY"
     CACHE_REUSE = "CACHE_REUSE"
+    FAILURE_PROTECTION = "FAILURE_PROTECTION"
 
 
 @dataclass(frozen=True, slots=True)

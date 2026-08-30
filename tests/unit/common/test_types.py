@@ -47,7 +47,11 @@ def test_invalid_token_interval_fails_closed() -> None:
         KVIdentity(**fields)
 
 
-def test_main_location_enum_has_no_peer_or_persistent_tier() -> None:
-    assert {location.value for location in KVLocation} == {"PRIMARY_HBM", "STORE_DRAM"}
+def test_aegiskv_location_enum_adds_only_peer_hbm_and_no_persistent_tier() -> None:
+    assert {location.value for location in KVLocation} == {
+        "PRIMARY_HBM",
+        "PEER_HBM",
+        "STORE_DRAM",
+    }
     assert ReplicaState.PENDING.visible is False
     assert ReplicaState.COMMITTED.visible is True

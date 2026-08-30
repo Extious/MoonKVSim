@@ -41,6 +41,7 @@ class PutTicket:
     replica_ids: tuple[str, ...]
     allocation_ids: tuple[str, ...]
     created_at_ns: int
+    transaction_cause_prefix: str
     state: PutState = PutState.PENDING
 
 
@@ -64,6 +65,7 @@ class _CapacityPressureAttempt:
     victims: tuple[_EvictionVictim, ...]
     inspected_object_ids: tuple[str, ...]
     skipped_object_ids: tuple[str, ...]
+    policy: str
 
 
 class MasterService:
@@ -154,11 +156,21 @@ class MasterService:
         timestamp_ns: int,
         preferred_segment_ids: tuple[str, ...] = (),
         excluded_segment_ids: tuple[str, ...] = (),
+        capacity_pressure_candidate_object_ids: tuple[str, ...] | None = None,
+        transaction_cause_prefix: str = "MOONCAKE_PUT",
     ) -> PutTicket:
         if not put_id or put_id in self._tickets:
             raise ValueError("put_id must be non-empty and unique")
         if payload_bytes <= 0 or replica_count <= 0:
             raise ValueError("payload bytes and replica count must be positive")
+        if not transaction_cause_prefix:
+            raise ValueError("transaction_cause_prefix must be non-empty")
+        if capacity_pressure_candidate_object_ids is not None and (
+            any(not item for item in capacity_pressure_candidate_object_ids)
+            or len(set(capacity_pressure_candidate_object_ids))
+            != len(capacity_pressure_candidate_object_ids)
+        ):
+            raise ValueError("capacity-pressure candidates must be unique and non-empty")
         object_id = self.directory.register_object(identity)
         allocation_checkpoint = self.allocation_strategy.checkpoint()
         try:
@@ -176,6 +188,7 @@ class MasterService:
                     victims=(),
                     inspected_object_ids=(),
                     skipped_object_ids=(),
+                    policy="no_capacity_pressure",
                 )
             else:
                 attempt = self._allocate_after_capacity_pressure(
@@ -184,6 +197,16 @@ class MasterService:
                     replica_count=replica_count,
                     preferred_segment_ids=preferred_segment_ids,
                     excluded_segment_ids=excluded_segment_ids,
+                    candidate_object_ids=(
+                        self.eviction_strategy.keys_lru_to_mru
+                        if capacity_pressure_candidate_object_ids is None
+                        else capacity_pressure_candidate_object_ids
+                    ),
+                    policy=(
+                        "deterministic_lru_capacity_pressure_replacement"
+                        if capacity_pressure_candidate_object_ids is None
+                        else "explicit_aegiskv_admission_plan"
+                    ),
                 )
         except Exception:
             self.allocation_strategy.restore(allocation_checkpoint)
@@ -216,9 +239,9 @@ class MasterService:
             event_id=(f"{put_id}:evict-reserve" if attempt.victims else f"{put_id}:reserve"),
             timestamp_ns=timestamp_ns,
             cause=(
-                "MOONCAKE_PUT_START_CAPACITY_PRESSURE_REPLACEMENT"
+                f"{transaction_cause_prefix}_START_CAPACITY_PRESSURE_REPLACEMENT"
                 if attempt.victims
-                else "MOONCAKE_PUT_START"
+                else f"{transaction_cause_prefix}_START"
             ),
             allocation_deltas=[
                 *eviction_deltas,
@@ -236,9 +259,30 @@ class MasterService:
                 ],
             ],
         )
+        revoked_recovery_allocation_ids: list[str] = []
+        for victim in attempt.victims:
+            for allocation in victim.allocations:
+                if not self.allocation_registry.overlay(
+                    allocation.allocation_id
+                ).recovery_eligible:
+                    continue
+                self.allocation_registry.set_recovery_eligible(
+                    allocation.allocation_id,
+                    False,
+                    timestamp_ns=timestamp_ns,
+                    event_id=f"{put_id}:pre-transaction-revoke:{allocation.allocation_id}",
+                )
+                revoked_recovery_allocation_ids.append(allocation.allocation_id)
         try:
             transaction.commit(self.ledgers, journal=self.journal)
         except Exception:
+            for allocation_id in revoked_recovery_allocation_ids:
+                self.allocation_registry.set_recovery_eligible(
+                    allocation_id,
+                    True,
+                    timestamp_ns=timestamp_ns,
+                    event_id=f"{put_id}:pre-transaction-rollback:{allocation_id}",
+                )
             self._rollback_capacity_pressure_geometry(records, attempt.victims)
             self.allocation_strategy.restore(allocation_checkpoint)
             if attempt.victims:
@@ -300,6 +344,7 @@ class MasterService:
             replica_ids=tuple(record.replica_id for record in records),
             allocation_ids=tuple(record.buffer.buffer_id for record in records),
             created_at_ns=timestamp_ns,
+            transaction_cause_prefix=transaction_cause_prefix,
         )
         self._tickets[put_id] = ticket
         if attempt.victims:
@@ -344,7 +389,7 @@ class MasterService:
         ResourceTransaction(
             event_id=f"{put_id}:finalize",
             timestamp_ns=timestamp_ns,
-            cause="MOONCAKE_PUT_END",
+            cause=f"{ticket.transaction_cause_prefix}_END",
             allocation_deltas=deltas,
         ).commit(self.ledgers, journal=self.journal)
 
@@ -418,7 +463,7 @@ class MasterService:
         ResourceTransaction(
             event_id=f"{put_id}:abort",
             timestamp_ns=timestamp_ns,
-            cause=f"MOONCAKE_PUT_ABORT:{reason}",
+            cause=f"{ticket.transaction_cause_prefix}_ABORT:{reason}",
             allocation_deltas=deltas,
         ).commit(self.ledgers, journal=self.journal)
         for replica_id, allocation_id in zip(
@@ -437,12 +482,18 @@ class MasterService:
         ticket.state = PutState.ABORTED
 
     def get_replica_list(self, identity: KVIdentity) -> tuple[Replica, ...]:
-        return self.directory.query(identity)
+        return self.directory.query(
+            identity,
+            locations=frozenset({KVLocation.STORE_DRAM}),
+        )
 
     def record_committed_access(self, identity: KVIdentity, *, timestamp_ns: int) -> None:
         """Move a visible object to the MRU frontier after a real GET starts."""
 
-        if not self.directory.query(identity):
+        if not self.directory.query(
+            identity,
+            locations=frozenset({KVLocation.STORE_DRAM}),
+        ):
             raise ValueError("only a visible committed Store object may be touched")
         self.eviction_strategy.update_key(identity.object_id)
         self.journal.append(
@@ -455,7 +506,10 @@ class MasterService:
         )
 
     def remove(self, identity: KVIdentity, *, timestamp_ns: int) -> int:
-        replicas = self.directory.query(identity)
+        replicas = self.directory.query(
+            identity,
+            locations=frozenset({KVLocation.STORE_DRAM}),
+        )
         if not replicas:
             return 0
         deltas: list[AllocationDelta] = []
@@ -541,8 +595,10 @@ class MasterService:
         replica_count: int,
         preferred_segment_ids: tuple[str, ...],
         excluded_segment_ids: tuple[str, ...],
+        candidate_object_ids: tuple[str, ...],
+        policy: str,
     ) -> _CapacityPressureAttempt:
-        """Tentatively free legal LRU victims, then retry best-effort placement.
+        """Tentatively free ordered legal victims, then retry best-effort placement.
 
         The pinned service performs this work asynchronously and does not retry
         the failing PutStart.  MoonKVSim keeps the replacement synchronous so
@@ -559,7 +615,7 @@ class MasterService:
         inspected: list[str] = []
         skipped: list[str] = []
         try:
-            for object_id in self.eviction_strategy.keys_lru_to_mru:
+            for object_id in candidate_object_ids:
                 inspected.append(object_id)
                 candidate_victims = self._evictable_victims(
                     object_id,
@@ -590,6 +646,7 @@ class MasterService:
                         victims=tuple(victims),
                         inspected_object_ids=tuple(inspected),
                         skipped_object_ids=tuple(skipped),
+                        policy=policy,
                     )
         except Exception:
             self._rollback_capacity_pressure_geometry((), tuple(victims))
@@ -601,6 +658,7 @@ class MasterService:
             victims=tuple(victims),
             inspected_object_ids=tuple(inspected),
             skipped_object_ids=tuple(skipped),
+            policy=policy,
         )
 
     def _evictable_victims(
@@ -611,7 +669,9 @@ class MasterService:
     ) -> tuple[_EvictionVictim, ...]:
         replicas = self.directory.replicas_for_object(object_id)
         if any(
-            replica.state in {ReplicaState.ALLOCATED, ReplicaState.PENDING} for replica in replicas
+            replica.location is KVLocation.STORE_DRAM
+            and replica.state in {ReplicaState.ALLOCATED, ReplicaState.PENDING}
+            for replica in replicas
         ):
             return ()
 
@@ -716,7 +776,8 @@ class MasterService:
             affected_object_ids.add(victim.replica.object_id)
         for object_id in sorted(affected_object_ids):
             if not any(
-                replica.visible for replica in self.directory.replicas_for_object(object_id)
+                replica.location is KVLocation.STORE_DRAM and replica.visible
+                for replica in self.directory.replicas_for_object(object_id)
             ):
                 self.eviction_strategy.remove_key(object_id)
 
@@ -734,7 +795,7 @@ class MasterService:
             {
                 "put_id": put_id,
                 "outcome": outcome,
-                "policy": "deterministic_lru_capacity_pressure_replacement",
+                "policy": attempt.policy,
                 "inspected_object_ids_lru_first": list(attempt.inspected_object_ids),
                 "skipped_object_ids": list(attempt.skipped_object_ids),
                 "candidate_victim_object_ids": sorted(

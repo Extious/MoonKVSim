@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from moonkvsim.common.status import KVLocation
 from moonkvsim.common.types import KVIdentity
 from moonkvsim.store.replica import Replica
 
@@ -67,19 +68,38 @@ class GlobalKVDirectory:
         object_id = self._replica_to_object[replica_id]
         return self._objects[object_id].replicas[replica_id]
 
+    def get_replica_for_allocation(self, allocation_id: str) -> Replica:
+        """Resolve one physical allocation through the sole replica index."""
+
+        try:
+            replica_id = self._allocation_to_replica[allocation_id]
+        except KeyError as error:
+            raise KeyError(f"unknown replica allocation: {allocation_id}") from error
+        return self.get_replica(replica_id)
+
     def replicas_for_object(self, object_id: str) -> tuple[Replica, ...]:
         entry = self._objects.get(object_id)
         if entry is None:
             return ()
         return tuple(sorted(entry.replicas.values(), key=lambda item: item.replica_id))
 
-    def query(self, identity: KVIdentity) -> tuple[Replica, ...]:
+    def query(
+        self,
+        identity: KVIdentity,
+        *,
+        locations: frozenset[KVLocation] | None = None,
+    ) -> tuple[Replica, ...]:
         entry = self._objects.get(identity.object_id)
         if entry is None or entry.identity.compatibility_key != identity.compatibility_key:
             return ()
         return tuple(
             sorted(
-                (replica for replica in entry.replicas.values() if replica.visible),
+                (
+                    replica
+                    for replica in entry.replicas.values()
+                    if replica.visible
+                    and (locations is None or replica.location in locations)
+                ),
                 key=lambda replica: replica.replica_id,
             )
         )

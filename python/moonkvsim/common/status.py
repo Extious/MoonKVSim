@@ -1,13 +1,11 @@
-"""Baseline KV location and replica states.
-
-The `main` branch intentionally has no Peer-HBM or persistent-storage location.
-"""
+"""KV location and replica states shared by the baseline and AegisKV branch."""
 
 from enum import StrEnum
 
 
 class KVLocation(StrEnum):
     PRIMARY_HBM = "PRIMARY_HBM"
+    PEER_HBM = "PEER_HBM"
     STORE_DRAM = "STORE_DRAM"
 
 

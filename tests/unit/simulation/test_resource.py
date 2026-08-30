@@ -46,6 +46,37 @@ def test_concurrency_calendar_rejects_invalid_lane_views() -> None:
         resource.reservations_on_lane(2)
 
 
+def test_cancel_from_preserves_elapsed_prefix_and_releases_future_suffix() -> None:
+    resource = ConcurrencyResource(resource_id="gpu-0.copy", lanes=1)
+    planned = resource.reserve(
+        ready_ns=10,
+        duration_ns=20,
+        reservation_id="r0",
+        cause="AEGIS_PEER_PROTECTION",
+    )
+    queued = resource.reserve(
+        ready_ns=10,
+        duration_ns=10,
+        reservation_id="r1",
+        cause="AEGIS_PEER_PROTECTION",
+    )
+
+    assert resource.cancel_from("r0", timestamp_ns=18) == planned
+    elapsed = resource.reservation("r0")
+    assert elapsed is not None
+    assert (elapsed.start_ns, elapsed.end_ns) == (10, 18)
+    assert resource.reservation("r1") == queued
+
+    replacement = resource.reserve(
+        ready_ns=18,
+        duration_ns=5,
+        reservation_id="r2",
+        cause="RECOVERY",
+    )
+    assert (replacement.start_ns, replacement.end_ns) == (18, 23)
+    assert resource.cancel_from("missing", timestamp_ns=18) is None
+
+
 def test_rate_resource_has_deterministic_equal_share() -> None:
     resource = RateResource(resource_id="nic-0.tx", capacity_bytes_per_second=100.0)
     assert resource.equal_fair_share({"flow-b", "flow-a"}) == {

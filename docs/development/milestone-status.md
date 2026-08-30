@@ -11,11 +11,13 @@ being silently marked solved.
 
 ## M0 - project freeze and initialization
 
-Status: E0/E1 implementation present; E2 baseline acceptance in progress
+Status: baseline E2 accepted at `v0.1.0-mooncake-baseline`
 
 Completed or under direct verification:
 
-- Git repository initialized on `main`; no baseline commit/tag has been accepted.
+- Git repository initialized on `main`; the accepted baseline tag resolves to
+  commit `f2684c2b692c381f9e7db24ef808deb7551d62fc` and tree
+  `f2613f45c15421f49f526ed86c77fc3b5ad63b73`.
 - README, design boundary, package metadata, CI, lint and test skeleton exist.
 - Immutable patent input is present and its required SHA-256/OOXML integrity are
   covered by passing automated checksum, OOXML, and patent-contract audits. No
@@ -39,12 +41,14 @@ Retained higher-evidence limitations:
 - `SRC-BLOCK-001..003` prohibit calibrated/formal/paper claims but do not prohibit
   the explicitly modeled E2 runs in the current scope.
 
-Current E2 gate: an accepted source-frozen baseline commit/tag and its final six
-complete real-trace bundles do not yet exist.
+The final source-frozen no-failure, fixed-`GPU_FAILURE`, and near-128K scenarios
+were each run twice. All three strict comparisons decoded and validated 19/19
+artifacts and were byte-identical. Aggregate hashes and frozen bundle paths are
+recorded in `benchmark/AegisKV/experiments/baseline-tag-evidence.json`.
 
 ## M1 - common DES kernel
 
-Status: E2 candidate; final source-frozen acceptance pending
+Status: E2 accepted for the tagged baseline
 
 Implemented and covered by tests:
 
@@ -62,13 +66,12 @@ Implemented and covered by tests:
 
 Remaining non-blocking or final-acceptance work:
 
-- broader randomized/property coverage and minimal-replay-prefix diagnostics;
-- final source-frozen whole-workflow repeat. Physical validation is not part of
-  the current scope.
+- broader randomized/property coverage and minimal-replay-prefix diagnostics.
+  Physical validation is not part of the current scope.
 
 ## M2 - vLLM engine baseline
 
-Status: E2 candidate; pinned CPU metadata differential present
+Status: E2 accepted for the tagged baseline; pinned CPU metadata differential present
 
 - The tensor-free request state ordering and finish-reason mapping mirror the
   pinned `vllm/v1/request.py` source, and the 131072 guard rejects
@@ -89,9 +92,8 @@ Status: E2 candidate; pinned CPU metadata differential present
   timing, or physical 128K claim is involved.
 
 Open higher-evidence or broader-mode gaps are CUDA allocation/runtime capacity,
-tokenizer-equivalent physical 128K validation, hybrid/broader scheduler modes,
-and the final accepted source-frozen real-trace repeat. Only the last item is a
-current E2 tag gate.
+tokenizer-equivalent physical 128K validation, and hybrid/broader scheduler
+modes. The source-frozen real-trace repeat is complete.
 
 ## M3 - AIConfigurator
 
@@ -131,7 +133,7 @@ payload copy and records no timing. It is a bounded E2 subset, not full parity.
 
 ## M5 - baseline GPU failure and end-to-end validation
 
-Status: E2 candidate; final six-run acceptance pending. The normalized trace runner now uses
+Status: E2 accepted at the baseline tag. The normalized trace runner uses
 one Store/HBM allocation registry, exact PhysicalGPU-to-ledger failure domains,
 and HBM bridge observers wired through an atomic fail-stop handler. Directed
 compute-failure and active prefix-Get-failure runs deterministically cancel,
@@ -151,14 +153,14 @@ strict comparator gate. Multi-request workflow TPOT is explicitly not
 applicable across independent output streams, while TTFT and WCT remain complete.
 The comparator decodes Parquet content and requires every request/workflow timing
 row and capacity snapshot row to be complete; JSON summaries alone cannot assert
-completeness. The only
-current baseline gate is rerunning all six bundles on the final clean commit and
-tagging that exact commit. Token-content equivalence and physical/matched
+completeness. The final six bundles were rerun on the clean tagged commit and
+passed strict comparison. Token-content equivalence and physical/matched
 validation remain higher-evidence limitations outside the E2-only DoD.
 
 ## M6-M9
 
-Status: pre-branch M6 design-input preparation is partially complete through the
-immutable patent, provenance manifest, contract, and automated audit. No
-baseline tag, AegisKV branch/runtime, matched AegisKV experiment, or paper-ready
-result exists yet; runtime work remains forbidden before baseline acceptance.
+Status: M6-M8 implementation in progress on `aegiskv`, created directly from the
+accepted baseline tag. The immutable patent, provenance manifest, contract, and
+automated audit are present; manual patent review remains pending. No matched
+AegisKV result or paper-ready result is claimed until the branch-local runtime,
+tests, matrix, determinism, and provenance gates complete.
