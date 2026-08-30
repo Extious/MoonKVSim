@@ -347,15 +347,16 @@ def _render(rows: Sequence[Mapping[str, Any]], output: Path) -> dict[str, Any]:
     svg.text(904, 136, "C  Peak Host DRAM staging (GiB)", "panel")
 
     left, top, plot_w, plot_h = 82, 175, 320, 410
-    for tick in (0.0, 0.02, 0.04, 0.06, 0.08):
-        grid_y = top + plot_h - tick / 0.08 * plot_h
+    wct_min, wct_max = -0.02, 0.08
+    for tick in (-0.02, 0.0, 0.02, 0.04, 0.06, 0.08):
+        grid_y = top + plot_h - (tick - wct_min) / (wct_max - wct_min) * plot_h
         svg.line(
             left,
             grid_y,
             left + plot_w,
             grid_y,
-            stroke="#e2e8f0",
-            **{"stroke-width": "1"},
+            stroke="#94a3b8" if tick == 0 else "#e2e8f0",
+            **{"stroke-width": "1.5" if tick == 0 else "1"},
         )
         svg.text(left - 35, grid_y + 4, f"{tick:.2f}", "tick")
     staged = TRANSPORTS[1:]
@@ -396,9 +397,13 @@ def _render(rows: Sequence[Mapping[str, Any]], output: Path) -> dict[str, Any]:
                 gdr_network = sum(gdr_network_map.values())
                 multipliers.append(network / gdr_network)
             delta_mean = sum(deltas) / len(deltas)
-            y_a = top + plot_h - delta_mean / 0.08 * plot_h
-            y_min = top + plot_h - min(deltas) / 0.08 * plot_h
-            y_max = top + plot_h - max(deltas) / 0.08 * plot_h
+            y_a = top + plot_h - (delta_mean - wct_min) / (wct_max - wct_min) * plot_h
+            y_min = top + plot_h - (min(deltas) - wct_min) / (
+                wct_max - wct_min
+            ) * plot_h
+            y_max = top + plot_h - (max(deltas) - wct_min) / (
+                wct_max - wct_min
+            ) * plot_h
             svg.line(x_a, y_min, x_a, y_max, stroke=COLORS[transport], **{"stroke-width": "2"})
             svg.point(
                 x_a,
@@ -514,7 +519,8 @@ def _render(rows: Sequence[Mapping[str, Any]], output: Path) -> dict[str, Any]:
         x = 78 + index * 190
         svg.rect(x, legend_y - 10, 16, 8, COLORS[transport])
         svg.text(x + 23, legend_y, LABELS[transport], "tick")
-    svg.text(902, 625, "Modeled rates: RDMA Store 25 GB/s; Host 16 GB/s; TCP 8 GB/s", "sub")
+    svg.text(902, 620, "Modeled rates (assumed):", "sub")
+    svg.text(902, 642, "RDMA Store 25 · Host 16 · TCP Store 8 GB/s", "sub")
     svg.text(44, 732, EVIDENCE_FOOTER, "footer")
     svg.text(
         44,
