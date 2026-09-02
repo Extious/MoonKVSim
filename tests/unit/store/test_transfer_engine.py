@@ -184,7 +184,7 @@ def test_topology_preserves_preferred_available_retry_and_hca_disable_semantics(
 
 @pytest.mark.parametrize(
     "transport",
-    [TransportKind.LOCAL_COPY, TransportKind.NVLINK],
+    [TransportKind.LOCAL_COPY, TransportKind.PCIE, TransportKind.NVLINK],
 )
 def test_topology_rejects_wrong_endpoint_and_cross_node_local_paths(
     transport: TransportKind,

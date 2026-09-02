@@ -9,6 +9,7 @@ from moonkvsim.integration.vllm.scheduler import (
     VLLM_SCHEDULER_SHA256,
     VLLM_SOURCE_COMMIT,
     ContinuousBatchScheduler,
+    RecoveryPrefixReservation,
     SchedulerInvariantError,
     SchedulingOrigin,
     SchedulingPhase,
@@ -53,6 +54,38 @@ def make_token_request(request_id: str, token_ids: list[int]) -> Request:
         max_output_tokens=8,
         arrival_ns=0,
     )
+
+
+def test_recovery_reservation_allows_only_contiguous_exact_allocation_groups() -> None:
+    reservation = RecoveryPrefixReservation(
+        request_id="rounded",
+        restored_tokens=64,
+        block_ids=(1, 2, 3, 4),
+        destination_allocation_ids=(("source-0",),) * 4,
+    )
+
+    assert reservation.physical_allocation_ids == frozenset({"source-0"})
+    with pytest.raises(ValueError, match="conflicting groups"):
+        RecoveryPrefixReservation(
+            request_id="partial-overlap",
+            restored_tokens=8,
+            block_ids=(1, 2),
+            destination_allocation_ids=(
+                ("stage-0", "stage-1"),
+                ("stage-0", "stage-2"),
+            ),
+        )
+    with pytest.raises(ValueError, match="contiguous blocks"):
+        RecoveryPrefixReservation(
+            request_id="non-contiguous",
+            restored_tokens=12,
+            block_ids=(1, 2, 3),
+            destination_allocation_ids=(
+                ("source-0",),
+                ("source-1",),
+                ("source-0",),
+            ),
+        )
 
 
 def test_running_requests_are_scheduled_before_waiting_requests() -> None:
@@ -146,6 +179,58 @@ def test_kv_shortage_preempts_tail_and_resumes_with_recompute() -> None:
     assert resumed.recompute
     assert resumed.num_computed_tokens_before == 0
     assert resumed.num_computed_tokens_after == 8
+
+
+def test_ready_remote_prefix_owner_precedes_newly_preempted_recompute() -> None:
+    scheduler = make_scheduler(num_gpu_blocks=4, block_size_tokens=4, token_budget=8)
+    running = make_request("running", 12)
+    restored = make_request("restored", 8)
+    scheduler.add_request(running)
+    scheduler.schedule()
+    scheduler.add_request(restored)
+    scheduler.mark_waiting_for_remote_kv(restored.request_id)
+    scheduler.restore_waiting_request_prefix(restored.request_id, restored_tokens=8)
+
+    scheduler.append_output_tokens(running.request_id)
+    pressured = scheduler.schedule()
+
+    assert pressured.preempted_req_ids == (running.request_id,)
+    assert scheduler.waiting_request_ids == (restored.request_id, running.request_id)
+
+    admitted = scheduler.schedule()
+
+    assert admitted.scheduled_req_ids[0] == restored.request_id
+    assert restored.status is RequestStatus.RUNNING
+    assert restored.num_computed_tokens == restored.prompt_tokens
+    assert running.status is RequestStatus.PREEMPTED
+
+
+def test_failure_recovery_priority_preempts_one_running_slot_then_admits() -> None:
+    scheduler = make_scheduler(
+        num_gpu_blocks=10,
+        block_size_tokens=4,
+        token_budget=16,
+        max_running=2,
+    )
+    head = make_request("head", 8)
+    tail = make_request("tail", 8)
+    recovery = make_request("recovery", 4)
+    scheduler.add_request(head)
+    scheduler.add_request(tail)
+    scheduler.schedule()
+    scheduler.add_request(recovery)
+    scheduler.prioritize_waiting_recovery(recovery.request_id)
+
+    pressured = scheduler.schedule()
+
+    assert pressured.preempted_req_ids == (tail.request_id,)
+    assert scheduler.waiting_request_ids == (recovery.request_id, tail.request_id)
+
+    admitted = scheduler.schedule()
+
+    assert admitted.scheduled_req_ids[0] == recovery.request_id
+    assert recovery.status is RequestStatus.RUNNING
+    assert tail.status is RequestStatus.PREEMPTED
 
 
 def test_local_prefix_hit_recomputes_final_full_prompt_block_and_shares_refcount() -> None:

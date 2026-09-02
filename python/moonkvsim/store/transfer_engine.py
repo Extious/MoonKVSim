@@ -26,6 +26,7 @@ class TransferOpcode(StrEnum):
 
 class TransportKind(StrEnum):
     LOCAL_COPY = "LOCAL_COPY"
+    PCIE = "PCIE"
     NVLINK = "NVLINK"
     RDMA_GDR = "RDMA_GDR"
     RDMA_HOST_STAGED = "RDMA_HOST_STAGED"
@@ -152,13 +153,14 @@ class TopologyPath:
             raise ValueError("direct transport cannot silently reserve host staging")
         local_transport = self.transport in {
             TransportKind.LOCAL_COPY,
+            TransportKind.PCIE,
             TransportKind.NVLINK,
         }
         if local_transport:
             if self.source_node_id != self.destination_node_id:
-                raise ValueError("LOCAL_COPY/NVLINK paths cannot cross nodes")
+                raise ValueError("LOCAL_COPY/PCIE/NVLINK paths cannot cross nodes")
             if self.source_hca_id is not None or self.destination_hca_id is not None:
-                raise ValueError("LOCAL_COPY/NVLINK paths cannot bind network HCAs")
+                raise ValueError("LOCAL_COPY/PCIE/NVLINK paths cannot bind network HCAs")
         elif not self.source_hca_id or not self.destination_hca_id:
             raise ValueError("network paths require explicit source and destination HCAs")
         if self.transport is TransportKind.NVLINK and (

@@ -103,7 +103,10 @@ def _span(
 
 
 def _run_to_completion(
-    records: list[dict[str, Any]], durations_ns: dict[str, int]
+    records: list[dict[str, Any]],
+    durations_ns: dict[str, int],
+    *,
+    workflow_concurrency: int | None = None,
 ) -> tuple[CausalReleaseEngine, GlobalDES]:
     trace = load_normalized_trace_records(records)
     des = GlobalDES()
@@ -124,7 +127,12 @@ def _run_to_completion(
         )
 
     des.register_handler(EventKind.REQUEST_COMPLETE, complete)
-    engine = CausalReleaseEngine(trace, des, on_release=on_release)
+    engine = CausalReleaseEngine(
+        trace,
+        des,
+        on_release=on_release,
+        workflow_concurrency=workflow_concurrency,
+    )
     holder["engine"] = engine
     engine.start()
     des.run()
@@ -213,6 +221,32 @@ def test_same_timestamp_release_order_uses_source_metadata_not_input_order() -> 
     assert engine.release_order == ("root", "first", "second")
     assert engine.snapshot("first").released_ns == 5
     assert engine.snapshot("second").released_ns == 5
+
+
+def test_workflow_concurrency_is_closed_loop_and_releases_slot_on_completion() -> None:
+    records = [
+        _span("root-2", workflow_id="wf-2", top_level_index=0),
+        _span("root-0", workflow_id="wf-0", top_level_index=0),
+        _span("root-1", workflow_id="wf-1", top_level_index=0),
+    ]
+    engine, des = _run_to_completion(
+        records,
+        {"root-0": 5, "root-1": 10, "root-2": 1},
+        workflow_concurrency=2,
+    )
+
+    assert engine.release_order == ("root-0", "root-1", "root-2")
+    assert engine.snapshot("root-0").released_ns == 0
+    assert engine.snapshot("root-1").released_ns == 0
+    assert engine.snapshot("root-2").released_ns == 5
+    admissions = [
+        record
+        for record in des.journal.records
+        if record.record_type == "WORKLOAD_WORKFLOW_ADMITTED"
+    ]
+    assert [record.data["workflow_id"] for record in admissions] == ["wf-0", "wf-1", "wf-2"]
+    assert max(int(record.data["active_workflows"]) for record in admissions) == 2
+    assert admissions[-1].data["queue_wait_ns"] == 5
 
 
 @pytest.mark.parametrize("kind", ["missing", "cross_workflow", "cycle"])

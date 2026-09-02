@@ -660,10 +660,8 @@ class TransferResourceLeaseManager:
             task.audit()
         except RuntimeError as error:
             raise TransferResourceError("transfer task failed byte-layout audit") from error
-        if (
-            self.des.journal.records
-            and self.des.journal.records[-1].timestamp_ns > self.des.now_ns
-        ):
+        last_timestamp_ns = self.des.journal.last_timestamp_ns
+        if last_timestamp_ns is not None and last_timestamp_ns > self.des.now_ns:
             raise TransferResourceError("journal is ahead of the shared DES clock")
 
     def _build_staging_allocations(

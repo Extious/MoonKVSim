@@ -62,24 +62,43 @@ class CausalReleaseEngine:
         des: GlobalDES,
         *,
         on_release: ReleaseCallback | None = None,
+        workflow_concurrency: int | None = None,
     ) -> None:
         # Validate again at the runtime boundary even when the loader already did so.
         validate_causal_trace(trace.spans)
         self.trace = trace
         self.des = des
         self._on_release = on_release
+        if workflow_concurrency is not None and (
+            type(workflow_concurrency) is not int or workflow_concurrency <= 0
+        ):
+            raise CausalReplayError("workflow_concurrency must be a positive integer or null")
+        self.workflow_concurrency = workflow_concurrency
         self._by_id = trace.by_span_id
         self._states = {span.span_id: _MutableSpanState() for span in trace.spans}
+        workflows: dict[str, list[NormalizedSpanMetadata]] = defaultdict(list)
         children: dict[str, list[NormalizedSpanMetadata]] = defaultdict(list)
         for span in trace.spans:
+            workflows[span.workflow_id].append(span)
             for parent_id in span.parent_span_ids:
                 children[parent_id].append(span)
+        self._workflows = {
+            workflow_id: tuple(sorted(spans, key=lambda span: span.stable_sort_key))
+            for workflow_id, spans in workflows.items()
+        }
+        self._workflow_roots = {
+            workflow_id: tuple(span for span in spans if not span.parent_span_ids)
+            for workflow_id, spans in self._workflows.items()
+        }
         self._children = {
             parent_id: tuple(sorted(spans, key=lambda span: span.stable_sort_key))
             for parent_id, spans in children.items()
         }
         self._started = False
         self._release_order: list[str] = []
+        self._eligible_workflow_ids: list[str] = []
+        self._active_workflow_ids: set[str] = set()
+        self._admitted_workflow_ids: set[str] = set()
         try:
             self.des.register_handler(EventKind.REQUEST_ARRIVAL, self._handle_release_event)
         except ValueError as error:
@@ -124,11 +143,35 @@ class CausalReleaseEngine:
                 "engine": self._PAYLOAD_ENGINE,
                 "span_count": len(self.trace.spans),
                 "root_count": len(roots),
+                "workflow_count": len(self._workflows),
+                "workflow_concurrency": self.workflow_concurrency,
+                "admission_mode": (
+                    "observed_open_loop"
+                    if self.workflow_concurrency is None
+                    else "closed_loop_workflow_concurrency"
+                ),
                 "evidence_boundary": "toy_E1_E2_causal_semantics_not_trace_experiment",
             },
         )
-        for root in roots:
-            self._schedule_release(root, root.observed_submit_ns, "observed_root_arrival")
+        if self.workflow_concurrency is None:
+            for root in roots:
+                self._schedule_release(root, root.observed_submit_ns, "observed_root_arrival")
+            return
+        for workflow_id, workflow_roots in sorted(
+            self._workflow_roots.items(),
+            key=lambda item: (item[1][0].observed_submit_ns, item[1][0].stable_sort_key),
+        ):
+            first_submit_ns = min(root.observed_submit_ns for root in workflow_roots)
+            self.des.schedule_at(
+                first_submit_ns,
+                EventKind.REQUEST_ARRIVAL,
+                payload={
+                    "workload_engine": self._PAYLOAD_ENGINE,
+                    "event_type": "WORKFLOW_ELIGIBLE",
+                    "workflow_id": workflow_id,
+                },
+                event_id=f"workload-eligible:{workflow_id}",
+            )
 
     def mark_completed(self, span_id: str) -> None:
         self._require_started()
@@ -146,6 +189,7 @@ class CausalReleaseEngine:
         )
         for child in self._children.get(span_id, ()):
             self._evaluate_child(child)
+        self._maybe_finish_workflow(self._by_id[span_id].workflow_id)
 
     def mark_unavailable(self, span_id: str, *, reason: str) -> None:
         self._require_started()
@@ -170,6 +214,7 @@ class CausalReleaseEngine:
             {"span_id": span_id, "reason": reason},
         )
         self._block_descendants(span_id, unavailable_parent_id=span_id)
+        self._maybe_finish_workflow(self._by_id[span_id].workflow_id)
 
     def _state(self, span_id: str) -> _MutableSpanState:
         try:
@@ -195,6 +240,7 @@ class CausalReleaseEngine:
             )
         payload = {
             "workload_engine": self._PAYLOAD_ENGINE,
+            "event_type": "SPAN_RELEASE",
             "workflow_id": span.workflow_id,
             "session_id": span.session_id,
             "agent_id": span.agent_id,
@@ -239,6 +285,11 @@ class CausalReleaseEngine:
             raise CausalReplayError("release event executed on a different GlobalDES instance")
         if event.payload.get("workload_engine") != self._PAYLOAD_ENGINE:
             raise CausalReplayError("foreign REQUEST_ARRIVAL event reached causal release engine")
+        if event.payload.get("event_type") == "WORKFLOW_ELIGIBLE":
+            self._handle_workflow_eligible(event)
+            return
+        if event.payload.get("event_type") not in {None, "SPAN_RELEASE"}:
+            raise CausalReplayError("causal release event has an unknown event_type")
         span_id = event.payload.get("span_id")
         if not isinstance(span_id, str) or span_id not in self._by_id:
             raise CausalReplayError("release event has an unknown or missing span_id")
@@ -265,6 +316,85 @@ class CausalReleaseEngine:
         )
         if self._on_release is not None:
             self._on_release(self._by_id[span_id], self.des)
+
+    def _handle_workflow_eligible(self, event: ScheduledEvent) -> None:
+        if self.workflow_concurrency is None:
+            raise CausalReplayError("workflow eligibility event reached open-loop replay")
+        workflow_id = event.payload.get("workflow_id")
+        if not isinstance(workflow_id, str) or workflow_id not in self._workflows:
+            raise CausalReplayError("workflow eligibility event has an unknown workflow_id")
+        if workflow_id in self._admitted_workflow_ids or workflow_id in self._eligible_workflow_ids:
+            raise CausalReplayError(f"workflow {workflow_id!r} became eligible twice")
+        self._eligible_workflow_ids.append(workflow_id)
+        self._eligible_workflow_ids.sort(key=self._workflow_admission_key)
+        self.des.journal.append(
+            self.des.now_ns,
+            "WORKLOAD_WORKFLOW_ELIGIBLE",
+            {"workflow_id": workflow_id, "queued_workflows": len(self._eligible_workflow_ids)},
+        )
+        self._admit_eligible_workflows()
+
+    def _workflow_admission_key(self, workflow_id: str) -> tuple[object, ...]:
+        roots = self._workflow_roots[workflow_id]
+        return (min(root.observed_submit_ns for root in roots), roots[0].stable_sort_key)
+
+    def _admit_eligible_workflows(self) -> None:
+        if self.workflow_concurrency is None:
+            return
+        while (
+            self._eligible_workflow_ids
+            and len(self._active_workflow_ids) < self.workflow_concurrency
+        ):
+            workflow_id = self._eligible_workflow_ids.pop(0)
+            roots = self._workflow_roots[workflow_id]
+            original_start_ns = min(root.observed_submit_ns for root in roots)
+            admitted_ns = self.des.now_ns
+            self._active_workflow_ids.add(workflow_id)
+            self._admitted_workflow_ids.add(workflow_id)
+            self.des.journal.append(
+                admitted_ns,
+                "WORKLOAD_WORKFLOW_ADMITTED",
+                {
+                    "workflow_id": workflow_id,
+                    "workflow_concurrency": self.workflow_concurrency,
+                    "active_workflows": len(self._active_workflow_ids),
+                    "queued_workflows": len(self._eligible_workflow_ids),
+                    "eligibility_ns": original_start_ns,
+                    "queue_wait_ns": admitted_ns - original_start_ns,
+                },
+            )
+            for root in roots:
+                root_offset_ns = root.observed_submit_ns - original_start_ns
+                self._schedule_release(
+                    root,
+                    admitted_ns + root_offset_ns,
+                    "workflow_admission_plus_observed_root_offset",
+                )
+
+    def _maybe_finish_workflow(self, workflow_id: str) -> None:
+        if self.workflow_concurrency is None or workflow_id not in self._active_workflow_ids:
+            return
+        terminal = {
+            SpanRuntimeStatus.COMPLETED,
+            SpanRuntimeStatus.UNAVAILABLE,
+            SpanRuntimeStatus.BLOCKED,
+        }
+        if not all(
+            self._state(span.span_id).status in terminal
+            for span in self._workflows[workflow_id]
+        ):
+            return
+        self._active_workflow_ids.remove(workflow_id)
+        self.des.journal.append(
+            self.des.now_ns,
+            "WORKLOAD_WORKFLOW_COMPLETED",
+            {
+                "workflow_id": workflow_id,
+                "active_workflows": len(self._active_workflow_ids),
+                "queued_workflows": len(self._eligible_workflow_ids),
+            },
+        )
+        self._admit_eligible_workflows()
 
     def _evaluate_child(self, child: NormalizedSpanMetadata) -> None:
         child_state = self._state(child.span_id)

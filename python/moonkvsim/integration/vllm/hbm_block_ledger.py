@@ -212,16 +212,42 @@ class HbmBlockLedgerBridge:
 
     @property
     def num_free_blocks(self) -> int:
-        """Return free plus inactive-cache pages that the pool may evict."""
+        """Return free plus only the inactive physical pages that may be evicted."""
+
+        available_bytes = {
+            resource_id: self.ledgers[resource_id].bytes_in(FREE_ACCOUNT)
+            for resource_id in self._allocated_bytes_per_resource
+        }
+        for record in self._blocks.values():
+            for allocation in self._evictable_inactive_allocations(record):
+                available_bytes[allocation.resource_id] += allocation.allocated_bytes
 
         return min(
-            (
-                self.ledgers[resource_id].bytes_in(FREE_ACCOUNT)
-                + self.ledgers[resource_id].bytes_in(HBM_KV_INACTIVE_ACCOUNT)
-            )
-            // allocated_bytes
+            available_bytes[resource_id] // allocated_bytes
             for resource_id, allocated_bytes in self._allocated_bytes_per_resource.items()
         )
+
+    def num_free_blocks_for_request(self, request_id: str) -> int:
+        """Return fungible pages; this bridge charges every page independently."""
+
+        if not request_id:
+            raise ValueError("request_id must be non-empty")
+        failed_resource_ids = self._unavailable_hbm_resource_ids()
+        if failed_resource_ids:
+            raise RuntimeError(
+                "request-aware HBM capacity is unavailable because bound resources "
+                f"failed or were lost: {list(failed_resource_ids)}"
+            )
+        return self.num_free_blocks
+
+    def try_reclaim_blocks(self, request_id: str, required_blocks: int) -> bool:
+        """Report existing evictable capacity; allocation performs the eviction."""
+
+        if not request_id:
+            raise ValueError("request_id must be non-empty")
+        if type(required_blocks) is not int or required_blocks < 0:
+            raise ValueError("required_blocks must be a non-negative integer")
+        return required_blocks <= self.num_free_blocks_for_request(request_id)
 
     @property
     def active_block_ids(self) -> tuple[int, ...]:
@@ -234,6 +260,20 @@ class HbmBlockLedgerBridge:
                 block_id
                 for block_id, record in self._blocks.items()
                 if not record.active_request_ids
+            )
+        )
+
+    @property
+    def active_request_ids(self) -> tuple[str, ...]:
+        """Return logical requests that currently own physical ACTIVE pages."""
+
+        return tuple(
+            sorted(
+                {
+                    request_id
+                    for record in self._blocks.values()
+                    for request_id in record.active_request_ids
+                }
             )
         )
 
@@ -1359,6 +1399,40 @@ class HbmBlockLedgerBridge:
             "failed_resource_ids": sorted(self._failed_resource_ids),
         }
         return json.dumps(snapshot, sort_keys=True, separators=(",", ":")).encode()
+
+    def _evictable_inactive_allocations(
+        self,
+        record: _LogicalBlockRecord,
+    ) -> tuple[PhysicalAllocation, ...]:
+        if (
+            record.active_request_ids
+            or record.cache_hash is None
+            or record.aliases
+            or record.lost_allocation_ids
+        ):
+            return ()
+        allocations = tuple(
+            self.registry.get(allocation_id) for allocation_id in record.allocation_ids
+        )
+        if any(
+            allocation.state is not AllocationState.COMMITTED
+            or allocation.owner_account != HBM_KV_INACTIVE_ACCOUNT
+            or AllocationRole.ACTIVE_PRIMARY in allocation.roles
+            or AllocationRole.CACHE_REUSE not in allocation.roles
+            or self.registry.overlay(allocation.allocation_id).source_pin_count
+            for allocation in allocations
+        ):
+            return ()
+        return allocations
+
+    def _unavailable_hbm_resource_ids(self) -> tuple[str, ...]:
+        failed_resource_ids = set(self._failed_resource_ids)
+        failed_resource_ids.update(
+            resource_id
+            for resource_id in self._allocated_bytes_per_resource
+            if self.ledgers[resource_id].bytes_in(UNAVAILABLE_CAPACITY_ACCOUNT) > 0
+        )
+        return tuple(sorted(failed_resource_ids))
 
     def _build_allocations(
         self,

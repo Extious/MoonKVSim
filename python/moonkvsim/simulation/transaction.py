@@ -109,12 +109,10 @@ class ResourceTransaction:
                 [delta.as_transfer() for delta in deltas]
             )
 
-        if (
-            journal is not None
-            and journal.records
-            and self.timestamp_ns < journal.records[-1].timestamp_ns
-        ):
-            raise ValueError("transaction timestamp would move journal backwards")
+        if journal is not None:
+            last_timestamp_ns = journal.last_timestamp_ns
+            if last_timestamp_ns is not None and self.timestamp_ns < last_timestamp_ns:
+                raise ValueError("transaction timestamp would move journal backwards")
 
         for resource_id, accounts in proposed.items():
             ledgers[resource_id]._replace_accounts(accounts)

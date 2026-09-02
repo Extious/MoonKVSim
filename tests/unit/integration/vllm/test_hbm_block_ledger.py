@@ -290,6 +290,86 @@ def test_prefix_cache_residency_moves_active_inactive_without_alias_double_charg
     assert replayed_registry.snapshot_bytes() == scenario.registry.snapshot_bytes()
 
 
+def test_alias_pinned_inactive_block_is_not_reported_as_evictable_capacity() -> None:
+    scenario = _scenario(physical_block_capacity=2)
+    scheduler = _scheduler(
+        scenario,
+        num_gpu_blocks=3,
+        enable_prefix_caching=True,
+    )
+    owner = _token_request("owner", list(range(1, 9)))
+    scheduler.add_request(owner)
+    scheduler.schedule()
+    scheduler.finish_request(owner.request_id, RequestStatus.FINISHED_STOPPED)
+    scenario.bridge.retain_alias(1, alias_id="remote-reader", logical_hash="hash-alias")
+
+    assert scenario.bridge.inactive_block_ids == (1, 2)
+    assert scenario.bridge.num_free_blocks == 1
+    assert scenario.bridge.num_free_blocks_for_request("replacement") == 1
+
+    replacement = _token_request("replacement", list(range(90, 98)))
+    scheduler.add_request(replacement)
+    bridge_before = scenario.bridge.snapshot_bytes()
+    registry_before = scenario.registry.snapshot_bytes()
+    journal_before = scenario.journal.to_jsonl_bytes()
+    accounts_before = {
+        resource_id: ledger.accounts for resource_id, ledger in scenario.ledgers.items()
+    }
+
+    output = scheduler.schedule()
+
+    assert output.scheduled_req_ids == ()
+    assert scheduler.waiting_request_ids == (replacement.request_id,)
+    assert replacement.status is RequestStatus.WAITING
+    assert scenario.bridge.snapshot_bytes() == bridge_before
+    assert scenario.registry.snapshot_bytes() == registry_before
+    assert scenario.journal.to_jsonl_bytes() == journal_before
+    assert {
+        resource_id: ledger.accounts for resource_id, ledger in scenario.ledgers.items()
+    } == accounts_before
+
+
+def test_capacity_uses_minimum_truly_evictable_pages_across_stage_rank_resources() -> None:
+    layouts = (
+        _layout(pp_stage=0, tp_rank=0, allocated_bytes=64),
+        _layout(pp_stage=1, tp_rank=0, allocated_bytes=80),
+    )
+    ledgers = {
+        "gpu-pp0-tp0.hbm": CapacityLedger(
+            resource_id="gpu-pp0-tp0.hbm",
+            resource_kind=CapacityResourceKind.GPU_HBM,
+            capacity_bytes=3 * layouts[0].allocated_bytes,
+        ),
+        "gpu-pp1-tp0.hbm": CapacityLedger(
+            resource_id="gpu-pp1-tp0.hbm",
+            resource_kind=CapacityResourceKind.GPU_HBM,
+            capacity_bytes=2 * layouts[1].allocated_bytes,
+        ),
+    }
+    journal = EventJournal()
+    registry = AllocationRegistry(journal=journal)
+    bridge = HbmBlockLedgerBridge(
+        bridge_id="uneven-capacity",
+        bindings=(
+            HbmStageRankBinding("gpu-pp0-tp0.hbm", layouts[0]),
+            HbmStageRankBinding("gpu-pp1-tp0.hbm", layouts[1]),
+        ),
+        ledgers=ledgers,
+        registry=registry,
+        journal=journal,
+    )
+    bridge.allocate_blocks((1,), request_id="owner", cause="test.allocate")
+    bridge.mark_cacheable_blocks({1: "hash-1"}, cause="test.cacheable")
+    bridge.release_blocks((1,), request_id="owner", cause="test.release")
+
+    assert bridge.num_free_blocks == 2
+
+    bridge.retain_alias(1, alias_id="remote-reader", logical_hash="hash-1")
+
+    assert bridge.num_free_blocks == 1
+    assert bridge.num_free_blocks_for_request("candidate") == 1
+
+
 def test_large_hbm_release_record_has_bounded_compact_payload() -> None:
     scenario = _scenario(physical_block_capacity=128)
     block_ids = tuple(range(1, 129))
@@ -628,6 +708,74 @@ def test_multi_gpu_block_degrades_and_later_release_preserves_failed_capacity() 
     assert scenario.registry.get(failed_allocation).state is AllocationState.LOST
     assert scenario.registry.get(healthy_allocation).state is AllocationState.RELEASED
     assert healthy_ledger.bytes_in(HBM_KV_ACTIVE_ACCOUNT) == 0
+
+
+def test_failed_rank_fences_zero_growth_request_without_mutation() -> None:
+    scenario = _scenario()
+    scheduler = _scheduler(scenario)
+    request = _request("zero-growth-after-failure", 3)
+    scheduler.add_request(request)
+    [prefill] = scheduler.schedule().scheduled_new_reqs
+    scheduler.append_output_tokens(request.request_id)
+
+    assert prefill.new_block_ids == (1,)
+    assert request.num_computed_tokens == 3
+    assert request.num_tokens == 4
+    assert scheduler.request_block_ids(request.request_id) == (1,)
+
+    AtomicGPUHBMFailStop(
+        ledgers=scenario.ledgers,
+        registry=scenario.registry,
+        journal=scenario.journal,
+        observers=(scenario.bridge,),
+    ).fail_gpu_hbm(
+        gpu_id="gpu-pp0-tp0",
+        resource_ids=("gpu-pp0-tp0.hbm",),
+        failure_id="failure-before-zero-growth",
+        timestamp_ns=7,
+    )
+    bridge_before = scenario.bridge.snapshot_bytes()
+    registry_before = scenario.registry.snapshot_bytes()
+    journal_before = scenario.journal.to_jsonl_bytes()
+    accounts_before = {
+        resource_id: ledger.accounts for resource_id, ledger in scenario.ledgers.items()
+    }
+    scheduler_before = (
+        scheduler.waiting_request_ids,
+        scheduler.running_request_ids,
+        scheduler.request_block_ids(request.request_id),
+        scheduler.block_pool.free_block_ids,
+        tuple(block.ref_count for block in scheduler.block_pool.blocks),
+        request.status,
+        request.num_computed_tokens,
+        request.num_output_tokens,
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match=(
+            r"request-aware HBM capacity is unavailable because bound resources "
+            r"failed or were lost:.*gpu-pp0-tp0\.hbm"
+        ),
+    ):
+        scheduler.schedule()
+
+    assert scenario.bridge.snapshot_bytes() == bridge_before
+    assert scenario.registry.snapshot_bytes() == registry_before
+    assert scenario.journal.to_jsonl_bytes() == journal_before
+    assert {
+        resource_id: ledger.accounts for resource_id, ledger in scenario.ledgers.items()
+    } == accounts_before
+    assert (
+        scheduler.waiting_request_ids,
+        scheduler.running_request_ids,
+        scheduler.request_block_ids(request.request_id),
+        scheduler.block_pool.free_block_ids,
+        tuple(block.ref_count for block in scheduler.block_pool.blocks),
+        request.status,
+        request.num_computed_tokens,
+        request.num_output_tokens,
+    ) == scheduler_before
 
 
 def test_fully_lost_block_release_keeps_reconstructable_logical_ids() -> None:

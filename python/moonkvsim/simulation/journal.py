@@ -28,6 +28,18 @@ class EventJournal:
     def records(self) -> tuple[JournalRecord, ...]:
         return tuple(self._records)
 
+    @property
+    def record_count(self) -> int:
+        """Return the number of records without copying the journal."""
+
+        return len(self._records)
+
+    @property
+    def last_timestamp_ns(self) -> int | None:
+        """Return the terminal timestamp without materializing ``records``."""
+
+        return None if not self._records else self._last_timestamp_ns
+
     def append(self, timestamp_ns: int, record_type: str, data: dict[str, Any]) -> None:
         if timestamp_ns < self._last_timestamp_ns:
             raise ValueError("journal timestamp cannot move backwards")

@@ -139,9 +139,19 @@ class GlobalDES:
         )
         return True
 
-    def run(self, *, until_ns: int | None = None) -> int:
+    def run(
+        self,
+        *,
+        until_ns: int | None = None,
+        progress_every_events: int | None = None,
+        on_progress: Callable[["GlobalDES", int], None] | None = None,
+    ) -> int:
         if until_ns is not None and until_ns < self.now_ns:
             raise ValueError("until_ns cannot be earlier than now_ns")
+        if progress_every_events is not None and progress_every_events <= 0:
+            raise ValueError("progress_every_events must be positive")
+        if (progress_every_events is None) != (on_progress is None):
+            raise ValueError("progress interval and callback must be configured together")
         executed = 0
         while self._heap:
             event = heapq.heappop(self._heap)
@@ -182,6 +192,12 @@ class GlobalDES:
                 )
             self._terminal.add(event.event_id)
             executed += 1
+            if (
+                progress_every_events is not None
+                and on_progress is not None
+                and executed % progress_every_events == 0
+            ):
+                on_progress(self, executed)
         else:
             if until_ns is not None:
                 self.now_ns = until_ns
