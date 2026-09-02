@@ -1,0 +1,5 @@
+{
+  "name": "MoonKVSim",
+  "user": "ubuntu",
+  "install": "bash ./.cursor/install.sh"
+}
