@@ -1,0 +1,9 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+const ctx={window:{}};vm.createContext(ctx);let src=fs.readFileSync('dist/workflows.js','utf8');src=src.replace('window.WORKFLOWS =','const WORKFLOWS = window.WORKFLOWS =');vm.runInContext(src,ctx);
+const escape=s=>String(s).replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+for(const w of ctx.window.WORKFLOWS){let cells=['<mxCell id="0"/>','<mxCell id="1" parent="0"/>'];
+for(const n of w.nodes)cells.push(`<mxCell id="${n.id}" value="${escape(n.id+'  '+n.title+'\n前驱：'+(n.pred.join(' · ')||'无'))}" style="rounded=1;whiteSpace=wrap;html=0;fontSize=16;fillColor=${w.pale};strokeColor=${w.accent};fontFamily=Noto Sans CJK SC;" vertex="1" parent="1"><mxGeometry x="${n.x}" y="${n.y}" width="160" height="72" as="geometry"/></mxCell>`);
+for(const [a,b,pts,cross] of w.edges){const from=w.nodes.find(n=>n.id===a),to=w.nodes.find(n=>n.id===b),first=pts[0],last=pts.at(-1);cells.push(`<mxCell id="${a}-${b}" value="" style="edgeStyle=none;rounded=0;endArrow=block;endFill=1;strokeWidth=1.8;strokeColor=#8b9aaf;${cross?'dashed=1;':''}exitX=${(first[0]-from.x)/160};exitY=${(first[1]-from.y)/72};entryX=${(last[0]-to.x)/160};entryY=${(last[1]-to.y)/72};exitPerimeter=0;entryPerimeter=0;" edge="1" source="${a}" target="${b}" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points">${pts.slice(1,-1).map(([x,y])=>`<mxPoint x="${x}" y="${y}"/>`).join('')}</Array></mxGeometry></mxCell>`);}
+fs.writeFileSync(`dist/${w.id}.drawio`,`<mxfile host="app.diagrams.net"><diagram id="${w.id}" name="${escape(w.title)}"><mxGraphModel page="1" pageWidth="1040" pageHeight="450"><root>${cells.join('')}</root></mxGraphModel></diagram></mxfile>`);}
+console.log('Generated 3 editable DAGs from the shared workflow contract.');
