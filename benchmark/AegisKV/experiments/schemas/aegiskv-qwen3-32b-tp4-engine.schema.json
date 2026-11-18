@@ -1,0 +1,637 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://moonkvsim.local/schemas/aegiskv-qwen3-32b-tp4-engine.schema.json",
+  "title": "AegisKV Qwen3-32B DP8/TP4 engine contract v1",
+  "$comment": "This is a simulation-only, modeled/uncalibrated contract. Capacity numbers are provenance-bound assumptions rather than runtime allocator or inventory observations. TP KV recovery loads one independent shard per rank and uses a collective barrier for readiness; it does not perform a mathematical all-reduce.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "model",
+    "parallelism",
+    "cluster",
+    "capacity",
+    "placement",
+    "protection",
+    "recovery",
+    "algorithm3",
+    "modeled_costs",
+    "evidence"
+  ],
+  "properties": {
+    "schema": {
+      "const": "moonkvsim.aegiskv.qwen3_32b_tp4_engine.v1"
+    },
+    "model": {
+      "$ref": "#/$defs/model"
+    },
+    "parallelism": {
+      "$ref": "#/$defs/parallelism"
+    },
+    "cluster": {
+      "$ref": "#/$defs/cluster"
+    },
+    "capacity": {
+      "$ref": "#/$defs/capacity"
+    },
+    "placement": {
+      "$ref": "#/$defs/placement"
+    },
+    "protection": {
+      "$ref": "#/$defs/protection"
+    },
+    "recovery": {
+      "$ref": "#/$defs/recovery"
+    },
+    "algorithm3": {
+      "$ref": "#/$defs/algorithm3"
+    },
+    "modeled_costs": {
+      "$ref": "#/$defs/modeledCosts"
+    },
+    "evidence": {
+      "$ref": "#/$defs/evidence"
+    }
+  },
+  "$defs": {
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "revision",
+        "dtype",
+        "kv_dtype",
+        "native_max_context_tokens",
+        "max_context_tokens",
+        "context_extension_provenance",
+        "num_hidden_layers",
+        "num_kv_heads",
+        "head_dim",
+        "kv_scalar_bytes",
+        "kv_bytes_per_token_total",
+        "kv_bytes_per_token_per_tp_rank",
+        "kv_layout_status"
+      ],
+      "properties": {
+        "id": {
+          "const": "Qwen/Qwen3-32B"
+        },
+        "revision": {
+          "const": "9216db5781bf21249d130ec9da846c4624c16137"
+        },
+        "dtype": {
+          "const": "bfloat16"
+        },
+        "kv_dtype": {
+          "const": "bfloat16"
+        },
+        "native_max_context_tokens": {
+          "const": 40960
+        },
+        "max_context_tokens": {
+          "const": 131072
+        },
+        "context_extension_provenance": {
+          "const": "proposed_yarn_128k_modeled_not_runtime_validated"
+        },
+        "num_hidden_layers": {
+          "const": 64
+        },
+        "num_kv_heads": {
+          "const": 8
+        },
+        "head_dim": {
+          "const": 128
+        },
+        "kv_scalar_bytes": {
+          "const": 2
+        },
+        "kv_bytes_per_token_total": {
+          "const": 262144
+        },
+        "kv_bytes_per_token_per_tp_rank": {
+          "const": 65536
+        },
+        "kv_layout_status": {
+          "const": "proposed_yarn_128k_modeled_runtime_validation_pending"
+        }
+      }
+    },
+    "parallelism": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["data_parallel_size", "tensor_parallel_size", "pipeline_parallel_size", "world_size"],
+      "properties": {
+        "data_parallel_size": {
+          "const": 8
+        },
+        "tensor_parallel_size": {
+          "const": 4
+        },
+        "pipeline_parallel_size": {
+          "const": 1
+        },
+        "world_size": {
+          "const": 32
+        }
+      }
+    },
+    "cluster": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "inference_node_count",
+        "gpus_per_node",
+        "gpu_count",
+        "gpu_sku",
+        "physical_hbm_bytes_per_gpu",
+        "tp_group_placement",
+        "intra_node_gpu_fabric"
+      ],
+      "properties": {
+        "inference_node_count": {
+          "const": 8
+        },
+        "gpus_per_node": {
+          "const": 4
+        },
+        "gpu_count": {
+          "const": 32
+        },
+        "gpu_sku": {
+          "const": "NVIDIA-A100-SXM4-80GB"
+        },
+        "physical_hbm_bytes_per_gpu": {
+          "const": 85899345920
+        },
+        "tp_group_placement": {
+          "const": "one_dp_replica_per_node"
+        },
+        "intra_node_gpu_fabric": {
+          "const": "NVLINK"
+        }
+      }
+    },
+    "rankHBMCapacity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "physical_hbm_bytes_per_rank",
+        "model_weights_bytes_per_rank",
+        "runtime_fixed_bytes_per_rank",
+        "kv_capable_hbm_bytes_per_rank",
+        "peer_hbm_dynamic_quota_upper_bound_bytes_per_rank",
+        "peer_hbm_dynamic_quota_upper_bound_numerator",
+        "peer_hbm_dynamic_quota_upper_bound_denominator",
+        "peer_hbm_accounting_rule"
+      ],
+      "properties": {
+        "physical_hbm_bytes_per_rank": {
+          "const": 85899345920
+        },
+        "model_weights_bytes_per_rank": {
+          "const": 16381061632
+        },
+        "runtime_fixed_bytes_per_rank": {
+          "const": 2147483648
+        },
+        "kv_capable_hbm_bytes_per_rank": {
+          "const": 67370800640
+        },
+        "peer_hbm_dynamic_quota_upper_bound_bytes_per_rank": {
+          "const": 33685400320
+        },
+        "peer_hbm_dynamic_quota_upper_bound_numerator": {
+          "const": 1
+        },
+        "peer_hbm_dynamic_quota_upper_bound_denominator": {
+          "const": 2
+        },
+        "peer_hbm_accounting_rule": {
+          "const": "peer_hbm_dynamic_quota_is_reclaimable_subquota_of_kv_capable_hbm_not_additive"
+        }
+      }
+    },
+    "storeDRAMSegment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["segment_id", "node_id", "capacity_bytes"],
+      "properties": {
+        "segment_id": {
+          "const": "store-0:segment-0"
+        },
+        "node_id": {
+          "const": "store-0"
+        },
+        "capacity_bytes": {
+          "const": 1000000000000
+        }
+      }
+    },
+    "storeDRAMCapacity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "store_node_count",
+        "total_capacity_bytes",
+        "failure_domain_rule",
+        "segments"
+      ],
+      "properties": {
+        "store_node_count": {
+          "const": 1
+        },
+        "total_capacity_bytes": {
+          "const": 1000000000000
+        },
+        "failure_domain_rule": {
+          "const": "outside_all_inference_node_failure_domains"
+        },
+        "segments": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": {
+            "$ref": "#/$defs/storeDRAMSegment"
+          }
+        }
+      }
+    },
+    "capacityProvenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "physical_hbm_bytes_per_rank",
+        "model_weights_bytes_per_rank",
+        "runtime_fixed_bytes_per_rank",
+        "kv_capable_hbm_bytes_per_rank",
+        "peer_hbm_dynamic_quota_upper_bound_bytes_per_rank",
+        "store_dram_capacity_bytes_per_segment"
+      ],
+      "properties": {
+        "physical_hbm_bytes_per_rank": {
+          "const": "a100_sxm4_80gb_sku_capacity_modeled_as_80_gib_runtime_allocatable_bytes_unobserved"
+        },
+        "model_weights_bytes_per_rank": {
+          "const": "locked_revision_safetensors_index_total_size_65524246528_evenly_divided_by_tp4_runtime_partition_validation_pending"
+        },
+        "runtime_fixed_bytes_per_rank": {
+          "const": "modeled_one_eighth_per_rank_weights_rounded_up_to_gib_not_physically_observed"
+        },
+        "kv_capable_hbm_bytes_per_rank": {
+          "const": "arithmetic_remainder_after_modeled_weights_and_runtime_fixed_shared_by_primary_reusable_and_peer_hbm"
+        },
+        "peer_hbm_dynamic_quota_upper_bound_bytes_per_rank": {
+          "const": "modeled_alpha_max_one_half_of_kv_capable_hbm_not_selected_from_result_trends"
+        },
+        "store_dram_capacity_bytes_per_segment": {
+          "const": "modeled_dedicated_store_l3_single_segment_capacity_not_inventory_or_runtime_observation"
+        }
+      }
+    },
+    "capacity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "rank_hbm", "store_dram", "provenance"],
+      "properties": {
+        "status": {
+          "const": "modeled_uncalibrated"
+        },
+        "rank_hbm": {
+          "$ref": "#/$defs/rankHBMCapacity"
+        },
+        "store_dram": {
+          "$ref": "#/$defs/storeDRAMCapacity"
+        },
+        "provenance": {
+          "$ref": "#/$defs/capacityProvenance"
+        }
+      }
+    },
+    "placement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "linear_rank_formula",
+        "node_formula",
+        "local_gpu_formula",
+        "peer_target_dp_by_source_dp",
+        "peer_mapping_rule",
+        "peer_failure_domain_rule"
+      ],
+      "properties": {
+        "linear_rank_formula": {
+          "const": "dp_rank * tensor_parallel_size + tp_rank"
+        },
+        "node_formula": {
+          "const": "dp_rank"
+        },
+        "local_gpu_formula": {
+          "const": "tp_rank"
+        },
+        "peer_target_dp_by_source_dp": {
+          "type": "array",
+          "minItems": 8,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 7
+          }
+        },
+        "peer_mapping_rule": {
+          "const": "same_tp_rank_on_target_dp"
+        },
+        "peer_failure_domain_rule": {
+          "const": "different_inference_node"
+        }
+      }
+    },
+    "tierPath": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tier",
+        "source",
+        "ownership",
+        "admission",
+        "shard_granularity",
+        "writes_per_logical_chunk",
+        "commit_rule",
+        "cross_tier_copy_allowed"
+      ],
+      "properties": {
+        "tier": {
+          "enum": ["PEER_HBM", "STORE_DRAM"]
+        },
+        "source": {
+          "const": "PRIMARY_HBM_PRODUCTION_BUFFER"
+        },
+        "ownership": {
+          "const": "source_owned"
+        },
+        "admission": {
+          "const": "independent"
+        },
+        "shard_granularity": {
+          "const": "one_kv_shard_per_tp_rank"
+        },
+        "writes_per_logical_chunk": {
+          "const": 4
+        },
+        "commit_rule": {
+          "const": "all_tp_shard_writes_ack"
+        },
+        "cross_tier_copy_allowed": {
+          "const": false
+        }
+      }
+    },
+    "protection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "peer_hbm",
+        "store_dram",
+        "store_depends_on_peer_hbm",
+        "peer_hbm_depends_on_store",
+        "same_source_production_buffer"
+      ],
+      "properties": {
+        "peer_hbm": {
+          "allOf": [
+            {"$ref": "#/$defs/tierPath"},
+            {"properties": {"tier": {"const": "PEER_HBM"}}}
+          ]
+        },
+        "store_dram": {
+          "allOf": [
+            {"$ref": "#/$defs/tierPath"},
+            {"properties": {"tier": {"const": "STORE_DRAM"}}}
+          ]
+        },
+        "store_depends_on_peer_hbm": {
+          "const": false
+        },
+        "peer_hbm_depends_on_store": {
+          "const": false
+        },
+        "same_source_production_buffer": {
+          "const": true
+        }
+      }
+    },
+    "collective": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "scope",
+        "payload",
+        "mathematical_reduction",
+        "all_reduce",
+        "logical_reassembly"
+      ],
+      "properties": {
+        "kind": {
+          "const": "TP_BARRIER"
+        },
+        "scope": {
+          "const": "single_recovery_tp_group"
+        },
+        "payload": {
+          "const": "readiness_and_block_table_metadata_only"
+        },
+        "mathematical_reduction": {
+          "const": false
+        },
+        "all_reduce": {
+          "const": false
+        },
+        "logical_reassembly": {
+          "const": "install_directory_generation_after_all_rank_shards_ready"
+        }
+      }
+    },
+    "recoveryPath": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_tier", "rank_load", "completion_rule", "collective"],
+      "properties": {
+        "source_tier": {
+          "enum": ["PEER_HBM", "STORE_DRAM"]
+        },
+        "rank_load": {
+          "enum": [
+            "activate_same_tp_rank_peer_hbm_shard",
+            "load_same_tp_rank_store_dram_shard_to_primary_hbm"
+          ]
+        },
+        "completion_rule": {
+          "const": "all_four_rank_loads_complete_then_collective_sync"
+        },
+        "collective": {
+          "$ref": "#/$defs/collective"
+        }
+      }
+    },
+    "recovery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["peer_hbm", "store_dram", "cross_layout_conversion_allowed"],
+      "properties": {
+        "peer_hbm": {
+          "allOf": [
+            {"$ref": "#/$defs/recoveryPath"},
+            {
+              "properties": {
+                "source_tier": {"const": "PEER_HBM"},
+                "rank_load": {"const": "activate_same_tp_rank_peer_hbm_shard"}
+              }
+            }
+          ]
+        },
+        "store_dram": {
+          "allOf": [
+            {"$ref": "#/$defs/recoveryPath"},
+            {
+              "properties": {
+                "source_tier": {"const": "STORE_DRAM"},
+                "rank_load": {"const": "load_same_tp_rank_store_dram_shard_to_primary_hbm"}
+              }
+            }
+          ]
+        },
+        "cross_layout_conversion_allowed": {
+          "const": false
+        }
+      }
+    },
+    "transferCost": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["transport", "effective_bandwidth_bytes_per_second", "setup_ns"],
+      "properties": {
+        "transport": {
+          "enum": ["NVLINK", "RDMA_GDR", "MOONCAKE_RDMA"]
+        },
+        "effective_bandwidth_bytes_per_second": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "setup_ns": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "collectiveCost": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["transport", "fixed_overhead_ns", "data_reduction_bytes"],
+      "properties": {
+        "transport": {
+          "const": "NVLINK"
+        },
+        "fixed_overhead_ns": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "data_reduction_bytes": {
+          "const": 0
+        }
+      }
+    },
+    "algorithm3": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "control_window_ns",
+        "minimum_fraction",
+        "maximum_fraction",
+        "initial_fraction",
+        "multiplicative_decrease",
+        "additive_increase",
+        "stable_window_count",
+        "pressure_source",
+        "controller_scope",
+        "provenance"
+      ],
+      "properties": {
+        "control_window_ns": {"const": 100000},
+        "minimum_fraction": {"const": "0"},
+        "maximum_fraction": {"const": "0.50"},
+        "initial_fraction": {"const": "0.50"},
+        "multiplicative_decrease": {"const": "0.50"},
+        "additive_increase": {"const": "0.05"},
+        "stable_window_count": {"const": 4},
+        "pressure_source": {"const": "explicit_schedule_signal_with_global_des_physical_snapshot"},
+        "controller_scope": {"const": "one_state_per_peer_target_dp_rank"},
+        "provenance": {"const": "modeled_uncalibrated_not_selected_from_result_trends"}
+      }
+    },
+    "modeledCosts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "intra_node_nvlink",
+        "cross_node_peer_hbm",
+        "store_dram",
+        "tp_collective_sync"
+      ],
+      "properties": {
+        "intra_node_nvlink": {
+          "allOf": [
+            {"$ref": "#/$defs/transferCost"},
+            {"properties": {"transport": {"const": "NVLINK"}}}
+          ]
+        },
+        "cross_node_peer_hbm": {
+          "allOf": [
+            {"$ref": "#/$defs/transferCost"},
+            {"properties": {"transport": {"const": "RDMA_GDR"}}}
+          ]
+        },
+        "store_dram": {
+          "allOf": [
+            {"$ref": "#/$defs/transferCost"},
+            {"properties": {"transport": {"const": "MOONCAKE_RDMA"}}}
+          ]
+        },
+        "tp_collective_sync": {
+          "$ref": "#/$defs/collectiveCost"
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "timing_and_bandwidth",
+        "capacity",
+        "calibrated",
+        "physical_measurement_completed",
+        "allowed_claim"
+      ],
+      "properties": {
+        "timing_and_bandwidth": {
+          "const": "modeled_uncalibrated"
+        },
+        "capacity": {
+          "const": "modeled_uncalibrated"
+        },
+        "calibrated": {
+          "const": false
+        },
+        "physical_measurement_completed": {
+          "const": false
+        },
+        "allowed_claim": {
+          "const": "simulation_only"
+        }
+      }
+    }
+  }
+}

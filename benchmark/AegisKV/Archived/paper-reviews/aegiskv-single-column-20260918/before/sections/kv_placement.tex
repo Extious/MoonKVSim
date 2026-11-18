@@ -1,0 +1,198 @@
+\subsection{KV Placement Planner: Blocks and Layers}
+\label{sec:kv-placement}
+
+Planner (2) describes a request's Peer protection as the hottest $K_l$
+sealed blocks of each of the first $L$ layers. Calibration determines
+the hot-set sizes; online rankings determine their identities; a
+transfer--compute model determines the front-layer prefix.
+
+\paragraph{Protection unit and replay endpoint.}
+The unit is a \emph{(layer, block)} containing all KV heads. AegisKV uses
+64-token blocks for the profiled selectors, aligning counting, sealing,
+and copying with their block granularity. Larger units bundle cold and
+hot tokens; smaller units increase object and metadata counts.
+At the same 20\% byte budget, tying each token span to all layers covers
+only 53--59\% of selection events in the 512-query traces, versus 66\%
+for MiniCPM4-8B and over 90\% for NOSA-1B with layer-block selection.
+
+A full block is sealed and becomes eligible for copying. During decode,
+the unsealed tail is shorter than one block; the analysis conservatively
+uses 64 tokens (about 32 in expectation under a uniform failure phase).
+Sealed but uncommitted KV also belongs to the replay suffix, determined
+by the commit frontier. Replay forwards the already generated token IDs
+to rebuild missing KV; it neither resamples those tokens nor recomputes
+an available historical prefix. Our recovery endpoint is completion of
+this known-tail KV reconstruction.
+
+\paragraph{Size the hot set by distinct needed blocks.}
+For layer $l$, replaying $n$ tail tokens needs
+\begin{equation}
+ U_l(n)=\bigcup_{q=1}^{n}\ \bigcup_g S_{l,q,g},
+\end{equation}
+where $S_{l,q,g}$ is the selector output for query $q$ and selection
+group $g$. A repeatedly selected block appears once in $U_l$.
+At 32K history, the 64-query union averages 37\% of history bytes for
+NOSA-1B and 68\% for MiniCPM4-8B; for 512 queries these rise to 58\%
+and 90\%. Thus, event-frequency concentration cannot determine required
+recovery bytes.
+
+A table indexed by model, layer, context bin, and tail length estimates
+$h_l=|U_l|/B_l$, where $B_l$ is the number of historical blocks in layer
+$l$. It yields $K_l=\lceil h_l B_l\rceil$, validated to include the
+selector's mandatory historical blocks within that budget.
+In the current three-document calibration, a table from other documents
+gives a modeled demand floor of 20.3\,ms, compared with 19.9\,ms from
+window-specific estimation. Adjacent-window union fractions change by
+0.03 on average (P90: 0.07). Layer specificity matters: fractions vary
+from 0.44 to 0.87 across MiniCPM4 layers; replacing them with one constant
+raises this floor to 23.5\,ms. Context matters too: the mean calibrated
+fraction is 0.89 at 16K versus 0.66 at 32K. The Adapter can report union
+statistics for slow, cross-request profile refreshes rather than
+resizing every request's hot set online.
+
+\paragraph{Track identities online.}
+The Adapter reads indices already produced by native attention kernels
+and accumulates selection counts in a layer-by-block table. It assumes
+neither identical selectors nor a fixed selection budget across models.
+In the profiled MiniCPM4 configuration, top-64 selection plus a
+2,048-token local window selects at most 96 blocks per query per layer;
+NOSA-1B selects 64 including mandatory blocks. With 32 layers, two KV
+heads, and 32K history, MiniCPM4 needs at most 6,144 counter increments
+per decoding step and a 32\,KiB table of 16-bit counters. Deduplicating
+indices within each group and resetting every 512 steps bounds a
+counter by 1,024. These are operation and storage counts, not measured
+runtime overhead.
+
+At each ranking window, the Planner prioritizes mandatory sealed blocks
+and fills the remaining $K_l$ slots by decreasing count, breaking ties
+by recency. An old optional block becomes replaceable only after two
+successive windows outside the top set. Replacements use existing slots,
+so hysteresis does not inflate the $K_l$ budget. Newly selected objects
+trigger incremental copies; removed objects retain DRAM coverage.
+Figure~\ref{fig:design-coverage} extends the budget comparison in
+Figure~\ref{fig:insight-retry-kv}. At 40\% historical bytes, past-frequency
+ranking covers 79.2\%/77.8\%/53.6\% of distinct needed KV for
+NOSA-1B/NOSA-3B/MiniCPM4, versus 59.7\%/59.7\%/50.9\% for recency.
+This isolates the ranking signal with a fixed per-layer budget; it does
+not evaluate the complete admission policy or two-window hysteresis.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/design-insights/retry-kv-budget.pdf}
+  \caption{Budget sensitivity of the same held-out KV forecast as
+    Figure~\ref{fig:insight-retry-kv}. Both policies include mandatory sink
+    and local-window blocks within the plotted budget. Coverage sums
+    distinct covered/needed historical layer-blocks per document, then
+    averages over three documents per model. Solid/filled curves use
+    past frequency; dashed/hollow curves use recency. Each model has one
+    native capture per document; budget points reuse those captures.}
+  \label{fig:design-coverage}
+  \Description{Past-window hotness covers needed KV blocks earlier than
+    recency, with a larger difference for NOSA than for MiniCPM4.}
+\end{figure}
+
+\paragraph{Preload and demand fetch.}
+The recovery loader preloads $K_l$ hot blocks for each layer. Selector
+state, such as compressed keys or block summaries, must be available
+before selecting that layer's exact demand. Once demand is known, misses
+receive higher priority than speculative preloads; remaining cold KV is
+filled in the background. Let $\widetilde u_l$ denote the fraction of
+historical KV in the union of preload and demand-fetch sets. Replaying
+64 queries at 32K gives mean $\widetilde u=0.44$ for NOSA-1B and 0.77
+for MiniCPM4, about 5--10 percentage points above the ideal needed union.
+At 16K these values are 0.69 and 0.96. They describe trace-derived
+sets, not a measured DMA schedule. Dense attention approaches
+$h=\widetilde u=1$ and reduces to full-layer loading.
+
+\paragraph{Protect the front-layer preload backlog.}
+Consider $N$ homogeneous layers, with mean preload fraction $h$,
+effective fraction $\widetilde u$, per-layer tail compute time $C$,
+and full-history transfer time $D=L_rs/\beta$.
+Here $s$ is KV bytes per token per layer and $\beta$ is effective
+bandwidth under representative concurrency. Preloads can be queued in
+advance, whereas a layer's misses are released only when its selector
+can determine demand. With an ideal preemptible copy stream,
+\begin{align}
+ W_{\mathrm{floor}}&=N(\widetilde u-h)D,\label{eq:demand-floor}\\
+ W_0&=hD+(N-1)[hD-C]^++W_{\mathrm{floor}}.\label{eq:exposed-wait}
+\end{align}
+The first two terms are startup preload and the backlog that computation
+cannot hide. The floor is demand-fetch wait under this \emph{fixed hot
+set and release policy}. Increasing the number of Peer-protected layers
+removes preload wait, not misses outside the hot set. Enlarging or
+changing that set can lower the floor; it is not a bound on all placements.
+
+Figure~\ref{fig:design-pipeline} illustrates the progression at 32K history
+with the measured MiniCPM4 tail cost and $\beta=6.25$\,GB/s.
+Waiting for all historical KV before computing exposes 172\,ms;
+full-layer pipelining reduces this to 83\,ms, and hot preloads with
+demand fetching to 44\,ms. Keeping the first seven layers' hot sets
+(147\,MiB) in Peer HBM leaves 20\,ms of demand wait. These are modeled
+timelines, not end-to-end fault-recovery measurements.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/design-paper/design-layer-pipeline.pdf}
+  \caption{Calibrated single-request recovery illustration: MiniCPM4-8B,
+    32 layers, 32K history (32\,MiB/layer), and a known 64-token tail.
+    (a) Composes measured 4.70\,s history prefill with calibrated tail
+    compute; it is not a measured one-shot 32K+64 run.
+    (b--e) Use an expanded millisecond axis, $D=5.37$\,ms at
+    6.25\,GB/s, and $C=2.87$\,ms from A100 measurements. Rows compare
+    waiting for all history, full-layer pipelining, preload plus demand
+    fetch, and the same loader with front-layer hot sets in Peer HBM.
+    Waits are 172, 83, 44, and 20\,ms; totals include 92\,ms of tail
+    compute and end at reconstructed tail KV, not cold-copy completion.
+    The model uses homogeneous layer/document means and a preemptible
+    copy stream; it excludes detection, queuing, and resource interference.}
+  \label{fig:design-pipeline}
+  \Description{A seconds-scale recomputation reference and four
+    millisecond-scale timelines separate transfer, tail compute, and
+    exposed KV wait. Peer-resident front-layer hot sets reduce preload
+    wait while demand-fetch misses remain.}
+\end{figure*}
+
+The Peer byte target for eliminating the preload component is
+\begin{equation}
+ F^\star(r)=\beta\bigl(W_0-W_{\mathrm{floor}}\bigr)
+ =\beta\bigl(hD+(N-1)[hD-C]^+\bigr).
+ \label{eq:peer-byte-target}
+\end{equation}
+Let $b$ be bytes per layer-block. Choose the smallest front-layer prefix
+$L$ whose hot-set bytes reach $F^\star$; the KV footprint is
+$F_{\mathrm{KV}}(r)=\sum_{l=1}^{L}K_l b$.
+Admission also counts selector-state bytes. If $hD\le C$, the first
+layer's hot set suffices. Figure~\ref{fig:design-footprint} scans the same
+causal pipeline: full-layer loading needs 16 layers/512\,MiB to eliminate
+wait, the MiniCPM4 profile needs seven/147\,MiB to reach its demand floor,
+and the NOSA-1B profile needs one/11\,MiB. The NOSA curve retains the
+MiniCPM4 layer sizes and compute cost to isolate the access profile.
+It is not a measured NOSA recovery latency.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/design-wait-vs-bytes.pdf}
+  \caption{Modeled exposed wait versus front-layer hot-set residency.
+    All curves use the 32-layer MiniCPM4 byte and compute configuration
+    of Figure~\ref{fig:design-pipeline}; only $(h,\widetilde u)$ changes:
+    $(1,1)$, $(0.66,0.77)$, and $(0.36,0.44)$.
+    One step adds one layer's hot set. Triangles mark the first prefix
+    reaching the corresponding fixed-hot-set demand floor.
+    Footprints do not depend on slack.}
+  \label{fig:design-footprint}
+  \Description{Dense loading reaches zero wait at 512 MiB; MiniCPM4 and
+    NOSA access profiles reach nonzero demand floors with smaller footprints.}
+\end{figure}
+
+The footprint depends on context, model profile, and bandwidth, not slack.
+Within a fixed prefix length it varies approximately linearly with
+context, with discrete changes when $L$ changes. The profiled 16K case
+needs one layer/14\,MiB; extrapolating the 32K union fraction to 64K and
+128K gives about 20 layers/843\,MiB and 25 layers/2.1\,GiB.
+These larger-context footprints are extrapolations. At 25\,GB/s,
+the 32K case needs one layer/21\,MiB. A 32-token rather than 64-token
+tail reduces the illustrative footprint from 147 to 92\,MiB.
+$L$ and the footprint are fixed within a placement window and recomputed
+at its boundary. Equation~\ref{eq:peer-byte-target} is a planning
+approximation for heterogeneous layers, not a guarantee that their
+actual runtime reaches exactly the homogeneous floor.

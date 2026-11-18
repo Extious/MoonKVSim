@@ -1,0 +1,130 @@
+<mxfile host="65bd71144e">
+    <diagram id="figure-3-slacklandlord" name="附图3：SlackLandlord 租值键决策">
+        <mxGraphModel dx="1845" dy="2883" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="2030" background="#FFFFFF" math="1" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="canvas" value="&lt;div style=&quot;line-height:1.35&quot;&gt;&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=28;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;text;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+                    <mxGeometry width="1800" height="2030" as="geometry"/>
+                </mxCell>
+                <mxCell id="title" value="&lt;div style=&quot;line-height:1.35&quot;&gt;SlackLandlord：KV 分块的租值键决策&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=42;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;text;strokeColor=none;fillColor=none;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="-40" width="1720" height="65" as="geometry"/>
+                </mxCell>
+                <mxCell id="symbols" value="&lt;div style=&quot;line-height:1.35&quot;&gt;\(x\)：本次处理的完整块；\(Q\)：本池已提交备份中可安全释放的尾块队列&lt;br&gt;\(L\)：本池累计租金；\(H_x\)：租值键；\(c_{u,x}\)：Agent u 的信用份额&lt;br&gt;\(L^{\prime},Y,f\)：试算租金、待回收块、可用字节；y：Q 中 H 最小的尾块；z：新尾块&lt;br&gt;所有占用本池的备份均收租；Q 仅控制能否淘汰。Peer-HBM 与 DRAM 各自执行。&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=31;fontColor=#000000;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;spacing=10;strokeWidth=2;text;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="50" width="1680" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="input" value="&lt;div style=&quot;line-height:1.35&quot;&gt;① 读取本次输入&lt;br&gt;\(a,\ x,\ b_x,\ G_{a,x}\)（收益由附图 2 提供）&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=34;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=6;" parent="1" vertex="1">
+                    <mxGeometry x="360" y="270" width="1080" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="resident" value="&lt;div style=&quot;line-height:1.35&quot;&gt;本池已有 x 的&lt;br&gt;已提交备份？&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=34;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rhombus;" parent="1" vertex="1">
+                    <mxGeometry x="600" y="430" width="600" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-0" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.5;endArrow=block;endFill=1;endSize=10;jettySize=20;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="input" target="resident" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="settle" value="&lt;div style=&quot;line-height:1.35&quot;&gt;② x 已有备份，按本池 L 结算旧租金：&lt;br&gt;\(\mathrm{Credit}_x\leftarrow b_x\max(H_x-L,0)\)&lt;/div&gt;&lt;div style=&quot;line-height:1.35&quot;&gt;更新每个 Agent 被收租后的信用份额：&lt;br&gt;\(c_{u,x}\leftarrow c_{u,x}\cdot\frac{\mathrm{Credit}_x}{\sum_v c_{v,x}}\)&lt;br&gt;&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=31;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=6;" vertex="1" parent="1">
+                    <mxGeometry x="60" y="620" width="900" height="245" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.5;endArrow=block;endFill=1;endSize=10;jettySize=20;exitX=0;exitY=0.5;entryX=0.5;entryY=0;" parent="1" source="resident" target="settle" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="510" y="495"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="edge-1-label" value="&lt;div style=&quot;line-height:1.35&quot;&gt;是&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=31;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;text;strokeColor=none;fillColor=none;fillColor=#FFFFFF;spacing=1;" vertex="1" parent="1">
+                    <mxGeometry x="530" y="440" width="65" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="renew" value="&lt;div style=&quot;line-height:1.35&quot;&gt;只续租当前 Agent a:&amp;nbsp;&lt;br&gt;\(c_{a,x}\leftarrow G_{a,x},\quad \mathrm{Credit}_x\leftarrow\sum_u c_{u,x}\)&lt;br&gt;\(H_x\leftarrow L+\mathrm{Credit}_x/b_x\)&lt;br&gt;&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=31;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=6;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="925" width="900" height="190" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.5;endArrow=block;endFill=1;endSize=10;jettySize=20;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="settle" target="renew" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="initialize" value="&lt;div style=&quot;line-height:1.35&quot;&gt;② x 无备份：初始化候选信用&lt;br&gt;\(L^{\prime}\leftarrow L,\quad c_{a,x}\leftarrow G_{a,x}\)&lt;br&gt;\(H_x\leftarrow L^{\prime}+G_{a,x}/b_x\)&lt;br&gt;&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=31;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=6;" vertex="1" parent="1">
+                    <mxGeometry x="1030" y="620" width="700" height="195" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.5;endArrow=block;endFill=1;endSize=10;jettySize=20;exitX=1;exitY=0.5;entryX=0.5;entryY=0;" parent="1" source="resident" target="initialize" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1380" y="495"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="edge-3-label" value="&lt;div style=&quot;line-height:1.35&quot;&gt;否&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=31;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;text;strokeColor=none;fillColor=none;fillColor=#FFFFFF;spacing=1;" parent="1" vertex="1">
+                    <mxGeometry x="1230" y="440" width="65" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="trial" value="&lt;div style=&quot;line-height:1.35&quot;&gt;③ 初始化待淘汰KV集合：&lt;br&gt;\(Y\leftarrow\varnothing\)&lt;br&gt;\(f\leftarrow\text{Pool 剩余空间}\)&lt;br&gt;&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=31;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=6;" parent="1" vertex="1">
+                    <mxGeometry x="1010" y="910" width="740" height="205" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.5;endArrow=block;endFill=1;endSize=10;jettySize=20;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="initialize" target="trial" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="capacity" value="&lt;div style=&quot;line-height:1.35&quot;&gt;空间足够？&lt;br&gt;\(f\ge b_x\)&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=34;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rhombus;" parent="1" vertex="1">
+                    <mxGeometry x="650" y="1210" width="500" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.5;endArrow=block;endFill=1;endSize=10;jettySize=20;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="trial" target="capacity" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1380" y="1150"/>
+                            <mxPoint x="900" y="1150"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="choose" value="&lt;div style=&quot;line-height:1.35&quot;&gt;\(Q\ne\varnothing\)，且&lt;br&gt;\(\max(L^{\prime},H_y)&amp;lt;H_x\)？&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=33;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rhombus;" parent="1" vertex="1">
+                    <mxGeometry x="150" y="1370" width="620" height="195" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.5;endArrow=block;endFill=1;endSize=10;jettySize=20;exitX=0;exitY=0.5;entryX=0.5;entryY=0;" parent="1" source="capacity" target="choose" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="460" y="1270"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="edge-6-label" value="&lt;div style=&quot;line-height:1.35&quot;&gt;否&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=31;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;text;strokeColor=none;fillColor=none;fillColor=#FFFFFF;spacing=1;" parent="1" vertex="1">
+                    <mxGeometry x="505" y="1215" width="65" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="reject" value="&lt;div style=&quot;line-height:1.35&quot;&gt;拒绝 x 准入&lt;br&gt;&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=31;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=6;" parent="1" vertex="1">
+                    <mxGeometry x="870" y="1397.5" width="250" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.5;endArrow=block;endFill=1;endSize=10;jettySize=20;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="choose" target="reject" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-7-label" value="&lt;div style=&quot;line-height:1.35&quot;&gt;否&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=31;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;text;strokeColor=none;fillColor=none;fillColor=#FFFFFF;spacing=1;" parent="1" vertex="1">
+                    <mxGeometry x="795" y="1415" width="65" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="rent" value="&lt;div style=&quot;line-height:1.35&quot;&gt;④ 试删 y，并从 Q 移除&lt;br&gt;\(L^{\prime}\leftarrow\max(L^{\prime},H_y)\)&lt;br&gt;\(Y\leftarrow Y\cup\{y\},\quad f\leftarrow f+b_y\)&lt;br&gt;新尾块 z 入 Q&lt;br&gt;&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=31;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=6;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="1635" width="820" height="240" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.5;endArrow=block;endFill=1;endSize=10;jettySize=20;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="choose" target="rent" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-8-label" value="&lt;div style=&quot;line-height:1.35&quot;&gt;是&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=31;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;text;strokeColor=none;fillColor=none;fillColor=#FFFFFF;spacing=1;" vertex="1" parent="1">
+                    <mxGeometry x="505" y="1567" width="65" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.5;endArrow=block;endFill=1;endSize=10;jettySize=20;exitX=0;exitY=0.5;entryX=0.5;entryY=0;" parent="1" source="rent" target="capacity" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="25" y="1730"/>
+                            <mxPoint x="25" y="1170"/>
+                            <mxPoint x="900" y="1170"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="commit" value="&lt;div style=&quot;line-height:1.35&quot;&gt;⑤ 更新累计租金 L&lt;br&gt;\(L\leftarrow L^{\prime}\)&lt;br&gt;x 传输备份&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=31;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=6;" parent="1" vertex="1">
+                    <mxGeometry x="1220" y="1370" width="525" height="245" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.5;endArrow=block;endFill=1;endSize=10;jettySize=20;exitX=1;exitY=0.5;entryX=0.5;entryY=0;" parent="1" source="capacity" target="commit" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1482.5" y="1270"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="edge-10-label" value="&lt;div style=&quot;line-height:1.35&quot;&gt;是&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=31;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;text;strokeColor=none;fillColor=none;fillColor=#FFFFFF;spacing=1;" parent="1" vertex="1">
+                    <mxGeometry x="1230" y="1215" width="65" height="40" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

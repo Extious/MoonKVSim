@@ -1,0 +1,121 @@
+--- before
++++ after
+@@ -254,71 +254,66 @@
+ The example shows that recovery priorities should account for a request's
+ position in the workflow, in addition to its reconstruction cost.
+ 
+-\paragraph{Limitation 2: Workflow-aware caching without a recovery objective.}
+-Reducing these workflow delays through KV protection requires decisions
+-before a failure: which histories to retain and where to place them.
+-Workflow-aware serving provides a starting point: Parrot exposes
+-inter-request dependencies for application-level
++\paragraph{Limitation 2: Workflow-aware caching without fault tolerance.}
++Workflow-aware systems already exploit the dependencies highlighted
++above to improve application execution. Parrot exposes inter-request
++dependencies for application-level
+ scheduling~\cite{lin2024parrot}. KVFlow guides prefix retention and
+ prefetching by upcoming agent invocations~\cite{pan2025kvflow}, while Pythia
+ predicts future workflow steps and prompt contents to manage and stage
+ KV~\cite{yu2026pythia}. TOPAS jointly selects resident prefixes and admitted
+ requests by balancing remaining-path progress, reuse, and movement or
+-preemption costs~\cite{ni2026topas}. These objectives capture normal workflow
+-progress, but do not explicitly value KV by the WCT increase its retention
+-prevents after a serving-worker failure.
+-
+-Applying workflow information to recovery changes \emph{which state is
+-worth retaining}.
+-Normal reuse depends on future requests, whereas recovery can require
+-state from an interrupted request even when no later request would reuse
+-it. For example, KVFlow protects fixed prompts while assigning varying
+-suffixes the highest eviction priority~\cite{pan2025kvflow}.
+-Retaining a shared prompt can benefit many future calls, yet leave an
+-interrupted agent's accumulated task-specific history to be recomputed.
+-Checkpointing this history can avoid that repeated
+-work~\cite{strati2024dejavu}. Its protection value therefore depends on
+-the reconstruction it avoids and the affected branch's slack, in
+-addition to its expected reuse.
+-
+-Realizing this protection value also depends on \emph{where the state is
+-retained}.
+-CachedAttention and Mooncake already extend KV retention beyond GPU
++preemption costs~\cite{ni2026topas}. These workflow-aware caching and
++scheduling policies do not address serving-worker failures and the
++resulting loss of in-progress KV.
++
++Worker failures must be accounted for in large-scale deployment.
++As discussed in Section~\ref{sec:motivation-background}, worker failures
++can make KV unavailable and interrupt several co-located
++agents~\cite{strati2024dejavu,jayakody2026ghostserve,cao2026lumen}.
++For an agent that has accumulated context over many requests, resuming
++execution can require rebuilding a long history.
++Figure~\ref{fig:motivation-recompute} shows that this reconstruction can
++take far longer than reusing retained KV. The preceding workflow example
++shows how the resulting delay can postpone required outputs.
++Failure handling is therefore necessary for workflow execution,
++even when normal-operation caching is effective.
++
++Offloading KV provides useful building blocks for this protection.
++CachedAttention and Mooncake extend retention beyond GPU
+ memory~\cite{gao2024cachedattention,qin2025mooncake}; Pythia writes
+ future-relevant contexts to shared storage accessible by other
+-workers~\cite{yu2026pythia}. Such copies can support recovery if they survive
+-the failure. However, a shared prefix does not eliminate replay of
+-uncopied per-request history, and KV confined to the failed worker's HBM is
+-unavailable. Choosing locations for future access alone does not determine
+-which ongoing histories to protect outside that worker or how quickly
+-the surviving state must be retrieved.
++workers~\cite{yu2026pythia}. A surviving copy can support recovery, but
++retaining contexts for future invocations does not ensure that an
++interrupted agent's state has been protected. For example, KVFlow
++protects fixed prompts while assigning varying suffixes the highest
++eviction priority~\cite{pan2025kvflow}. Those suffixes can still be needed
++to resume the interrupted request, even if later requests would not
++reuse them. Shared prefixes may therefore survive while the agent's
++task-specific history still needs reconstruction.
+ 
+ \label{sec:motivation-long-context}
+-Once a history can survive the failure, its placement determines the
+-cost of making it available again. Figure~\ref{fig:motivation-recompute}
+-shows that retaining KV in a lower-cost tier can already avoid most
+-reconstruction work. Whether faster storage is worthwhile then depends
+-on the workflow priorities illustrated in
+-Figure~\ref{fig:motivation}(\subref{fig:motivation-recovery-exposure}).
+-If recovery from the lower-cost tier fits within a branch's slack,
+-faster retrieval provides no further WCT benefit when other execution is
+-unchanged; a branch with little slack may benefit from the same reduction.
+-Normal reuse can still justify retaining either branch's KV.
+-Protection must therefore connect the workflow impact of recovery to
+-which histories are retained and where, balancing that benefit against
+-storage cost and the value of normal reuse.
++The two limitations thus expose complementary gaps: existing
++fault-tolerant serving does not incorporate multi-agent dependencies
++into recovery priorities, while the workflow-aware caching policies
++above do not incorporate worker failures.
++A multi-agent service needs KV management that supports both normal
++workflow execution and recovery from state loss. This requires
++combining workflow information with fault-tolerant state protection
++under finite storage and bandwidth budgets.
+ 
+ \subsection{Design Challenges}
+ \label{sec:motivation-challenges}
+ 
+-Meeting this objective requires reasoning jointly about workflow progress
+-and KV placement. Progress determines how much recovery delay a workflow
+-can tolerate; retained KV and its location determine how much recovery
+-work remains. Both change as agents execute and compete for finite
+-capacity. An online policy must therefore estimate protection value from
+-incomplete execution information, translate it into storage decisions,
+-and revise those decisions without disrupting inference.
+-This gives rise to three coupled challenges.
++Combining workflow-aware KV management with fault tolerance introduces
++decisions that neither line of work resolves alone. The system must
++protect state before failures occur, account for how interruptions
++propagate through workflow dependencies, and share limited memory and
++bandwidth between protection and normal execution. These decisions
++change as agents accumulate context and advance through the workflow.
++This gives rise to three coupled challenges: estimating protection
++value online, allocating protection across storage tiers, and adapting it
++without disrupting inference.
+ 
+ \paragraph{Challenge 1: Estimating the value of KV protection online.}
+ A protection decision must relate saved reconstruction or retrieval time

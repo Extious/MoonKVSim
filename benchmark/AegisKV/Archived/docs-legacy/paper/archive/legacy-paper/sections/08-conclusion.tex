@@ -1,0 +1,25 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+\system{} couples causal residual-workflow Slack to KV protection and recovery.
+\textsc{SlackLandlord} manages continuous prefixes through independent HBM and
+DRAM credits and pool-local victim frontiers; source-owned paths commit
+independently, and \textsc{HBMQuotaAIMD} yields Peer HBM to foreground
+pressure.  The same Slack orders committed-prefix loading and recomputation
+under version and output fences.
+
+Using frozen historical SGLSim data, an earlier AegisKV prototype reduces
+mean WCT over no backup by 4.3\% in a paired DP8 trial, 11.8\% in a DP64 model
+projection, and 18.9--30.4\% in a heavy-failure logical stress smoke.  The
+paired trial also shows the prototype losing to simple host and peer-GPU
+backup.  These results support the end-to-end value of avoiding KV
+recomputation, but they do not validate the current design, isolate its three
+algorithms, or establish physical serving performance.  Closing that gap
+requires a current-design, multi-seed WCT campaign with executed failover and
+contention-aware serving.  A separate frozen 3,110-run current-design
+mechanism campaign provides complementary evidence: alpha decreases as
+foreground pressure rises, reaches zero in sustained-pressure cells, and the
+trace has 92.63\% request-level and 98.31\% token-level prefix reuse.  Its
+occupancy, intended-residency, copy, and restored-token counters validate
+simulator mechanisms and expose missing saturation, but remain distinct from
+WCT and physical-system evidence.

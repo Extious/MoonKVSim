@@ -1,0 +1,35 @@
+def _ref_torch_impl(
+    score: torch.Tensor,
+    seq_len: int,
+    topk: int,
+    row_starts: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    assert score.dim() == 2
+    if row_starts is None:
+        return torch.topk(score[:, :seq_len], topk, dim=-1, sorted=False).indices
+    else:
+        ks = row_starts.cpu().tolist()
+        ke = (row_starts + seq_len).tolist()
+        scores = []
+        for i, (start, end) in enumerate(zip(ks, ke)):
+            scores.append(score[i, start:end].unsqueeze(0))
+        score = torch.cat(scores, dim=0)
+        return torch.topk(score, topk, dim=-1, sorted=False).indices
+
+def _ref_torch_transform_decode_impl(
+    score: torch.Tensor,
+    seq_len: int,
+    src_page_table: torch.Tensor,
+    topk: int,
+    row_starts: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    batch_size, _ = score.shape
+    assert score.shape[0] == src_page_table.shape[0]
+    assert seq_len >= topk
+    indices = _ref_torch_impl(score, seq_len, topk, row_starts=row_starts)
+    topk_indices = torch.empty(
+        (batch_size, topk), dtype=torch.int32, device=score.device
+    )
+    for i in range(batch_size):
+        topk_indices[i] = src_page_table[i, indices[i]]
+    return topk_indices

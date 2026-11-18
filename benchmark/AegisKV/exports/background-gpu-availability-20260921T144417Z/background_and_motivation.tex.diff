@@ -1,0 +1,32 @@
+--- before/background_and_motivation.tex
++++ background_and_motivation.tex
+@@ -106,6 +106,29 @@
+ histories while also handling normal traffic~\cite{cao2026lumen}.
+ Reconstruction delays the affected branches and can postpone downstream
+ integration or synthesis, increasing workflow completion time.
++
++Figure~\ref{fig:gpu-server-availability} provides production infrastructure
++context using the public InfiniteHBD training-cluster
++trace~\cite{shou2025infinitehbd}. Its 584 fault records affect 231 of
++400 GPU servers over approximately 349 days. Reconstructing the number
++of servers outside recorded fault intervals yields a minimum of 365
++available servers. These records characterize infrastructure
++unavailability; they do not measure KV reconstruction or serving latency.
++
++\begin{figure}[t]
++  \centering
++  \includegraphics[width=\columnwidth]{figures/gpu-server-availability.pdf}
++  \caption{GPU-server availability reconstructed from InfiniteHBD's
++    production-training trace~\cite{shou2025infinitehbd}: 400 servers minus
++    those within recorded fault intervals. Overlapping intervals per
++    server are merged; all recorded categories, including tests and
++    changes, are retained. Availability here is at the node level,
++    not idle GPU capacity or end-to-end serving availability.}
++  \label{fig:gpu-server-availability}
++  \Description{A step curve over approximately 349 days shows 365 to 400
++    GPU servers outside active recorded fault intervals in a fixed
++    400-server cohort. The dashed line marks all 400 servers.}
++\end{figure}
+ 
+ \paragraph{KV retention across storage tiers.}
+ A \emph{KV checkpoint} saves an already computed prefix. If that copy

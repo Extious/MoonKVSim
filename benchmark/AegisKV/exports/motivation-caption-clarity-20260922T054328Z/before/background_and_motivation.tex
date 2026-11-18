@@ -1,0 +1,336 @@
+\section{Background}
+\label{sec:background-motivation}
+\label{sec:motivation-background}
+
+\paragraph{Multi-agent Execution.}
+As LLM applications tackle more complex tasks, they increasingly rely on multi-agent collaboration. These applications divide user tasks into subtasks and assign them to several agents for parallel execution. Each Agent maintains its own conversation, advancing tasks through LLM requests and tool invocations: the model generates responses or initiates tool calls, with the returned results becoming input for subsequent requests~\cite{wu2023autogen}. A \emph{request} is a single model call; an \emph{agent} can initiate multiple requests to complete a subtask; and a \emph{workflow} connects these tasks through serial dependencies, parallel branches, and joins. The application is responsible for workflow orchestration, and the inference service layer is responsible for executing model requests.
+Figure~\ref{fig:agent-workflow-examples} illustrates this structure. In code generation, the main Agent assigns the CSV export function to the API, UI, test writing, and documentation Agents. The branches execute in parallel, alternating between model requests and file reading, editing, or checking. The main Agent then integrates the changes and runs tests. In deep research, the lead Agent assigns technical, cost, security, and supply investigations, and then combines the collected evidence into a report~\cite{anthropic2025multiagent}. The number of requests and tool calls required by each branch may vary. Therefore, after a model request is completed, its associated Agent and the entire workflow may still not be finished.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/agent-workflow-examples.pdf}
+  \caption{Multi-Agent Workflow Examples.
+    Each row is one agent: $R_i$ denotes its $i$th LLM request, with
+    intervening tool results carried into the next request.
+    Branches may have different request counts.
+    The coordinator resumes after their results join.}
+  \label{fig:agent-workflow-examples}
+  \Description{Two stacked left-to-right workflows. A main agent assigns
+    CSV-export API, UI, test-authoring and documentation tasks in parallel,
+    then integrates their outputs and runs tests. Their request counts
+    are four, three, three and two, respectively. A lead researcher assigns
+    technical, cost, safety and supply investigations, with four, two,
+    three and two requests, before writing a report. Each branch explicitly
+    unfolds its requests and intervening tools. Starts and ends are
+    staggered; all edges move forward, without loops or round barriers.}
+\end{figure}
+
+\paragraph{Workflow completion time.}
+Let $w$ represent a workflow, $a_w$ the time the workflow arrives at the system, and $c_w$ the time when all necessary outputs are ready. The total time from arrival to completion of the workflow is defined as the \emph{workflow completion time} (WCT), i.e., $\mathrm{WCT}_w=c_w-a_w$. It includes model execution, tool execution, queuing, and dependency waiting. In the code example, integration needs to wait for all necessary modifications. Delays on the last incomplete branch will delay integration, while branches that are completed earlier may absorb the same delay before merging. Request delays affect the WCT through these dependencies.
+
+\paragraph{KV reuse in multi-agent workflows.}
+The model requests on these branches repeatedly consume context from
+earlier steps. Coding agents carry source files, edits and test outputs
+into later requests; research agents accumulate retrieved documents,
+intermediate findings and tool results. Processing this growing history
+from scratch on every request would repeat work already performed.
+During \emph{prefill}, an LLM computes per-layer keys and values (KV)
+for input tokens; \emph{decoding} extends this state as output tokens
+are generated. Retaining this KV allows a subsequent request with a
+matching token prefix to compute only the new suffix, provided the model
+and position semantics are compatible~\cite{gao2024cachedattention,zheng2024sglang}.
+
+This reuse occurs both within and across agents. Successive requests
+from one agent can reuse KV for their shared conversation history.
+Different agents can also inherit a common prompt before adding their
+own tasks. For example, the API, UI and test agents in
+Figure~\ref{fig:agent-workflow-examples} can share KV for common project
+instructions and repository context when these form the same initial
+token sequence. Different role prompts or context edits can shorten
+the reusable prefix~\cite{zheng2024sglang}.
+
+The KV cache thus retains intermediate model state accumulated during agent execution and reused across model requests.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/gpu-server-availability.pdf}
+  \caption{GPU-server availability reconstructed from InfiniteHBD's
+    production-training trace~\cite{shou2025infinitehbd}: 400 servers minus
+    those within recorded outage intervals. Records include GPU, network,
+    power/cooling, and software faults; unknown causes, tests,
+    troubleshooting, and changes are also retained. Overlapping intervals
+    per server are merged. Availability is measured at the node level.}
+  \label{fig:gpu-server-availability}
+  \Description{A step curve over approximately 349 days shows 365 to 400
+    GPU servers outside active recorded fault intervals in a fixed
+    400-server cohort. The dashed line marks all 400 servers.}
+\end{figure}
+
+\paragraph{Failures and KV reconstruction.}
+These KV reuse benefits depend on the cached state remaining available.
+In large-scale LLM deployments, hardware faults and software crashes can
+interrupt serving workers and make their GPU-resident KV
+unavailable~\cite{cao2026lumen,jayakody2026ghostserve}.
+For production-cluster context, Figure~\ref{fig:gpu-server-availability}
+shows the public InfiniteHBD training-cluster trace: 584 recorded outages
+affect 231 of 400 GPU servers over approximately 349 days, with reconstructed
+availability falling to 365 servers~\cite{shou2025infinitehbd}.
+The trace includes faults and operational interruptions, as detailed in
+the caption.
+
+When no reusable KV survives, a replacement worker must reconstruct it
+by replaying the retained tokens, even if it already has the model weights
+and the application has preserved the conversation
+history~\cite{strati2024dejavu}. For a long-running agent, this means
+reprocessing the context accumulated across earlier requests rather than
+only the latest input~\cite{jayakody2026ghostserve}.
+One failed worker can also interrupt several co-located agents, requiring
+surviving workers to reconstruct multiple histories while handling normal
+traffic~\cite{cao2026lumen}. The resulting delays propagate through the
+workflow's dependencies: reconstruction on the last unfinished branch
+postpones its join and can increase WCT.
+
+\paragraph{KV backup across storage tiers.}
+To reduce reconstruction work, a \emph{KV checkpoint} retains an already
+computed prefix. If it survives the failure, recovery retrieves this
+prefix and replays only the unsaved
+tail~\cite{strati2024dejavu,jayakody2026ghostserve}.
+KV can be retained in GPU HBM, host DRAM, or shared
+storage~\cite{gao2024cachedattention,qin2025mooncake}.
+These tiers differ in both storage cost and recovery latency.
+HBM offers fast access but has high capacity cost and competes with
+foreground inference for GPU memory. DRAM and storage-backed shared
+services can provide cheaper capacity, with additional retrieval latency.
+
+Figure~\ref{fig:motivation-recompute} illustrates the latency difference
+between reconstructing a history and reusing retained KV.
+At 1,010,000 tokens, full prefill takes 571.21\,s even with sparse
+attention; HBM, DRAM and shared-storage reuse take 1.305, 2.663 and
+10.156\,s, respectively. The history occupies 57.92\,GB across two ranks.
+All paths end when the same input's KV is ready: reuse restores the
+preceding history, if needed, and computes one new token. These measurements show that reusing retained KV can substantially reduce reconstruction latency, although retaining this state consumes storage capacity.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/recovery-cost.pdf}
+  \caption{Measured KV reconstruction and reuse costs for
+    Qwen2.5-7B-Instruct-1M on two A100 PCIe 40\,GB GPUs
+    (TP2, BF16, batch one), with sparse attention above 32K.
+    Full prefill starts from empty KV; reuse starts from $(C-1)$ cached
+    tokens and computes one. KV reconstruction time includes any
+    retrieval and computation until all $C$ tokens' KV is ready.
+    HBM/DRAM whiskers show min--max over three timings; other paths have
+    one timing per length. Protocol: Appendix~\ref{sec:motivation-protocol}.}
+  \label{fig:motivation-recompute}
+  \Description{Four measured KV reconstruction-time curves for Qwen2.5-7B-Instruct-1M
+    from 8K to 1,010,000 tokens: blue circles for resident HBM reuse,
+    orange squares for DRAM reuse, purple diamonds for shared-storage
+    reuse, and red triangles for full prefill. Both axes are logarithmic.
+    At the longest context, the four paths take 1.305, 2.663, 10.156 and
+    571.21 seconds, respectively.}
+\end{figure}
+
+\section{Motivation and Challenges}
+\label{sec:motivation}
+
+The resulting management problem is to decide which KV to retain and
+in which tier. For a multi-agent service, the benefit of these decisions
+depends on how retained state supports both normal execution and workflow
+completion after a failure. Existing fault-tolerant serving and
+workflow-aware KV management provide useful mechanisms, but their
+objectives leave this joint decision unresolved.
+
+\subsection{Limitations of Existing Approaches}
+\label{sec:motivation-limitations}
+
+\begin{figure*}[t]
+  \centering
+  \captionsetup[subfigure]{font=normalsize,labelfont=normalfont,
+    textfont=normalfont,justification=centering,singlelinecheck=false}
+  \begin{subfigure}[t]{2.48in}
+    \vspace{0pt}
+    \begin{minipage}[c][1.65in][c]{\linewidth}
+      \centering
+      \includegraphics[width=\linewidth]{figures/workflow.pdf}
+    \end{minipage}
+    \caption{Four-branch workflow}
+    \label{fig:motivation-workflow}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{1.86in}
+    \vspace{0pt}
+    \begin{minipage}[c][1.65in][c]{\linewidth}
+      \centering
+      \includegraphics[width=\linewidth]{figures/workflow-gaps.pdf}
+    \end{minipage}
+    \caption{Workflow-maximum gaps}
+    \label{fig:motivation-branch-gap}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{2.52in}
+    \vspace{0pt}
+    \begin{minipage}[c][1.65in][c]{\linewidth}
+      \centering
+      \includegraphics[width=\linewidth]{figures/recovery-exposure.pdf}
+    \end{minipage}
+    \caption{Recovery cost and WCT}
+    \label{fig:motivation-recovery-exposure}
+  \end{subfigure}
+  \caption{Workflow timing and conditional recovery impact.
+    (a) Four trace-derived branches with schematic Main stages A0/A5.
+    Bars preserve timing; dashed tails assume an all-branch join.
+    (b) ECDF of maximum branch-duration gaps per workflow: 121 workflows
+    with temporally inferred fan-in; these are not failure-time slack.
+    (c) Measured Prefill costs at the four branches' trace input-size
+    proxies, using Figure~\ref{fig:motivation-recompute}'s configuration.
+    Bars/whiskers show median/min--max over three timings after warmup.
+    Hatching denotes absorbed delay; solid fill is the calculated WCT
+    increase under an all-branch join with other execution fixed.
+    Each case is a single-branch counterfactual, not a fault-injected WCT
+    measurement. Protocol: Appendix~\ref{sec:motivation-protocol}.}
+
+  \label{fig:motivation}
+  \Description{Left: a four-branch workflow with A2 completing last at
+    151.6 seconds. Middle: an ECDF of workflow-maximum branch-duration
+    differences with a median of 138 seconds and a 90th percentile of
+    1173 seconds. Right: A1 through A4 have measured median Prefill costs
+    of 33.2, 32.6, 35.4 and 39.9 seconds. Applying each cost separately
+    as an added branch pause gives calculated WCT increases of 0.0, 32.6,
+    16.3 and 18.0 seconds. Hatching identifies the absorbed portion;
+    whiskers show timing minima and maxima, not confidence intervals.}
+\end{figure*}
+
+\paragraph{Limitation 1: Fault tolerance without workflow-aware priorities.}
+Fault-tolerant serving systems preserve state and coordinate recovery
+for interrupted requests. D\'ej\`aVu streams KV checkpoints, and GhostServe
+uses host-memory parity to reduce reconstruction
+work~\cite{strati2024dejavu,jayakody2026ghostserve}.
+LUMEN further coordinates checkpoint placement, recovery routing and
+capacity restoration according to worker load~\cite{cao2026lumen}.
+These mechanisms address state loss and recovery contention, but do not
+use multi-agent dependencies to determine which requests' faster
+recovery would advance workflow completion. Request recovery cost and
+worker load alone cannot express this benefit.
+
+\label{sec:motivation-workflow}
+Figure~\ref{fig:motivation}(\subref{fig:motivation-workflow}) illustrates
+why workflow position matters. A2 finishes last, 151.6\,s after the fork,
+whereas A1 finishes at 60.4\,s. If the following Main stage requires all
+four outputs, A1 can absorb 91.2\,s of additional delay before postponing
+the join, whereas any delay on A2 postpones it. We call the additional
+delay a branch can absorb without postponing the required output its
+\emph{slack}.
+
+Such timing differences occur across the retained CC/Weka
+traces~\cite{semianalysis2026cctraces}. From 393 filtered Claude Code
+sessions, a temporal fan-in proxy retains 286 overlapping subagent
+groups in 121 workflows: all branches complete, and a Main request
+follows the last completion; Main activity during the branches is allowed.
+Figure~\ref{fig:motivation}(\subref{fig:motivation-branch-gap}) reports
+each workflow's maximum longest-minus-shortest branch-duration gap,
+with a median of 138\,s and a 90th percentile of 1,173\,s.
+The trace lacks explicit result-consumption edges, so these differences
+neither verify all-branch joins nor measure failure-time slack.
+The four-branch example is one retained group, not a representative
+workflow-maximum gap.
+
+To connect reconstruction cost to workflow delay, we measure full
+prefill at the four active requests' trace input-size proxies, using
+Figure~\ref{fig:motivation-recompute}'s Qwen2.5-7B-Instruct-1M
+configuration with sparse attention~\cite{qwen2025qwen25oneM,jiang2024minference}.
+Figure~\ref{fig:motivation}(\subref{fig:motivation-recovery-exposure})
+then inserts each measured cost $R_i$ separately as a pause on branch
+$i$ at 29.5\,s after the fork. With offline slack $\sigma_i$, an assumed
+all-branch join, and all other execution and queues fixed, the WCT
+increment is
+\[
+  \Delta\mathrm{WCT}_i=\max(0,R_i-\sigma_i).
+\]
+A1's 33.2\,s reconstruction fits within its 91.2\,s slack and leaves WCT
+unchanged. A2's slightly smaller cost, 32.6\,s, is fully exposed because
+its slack is zero. Thus prioritizing the more expensive reconstruction
+can favor a branch with less immediate effect on completion.
+Only the Prefill costs are measured; WCT increments are conditional
+calculations using synthetic inputs and trace timing, not fault-injected
+workflow measurements. Appendix~\ref{sec:motivation-protocol} gives the
+input construction, timing samples and mapping protocol.
+
+\paragraph{Limitation 2: Workflow-aware caching without a recovery objective.}
+Workflow-aware KV management uses application structure to improve
+normal execution. KVFlow uses upcoming agent invocations to guide prefix
+retention and prefetching~\cite{pan2025kvflow}; TOPAS jointly schedules
+prefix residency and request admission using remaining workflow paths,
+reuse benefits and movement or preemption costs~\cite{ni2026topas}.
+These systems already exploit workflow information, but their cache
+decisions do not explicitly optimize protection against serving-worker
+failures: which state must survive, where to retain it, and how quickly
+it should become available to a replacement worker.
+
+The distinction changes the value of retained state. For example,
+KVFlow gives varying suffixes the highest eviction priority while
+protecting reusable fixed prompts~\cite{pan2025kvflow}. A suffix with
+little expected reuse can nevertheless be needed to resume an
+interrupted execution. Likewise, keeping a prefix in the executing
+worker's HBM accelerates normal access but does not by itself preserve
+that state when the worker fails. A cache copy can support recovery if
+it survives; its usefulness for future calls alone does not determine
+its value as protection against a particular failure.
+
+\label{sec:motivation-long-context}
+The tier costs in Figure~\ref{fig:motivation-recompute} make the resulting
+allocation tradeoff concrete. Retaining KV in a slower tier already
+avoids much of the full-prefill cost; faster tiers reduce the remaining
+retrieval delay at a higher capacity cost. Whether that reduction
+advances workflow completion depends on the recovering branch's slack.
+Conversely, a branch with ample slack may still reuse its history during
+normal execution, so low recovery urgency does not justify deleting its
+last reusable copy. These are distinct reasons to retain and accelerate
+state, even when both use the same storage hierarchy.
+
+\subsection{Design Challenges}
+\label{sec:motivation-challenges}
+
+Together, these limitations call for a policy that connects workflow
+progress, failure recovery and KV storage management. Closing the gap
+requires estimating the value of retained state, translating that value
+into placement decisions, and maintaining those decisions as execution
+changes. These are coupled challenges: the usefulness of fast recovery
+depends on workflow progress, while protection itself consumes resources
+needed by the workflow.
+
+\paragraph{Challenge 1: Estimating the value of KV protection online.}
+A protection decision must relate saved reconstruction or retrieval time
+to the workflow's required outputs. The example above obtains slack from
+completed traces; an online system must act before the remaining model
+and tool durations are known. The branch that gates completion can
+change, and one worker failure can interrupt several agents whose
+recoveries share resources. Normal reuse also contributes value even
+when recovery is not urgent. The challenge is to derive useful priorities
+from partial execution and reuse history without treating request-level
+savings as independent, additive WCT reductions.
+
+\paragraph{Challenge 2: Translating protection value into tiered placement.}
+A request's urgency alone does not specify how much of its KV should
+occupy each tier. A policy must distinguish retaining enough state to
+avoid reconstruction from using faster capacity to reduce retrieval
+latency. It must compare these benefits with the bytes retained, the
+capacity cost of each tier and the work needed to move state.
+The same KV may support several agents, while different portions of a
+long history may have different access demands. Allocating capacity
+therefore requires connecting workflow-level priorities to the state
+that recovery and reuse actually need, subject to finite tier budgets.
+
+\paragraph{Challenge 3: Adapting protection without disrupting inference.}
+Agent progress, tool returns and new requests change both protection
+value and foreground memory demand. Repeatedly reassessing every stored
+KV object can make fine-grained management expensive; frequent placement
+changes can also consume bandwidth needed by active requests.
+A useful policy must update protection with bounded decision and
+migration work, react to capacity pressure, and retain valid recovery
+paths while state moves between tiers. The challenge is to keep
+protection responsive without allowing its management and data movement
+to erase the workflow benefit it seeks.
+
+\label{sec:motivation-goals}
+These challenges motivate AegisKV, a workflow-aware KV protection system
+that coordinates recovery priorities, tiered placement and online state
+management. The next section develops the observations and mechanisms
+behind this design.

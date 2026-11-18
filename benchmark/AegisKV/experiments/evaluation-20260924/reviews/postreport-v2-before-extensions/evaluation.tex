@@ -1,0 +1,378 @@
+\section{Evaluation}
+\label{sec:evaluation}
+
+We evaluate failure-induced workflow delay, the incremental value of Peer HBM
+over Peer DRAM, and the conditions under which workflow Slack changes
+protection. Discrete-event simulations measure modeled completion time;
+separate native-selector observations test selection without assigning it a
+serving-time benefit. Negative and null results constrain the design's claims.
+
+\subsection{Methodology}
+\label{sec:eval-method}
+
+\paragraph{Simulator and timing model.}
+MoonKVSim models dependency release, queues, asynchronous prediction,
+checkpoint publication, and recovery on a shared event clock. Transfers contend
+on per-rank H2D/D2H links, per-host DRAM and NIC resources, and the fabric.
+Pending copies consume capacity; all tensor-parallel (TP) shards must commit
+before use. Worker failures remove a TP group; host failures also remove local
+DRAM. Fixed token-sequence replays check output counts, epoch fencing, capacity
+conservation, and final release, without validating generated token identities.
+
+We use pinned AIConfigurator HYBRID operator estimates\cite{eval2026aiconfigurator}
+for dense Qwen3-8B TP1 and Qwen3-32B TP4 on A100-SXM configurations.
+Each 196-shape grid spans 49 prefixes (0--98,304, step 2,048), prefill extensions
+of 1/64/256 tokens, and one-token decode. Bounded interpolation supplies forward
+durations; decode steps sum individually. Empirical, mixed, and silicon-estimate
+provenance is retained. This is not end-to-end calibration. Foreground execution
+is FCFS with one active invocation per data-parallel worker, so results do not
+establish production throughput or continuous-batching behavior.
+
+\paragraph{Workload and held-out split.}
+The primary workload is a constructed, evidence-provided FanOutQA
+replay\cite{eval2024fanoutqa} with explicit dependencies. The retained source
+contains 160 workflows from 310 development questions, selected using a
+previously frozen task-ID order and context guard. Keeping complete workflows
+within the 40,960-token context bound leaves 74 workflows. A predeclared
+workflow-ID hash split gives 12 training workflows (95 tasks) and 62 evaluation
+workflows (503 tasks). Each original DAG executes once; each task is a distinct,
+single-invocation Agent. Prompts use pinned Qwen tokenizers; outputs are
+tokenized gold answers. A declared 512-token output limit determines reservation;
+eventual output length and future invocations are unavailable to the policy.
+
+FanOutQA does not validate naturally occurring multi-call histories. Separate
+constructed four-Agent fork--join interventions cover skewed/balanced branches,
+same-Agent history reuse, long decode with changing synthetic demand, and
+shared hosts. Seeds 7/19/41 vary token identities and prescribed length jitter.
+Each main case has eight workflows and four TP1 workers; shared-host cases
+place two workers on each of two hosts. The declared output cap is 16,384.
+These interventions are not additional natural-trace samples.
+
+\paragraph{Resources and predictions.}
+The primary deployment has eight workers on independent hosts: eight GPUs for
+8B and 32 for 32B. Each GPU has 80\,GiB HBM less profile weight/communication
+allocations and a 4\,GiB runtime allowance; each host has 256\,GiB Peer DRAM.
+Configured effective H2D/D2H, NIC/fabric, and DRAM bandwidths are 32, 25, and
+100\,GB/s. Peer HBM starts at 128\,MiB per rank, grows by 64\,MiB after stable
+windows, and is capped at 4\,GiB, with a 2\,GiB foreground reserve.
+Blocks contain 64 tokens; checkpoints and prefill chunks span 256 tokens.
+We set $K=16$, $\beta=0.9$, $\epsilon=0.1$, and $\lambda=10$\,ms.
+Metadata uses 16 selector-state plus eight counter bytes per block/layer/rank.
+
+The predictor combines submitted-prompt work with training role-median output
+length. Unstarted Agents use training role-duration priors; the guard is the
+training 90th-percentile absolute residual. This estimates invocation service,
+excluding queues, gaps, and future calls. Subtracting age from submission can
+therefore invalidate the estimate and force workflow-wide zero Slack.
+Reconstruction estimates and execution share a profile, an idealization rather
+than independent prediction validation. The offline depth rule uses the
+checkpoint-aligned training-median context (8,704 tokens), full dense demand
+including metadata, and uniform per-layer compute. It fixes $L=11/1$ for
+8B/32B before evaluation. Constructed controls use declared priors and $L=4$.
+
+\paragraph{Comparisons and failures.}
+Five policies share one runtime: restart without checkpointing; \emph{All-DRAM},
+which removes the exposure threshold while retaining exposure ordering;
+\emph{DRAM}, with \system's workflow selection but no extra HBM;
+\emph{Static-HBM}, which starts at 128\,MiB, disables quota growth, and still
+allows foreground enforcement to shrink it; and full \system. These are
+controlled variants, not complete prior-system reproductions. Comparing with
+DRAM isolates HBM from avoided reconstruction.
+
+Arrivals divide mean training workflow work by eight workers and nominal load
+$\rho\in\{0.3,0.65,0.9\}$, a generation parameter rather than measured
+utilization. Each model/load/policy has one healthy run and five failures:
+180 runs. Five equally spaced source-order workflows alternate sink and middle
+targets, interrupted at 80\% of the same invocation's total logical tokens.
+Short outputs place four faults in prefill and one in decode. The separate
+135-run constructed matrix instead targets 80\% of prefill and decode
+\emph{phase} progress, which are different positions. Detection is 1\,ms and
+failed capacity remains lost. Primary work-rate proxies after losing one of
+eight workers are $8\rho/7$, reaching 1.03 at the highest load; these are not
+measured utilization. Logical alignment fixes target identity and
+token position, but can change wall time or collateral victims. Splitting a
+modeled prefill at a fault can change its profiled compute cost; paired
+penalties include this effect as well as recovery and scheduling.
+
+\paragraph{Metrics and reproducibility.}
+WCT is last-Agent completion minus external workflow arrival. Co-primary
+endpoints are the target workflow's
+$\Delta\mathrm{WCT}=\mathrm{WCT}_{F1}-\mathrm{WCT}_{F0}$ and the interrupted
+Agent's failure-to-first-new-token latency, preserving fixed identities and
+sink/non-sink strata. The latter decomposes into detection, retry queue, and
+service from admission through the first new output token. The all-workflow
+mean separately captures collateral scheduling and permanent capacity loss.
+Artifacts retain absolute healthy/failure WCT, checkpoint lag, byte and memory
+accounting, co-victims, and per-identity recovery; selected runs retain full
+transfer intervals. Five fixed faults are descriptive scenarios; workflows
+within a run are dependent. Reusing F0 does not create new healthy samples.
+The retained 62-workflow p50/p95/p99 are interpolated descriptions, not reliable
+population tails. Deterministic reruns receive no confidence intervals.
+
+All 483 current simulations use the same runtime version, sealed per campaign:
+180 primary, 135 structural,
+126 sensitivity, 32 capacity/Slack, and ten post-hoc mechanism runs.
+It selects over causally visible KV, counts locally recomputed tail KV, restores
+committed histories for queued continuations, and cancels unused restoration at
+accepted EOS. The 74 runtime regressions and per-campaign audits accompany
+matched-input replacements of earlier versions; those historical runs are
+retained separately and are not additional samples.
+
+\subsection{Primary Workflow Replay}
+\label{sec:eval-primary}
+Figure~\ref{fig:eval-primary} retains every target workflow, separating sink
+and non-sink identities. For 8B, DRAM reduces mean target penalty from
+0.530 to 0.062\,s at $\rho=0.3/0.65$, but increases it from 1.994 to
+2.070\,s at $\rho=0.9$. The cohort means move differently: at $\rho=0.65$
+DRAM worsens 0.744 to 0.766\,s, whereas at $\rho=0.9$ it improves 3.956 to
+3.587\,s. For 32B at $\rho=0.3$, the mean target penalty improves from
+1.427 to 1.124\,s, but the worst identity worsens from 3.876 to 5.299\,s.
+Its retry changes workers: queueing adds 1.453\,s while service saves 29\,ms.
+Placement and reconstruction effects therefore both contribute to WCT.
+
+Table~\ref{tab:agent-failure-latency} reports the interrupted Agent's separate
+endpoint. Retry queue accounts for 62.22--90.63\% of DRAM's mean latency
+across the six model/load cells; retries cannot preempt a busy Peer.
+The artifact retains
+each identity's queue/service decomposition and sink/non-sink summaries.
+Three sink targets fail at only 257--356 logical tokens with a 256-token
+checkpoint, limiting the reconstruction work they can avoid.
+
+The target-workflow HBM increment ranges from $-0.0026$ to 1.442\,ms for 8B
+and from 0 to 0.137\,ms for 32B across the 15 model-specific fault conditions.
+Static-HBM and \system produce identical WCT for every workflow in this
+matrix despite different allocation and transfer behavior; these runs do not
+demonstrate a WCT advantage from quota adaptation. Healthy WCT is also
+identical across all five policies: its mean ranges from 6.23 to 16.65\,s
+across model/load conditions. Backup traffic is nonzero; the unchanged WCT
+reflects this model's execution and interference assumptions.
+
+\begin{table}[t]
+\centering
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.08}
+\caption{Mean failure-to-first-new-token latency over five fixed identities.
+HBM gain is DRAM minus AegisKV; positive is better. No confidence intervals.}
+\label{tab:agent-failure-latency}
+\begin{tabular}{@{}lrrrr@{}}
+\hline
+Model & $\rho$ & Restart & DRAM & HBM gain \\
+ & & (s) & (s) & (ms) \\
+\hline
+Qwen3-8B & 0.3 & 0.956 & 0.488 & 0.220 \\
+Qwen3-8B & 0.65 & 0.956 & 0.488 & 0.219 \\
+Qwen3-8B & 0.9 & 2.694 & 1.970 & 0.508 \\
+Qwen3-32B & 0.3 & 1.910 & 1.607 & 0.027 \\
+Qwen3-32B & 0.65 & 1.144 & 0.551 & 0.027 \\
+Qwen3-32B & 0.9 & 2.222 & 1.253 & 0.036 \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/eval-primary-wct.pdf}
+  \caption{Target-workflow penalty for five fixed identities at each model/load.
+  S/N denote sink/non-sink Agents. Each marker subtracts own-policy healthy WCT
+  for the same workflow; offsets separate coincident policies. Logical targets
+  match across policies; negative penalties remain visible. No confidence
+  intervals. Nominal load is an arrival-generation parameter.}
+  \label{fig:eval-primary}
+  \Description{Six panels compare target-workflow paired delay at five fixed sink or non-sink failure identities for two models and three nominal loads. Five policies use offset markers; negative penalties are retained.}
+\end{figure*}
+
+DRAM versus All-DRAM isolates the exposure threshold. Healthy transferred
+backup bytes fall by 10.21\%, 5.70\%, and $-0.095$\% at increasing 8B loads;
+32B savings are 10.81\%, 7.98\%, and 1.16\%, including cancellation bytes.
+Cohort WCT means match, although two workflows exchange $\pm4.113$\,s in
+one 32B high-load fault. In the two fully logged \system F1 runs at
+$\rho=0.65$, fallback covers 3,122/5,586 and 3,605/6,518 unfinished-workflow
+control-window observations (55.89\%/55.31\% for 8B/32B), all because prediction
+minus submission age is nonpositive. These are neither healthy-run percentages
+nor time fractions. Frequent zero-Slack fallback limits what this replay can
+establish about workflow-aware prioritization.
+
+A small recovery gain can change subsequent routing. In the 8B high-load
+second fault, HBM advances the target workflow by 1.10\,ms. This moves another
+completion across a later fork's submission, changes the Router's outstanding
+request counts, and assigns its branches to different workers. One other
+workflow finishes 3.41\,s later; eight workflows gain 1.10\,ms each, including
+the target, and 53 are unchanged. The 62-workflow WCT sum therefore increases
+by 3.40\,s. Fault time, failed worker, active co-victims, and queued migration
+match. Saved submission, completion, and worker records reproduce the routing
+change without treating unrecorded admission delay as measured queue time.
+This counterexample limits a direct interpretation of local $G_a$ as a global
+workflow benefit.
+
+\subsection{Workflow Structure and Recovery}
+\label{sec:eval-structure}
+Across the 135 constructed runs, DRAM worsens six of ten scenario/phase
+mean target penalties and two cohort means (Figure~\ref{fig:eval-structure}).
+Both worsen for skewed prefill (14.43/2.89\,s, target/cohort) and long-decode
+decode (21.24/6.63\,s); the latter's seed 19 worsens by 49.70/15.34\,s.
+Long-decode prefill also worsens the target by 30.62\,s. Extra HBM changes
+the ten mean target penalties by less than 0.875\,ms, and by below one
+microsecond in long-decode cases. There is no uniform checkpoint improvement
+or substantial incremental HBM benefit.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/eval-structural-wct.pdf}
+  \caption{Target-workflow penalty in five constructed four-Agent workloads,
+  eight workflows per run. Gray segments connect matched seeds; colored ranges
+  show min/max and horizontal marks means. Each F1 subtracts own-policy F0.
+  Agent, second invocation and logical position match across policies;
+  prefill/decode positions differ. Negative penalties and overlapping
+  DRAM/AegisKV points remain visible.}
+  \label{fig:eval-structure}
+  \Description{Two panels show target-workflow delay for prefill and decode faults across five constructed scenarios, with three matched seed points per policy. Negative penalties remain visible. Shared-host failures have large variation; checkpointing can worsen the target workflow.}
+\end{figure*}
+
+Endpoint choice can reverse the conclusion. In shared-host prefill/decode
+cases, DRAM worsens the mean target penalty by 30.00/41.01\,s while reducing
+the all-workflow mean penalty by 16.11/19.01\,s. History-reuse prefill likewise
+worsens the target by 12.05\,s but improves the cohort mean by 3.33\,s.
+Permanent capacity loss, queue placement, and completion-dependent routing
+redistribute delay across workflows; a local gain $G_a$ is not a global WCT
+guarantee. The audit separately records 108 active interrupted recoveries and
+279 queued-history restorations, without counting the latter as active
+co-victims. All per-seed target/cohort endpoints and recovery decompositions
+remain in the artifact.
+
+One matched history-prefill case (seed 19) makes the reversal explicit.
+DRAM shortens recovery service from 567.66 to 42.54\,ms with the same 1.060\,s
+retry queue. The final left call is submitted 0.525\,s earlier but lasts
+26.174\,s longer; the join adds another 17.681\,s of invocation latency.
+Target WCT worsens by 43.330\,s while the other seven workflows improve by
+81.811\,s in total. Recorded placement and timestamps support this decomposition;
+ordinary admission is not recorded, so these latter latency changes are not
+reported as measured queue time.
+
+The long-decode control uses two synthetic four-block banks and dense Qwen
+compute. Its $K=16$ fits both banks, so it cannot establish robustness to native
+hotspot drift under an insufficient budget. Larger 32/128-workflow simulator
+CPU/RSS controls are retained under the historical runtime; they are neither
+current recovery results nor physical controller-overhead measurements.
+
+\subsection{Operating Range and Controls}
+\label{sec:eval-sensitivity}
+The 126 one-factor controls use four complete held-out workflows (52 Agents),
+fixed arrivals/priors, and the longest-prompt Agent in the third workflow:
+20,283 prompt tokens, interrupted at token 16,228. Input length selects this
+target before outcomes. Each condition subtracts its own F0; shared center
+runs are not additional samples. This is one fixed fault, not a population.
+
+In Figure~\ref{fig:eval-resources}, reducing H2D from 64 to 8\,GB/s raises the
+DRAM target penalty from 24.02 to 283.95\,ms; HBM saves another 0.72/5.78\,ms.
+At 32\,GB/s, restart/DRAM/\system penalties are 1.8023/0.0610/0.0595\,s,
+with a 1.44\,ms HBM increment. At 0.25/1\,GiB Peer DRAM, the target loses its
+checkpoint and both backup policies revert to restart; peak host occupancy
+reaches 98.45\%. This is a capacity boundary, not unconstrained DRAM operation.
+A zero/32\,MiB HBM cap gives the same target penalty as DRAM.
+
+A 32-run control crosses 2/4/8/256\,GiB DRAM with DRAM, All-DRAM, \system,
+and \system with zero DAG Slack, affecting both exposure and HBM gain.
+Current and zero-Slack variants have identical individual workflow WCT in
+all F0/F1 conditions. Current reduces healthy backup bytes by 4.58--4.66\%,
+including completed checkpoint/hot placement and bytes served before cancellation.
+The target checkpoint needs 2.215\,GiB: it cannot fit alone at 2\,GiB and
+remains at 16,128 tokens for every variant at larger budgets. This cohort shows
+traffic savings, not a competition-induced WCT benefit.
+
+To exercise protection competition, a post-hoc ten-run diagnostic uses one
+constructed fork--join, declared branch priors giving 0/80\,s Slack, and no
+Peer-HBM backup. Its 1.25\,GiB shared peer budget fits either branch checkpoint
+individually but not both. At the fixed critical-branch fault, DAG Slack retains
+its 1,280-token checkpoint; zero Slack instead retains the expensive noncritical
+branch's 8,448-token checkpoint. With matching fault time and no retry queue,
+workflow penalties are 23.97/134.79\,ms. At 4\,GiB both variants retain the
+critical checkpoint and yield 23.97\,ms. This validates a conditional selection
+mechanism, not prediction quality or its prevalence in natural workloads.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/eval-resource-sensitivity.pdf}
+  \caption{One fixed prefill fault on four complete FanOutQA workflows,
+  Qwen3-8B TP1, eight workers. Points are target-workflow F1 minus own-condition
+  F0 WCT; no confidence interval is implied. $L=11$, $K=16$, and initial HBM
+  quota $\min(128\,\mathrm{MiB},\mathrm{cap})$. Delay, bandwidth and DRAM axes
+  are logarithmic; the HBM axis is linear from 0 to 32\,MiB and logarithmic
+  thereafter.}
+  \label{fig:eval-resources}
+  \Description{Three panels vary H2D bandwidth, host DRAM and per-rank HBM. Faster H2D lowers recovery delay. Small DRAM budgets lose the target checkpoint; low HBM quotas match DRAM-only.}
+\end{figure*}
+
+Other controls expose limits. Prediction multipliers 0.5/1/2 and
+$\lambda=0/0.01/1$\,s leave the target penalty unchanged. With a 100\,ms TTL,
+all 52 replies at 200\,ms are stale, yet changing latency from 0.1 to 200\,ms
+also leaves that penalty unchanged. These non-crossing controls check code
+paths, not prediction accuracy or robustness; detection controls use 1/10/100\,ms.
+
+DMA slowdown coefficients 0.05/0.1 increase healthy mean WCT by 3.33/6.66\%,
+from 8.398\,s to 8.678/8.957\,s; even F1 cohort WCT sums worsen by 0.39/0.74\,s.
+For a hypothetical mixture of F0 and this exact
+F1 with probability $p$, advantage is $pD-H$: healthy cost $H$ and reduction
+in paired fault penalty $D$ must use the same objective. At 0.1, break-even
+thresholds are 0.141 for the target and 1.494 for the four-workflow sum; thus
+no feasible $p\in[0,1]$ offsets cohort cost. These are not measured failure rates.
+Finally, $Z=64$ also limits forwards to 64 tokens, whereas $Z=1024$ retains
+256-token chunks. The former raises even restart's penalty to 17.71\,s:
+a coupled compute/checkpoint intervention. Full controls and adverse outcomes
+remain in the artifact.
+
+\subsection{Native Selection and its Limits}
+\label{sec:eval-native}
+We separately replay sealed NOSA-8B, NSA-8B, and MiniCPM4.1-8B selectors on the
+same three PG19 documents. We union blocks across KV groups per query, start
+counters at query zero, and apply decay, hysteresis, and the earlier-block tie
+rule every 256 tokens. All 13,824 checked sets match the deployed ranking
+function. This assumes continuous protection and immediate checkpoint visibility;
+it does not reproduce publication gaps or native chunked-prefill execution.
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/eval-native-topk.pdf}
+  \caption{Native distinct-history coverage over the first four layers and
+  next 256 queries at checkpoints 32,000/32,256. Each document's ratio sums
+  covered/requested block counts over layers and checkpoints. Points average
+  three documents; whiskers show their range. The future-demand oracle uses
+  the same per-layer block budget $K$. $\Delta$ is Current minus Recency at
+  $K=64$, in percentage points.}
+  \label{fig:eval-native-topk}
+  \Description{Three native-model panels compare current selection, recency, and a future-demand oracle as the block budget grows. Current beats recency for NOSA and NSA at budget 64 but loses for MiniCPM.}
+\end{figure}
+
+For NOSA/NSA/MiniCPM respectively, $K=16,L=4$ gives Current distinct coverage
+of 8.31\%, 4.20\%, and 4.06\%. Repeated query--block event coverage is
+15.70\%, 11.46\%, and 5.37\%, versus Recency's 15.18\%, 15.44\%, and 11.45\%
+and the oracle's 15.83\%, 16.15\%, and 11.45\%. These observations do not
+support ``few misses'' at this budget. They also differ from the dense WCT
+models and $L=11/1$ configurations.
+
+At $K=64$, Current distinct coverage rises to 32.77\%, 16.76\%, and 15.45\%
+(Figure~\ref{fig:eval-native-topk}), improving on Recency by
+2.36, 0.97, and $-1.07$ percentage points. The oracle reaches only
+33.25\%, 16.79\%, and 16.53\%, showing that the budget itself limits coverage.
+Event coverage is 59.90\%, 36.04\%, and 22.35\% for Current;
+33.77\%, 34.37\%, and 33.77\% for Recency; and 63.32\%, 53.60\%, and 42.69\%
+for the oracle. MiniCPM loses on both measures. The denominators cannot be
+added or interpreted as runtime cache-hit rates, and this three-document
+diagnostic does not establish a WCT advantage.
+
+\subsection{Scope of the Evidence}
+\label{sec:eval-limits}
+Unmodeled CPU/kernel costs and batching, and uncalibrated DMA interference,
+preclude physical-overhead claims. Immediate continuations exercise queued
+history recovery without tool/think idle gaps.
+
+For one Agent's dense checkpoint, HBM holds at most $LK$ historical blocks per
+rank; other demanded blocks need H2D. This partial residency does not exercise
+Equation~\ref{eq:depth}'s no-wait first-$L$-layers premise. Bytes/bandwidth
+explains local service savings, not global WCT under rerouting. FCFS also
+does not establish quota adaptation's benefit under changing batch memory pressure.
+
+Asynchronous publication can leave more than $Z$ uncommitted tokens.
+A historical, pre-freeze linear-cost control accepts 6,247 tokens with
+committed frontier 1,024: a 5,223-token tail despite $Z=256$.
+Likewise, protection tolerance and modeled depth are parameters, not
+per-workflow delay or transfer-hiding guarantees.

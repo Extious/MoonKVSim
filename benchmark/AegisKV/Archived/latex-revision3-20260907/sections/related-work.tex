@@ -1,0 +1,15 @@
+\section{Related Work}
+Mooncake distributes KV~\cite{qin2025mooncake}; D\'ej\`aVu streams it for
+recovery~\cite{strati2024dejavu}; GhostServe uses coding~\cite{jayakody2026ghostserve};
+RaidServe addresses post-failure resource imbalance~\cite{xu2026raidserve}.
+Our evaluated DRAM-only arm is an internal control, not these external baselines.
+
+Parrot exposes dataflow~\cite{lin2024parrot}; SGLang supports structured execution
+and radix reuse~\cite{zheng2024sglang}; KVFlow exploits temporal step graphs~\cite{pan2025kvflow};
+Pythia uses predictability~\cite{yu2026pythia}; Cortex isolates stages~\cite{pagonas2025cortex}.
+AegisKV uses predicted delay tolerance for fail-now protection harm. Strata
+couples transfer layout and scheduling~\cite{xie2026strata}; we reproduce neither
+its kernels nor throughput. The earlier policy combines CPM, Landlord and
+AIMD~\cite{kelley1959cpm,young2002landlord,chiu1989aimd}. Revision 3 replaces credit
+and AIMD with shared-prefix exchanges and foreground constraints; classical
+guarantees do not transfer automatically.

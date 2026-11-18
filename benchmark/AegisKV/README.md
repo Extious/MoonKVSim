@@ -1,75 +1,63 @@
-# AegisKV on the tag-derived `aegiskv` branch
+# AegisKV
 
-This directory is the AegisKV experiment and paper tree. The MoonKVSim
-simulator library lives outside it. On this branch the library is the
-AegisKV-modified Mooncake simulation; patent input, experiment configs, run
-scripts, published results, and paper figures stay here.
+AegisKV 论文、实验协议、图像与证据均在本目录；模拟器代码位于仓库级
+`python/moonkvsim/aegiskv/`。当前论文设计以 [system_design.tex](paper/system_design.tex)
+和 [AGENTS.md](AGENTS.md) 的最新修订为准，旧模拟器与分析模型并不自动代表当前控制器。
 
-The branch was created from the accepted `v0.1.0-mooncake-baseline` tag. The
-exact six-run baseline evidence binding is recorded in
-`experiments/baseline-tag-evidence.json`. Historical Mooncake/SGLSim assets are
-selected one file at a time through a source manifest; they are never imported
-as a directory and never gain a stronger evidence class merely by being copied.
+当前设计按 Agent 的 guarded Slack 与完整重建代价选择受保护历史，在 Peer DRAM
+保存完整的 256-token 粒度检查点，并将前 L 层各 Top-K KV 块额外保存到 Peer HBM。
+Adapter 按前台占用调整每 rank 的 HBM 配额。该版本没有租金/credit 或共享存储层。
 
-All current runtime and experiment evidence is CPU metadata-only GlobalDES,
-`modeled/preliminary`, `not_calibrated`, and capped at E2. It is not a physical
-GPU/CUDA/RDMA/Slurm experiment and is not a paper-ready claim. The patent
-contract remains machine-transcribed with manual review pending.
+最新模拟入口为 `.venv/bin/python -m moonkvsim.aegiskv.current`，当前版本为
+`checkpoint-decay-hysteresis-incremental-g-20260924-eosfix1`，包含 EOS 冷恢复清理修复，
+以及默认 `slack_mode="dag"`、显式 `"zero"` 对照。见
+[实现与复现说明](docs/current-design-simulation.md) 和
+[设计—代码—测试覆盖表](docs/DESIGN_IMPLEMENTATION_COVERAGE.md)。
+这是每 DP 单 active invocation 的 FCFS 元数据 DES，没有 continuous batching；
+AIConfigurator HYBRID 成本表仍未做端到端实机校准。FanOutQA 保留原始人工分解 DAG，
+但 prompts 是构造的；结构化场景和已有原生 selector 捕获的 CPU 诊断分别报告，
+不能拼成原生稀疏模型的端到端运行结果。
 
-The current experiment contract machine-locks `Qwen/Qwen3-8B`, DP=8, TP=1,
-PP=1, and a modeled single-node 8x NVIDIA A100-40GB host (40 GiB HBM per GPU).
-Those three layers are
-`experiments/configs/{requests,failure,engine}.json`.
-The last published full matrix remains
-`experiments/results/e2-qwen3-8b-dp-all-v1/`
-(2,760 rows over DP={2,4,8} and 80-GiB HBM) and is now a superseded snapshot.
-A replacement DP=8 A100-40GB matrix has not been published yet. F12 remains
-excluded because no physical calibration experiment was requested.
-`e2-initial-v1` is retained as an earlier legacy bundle.
-The config directories on these migrated historical releases are reconstructed
-snapshots and therefore are not retroactively hash-bound by their original
-manifests. The auditor checks their values and labels them
-`reconstructed_unbound`; future publications bind the three config hashes
-atomically and must report `manifest_bound`.
+[实验分组与冻结版本](docs/current-design-simulation.md#实验分组与冻结版本) 链接各组
+状态与审计：敏感性、容量/零 Slack 对照、结构化主矩阵已经完成；正式主矩阵及结构化
+规模扩展另有完成门槛。运行中的精确计数以链接的状态文件为准。
+旧 formal/structural 冻结源保留修复前版本，新组使用各自快照，不追溯覆盖 manifest。
 
-The follow-up fluid-core preview is
-`experiments/results/e2-fluid-core-v2/`, with three focused resource/recovery
-figures at `experiments/results/figures/e2-fluid-core-v2/` and interpretation
-in `experiments/results/e2-fluid-core-v2/FLUID_CORE_V2_REPORT.md`.
+## 目录
 
-The focused Store-transport matrix is
-`experiments/results/e2-transport-v1/`, with audited figure F17 at
-`experiments/results/figures/e2-transport-v1/` and interpretation in
-`experiments/results/e2-transport-v1/TRANSPORT_V1_REPORT.md`.
+| 路径 | 内容 |
+|---|---|
+| [paper/](paper/) | 唯一 Overleaf 源目录；`main.tex` 及其实际引入的章节、参考文献、模板和图像 |
+| [docs/current-design-simulation.md](docs/current-design-simulation.md) | 当前模拟实现、资源/故障语义与可复现命令 |
+| [experiments/evaluation-20260924/](experiments/evaluation-20260924/) | 当前分组协议、来源快照、运行状态、配对结果、原生访问诊断及审计 |
+| [experiments/current-design-20260923/](experiments/current-design-20260923/) | 旧设计首轮机制快照和配对结果；保留历史来源 |
+| [experiments/eurosys27/](experiments/eurosys27/README.md) | 保留的论文实验计划、协议和历史分析；不自动代表当前设计 |
+| [experiments/scripts/eurosys27/](experiments/scripts/eurosys27/) | 历史分析与绘图脚本 |
+| [experiments/native-sparse/](experiments/native-sparse/) | 既有原生稀疏路径采集与测量 |
+| [experiments/schemas/](experiments/schemas/README.md) | AegisKV 专用 JSON schema；由仓库级校验模块加载 |
+| [experiments/analysis/](experiments/analysis/) | 从根目录 `output/analysis/` 迁入的分析资料 |
+| [docs/related_works/](docs/related_works/) | 相关论文全文与索引 |
+| [exports/notion/](exports/notion/) | Notion 导出资料及发布脚本 |
+| [exports/reference-pages/](exports/reference-pages/) | 参考论文页和说明图的导出 |
+| [Archived/paper-reviews/](Archived/paper-reviews/) | 从根目录 `output/pdf/` 迁入的历史论文构建和审查资料 |
+| [Archived/](Archived/) | 不同历史版本的设计、稿件和图；保留来源与局限 |
 
-The focused multi-Store-node matrix is
-`experiments/results/e2-store-nodes-v1/`, with audited figure F18 at
-`experiments/results/figures/e2-store-nodes-v1/` and interpretation in
-`experiments/results/e2-store-nodes-v1/STORE_NODE_V1_REPORT.md`.
+仓库级 `python/moonkvsim/aegiskv/` 和 `tests/aegiskv/` 保留包与测试结构；
+不迁入论文资产目录。2026-10-04 的迁移、删除和保留状态见
+[项目整理记录](exports/project-cleanup-20261004/README.md)。
 
-Verify the current design bundle from the repository root:
+## 编译与图像复现
 
-```bash
-uv run python benchmark/AegisKV/docs/audit_patent_contract.py
-sha256sum --strict -c benchmark/AegisKV/docs/provenance/SHA256SUMS
-```
-
-Audit published GlobalDES results and figures:
+下载整个 `paper/` 上传 Overleaf，入口为 `main.tex`，使用 pdfLaTeX。
+章节以 `main.tex` 的实际 `\\input` 为准；当前已包含 Evaluation，旧三章说明不再适用。
 
 ```bash
-.venv/bin/python benchmark/AegisKV/experiments/scripts/audit_aegiskv_e2_artifacts.py \
-  --matrix-dir benchmark/AegisKV/experiments/results/e2-qwen3-8b-dp-all-v1 \
-  --figure-dir benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1
-
-.venv/bin/python benchmark/AegisKV/experiments/scripts/audit_aegiskv_fluid_preview.py \
-  --matrix-dir benchmark/AegisKV/experiments/results/e2-fluid-core-v2 \
-  --figure-dir benchmark/AegisKV/experiments/results/figures/e2-fluid-core-v2
-
-.venv/bin/python benchmark/AegisKV/experiments/scripts/audit_aegiskv_transport_preview.py \
-  --matrix-dir benchmark/AegisKV/experiments/results/e2-transport-v1 \
-  --figure-dir benchmark/AegisKV/experiments/results/figures/e2-transport-v1
-
-.venv/bin/python benchmark/AegisKV/experiments/scripts/audit_aegiskv_store_node_preview.py \
-  --matrix-dir benchmark/AegisKV/experiments/results/e2-store-nodes-v1 \
-  --figure-dir benchmark/AegisKV/experiments/results/figures/e2-store-nodes-v1
+cd /home/comp/zhanzhao/MoonKVSim
+sh benchmark/AegisKV/experiments/scripts/paper/build_paper.sh
 ```
+
+构建中间文件位于 `exports/latex-build/`，阅读版为 [paper/main.pdf](paper/main.pdf)。
+可编辑源、原始数据、SVG 和审查记录留在 `paper/` 外；不生成额外投稿 ZIP。
+
+旧 Evaluation 的实验计划及物理路径测量保留在实验目录。新的模拟结果与这些既有
+数据分别记录来源和证据等级，不直接升级成论文级端到端实测结论。

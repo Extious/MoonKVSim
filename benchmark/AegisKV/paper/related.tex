@@ -1,0 +1,44 @@
+\section{Related Work}\label{sec:related}
+
+\paragraph{Fault-tolerant LLM serving.}
+D\'ej\`aVu develops efficient KV streaming and state replication
+\cite{strati2024dejavu}. GhostServe studies lightweight checkpointing
+\cite{jayakody2026ghostserve}. LUMEN coordinates checkpointing and recovery
+with serving load \cite{cao2026lumen}. These are more than isolated copy
+mechanisms; in particular, load-aware recovery is already addressed by
+LUMEN. \system's distinction is its use of Agent-task delay tolerance and
+request-internal demand to allocate finite protection resources. External
+system reproductions and inspired internal baselines are identified
+separately in the evaluation protocol.
+
+\paragraph{Workflow-aware execution and live cache reuse.}
+Parrot exposes application dependencies through semantic variables
+\cite{lin2024parrot}. KVFlow uses workflow proximity for prefix eviction
+and prefetching \cite{pan2025kvflow}; TOPAS jointly considers prefix states
+and task progress \cite{ni2026topas}. These normal-serving objectives are
+complementary to recovery. PagedAttention/vLLM, SGLang, and CachedAttention
+manage or reuse live KV state
+\cite{kwon2023vllm,zheng2024sglang,gao2024cachedattention}. A recovery copy
+additionally requires reachability after the protected domain fails and a
+complete compatible committed state.
+
+\paragraph{Native sparse attention and recovery overlap.}
+Native sparse models expose selected historical KV regions
+\cite{huang2026nosav2,fasa2026minicpm4nsa,openbmb2025minicpm41}.
+\system consumes those indices without modifying the attention choice.
+The relevant placement evidence is causal future-demand coverage and
+exposed waiting removed beyond a full DRAM checkpoint, rather than
+retrospective concentration alone. Layer-ordering and transfer/compute
+overlap are also used in normal cache systems
+\cite{gao2024cachedattention,pan2025kvflow}; the evaluation isolates their
+value during recovery.
+
+\paragraph{Quota control and applications.}
+The Adapter uses guarded additive increase and multiplicative decrease,
+following the general congestion-control principle \cite{chiu1989aimd}.
+The experiments test its total quota against fixed-budget controls and
+foreground demand. DeepResearchBench, DeepResearch Bench II, and
+SWE-bench Verified provide public task inputs
+\cite{du2025deepresearch,li2026deepresearchii,swebenchverified};
+their task/report datasets do not themselves provide the complete
+multi-Agent serving traces required by this paper.

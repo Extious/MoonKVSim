@@ -1,0 +1,118 @@
+--- a/python/moonkvsim/aegiskv/current/runtime.py
++++ b/python/moonkvsim/aegiskv/current/runtime.py
+@@ -207,6 +207,9 @@
+         self.sequence = 0
+         self.events: list[dict] = []
+         self.recoveries: list[dict] = []
++        # Queued continuations lost cached history, not an executing invocation.
++        # Keep their restoration separate from active failure/co-victim records.
++        self.history_restores: list[dict] = []
+         self.requests: list[dict] = []
+         self.metrics: Counter = Counter()
+         self.peaks: Counter = Counter()
+@@ -714,7 +717,7 @@
+         self.pressure.clear()
+         self._rebalance()
+         slack = self._slack()
+-        for key, state in (self.states.items() if self.retain_detailed_logs else ()):
++        for key, state in self.states.items() if self.retain_detailed_logs else ():
+             if state.call >= 0 and state.finished is None:
+                 cp = state.checkpoint
+                 self._record(
+@@ -1338,8 +1341,11 @@
+         }
+         self._record("failure", **self.failure_record)
+         affected = [self.states[k] for w in sorted(failed) if (k := self.busy[w]) is not None]
+-        source_workers = {s.spec.key: s.worker for s in affected}
+         queued = [self.states[k] for w in sorted(failed) for k in self.queues[w]]
++        histories = [state for state in queued if state.durable > 0]
++        history_keys = {state.spec.key for state in histories}
++        recovering_states = affected + histories
++        source_workers = {s.spec.key: s.worker for s in recovering_states}
+         self.alive -= failed
+         if not self.alive:
+             raise RuntimeError("no compatible surviving execution worker")
+@@ -1347,7 +1353,7 @@
+             if group.source in failed or group.target in failed or group.host in dead_hosts:
+                 self._cancel_group(identity)
+         # Hold surviving committed checkpoints before policy refresh can reclaim them.
+-        for state in affected:
++        for state in recovering_states:
+             cp = state.checkpoint
+             valid = cp and cp.peer in self.alive and c.hosts[cp.peer] not in dead_hosts
+             if valid and cp.frontier:
+@@ -1370,8 +1376,12 @@
+             if state.worker in failed:
+                 self._release_primary(state)
+                 state.computed = 0
++                # Live counters/snapshots belonged to the lost execution. A
++                # surviving checkpoint restores its frozen counters on admit.
++                state.counts.clear()
++                state.count_snapshots.clear()
+                 state.worker = None
+-        for state in affected:
++        for state in recovering_states:
+             state.epoch += 1
+             if state.compute_event:
+                 self.des.cancel(state.compute_event, reason="GPU_FAILURE")
+@@ -1399,7 +1409,11 @@
+                 else 0,
+                 "source_worker": source_workers[state.spec.key],
+             }
+-            self.recoveries.append(row)
++            if state.spec.key in history_keys:
++                row["kind"] = "queued_history"
++                self.history_restores.append(row)
++            else:
++                self.recoveries.append(row)
+             state.recovery_row = row
+             state.worker = (
+                 cp.peer
+@@ -1418,18 +1432,35 @@
+             self._at(
+                 self.des.now_ns + c.failure_detection_ns,
+                 EventKind.RECOVERY_START,
+-                lambda s=state: self._enqueue_retry(s),
++                lambda s=state, priority=state.spec.key not in history_keys: self._enqueue_retry(
++                    s, priority=priority
++                ),
+             )
+         for state in queued:
++            if state.spec.key in history_keys:
++                continue
+             state.worker = min(self.alive, key=lambda w: (len(self.queues[w]), w))
+             self.queues[state.worker].append(state.spec.key)
++            # A displaced first call may land on an idle worker different from
++            # every active retry target. Give that queue its own wake-up.
++            self._at(
++                self.des.now_ns + c.failure_detection_ns,
++                EventKind.RECOVERY_START,
++                lambda worker=state.worker: self._admit(worker),
++            )
+         self._rebalance()
+ 
+-    def _enqueue_retry(self, state: State) -> None:
++    def _enqueue_retry(self, state: State, *, priority: bool = True) -> None:
+         state.recovery_row["retry_enqueued_ns"] = self.des.now_ns
+         state.recovery_row["detection_ns"] = self.des.now_ns - state.recovery_row["failure_ns"]
+-        self.queues[state.worker].appendleft(state.spec.key)
+-        self._record("retry", agent=state.spec.key, worker=state.worker, new_peer=state.peer)
++        queue = self.queues[state.worker]
++        (queue.appendleft if priority else queue.append)(state.spec.key)
++        self._record(
++            "retry" if priority else "queued_history_restore",
++            agent=state.spec.key,
++            worker=state.worker,
++            new_peer=state.peer,
++        )
+         self._admit(state.worker)
+ 
+     def _complete(self, state: State) -> None:
+@@ -1571,6 +1602,7 @@
+             "workflows": workflows,
+             "requests": self.requests,
+             "recoveries": self.recoveries,
++            "history_restores": self.history_restores,
+             "metrics": dict(self.metrics),
+             "peak_bytes": dict(self.peaks),
+             "terminal_allocations_zero": True,

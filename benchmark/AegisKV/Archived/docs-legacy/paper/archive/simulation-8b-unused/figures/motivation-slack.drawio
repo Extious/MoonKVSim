@@ -1,0 +1,74 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" version="31.1.5">
+  <diagram id="motivation-slack" name="motivation-slack">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageScale="1" pageWidth="1000" pageHeight="430" background="#FFFFFF" math="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Illustrative example: equal KV protection, different workflow benefit" style="text;strokeColor=none;fillColor=none;align=left;fontFamily=Cantarell;fontSize=22;fontColor=#263445;whiteSpace=wrap;html=0;spacing=6;verticalAlign=middle;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="0" y="0" width="1000" height="45" />
+        </mxCell>
+        <mxCell id="fork" value="Fork" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#008568;fillColor=#F0F8F5;fontFamily=Cantarell;fontSize=20;fontColor=#008568;whiteSpace=wrap;html=0;spacing=6;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="10" y="140" width="85" height="65" />
+        </mxCell>
+        <mxCell id="a" value="A: 8 s&#10;Slack = 0 s" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#C44747;fillColor=#FCECEC;fontFamily=Cantarell;fontSize=20;fontColor=#C44747;whiteSpace=wrap;html=0;spacing=6;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="135" y="75" width="200" height="90" />
+        </mxCell>
+        <mxCell id="b" value="B: 3 s&#10;Slack = 5 s" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#008568;fillColor=#F0F8F5;fontFamily=Cantarell;fontSize=20;fontColor=#008568;whiteSpace=wrap;html=0;spacing=6;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="135" y="225" width="200" height="90" />
+        </mxCell>
+        <mxCell id="join" value="Join" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#008568;fillColor=#F0F8F5;fontFamily=Cantarell;fontSize=20;fontColor=#008568;whiteSpace=wrap;html=0;spacing=6;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="390" y="140" width="80" height="65" />
+        </mxCell>
+        <mxCell id="edge1" parent="1" source="fork" target="a" value="" edge="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeWidth=2;strokeColor=#008568;endArrow=block;endFill=1;fontFamily=Cantarell;fontSize=20;fontColor=#008568;exitX=1;exitY=0.5;entryX=0;entryY=0.5;labelBackgroundColor=#FFFFFF;html=0;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge2" parent="1" source="a" target="join" value="" edge="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeWidth=2;strokeColor=#008568;endArrow=block;endFill=1;fontFamily=Cantarell;fontSize=20;fontColor=#008568;exitX=1;exitY=0.5;entryX=0;entryY=0.5;labelBackgroundColor=#FFFFFF;html=0;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge3" parent="1" source="fork" target="b" value="" edge="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeWidth=2;strokeColor=#008568;endArrow=block;endFill=1;fontFamily=Cantarell;fontSize=20;fontColor=#008568;exitX=1;exitY=0.5;entryX=0;entryY=0.5;labelBackgroundColor=#FFFFFF;html=0;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge4" parent="1" source="b" target="join" value="" edge="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeWidth=2;strokeColor=#008568;endArrow=block;endFill=1;fontFamily=Cantarell;fontSize=20;fontColor=#008568;exitX=1;exitY=0.5;entryX=0;entryY=0.5;labelBackgroundColor=#FFFFFF;html=0;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="base" value="Healthy workflow completion: 8 s" style="text;strokeColor=none;fillColor=none;align=left;fontFamily=Cantarell;fontSize=20;fontColor=#263445;whiteSpace=wrap;html=0;spacing=6;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="10" y="350" width="470" height="45" />
+        </mxCell>
+        <mxCell id="tabletitle" value="Workflow completion after failure" style="text;strokeColor=none;fillColor=none;align=left;fontFamily=Cantarell;fontSize=20;fontColor=#263445;whiteSpace=wrap;html=0;spacing=6;verticalAlign=middle;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="520" y="65" width="480" height="45" />
+        </mxCell>
+        <mxCell id="table00" value="Failed branch" style="text;strokeColor=none;fillColor=none;align=left;fontFamily=Cantarell;fontSize=20;fontColor=#263445;whiteSpace=wrap;html=0;spacing=6;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="520" y="120" width="205" height="45" />
+        </mxCell>
+        <mxCell id="table10" value="A (critical)" style="text;strokeColor=none;fillColor=none;align=left;fontFamily=Cantarell;fontSize=20;fontColor=#C44747;whiteSpace=wrap;html=0;spacing=6;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="520" y="180" width="205" height="45" />
+        </mxCell>
+        <mxCell id="table20" value="B (parallel)" style="text;strokeColor=none;fillColor=none;align=left;fontFamily=Cantarell;fontSize=20;fontColor=#008568;whiteSpace=wrap;html=0;spacing=6;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="520" y="240" width="205" height="45" />
+        </mxCell>
+        <mxCell id="table01" value="Recompute" style="text;strokeColor=none;fillColor=none;align=left;fontFamily=Cantarell;fontSize=20;fontColor=#263445;whiteSpace=wrap;html=0;spacing=6;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="740" y="120" width="125" height="45" />
+        </mxCell>
+        <mxCell id="table11" value="12 s" style="text;strokeColor=none;fillColor=none;align=left;fontFamily=Cantarell;fontSize=20;fontColor=#C44747;whiteSpace=wrap;html=0;spacing=6;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="740" y="180" width="125" height="45" />
+        </mxCell>
+        <mxCell id="table21" value="8 s" style="text;strokeColor=none;fillColor=none;align=left;fontFamily=Cantarell;fontSize=20;fontColor=#008568;whiteSpace=wrap;html=0;spacing=6;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="740" y="240" width="125" height="45" />
+        </mxCell>
+        <mxCell id="table02" value="Protect" style="text;strokeColor=none;fillColor=none;align=left;fontFamily=Cantarell;fontSize=20;fontColor=#263445;whiteSpace=wrap;html=0;spacing=6;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="880" y="120" width="115" height="45" />
+        </mxCell>
+        <mxCell id="table12" value="9 s" style="text;strokeColor=none;fillColor=none;align=left;fontFamily=Cantarell;fontSize=20;fontColor=#C44747;whiteSpace=wrap;html=0;spacing=6;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="880" y="180" width="115" height="45" />
+        </mxCell>
+        <mxCell id="table22" value="8 s" style="text;strokeColor=none;fillColor=none;align=left;fontFamily=Cantarell;fontSize=20;fontColor=#008568;whiteSpace=wrap;html=0;spacing=6;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="880" y="240" width="115" height="45" />
+        </mxCell>
+        <mxCell id="cost" value="Same request recovery cost: 4 s → 1 s&#10;Workflow gain: A saves 3 s; B saves 0 s" style="text;strokeColor=none;fillColor=none;align=left;fontFamily=Cantarell;fontSize=20;fontColor=#263445;whiteSpace=wrap;html=0;spacing=6;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="520" y="320" width="480" height="80" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

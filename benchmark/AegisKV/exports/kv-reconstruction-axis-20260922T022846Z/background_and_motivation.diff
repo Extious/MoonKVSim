@@ -1,0 +1,21 @@
+--- 
++++ 
+@@ -152,13 +152,15 @@
+     Qwen2.5-7B-Instruct-1M on two A100 PCIe 40\,GB GPUs
+     (TP2, BF16, batch one), with sparse attention above 32K.
+     Full prefill starts from empty KV; reuse starts from $(C-1)$ cached
+-    tokens and computes one. DRAM/shared-storage I/O is serialized with
+-    computation. HBM/DRAM: median and min--max of three timings;
++    tokens and computes one. KV reconstruction time includes any
++    retrieval and computation until all $C$ tokens' KV is ready.
++    DRAM/shared-storage I/O is serialized with computation.
++    HBM/DRAM: median and min--max of three timings;
+     shared storage/full prefill: one timing per length.
+     Protocol: Appendix~\ref{sec:motivation-protocol}.
+     K~=~1,024; M~=~1,000,000.}
+   \label{fig:motivation-recompute}
+-  \Description{Four measured Prefill curves for Qwen2.5-7B-Instruct-1M
++  \Description{Four measured KV reconstruction-time curves for Qwen2.5-7B-Instruct-1M
+     from 8K to 1,010,000 tokens: blue circles for resident HBM reuse,
+     orange squares for DRAM reuse, purple diamonds for shared-storage
+     reuse, and red triangles for full prefill. Both axes are logarithmic.

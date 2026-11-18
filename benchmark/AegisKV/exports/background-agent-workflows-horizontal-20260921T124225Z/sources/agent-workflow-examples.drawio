@@ -1,0 +1,450 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="agent-examples" name="Agent workflows">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageWidth="1220" pageHeight="680" background="#FFFFFF">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="canvas" value="" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#FFFFFF;strokeColor=none;strokeWidth=1.5;spacing=1;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="1220" height="680" as="geometry" />
+        </mxCell>
+        <mxCell id="code-title" value="(a) Code generation: add CSV export" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=27;fontColor=#243746;fontStyle=1;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;strokeWidth=1.5;spacing=1;align=left;" vertex="1" parent="1">
+          <mxGeometry x="4" y="0" width="842" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="code-plan" value="Main agent&#10;Plan tasks" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#F0F2F4;strokeColor=#627887;strokeWidth=1.5;spacing=1;" vertex="1" parent="1">
+          <mxGeometry x="4" y="145" width="134" height="78" as="geometry" />
+        </mxCell>
+        <mxCell id="code-join" value="Main agent&#10;Merge &amp; test" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#F0F2F4;strokeColor=#627887;strokeWidth=1.5;spacing=1;" vertex="1" parent="1">
+          <mxGeometry x="1030" y="145" width="186" height="78" as="geometry" />
+        </mxCell>
+        <mxCell id="code-output" value="CSV patch" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=1;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;strokeWidth=1.5;spacing=1;" vertex="1" parent="1">
+          <mxGeometry x="1030" y="229" width="186" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="code-fork" value="" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#627887;strokeColor=none;strokeWidth=1.5;spacing=1;shape=ellipse;" vertex="1" parent="1">
+          <mxGeometry x="157" y="182" width="4" height="4" as="geometry" />
+        </mxCell>
+        <mxCell id="code-merge" value="" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#627887;strokeColor=none;strokeWidth=1.5;spacing=1;shape=ellipse;" vertex="1" parent="1">
+          <mxGeometry x="1002" y="182" width="4" height="4" as="geometry" />
+        </mxCell>
+        <mxCell id="code-delegate" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=none;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="code-plan" target="code-fork" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="code-aggregate" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="code-merge" target="code-join" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-0" value="" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#F7F9FB;strokeColor=#B1BEC8;strokeWidth=1.5;spacing=1;container=1;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry x="176" y="44" width="800" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-0-name" value="API&#10;agent" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=1;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;strokeWidth=1.5;spacing=1;" vertex="1" parent="code-agent-0">
+          <mxGeometry x="3" y="2" width="134" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-0-event-0" value="LLM 1&#10;Inspect" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#EAF3F8;strokeColor=#3377A0;strokeWidth=1.5;spacing=1;" vertex="1" parent="code-agent-0">
+          <mxGeometry x="142" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-0-event-1" value="Read&#10;files" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#FBF1E1;strokeColor=#AE844B;strokeWidth=1.5;spacing=1;rounded=0;" vertex="1" parent="code-agent-0">
+          <mxGeometry x="274" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-0-step-1" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="code-agent-0-event-0" target="code-agent-0-event-1" parent="code-agent-0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-0-event-2" value="LLM 2&#10;Code" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#EAF3F8;strokeColor=#3377A0;strokeWidth=1.5;spacing=1;" vertex="1" parent="code-agent-0">
+          <mxGeometry x="406" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-0-step-2" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="code-agent-0-event-1" target="code-agent-0-event-2" parent="code-agent-0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-0-event-3" value="Edit&#10;files" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#FBF1E1;strokeColor=#AE844B;strokeWidth=1.5;spacing=1;rounded=0;" vertex="1" parent="code-agent-0">
+          <mxGeometry x="538" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-0-step-3" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="code-agent-0-event-2" target="code-agent-0-event-3" parent="code-agent-0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-0-event-4" value="LLM 3&#10;Review" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#EAF3F8;strokeColor=#3377A0;strokeWidth=1.5;spacing=1;" vertex="1" parent="code-agent-0">
+          <mxGeometry x="670" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-0-step-4" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="code-agent-0-event-3" target="code-agent-0-event-4" parent="code-agent-0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-0-assigned" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=0.5;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="code-fork" target="code-agent-0" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="159" y="76" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="code-agent-0-returned" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=none;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0.5;entryY=0.5;entryPerimeter=0;" edge="1" source="code-agent-0" target="code-merge" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1004" y="76" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="code-agent-1" value="" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#F7F9FB;strokeColor=#B1BEC8;strokeWidth=1.5;spacing=1;container=1;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry x="176" y="116" width="800" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-1-name" value="UI&#10;agent" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=1;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;strokeWidth=1.5;spacing=1;" vertex="1" parent="code-agent-1">
+          <mxGeometry x="3" y="2" width="134" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-1-event-0" value="LLM 1&#10;Inspect" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#EAF3F8;strokeColor=#3377A0;strokeWidth=1.5;spacing=1;" vertex="1" parent="code-agent-1">
+          <mxGeometry x="142" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-1-event-1" value="Read&#10;files" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#FBF1E1;strokeColor=#AE844B;strokeWidth=1.5;spacing=1;rounded=0;" vertex="1" parent="code-agent-1">
+          <mxGeometry x="274" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-1-step-1" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="code-agent-1-event-0" target="code-agent-1-event-1" parent="code-agent-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-1-event-2" value="LLM 2&#10;Code" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#EAF3F8;strokeColor=#3377A0;strokeWidth=1.5;spacing=1;" vertex="1" parent="code-agent-1">
+          <mxGeometry x="406" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-1-step-2" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="code-agent-1-event-1" target="code-agent-1-event-2" parent="code-agent-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-1-event-3" value="Edit&#10;files" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#FBF1E1;strokeColor=#AE844B;strokeWidth=1.5;spacing=1;rounded=0;" vertex="1" parent="code-agent-1">
+          <mxGeometry x="538" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-1-step-3" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="code-agent-1-event-2" target="code-agent-1-event-3" parent="code-agent-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-1-event-4" value="LLM 3&#10;Review" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#EAF3F8;strokeColor=#3377A0;strokeWidth=1.5;spacing=1;" vertex="1" parent="code-agent-1">
+          <mxGeometry x="670" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-1-step-4" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="code-agent-1-event-3" target="code-agent-1-event-4" parent="code-agent-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-1-assigned" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=0.5;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="code-fork" target="code-agent-1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="159" y="148" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="code-agent-1-returned" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=none;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0.5;entryY=0.5;entryPerimeter=0;" edge="1" source="code-agent-1" target="code-merge" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1004" y="148" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="code-agent-2" value="" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#F7F9FB;strokeColor=#B1BEC8;strokeWidth=1.5;spacing=1;container=1;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry x="176" y="188" width="800" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-2-name" value="Test&#10;agent" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=1;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;strokeWidth=1.5;spacing=1;" vertex="1" parent="code-agent-2">
+          <mxGeometry x="3" y="2" width="134" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-2-event-0" value="LLM 1&#10;Plan tests" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#EAF3F8;strokeColor=#3377A0;strokeWidth=1.5;spacing=1;" vertex="1" parent="code-agent-2">
+          <mxGeometry x="142" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-2-event-1" value="Read&#10;spec" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#FBF1E1;strokeColor=#AE844B;strokeWidth=1.5;spacing=1;rounded=0;" vertex="1" parent="code-agent-2">
+          <mxGeometry x="274" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-2-step-1" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="code-agent-2-event-0" target="code-agent-2-event-1" parent="code-agent-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-2-event-2" value="LLM 2&#10;Author" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#EAF3F8;strokeColor=#3377A0;strokeWidth=1.5;spacing=1;" vertex="1" parent="code-agent-2">
+          <mxGeometry x="406" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-2-step-2" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="code-agent-2-event-1" target="code-agent-2-event-2" parent="code-agent-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-2-event-3" value="Edit&#10;tests" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#FBF1E1;strokeColor=#AE844B;strokeWidth=1.5;spacing=1;rounded=0;" vertex="1" parent="code-agent-2">
+          <mxGeometry x="538" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-2-step-3" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="code-agent-2-event-2" target="code-agent-2-event-3" parent="code-agent-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-2-event-4" value="LLM 3&#10;Review" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#EAF3F8;strokeColor=#3377A0;strokeWidth=1.5;spacing=1;" vertex="1" parent="code-agent-2">
+          <mxGeometry x="670" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-2-step-4" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="code-agent-2-event-3" target="code-agent-2-event-4" parent="code-agent-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-2-assigned" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=0.5;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="code-fork" target="code-agent-2" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="159" y="220" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="code-agent-2-returned" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=none;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0.5;entryY=0.5;entryPerimeter=0;" edge="1" source="code-agent-2" target="code-merge" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1004" y="220" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="code-agent-3" value="" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#F7F9FB;strokeColor=#B1BEC8;strokeWidth=1.5;spacing=1;container=1;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry x="176" y="260" width="800" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-3-name" value="Docs&#10;agent" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=1;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;strokeWidth=1.5;spacing=1;" vertex="1" parent="code-agent-3">
+          <mxGeometry x="3" y="2" width="134" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-3-event-0" value="LLM 1&#10;Outline" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#EAF3F8;strokeColor=#3377A0;strokeWidth=1.5;spacing=1;" vertex="1" parent="code-agent-3">
+          <mxGeometry x="142" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-3-event-1" value="Read&#10;spec" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#FBF1E1;strokeColor=#AE844B;strokeWidth=1.5;spacing=1;rounded=0;" vertex="1" parent="code-agent-3">
+          <mxGeometry x="274" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-3-step-1" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="code-agent-3-event-0" target="code-agent-3-event-1" parent="code-agent-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-3-event-2" value="LLM 2&#10;Draft" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#EAF3F8;strokeColor=#3377A0;strokeWidth=1.5;spacing=1;" vertex="1" parent="code-agent-3">
+          <mxGeometry x="406" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-3-step-2" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="code-agent-3-event-1" target="code-agent-3-event-2" parent="code-agent-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-3-event-3" value="Edit&#10;docs" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#FBF1E1;strokeColor=#AE844B;strokeWidth=1.5;spacing=1;rounded=0;" vertex="1" parent="code-agent-3">
+          <mxGeometry x="538" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-3-step-3" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="code-agent-3-event-2" target="code-agent-3-event-3" parent="code-agent-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-3-event-4" value="LLM 3&#10;Review" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#EAF3F8;strokeColor=#3377A0;strokeWidth=1.5;spacing=1;" vertex="1" parent="code-agent-3">
+          <mxGeometry x="670" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-3-step-4" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="code-agent-3-event-3" target="code-agent-3-event-4" parent="code-agent-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="code-agent-3-assigned" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=0.5;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="code-fork" target="code-agent-3" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="159" y="292" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="code-agent-3-returned" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=none;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0.5;entryY=0.5;entryPerimeter=0;" edge="1" source="code-agent-3" target="code-merge" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1004" y="292" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="research-title" value="(b) Deep research: compare battery technologies" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=27;fontColor=#243746;fontStyle=1;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;strokeWidth=1.5;spacing=1;align=left;" vertex="1" parent="1">
+          <mxGeometry x="4" y="350" width="842" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="research-plan" value="Lead agent&#10;Plan tasks" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#F0F2F4;strokeColor=#627887;strokeWidth=1.5;spacing=1;" vertex="1" parent="1">
+          <mxGeometry x="4" y="495" width="134" height="78" as="geometry" />
+        </mxCell>
+        <mxCell id="research-join" value="Lead agent&#10;Synthesize" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#F0F2F4;strokeColor=#627887;strokeWidth=1.5;spacing=1;" vertex="1" parent="1">
+          <mxGeometry x="1030" y="495" width="186" height="78" as="geometry" />
+        </mxCell>
+        <mxCell id="research-output" value="Cited report" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=1;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;strokeWidth=1.5;spacing=1;" vertex="1" parent="1">
+          <mxGeometry x="1030" y="579" width="186" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="research-fork" value="" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#627887;strokeColor=none;strokeWidth=1.5;spacing=1;shape=ellipse;" vertex="1" parent="1">
+          <mxGeometry x="157" y="532" width="4" height="4" as="geometry" />
+        </mxCell>
+        <mxCell id="research-merge" value="" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#627887;strokeColor=none;strokeWidth=1.5;spacing=1;shape=ellipse;" vertex="1" parent="1">
+          <mxGeometry x="1002" y="532" width="4" height="4" as="geometry" />
+        </mxCell>
+        <mxCell id="research-delegate" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=none;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="research-plan" target="research-fork" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="research-aggregate" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="research-merge" target="research-join" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-0" value="" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#F7F9FB;strokeColor=#B1BEC8;strokeWidth=1.5;spacing=1;container=1;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry x="176" y="394" width="800" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-0-name" value="Technical&#10;agent" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=1;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;strokeWidth=1.5;spacing=1;" vertex="1" parent="research-agent-0">
+          <mxGeometry x="3" y="2" width="134" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-0-event-0" value="LLM 1&#10;Plan" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#EAF3F8;strokeColor=#3377A0;strokeWidth=1.5;spacing=1;" vertex="1" parent="research-agent-0">
+          <mxGeometry x="142" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-0-event-1" value="Web&#10;search" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#FBF1E1;strokeColor=#AE844B;strokeWidth=1.5;spacing=1;rounded=0;" vertex="1" parent="research-agent-0">
+          <mxGeometry x="274" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-0-step-1" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="research-agent-0-event-0" target="research-agent-0-event-1" parent="research-agent-0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-0-event-2" value="LLM 2&#10;Assess" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#EAF3F8;strokeColor=#3377A0;strokeWidth=1.5;spacing=1;" vertex="1" parent="research-agent-0">
+          <mxGeometry x="406" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-0-step-2" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="research-agent-0-event-1" target="research-agent-0-event-2" parent="research-agent-0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-0-event-3" value="Read&#10;papers" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#FBF1E1;strokeColor=#AE844B;strokeWidth=1.5;spacing=1;rounded=0;" vertex="1" parent="research-agent-0">
+          <mxGeometry x="538" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-0-step-3" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="research-agent-0-event-2" target="research-agent-0-event-3" parent="research-agent-0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-0-event-4" value="LLM 3&#10;Report" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#EAF3F8;strokeColor=#3377A0;strokeWidth=1.5;spacing=1;" vertex="1" parent="research-agent-0">
+          <mxGeometry x="670" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-0-step-4" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="research-agent-0-event-3" target="research-agent-0-event-4" parent="research-agent-0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-0-assigned" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=0.5;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="research-fork" target="research-agent-0" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="159" y="426" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="research-agent-0-returned" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=none;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0.5;entryY=0.5;entryPerimeter=0;" edge="1" source="research-agent-0" target="research-merge" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1004" y="426" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="research-agent-1" value="" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#F7F9FB;strokeColor=#B1BEC8;strokeWidth=1.5;spacing=1;container=1;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry x="176" y="466" width="800" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-1-name" value="Cost&#10;agent" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=1;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;strokeWidth=1.5;spacing=1;" vertex="1" parent="research-agent-1">
+          <mxGeometry x="3" y="2" width="134" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-1-event-0" value="LLM 1&#10;Plan" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#EAF3F8;strokeColor=#3377A0;strokeWidth=1.5;spacing=1;" vertex="1" parent="research-agent-1">
+          <mxGeometry x="142" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-1-event-1" value="Web&#10;search" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#FBF1E1;strokeColor=#AE844B;strokeWidth=1.5;spacing=1;rounded=0;" vertex="1" parent="research-agent-1">
+          <mxGeometry x="274" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-1-step-1" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="research-agent-1-event-0" target="research-agent-1-event-1" parent="research-agent-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-1-event-2" value="LLM 2&#10;Assess" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#EAF3F8;strokeColor=#3377A0;strokeWidth=1.5;spacing=1;" vertex="1" parent="research-agent-1">
+          <mxGeometry x="406" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-1-step-2" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="research-agent-1-event-1" target="research-agent-1-event-2" parent="research-agent-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-1-event-3" value="Read&#10;reports" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#FBF1E1;strokeColor=#AE844B;strokeWidth=1.5;spacing=1;rounded=0;" vertex="1" parent="research-agent-1">
+          <mxGeometry x="538" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-1-step-3" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="research-agent-1-event-2" target="research-agent-1-event-3" parent="research-agent-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-1-event-4" value="LLM 3&#10;Report" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#EAF3F8;strokeColor=#3377A0;strokeWidth=1.5;spacing=1;" vertex="1" parent="research-agent-1">
+          <mxGeometry x="670" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-1-step-4" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="research-agent-1-event-3" target="research-agent-1-event-4" parent="research-agent-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-1-assigned" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=0.5;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="research-fork" target="research-agent-1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="159" y="498" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="research-agent-1-returned" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=none;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0.5;entryY=0.5;entryPerimeter=0;" edge="1" source="research-agent-1" target="research-merge" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1004" y="498" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="research-agent-2" value="" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#F7F9FB;strokeColor=#B1BEC8;strokeWidth=1.5;spacing=1;container=1;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry x="176" y="538" width="800" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-2-name" value="Safety&#10;agent" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=1;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;strokeWidth=1.5;spacing=1;" vertex="1" parent="research-agent-2">
+          <mxGeometry x="3" y="2" width="134" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-2-event-0" value="LLM 1&#10;Plan" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#EAF3F8;strokeColor=#3377A0;strokeWidth=1.5;spacing=1;" vertex="1" parent="research-agent-2">
+          <mxGeometry x="142" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-2-event-1" value="Web&#10;search" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#FBF1E1;strokeColor=#AE844B;strokeWidth=1.5;spacing=1;rounded=0;" vertex="1" parent="research-agent-2">
+          <mxGeometry x="274" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-2-step-1" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="research-agent-2-event-0" target="research-agent-2-event-1" parent="research-agent-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-2-event-2" value="LLM 2&#10;Assess" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#EAF3F8;strokeColor=#3377A0;strokeWidth=1.5;spacing=1;" vertex="1" parent="research-agent-2">
+          <mxGeometry x="406" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-2-step-2" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="research-agent-2-event-1" target="research-agent-2-event-2" parent="research-agent-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-2-event-3" value="Read&#10;studies" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#FBF1E1;strokeColor=#AE844B;strokeWidth=1.5;spacing=1;rounded=0;" vertex="1" parent="research-agent-2">
+          <mxGeometry x="538" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-2-step-3" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="research-agent-2-event-2" target="research-agent-2-event-3" parent="research-agent-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-2-event-4" value="LLM 3&#10;Report" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#EAF3F8;strokeColor=#3377A0;strokeWidth=1.5;spacing=1;" vertex="1" parent="research-agent-2">
+          <mxGeometry x="670" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-2-step-4" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="research-agent-2-event-3" target="research-agent-2-event-4" parent="research-agent-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-2-assigned" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=0.5;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="research-fork" target="research-agent-2" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="159" y="570" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="research-agent-2-returned" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=none;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0.5;entryY=0.5;entryPerimeter=0;" edge="1" source="research-agent-2" target="research-merge" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1004" y="570" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="research-agent-3" value="" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#F7F9FB;strokeColor=#B1BEC8;strokeWidth=1.5;spacing=1;container=1;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry x="176" y="610" width="800" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-3-name" value="Supply&#10;agent" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=1;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;strokeWidth=1.5;spacing=1;" vertex="1" parent="research-agent-3">
+          <mxGeometry x="3" y="2" width="134" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-3-event-0" value="LLM 1&#10;Plan" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#EAF3F8;strokeColor=#3377A0;strokeWidth=1.5;spacing=1;" vertex="1" parent="research-agent-3">
+          <mxGeometry x="142" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-3-event-1" value="Web&#10;search" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#FBF1E1;strokeColor=#AE844B;strokeWidth=1.5;spacing=1;rounded=0;" vertex="1" parent="research-agent-3">
+          <mxGeometry x="274" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-3-step-1" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="research-agent-3-event-0" target="research-agent-3-event-1" parent="research-agent-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-3-event-2" value="LLM 2&#10;Assess" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#EAF3F8;strokeColor=#3377A0;strokeWidth=1.5;spacing=1;" vertex="1" parent="research-agent-3">
+          <mxGeometry x="406" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-3-step-2" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="research-agent-3-event-1" target="research-agent-3-event-2" parent="research-agent-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-3-event-3" value="Read&#10;reports" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#FBF1E1;strokeColor=#AE844B;strokeWidth=1.5;spacing=1;rounded=0;" vertex="1" parent="research-agent-3">
+          <mxGeometry x="538" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-3-step-3" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="research-agent-3-event-2" target="research-agent-3-event-3" parent="research-agent-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-3-event-4" value="LLM 3&#10;Report" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#EAF3F8;strokeColor=#3377A0;strokeWidth=1.5;spacing=1;" vertex="1" parent="research-agent-3">
+          <mxGeometry x="670" y="2" width="112" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-3-step-4" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="research-agent-3-event-3" target="research-agent-3-event-4" parent="research-agent-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="research-agent-3-assigned" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;exitX=0.5;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" source="research-fork" target="research-agent-3" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="159" y="642" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="research-agent-3-returned" value="" style="rounded=0;html=0;strokeColor=#627887;strokeWidth=1.6;endArrow=none;endSize=5;endFill=1;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0.5;entryY=0.5;entryPerimeter=0;" edge="1" source="research-agent-3" target="research-merge" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1004" y="642" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="llm-key" value="" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#EAF3F8;strokeColor=#3377A0;strokeWidth=1.5;spacing=1;" vertex="1" parent="1">
+          <mxGeometry x="867" y="7" width="21" height="19" as="geometry" />
+        </mxCell>
+        <mxCell id="llm-key-text" value="LLM request" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;strokeWidth=1.5;spacing=1;align=left;" vertex="1" parent="1">
+          <mxGeometry x="895" y="1" width="147" height="31" as="geometry" />
+        </mxCell>
+        <mxCell id="tool-key" value="" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#FBF1E1;strokeColor=#AE844B;strokeWidth=1.5;spacing=1;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1050" y="7" width="21" height="19" as="geometry" />
+        </mxCell>
+        <mxCell id="tool-key-text" value="Tool call" style="rounded=1;arcSize=10;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=25;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;strokeWidth=1.5;spacing=1;align=left;" vertex="1" parent="1">
+          <mxGeometry x="1078" y="1" width="138" height="31" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

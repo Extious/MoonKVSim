@@ -1,0 +1,23 @@
+% English design draft, aligned with draft/system_design.md (2026-09-18).
+\section{AegisKV Design}
+\label{sec:design}
+
+AegisKV allocates scarce Peer HBM and copy bandwidth to reduce the
+effect of failures on workflow completion time (WCT).
+We organize the design around agent-time estimation, the adoption of
+sparse attention in long-context serving, and prediction of the KV
+needed to replay an uncommitted tail. We distinguish supporting evidence
+from the timing-estimation premise that remains unvalidated.
+These premises lead to workflow protection tiers and request-internal
+KV selection; transfer--compute overlap and capacity constraints then
+determine placement. Protection priority does not impose a serial order
+on recovery execution.
+
+\input{sections/design_insights}
+\input{sections/system_overview}
+\input{sections/workflow_protection}
+\input{sections/kv_placement}
+\input{sections/capacity_allocation}
+\input{sections/parallel_recovery}
+\input{sections/kv_runtime}
+\input{sections/design_discussion}

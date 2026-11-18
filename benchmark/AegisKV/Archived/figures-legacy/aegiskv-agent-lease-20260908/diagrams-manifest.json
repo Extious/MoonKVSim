@@ -1,0 +1,89 @@
+{
+  "figures": [
+    {
+      "name": "system-overview",
+      "evidence": "design",
+      "width_in": 7,
+      "files": {
+        "pdf": "3b94d077a667177811f907b2b1fc703bf6e9c312991c5890f26dd2ddb3807341",
+        "svg": "641c2533764148f61e2095b034231762238dd43e10f5b3c1545a5085f9d005d3",
+        "png": "916bb9828b3eaeda6a9403f02ab6c9eb1a6106db601fc4abe4022498ab42016c",
+        "drawio": "90e45a1ab100fd3208e1ae51140c87a84500a434e981e9a43c77bb4c6746932e"
+      }
+    },
+    {
+      "name": "design-joint-wct",
+      "evidence": "design",
+      "width_in": 7,
+      "files": {
+        "pdf": "61d0d4e697beeaf61c9d82d1e061c8f8b6af4bf69c2a34e15a614b6e727ee4f5",
+        "svg": "38f17bb5b51dd6430ef0d7247b6e324ed81d14af3db3a7e2f9a261e93648a8b6",
+        "png": "fc6940ec32ae9c96a9166e5caeae0a2fcf728e0de98fc765fa73cdaf02d57182",
+        "drawio": "997616c46c4c38d71eed8086e9c6161264cff1db763d42329122225d59c29a5b"
+      }
+    },
+    {
+      "name": "design-agent-subleases",
+      "evidence": "design",
+      "width_in": 7,
+      "files": {
+        "pdf": "e34e5127256b14335205066d2b6040c8f3a9cde51b1fd084e28cd78fee56aeef",
+        "svg": "1729057e339daba3fb25c70a64ceaa79ef66ea1b6fb68b2faff7b46bbe01d257",
+        "png": "4c582021ecd6a2ba6e7c16c85f6850f06427c41e4871ba197755162dbb3f33cc",
+        "drawio": "64249300aae07fdbd3a6a84e30679bfb8d07cd7895c4e6bf8f774275bc5e8f10"
+      }
+    },
+    {
+      "name": "design-prefix-admission",
+      "evidence": "design",
+      "width_in": 7,
+      "files": {
+        "pdf": "77150b4c3441ca7584dac8fbd6b3cbf86e8202ff881c63b3a908d49802369218",
+        "svg": "9a5062bcf31411ef2fe36248e959a3c2096f303ce4229f4eee3c7d5e9588921a",
+        "png": "31984e71437ea6605c82786fd20001fd5855d0a483a5317b1abcd6ba0840c0a9",
+        "drawio": "74e5b010b9bac50133c036c9c0dd93c985dfff4d7d21a55c4544f791587adbb7"
+      }
+    },
+    {
+      "name": "design-guarded-aimd",
+      "evidence": "design",
+      "width_in": 7,
+      "files": {
+        "pdf": "21b3f9be07f211eb43b952d81efc680c6e57cdf30243bd80cdf670453bcb88cb",
+        "svg": "6eafdc6fca7a98173bcb163cee15095efc37145d886313b55c120ca498f806f8",
+        "png": "fc9d3a00d1c2c4d1d521e52a77765bc4664e6c85450af426dda4bc4f6b651ce0",
+        "drawio": "8a54401bf83cbdef77d08076f326a558242db29b598be7e17655213c658e549e"
+      }
+    },
+    {
+      "name": "commit-tier-timeline",
+      "evidence": "design",
+      "width_in": 7,
+      "files": {
+        "pdf": "eb81554cad14f26ddcfc267acae20b231b22245c3b6104978668626a9082cae0",
+        "svg": "eab8294e2a90722b87212f679c331dc527fc2fa6f6f6612a80828942b28529bf",
+        "png": "f9fb47a4617a416e3b0a0a4c2fa339749b55a9ef97af90aa5a9ae9565ab0283b",
+        "drawio": "b2668b603c3203e33defac6289b44ddd84d8ecad291ac51267cec979bcf3f7d4"
+      }
+    }
+  ],
+  "generator_sha256": "541f0a68482c57aa511f4c6edd0e1b7a19a671fc45d65796588c7c9f42b67de8",
+  "input_bindings": {
+    "benchmark/AegisKV/experiments/scripts/paper/build_agent_lease_diagrams.py": "541f0a68482c57aa511f4c6edd0e1b7a19a671fc45d65796588c7c9f42b67de8",
+    "benchmark/AegisKV/experiments/scripts/paper/build_paper_story_diagrams.py": "e756520c17f598c9b6fa1d2229bb884f56eabd9866b0a5486b3054ec8be25f28",
+    "output/agent-lease-20260908/ALGORITHM_AUTHORITY.json": "460c74f99e20eea7ca9ba0394d14297efcb2ea854b0da64a06b94809aed01f5a"
+  },
+  "authority": {
+    "threads": [
+      "01a06fb3-0069-74e1-af0f-ef9bcd39310a",
+      "01a079a1-f8f8-7813-b500-1d0b0e911710"
+    ],
+    "algorithm2_latest_final_utc": "2026-09-08T11:00:42.552Z",
+    "files": {
+      "benchmark/AegisKV/docs/drawio/slacklandlord-patent-revised/algorithm-2-admission.drawio": "a591e91bdbbd5d95612901d33d7e5c517fd2d06dcbe1b8aa3255760ec1ed58f0",
+      "benchmark/AegisKV/docs/drawio/slacklandlord-patent-revised/algorithm-2-cache-hit.drawio": "1cb82bb816b07ab3d710a1e02c089a4fffefcb1e2198570dc6dcaf3ddcab9720",
+      "benchmark/AegisKV/docs/drawio/algorithm-3-guarded-aimd/algorithm-3-guarded-aimd.drawio": "f9122c59c70ef0e4f56ae668a8b4fdf70b57117597ef5e50d30ca5263505273c"
+    },
+    "precedence": "Latest two Algorithm 2 decision pages supersede older strict-positive-free-space reference; Algorithm 3 is independent."
+  }
+}

@@ -1,0 +1,11 @@
+--- old/runtime.py
++++ optimized/runtime.py
+@@ -712,7 +712,7 @@
+         self.pressure.clear()
+         self._rebalance()
+         slack = self._slack()
+-        for key, state in self.states.items():
++        for key, state in (self.states.items() if self.retain_detailed_logs else ()):
+             if state.call >= 0 and state.finished is None:
+                 cp = state.checkpoint
+                 self._record(

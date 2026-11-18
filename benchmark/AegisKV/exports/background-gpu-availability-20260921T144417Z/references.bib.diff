@@ -1,0 +1,23 @@
+--- before/references.bib
++++ references.bib
+@@ -459,6 +459,20 @@
+  note = {Project documentation, accessed September 20, 2026}
+ }
+ 
++@inproceedings{shou2025infinitehbd,
++  author = {Shou, Chenchen and Liu, Guyue and Nie, Hao and Meng, Huaiyu
++            and Zhou, Yu and Jiang, Yimin and Lv, Wenqing and Xu, Yelong
++            and Lu, Yuanwei and Chen, Zhang and Yu, Yanbo and Shen, Yichen
++            and Zhu, Yibo and Jiang, Daxin},
++  title = {{InfiniteHBD}: Building Datacenter-Scale High-Bandwidth Domain
++           for {LLM} with Optical Circuit Switching Transceivers},
++  booktitle = {Proceedings of the ACM SIGCOMM 2025 Conference},
++  year = {2025},
++  doi = {10.1145/3718958.3750468},
++  url = {https://arxiv.org/abs/2502.03885},
++  note = {Public fault trace: \url{https://github.com/stepfun-ai/InfiniteHBD-Trace}}
++}
++
+ @misc{lanlFailureData,
+   author = {{Los Alamos National Laboratory}},
+   title = {{USRC} Data Sources: Failure Data},

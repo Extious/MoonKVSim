@@ -1,0 +1,27 @@
+const {chromium} = require('playwright');
+const fs = require('fs');
+const crypto = require('crypto');
+const path = require('path');
+(async () => {
+  const browser = await chromium.launch({headless: true, args: ['--no-sandbox']});
+  const page = await browser.newPage({viewport: {width:1120, height:900}, deviceScaleFactor:1});
+  const root = process.cwd();
+  const out = path.join(root,'tmp/pdfs/paper-story-markdown');
+  fs.mkdirSync(out,{recursive:true});
+  await page.goto('file://'+path.join(root,'output/pdf/aegiskv-paper-story-20260908/paper-story.html'));
+  await page.evaluate(() => document.fonts.ready);
+  const imageCount=await page.locator('img').count();
+  const loaded=await page.locator('img').evaluateAll(xs => xs.every(x=>x.complete&&x.naturalWidth>0));
+  if (imageCount!==33 || !loaded) throw new Error('Image count/load mismatch '+imageCount);
+  await page.screenshot({path:path.join(out,'page-top.png')});
+  const rows=page.locator('table.figpair');
+  for(let i=0;i<await rows.count();i++) await rows.nth(i).screenshot({path:path.join(out,'pair-'+(i+1)+'.png')});
+  const overflow=await page.evaluate(()=>({document:document.documentElement.scrollWidth,viewport:innerWidth}));
+  if(overflow.document>overflow.viewport) throw new Error('Horizontal overflow '+JSON.stringify(overflow));
+  const pairLayout=await rows.evaluateAll(xs=>xs.map(x=>[...x.querySelectorAll('img')].map(im=>{const r=im.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};})));
+  for(const imgs of pairLayout) if(imgs.length!==2 || Math.abs(imgs[0].y-imgs[1].y)>2) throw new Error('Misaligned pair');
+  const sha = relative => crypto.createHash('sha256').update(fs.readFileSync(path.join(root,relative))).digest('hex');
+  fs.writeFileSync(path.join(root,'output/paper-story-20260908/MARKDOWN_LAYOUT.json'),JSON.stringify({status:'RENDERED',source_sha256:sha('benchmark/AegisKV/experiments/Paper_Figures.md'),html_sha256:sha('output/pdf/aegiskv-paper-story-20260908/paper-story.html'),images:imageCount,loaded,pairedRows:pairLayout,overflow,renderer:'Chromium using markdown-it table rendering; not the client-specific Markdown renderer'},null,2)+'\n');
+  console.log(JSON.stringify({images:imageCount,loaded,paired_rows:pairLayout.length,overflow}));
+  await browser.close();
+})().catch(e=>{console.error(e);process.exit(1)});

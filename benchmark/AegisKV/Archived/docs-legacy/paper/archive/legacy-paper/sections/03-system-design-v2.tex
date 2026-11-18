@@ -1,0 +1,186 @@
+% Synchronized from AegisKV/design/current_design.md.
+% current_design.md is the source of truth; update it before editing this file.
+% Source-SHA256: 0fdfd097a536ab73cd9f7eb12099eb6f5b9c068a061da30af57a8e6798caacac
+\section{System Design}
+\label{sec:design}
+
+\subsection{Overview}
+
+\system{} spans the application, serving control plane, and Workers
+(Figure~\ref{fig:system-overview}).  The application alone observes agent
+dependencies and computes Slack.  The Router owns routes and output authority;
+the Aegis Controller incorporates Store Master and owns KV metadata,
+protection decisions, recovery order, and protection budgets.  Workers execute
+inference, independent KV transfers, and recovery under local limits.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/system-overview-submission.drawio.pdf}
+  \caption{\system{} overview.  The application derives causal Slack from the
+  visible residual DAG.  Router and Controller use it for versioned placement,
+  independent per-pool admission, quota control, and recovery order.  The
+  source Worker independently copies sealed KV to route-bound Peer HBM and
+  Store DRAM; each path commits with its own acknowledgement.}
+  \Description{A three-layer architecture diagram.  The application computes
+  causal Slack; the Router and Aegis Controller manage versioned routes,
+  independent HBM and DRAM admission, quota, and recovery; and the source
+  Worker owns separate D2D or P2P and direct D2H copy paths with independent
+  commits before Slack-ordered silent replay.}
+  \label{fig:system-overview}
+\end{figure*}
+
+The KV Directory persists chunk location, route/layout versions, occupancy,
+and commit state.  Pool rent, per-request suffix queues, lazy frontier heaps,
+and AIMD counters are reconstructible.  HBM and DRAM each return admit or
+bypass using their own capacity, rent, recovery benefit, and victim frontier;
+their product yields \textsc{HbmOnly}, \textsc{DramOnly},
+\textsc{HbmAndDram}, or \textsc{Bypass}.  HBM rejection therefore never
+prevents direct DRAM admission.
+
+An HBM admit allocates final slots at the Router-bound target and the source
+initiates D2D/P2P from live producer buffers.  A DRAM admit independently
+allocates Store space and the source initiates direct D2H from the same
+buffers.  Each path has its own \textsc{Pending} record, ACK, validation, and
+terminal state; a failure aborts only that path.  There is no target-owned
+task, HBM-to-DRAM copy, or cross-tier prerequisite.  Slack updates change
+victim metadata but never move KV.
+
+\subsection{Application layer: causal GBDT--CPM Slack}
+\label{sec:application-layer}
+
+At each model or tool completion, the runtime predicts durations on the
+causally revealed residual DAG and runs CPM from the active frontier to the
+next join.  If $ES_i$ and $LS_i$ are branch $i$'s earliest and latest starts,
+\begin{equation}
+ s_i=[LS_i-ES_i]^+.
+ \label{eq:design-slack}
+\end{equation}
+For one fan-out this is
+$[\max_j\widehat T_j-\widehat T_i]^+$.  Active nodes use predicted remaining
+time, visible not-yet-started nodes use predicted full duration, and structural
+nodes have zero weight.  The next request carries $(s_i,t)$; elapsed request
+time decreases it until the next update.  Missing Slack, an incomplete
+residual DAG, or a missing prediction maps to zero.
+
+Algorithm~1 performs observation, one topological and one
+reverse pass, then attaches Slack to active branches.  It never reads future
+output length, completion time, or failure location.  For $N$ visible agent
+nodes, $F$ features, $M$ depth-$d$ trees, and residual graph $(V_t,E_t)$, an
+update costs $O(N(F+Md)+|V_t|+|E_t|)$ time and
+$O(|V_t|+|E_t|)$ state; it runs at boundaries, not per token.  The full
+boundary-update pseudocode is retained in the artifact.
+
+\subsection{Serving control plane}
+\label{sec:control-plane}
+
+\paragraph{Router and failure domains.}
+Each route version binds a source, model revision, KV ABI, parallel layout,
+and compatible Peer-HBM target.  If the target fails first, the Router keeps
+source and output ownership and atomically selects a compatible replacement;
+old-target HBM is neither reassigned nor recoverable, while independently
+committed DRAM remains valid.  If the source fails, the Router advances the
+route version, fences output, and activates a healthy same-layout target.  A
+route without one is marked degraded rather than falsely recoverable.
+
+During rebind, committed HBM is usable only when its original designated
+failure domain is the activated recovery source.  Otherwise old pending HBM is
+aborted and unavailable committed HBM is removed before harm estimation;
+independent DRAM is unaffected.  Recovery freezes the remaining committed
+state and orders ready requests by current Slack.
+
+\paragraph{SlackLandlord chunks and value.}
+Request KV is sealed in token order, by default in 4096-token prefix and
+256-token decode chunks.  Capacity always uses actual bytes $b_c$ derived from
+tokens, model, KV type, and layout.  A sealed chunk contains every required
+TP/PP shard; open tails and \textsc{Pending} chunks have no recovery value.
+Request $i$ maintains separate HBM and DRAM continuous frontiers
+$f_i^H,f_i^D$.  Each pool exposes only its current safe suffix tail per request
+to a global lazy heap; other chunks remain hidden until they become tails.
+
+For pool $r$, committed prefix $S_i^r$, fail-now recovery time $T_i^r$, and
+Slack $s_i(t)$, tier-local harm and candidate credit are
+\begin{align}
+ J_i^r(S_i^r,t)&=[T_i^r(S_i^r)-s_i(t)]^+, \label{eq:recovery-harm}\\
+ A_x&=[J_i^r(S_i^r,t)-J_i^r(S_i^r\mathbin{\oplus}x,t)]^+ .
+ \label{eq:chunk-credit}
+\end{align}
+Candidate $x=(c,r)$ targets either Store DRAM or the already bound HBM Worker.
+Its gain contains only that path's immediate recovery benefit and is normalized
+by $b_c$; neither tier masks the other or charges its future transfer.  For a
+legal suffix-eviction set $Y$, \textsc{Loss}$(Y,t)=D_Y$ is the resulting
+tier-local harm increase.
+
+\paragraph{Pool-local credit and admission.}
+Each pool has cumulative rent $L_r$ and heap $Q_r$.  A committed chunk receives
+\begin{equation}
+ H_c=L_r'+A_x/b_c,\qquad \Theta_x=L_r+A_x/b_c,
+ \label{eq:landlord-credit}
+\end{equation}
+where $\Theta_x$ is the candidate threshold.  Hidden chunks retain their keys.
+A Slack update changes only the exposed tail's metadata; when another tail is
+revealed, its deletion-loss version and key are refreshed.
+
+Algorithm~\ref{alg:slack-landlord} invokes \textsc{TryAdmit} independently for
+the Router-fixed HBM candidate and direct-DRAM candidate.  Within one pool it
+builds $Y$ from stable minimum tails of other requests until enough bytes are
+available.  Admission requires every selected key below $\Theta_x$ and
+$A_x>D_Y$.  Store Master then evicts $Y$, advances rent, reserves final space,
+and creates that path's \textsc{Pending} record.  HBM uses source D2D/P2P and
+DRAM source D2H.  Only all-shard ACK plus route/model/layout validation commits
+the path; failure aborts and frees it without changing the other path.  Pool
+metadata updates are serialized, but different pools and physical copies may
+run concurrently.
+
+\input{algorithms/slack-landlord}
+
+For $R$ active requests, $k=|Y|$ evictions, $u$ stale-key refreshes, and $m$
+shards, Controller time is $O((k+u+1)\log(R+1)+k+m)$; the heap stores $O(R)$
+exposed tails and the Directory $O(C)$ chunk metadata.
+Evicting $Y$ before the new copy commits deliberately creates a protection
+gap; a failure in that interval uses another committed tier or recomputes.
+The algorithm claims neither global optimality nor a new competitive ratio.
+
+\paragraph{Peer-HBM alpha control.}
+Algorithm~3 changes only target $p$'s protection share
+$\alpha_p$ of capacity $M_p$.  HBM pressure $q_p=1$ denotes insufficient
+primary headroom or an allocation/reclaim stall.  With stable counter $z_p$,
+decrease factor $\gamma$, additive step $\delta$, and $K$ stable windows,
+\begin{equation}
+ (\alpha_p',z_p')=
+ \begin{cases}
+ (\max\{\alpha_p^{min},\gamma\alpha_p\},0),&q_p=1,\\
+ (\min\{\alpha_p^{max},\alpha_p+\delta\},0),
+   &q_p=0\land z_p+1\ge K,\\
+ (\alpha_p,z_p+1),&\text{otherwise}.
+ \end{cases}
+ \label{eq:guarded-aimd}
+\end{equation}
+
+If $\alpha_pM_p$ falls below occupancy, the Worker pauses new HBM admissions
+and Store Master uses that HBM pool's two-level victim index to delete
+low-value safe tails until usage fits.  Victims may be \textsc{HbmOnly}; DRAM
+backing is not required.  AIMD does not select chunks, and the Transfer Engine
+only manages copy queues and rates.  One window costs $O(P)$ time and state for
+$P$ targets.  Failure rate is not an AIMD input: load-driven pressure controls
+alpha, while failures change realized protection value.  The artifact retains
+the complete controller pseudocode.
+
+\subsection{Worker, recovery, and scope}
+\label{sec:worker-layer}
+\label{sec:end-to-end}
+
+Workers enforce $\alpha_pM_p$ independently of primary allocation, and Peer
+shadows cannot become normal cache hits.  On source failure, the Router fences
+output; Recovery Executor adopts only complete, version-compatible contiguous
+HBM or DRAM prefixes, recomputes uncovered suffixes, and silently replays to
+the last accepted output position.  All ranks finish before output authority
+resumes, preventing partial adoption and duplicate tokens.
+
+The first design handles one process, GPU, or host fail-stop at a time while
+the application, Router, persistent Directory, network, and a compatible
+Worker survive.  Same-layout DP recovery is direct; PP requires all stages and
+TP all ranks, while unsupported layouts fail closed.  GBDT, CPM, Landlord, and
+AIMD are building blocks.  The contribution is their coupling through one
+request-level Slack and fail-now model: independent tier credits before
+failure, due-time ordering after failure, and a separately enforced
+pressure-only HBM envelope.

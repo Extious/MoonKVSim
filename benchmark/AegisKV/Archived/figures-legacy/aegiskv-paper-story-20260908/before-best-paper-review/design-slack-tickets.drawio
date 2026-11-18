@@ -1,0 +1,47 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" version="31.1.5">
+  <diagram id="design-slack-tickets" name="design-slack-tickets">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageWidth="1200" pageHeight="345" background="#FFFFFF" math="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="canvas" value="" style="rounded=0;strokeWidth=1.7;strokeColor=#FFFFFF;fillColor=#FFFFFF;fontFamily=Cantarell;fontSize=26;fontColor=#FFFFFF;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="0" y="0" width="1200" height="345" />
+        </mxCell>
+        <mxCell id="input" value="Observed residual DAG&#10;Remaining-time estimates&#10;Active + known future" style="rounded=0;strokeWidth=1.7;strokeColor=#007D60;fillColor=#F2F8F5;fontFamily=Cantarell;fontSize=26;fontColor=#007D60;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="0" y="0" width="350" height="160" />
+        </mxCell>
+        <mxCell id="cpm" value="Forward / backward CPM&#10;Slack = max(LS − ES − m, 0)&#10;Structural nodes cost zero" style="rounded=0;strokeWidth=1.7;strokeColor=#007D60;fillColor=#F2F8F5;fontFamily=Cantarell;fontSize=26;fontColor=#007D60;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="425" y="0" width="350" height="160" />
+        </mxCell>
+        <mxCell id="ticket" value="Versioned Slack ticket&#10;Consumer + DAG version&#10;Issue time + expiry" style="rounded=0;strokeWidth=1.7;strokeColor=#7952A2;fillColor=#F6F3FA;fontFamily=Cantarell;fontSize=26;fontColor=#7952A2;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="850" y="0" width="350" height="160" />
+        </mxCell>
+        <mxCell id="cost-to-cpm" edge="1" parent="1" source="input" target="cpm" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeWidth=2.6;strokeColor=#007D60;endArrow=block;endFill=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;exitPerimeter=1;entryPerimeter=1;jettySize=10;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="cpm-to-ticket" edge="1" parent="1" source="cpm" target="ticket" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeWidth=2.6;strokeColor=#007D60;endArrow=block;endFill=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;exitPerimeter=1;entryPerimeter=1;jettySize=10;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="invalidate" value="Unknown structure, missing estimates, or stale version&#10;Affected consumers use Slack = 0" style="rounded=0;strokeWidth=1.7;strokeColor=#B83C46;fillColor=#FCF1F2;fontFamily=Cantarell;fontSize=26;fontColor=#B83C46;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="190" y="243" width="820" height="92" />
+        </mxCell>
+        <mxCell id="invalid" edge="1" parent="1" source="input" target="invalidate" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeWidth=2.6;strokeColor=#B83C46;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.2;entryY=0;exitPerimeter=1;entryPerimeter=1;jettySize=10;dashed=1;dashPattern=5 4;">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="175" y="206" />
+              <mxPoint x="354" y="206" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fallback-ticket" edge="1" parent="1" source="invalidate" target="ticket" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeWidth=2.6;strokeColor=#B83C46;endArrow=block;endFill=1;exitX=1;exitY=0.5;entryX=0.5;entryY=1;exitPerimeter=1;entryPerimeter=1;jettySize=10;dashed=1;dashPattern=5 4;">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="1025" y="289" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

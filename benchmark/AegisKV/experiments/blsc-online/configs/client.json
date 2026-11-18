@@ -1,0 +1,10 @@
+{
+  "schema": "aegiskv.online.client.v1",
+  "trace": "benchmark/AegisKV/experiments/native-sparse/20260921-concentration-nosa8b/capture-153951/traces/pg19-10146-M32192-N512",
+  "model": "NOSA-8B",
+  "document": "pg19-10146",
+  "workflows": 16,
+  "prompt_tokens": 1024,
+  "output_tokens": 32,
+  "arrival_gap_ns": 80000000
+}

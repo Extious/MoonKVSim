@@ -1,0 +1,125 @@
+\section{Background and Motivation}
+\label{sec:background}
+
+\subsection{Failures expose accumulated agent state}
+
+An agentic application is a DAG of model and tool calls whose later requests
+consume an accumulated transcript.  Prefix caching can reuse prior KV, but a
+tool return still begins another admission, prefill, and decode lifecycle
+~\cite{abhyankar2024infercept}.  A worker failure discards this execution
+state: a compatible committed prefix avoids prefill, while every absent suffix
+must be recomputed.  Protection consumes HBM, Store capacity, and copy
+bandwidth needed by healthy traffic, so copying every live byte is not free.
+
+Generated KV is immutable for a fixed model and token sequence.  The runtime
+therefore seals contiguous token chunks; only a complete prefix is useful for
+recovery.  Decisions are online because future chunks and final output length
+are unknown.  Real service cost includes setup, link contention, adoption, and
+silent replay rather than peak bandwidth alone.  The current simulator absorbs
+network effects into preregistered effective path caps and does not execute a
+shared-NIC queue.  These facts make recovery value a property of both the
+workflow and the feasible committed prefix, not of an isolated KV page.
+
+\subsection{Slack determines workflow-visible harm}
+
+The intended user-visible unit is workflow completion time
+$\mathrm{WCT}_w=C_w-A_w$.  A physical end-to-end evaluation would compare
+failure and matched no-failure executions,
+\begin{equation}
+ \Delta\mathrm{WCT}_w=
+ [\mathrm{WCT}^{\mathrm{fail}}_w-\mathrm{WCT}^{\mathrm{nf}}_w]^+,
+ \label{eq:motivation-delta-wct}
+\end{equation}
+so a policy could not improve apparent recovery by changing the healthy
+schedule.  Our simulated study does not execute this propagation.  It instead
+uses the explicitly named causal-Slack harm surrogate in
+Section~\ref{sec:evaluation}.  A request matters only through delay propagated
+to the terminal: one branch can block a fan-in while another absorbs the same
+pause.
+
+Figure~\ref{fig:real-cc-parallel} quantifies this opportunity in the public
+Real CC/Weka trace~\cite{semianalysis2026cctraces}.  We define a parser fan-out as a maximal
+consecutive run of at least two top-level subagent records whose recorded
+intervals share a nonempty overlap.  Among 393 workflows, 124 contain 292 such
+fan-outs and 944 branch executions.  For fan-out $g$, let
+$R_g=\max_{a\in g}d_a-\min_{a\in g}d_a$; taking one maximum $R_w$ per workflow
+avoids overweighting workflows with many fan-outs.  Median $R_w$ is 140.611~s
+and its 90th percentile is 1570.290~s.  This is trace structure, not evidence
+that any protection policy improves end-to-end completion.  Section~
+\ref{sec:evaluation} tests only the preregistered harm surrogate in simulation.
+
+Panels~(b,c) retain the previously analyzed workflow 8ab0a089\ldots: its five
+branches last 110.3, 116.7, 78.9, 117.9, and 107.1~s, a 39.0~s gap.  At the
+common active time $t_f=349.5$~s, panel~(c) combines the trace's real 65--112K
+input prefixes and observed fan-in Slack with a Qwen3-235B-A22B
+TP8$\times$PP4$\times$EP8 AIConfigurator recomputation model.  The resulting
+exposed-delay estimates are 0, 17.2, 0, 35.9, and 21.4~s.  This panel is a
+trace-plus-configuration counterfactual, not a paired failure run, simulator
+outcome, or physical measurement.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/motivation-real-cc-three-panel-submission.pdf}
+  \caption{Parallel execution and failure-position sensitivity in the Real CC
+  trace.  Panel~(a) reports the CDF of each eligible workflow's largest
+  within-fan-out slowest-minus-fastest duration gap.  Panel~(b) reconstructs a
+  selected five-way fan-out with a 39.0~s gap.  Panel~(c) subtracts observed
+  fan-in Slack from configuration-predicted prefix-recomputation time for all
+  five branches at $t_f=349.5$~s.  Panels~(a,b) are trace observations;
+  panel~(c) is a trace-plus-AIConfigurator counterfactual, not an end-to-end
+  measurement.}
+  \Description{Three panels show a Real CC workflow-level duration-gap CDF, a
+  five-way fan-out with a 39-second branch-duration gap, and estimated exposed
+  fan-in delay for failures on each of the five branches.}
+  \label{fig:real-cc-parallel}
+\end{figure*}
+
+At a model or tool completion, Algorithm~1 observes the currently visible
+residual DAG, predicts remaining node durations, and runs CPM to the next
+mandatory join.  For a single fan-out, branch $r$ receives
+\begin{equation}
+ s_r(t)=\left[\max_{j\ne r}\widehat T_j(t)-\widehat T_r(t)\right]_+.
+ \label{eq:slack}
+\end{equation}
+The next request carries this Slack as metadata.  Elapsed request time reduces
+it until the next application update replaces the estimate.  Unknown future
+branches are never read, and missing causal input maps to zero Slack.
+Prediction error can alter priority but cannot create capacity or make a
+partial chunk recoverable.
+
+For request $i$, let $T_i$ be fail-now recovery time from the currently
+committed state and $s_i$ its remaining Slack.  Its workflow-exposed harm is
+$J_i=[T_i-s_i]^+$.  The value of a candidate chunk is the decrease in $J_i$,
+normalized by its actual bytes.  This single quantity connects application
+dependencies to two serving decisions: which KV deserves protection before a
+failure, and which ready request should recover first afterward.
+
+\subsection{Why existing signals are insufficient}
+
+PagedAttention and SGLang manage pages and reusable prefixes
+~\cite{kwon2023vllm,zheng2024sglang}; Mooncake, HiCache, SYMPHONY, Strata, and
+Bidaw provide hierarchical or disaggregated KV movement
+~\cite{qin2025mooncake,xie2025hicache,agarwal2026symphony,
+xie2026strata,hu2026bidaw}.  Agent-aware systems expose graph, reuse, and load
+signals~\cite{lin2024parrot,pan2025kvflow,yu2026pythia,luo2026agentix,
+bian2026tokencake,li2026continuum,zheng2026pbkv,bian2026tokendance}.
+Fault-tolerant systems stream, checkpoint, or reconstruct serving state
+~\cite{strati2024dejavu,jayakody2026ghostserve,xu2026raidserve,
+qian2026kevlarflow,cao2026lumen,gan2026concordia}.  These mechanisms supply
+valuable substrates, but local size, tier, recency, reuse, and load do not by
+themselves reveal how a fail-stop pause propagates through the current
+workflow.  Classic real-time work also uses Slack for checkpoint and recovery
+scheduling~\cite{melhem2004interplay,acharya2008dynamic}; our claim is not
+Slack itself, but its realization as one dynamic KV value used on both sides
+of a serving failure.
+
+\subsection{Requirements and scope}
+
+The design must therefore: (1) compute Slack only from causally visible work;
+(2) value and commit complete contiguous chunks; (3) make HBM and DRAM
+admission independent; (4) isolate protection from foreground capacity; and
+(5) use the same current Slack for recovery order.  We consider one declared
+fail-stop serving domain at a time.  The application, Router, failure-isolated
+output log, persistent KV Directory, network, and one same-layout target
+survive.  Missing or incompatible state is recomputed.  The Router selects the
+target; the placement policy never changes model or parallel layout.

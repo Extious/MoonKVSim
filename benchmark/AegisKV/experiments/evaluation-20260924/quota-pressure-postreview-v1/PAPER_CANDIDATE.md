@@ -1,0 +1,7 @@
+# Candidate Evaluation paragraph
+
+NOT APPLIED. 165 whitespace-delimited words; all numbers bound by INDEPENDENT_ACCOUNTING_AUDIT.json.
+
+We evaluate a post-hoc small-pool O3 diagnostic using the original four-workflow input and frozen online walltime predictor, role priors, and guard. The allocatable pool equals the maximum declared foreground allocation, including metadata, plus the 2 GiB reserve and a 0/32/128 MiB margin; every invocation fits. Seventy-two runs cross DMA factors 0/0.005 and F0/F1 with Restart, DRAM, fixed 32/128/4096 MiB targets, and adaptive quotas. Unlike the earlier downward-clamped static variant, fixed targets regrow each control window within the live ceiling. Pressure occurs in 12/36 F0 runs and no F1 runs, without capacity-denied admissions. At 32 MiB margin, adaptive quotas decrease from 32 to 24 MiB; pressure nevertheless occurs after the target workflow finishes. Adaptive and fixed 128/4096 MiB have identical workflow endpoints, improving target delta-WCT over DRAM by 1.444 ms. All protected variants add 28.840 ms mean healthy WCT at DMA=0.005. These null differences neither attribute recovery gains to AIMD nor establish recovery under pressure. This constructed boundary does not demonstrate production 80 GB capacity pressure.
+
+Evidence: audited-bindings.csv, audited-endpoints.csv, MECHANISM_ENDPOINTS.json, and all 24 adaptive/fixed endpoint comparisons in the independent audit. The 1.444 ms is the rounded 1.443871 ms paired target improvement; 28.840 ms is rounded from 28.8397755 ms. The paper has not been edited.

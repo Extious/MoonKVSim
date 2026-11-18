@@ -1,0 +1,380 @@
+\section{System Design}
+\label{sec:design}
+
+\system turns the three observations into three decisions: which Agents
+receive a recoverable checkpoint (O1), which regions of their KV state
+receive fast replicas (O2), and how much HBM those replicas may occupy
+(O3). The objective is to reduce workflow completion time after a worker
+failure while bounding the memory and transfer resources consumed by
+protection during normal execution.
+
+\subsection{Overview and Recovery State}
+\label{sec:teacher-overview}
+
+The design operates on DAGs of LLM invocations and their accepted token
+histories. It uses two managed memory tiers. Fault-safe DRAM retains a
+complete checkpoint for each admitted Agent; a compatible takeover worker
+keeps selected replicas of that checkpoint in Peer HBM. DRAM provides
+recovery coverage, while Peer HBM removes selected restoration stalls.
+An Agent without an admitted checkpoint can still recover by prefilling
+its retained input and accepted output tokens.
+
+Figure~\ref{fig:teacher-overview} shows how the components cooperate.
+The workflow runtime supplies invocation dependencies and progress.
+The \emph{Workflow Tracker} estimates remaining work and slack.
+The \emph{Recovery-aware Router} dispatches requests using load and prefix
+locality and identifies compatible takeover workers outside the source
+failure domain. The \emph{KV Master} selects DRAM checkpoints and Peer
+regions using the current workflow and recovery profiles. A per-worker
+\emph{Adapter} publishes a safe Peer budget; rank-local \emph{Connectors}
+execute Master's copies and report their completion. KV bytes move
+between memory resources, while these components exchange metadata.
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/teacher-system-overview.pdf}
+ \caption{Two-tier protection organized around O1--O3. Each worker is a
+ DP replica with two TP ranks. DRAM checkpoints contain all layers and
+ shards; Peer regions are additional copies on corresponding ranks of a
+ compatible takeover worker. DRAM and accepted histories survive the
+ protected source failure. Blue paths carry KV; dashed paths carry
+ progress, plans, completion status, or capacity feedback.}
+ \label{fig:teacher-overview}
+ \Description{Application, Controller, and Engine bands. Tracker feeds
+ workflow estimates to KV Master; Router selects execution and takeover
+ workers. Master exchanges plans and status with Connectors, while
+ Adapter reports a Peer quota. Two workers have distinct TP0 and TP1
+ execution and Peer pools, with rank-matched Peer copy paths and a
+ complete fault-safe DRAM checkpoint service outside their boundaries.}
+\end{figure}
+
+For an Agent $a$, let $T_a$ be the length of its accepted token history
+and $M_a\le T_a$ the latest complete checkpoint frontier. Recovery restores
+the prefix through $M_a$ and replays the accepted tail
+$N_a=T_a-M_a$. A checkpoint contains every required layer, TP shard,
+and attention auxiliary object for that prefix. Model revision, numerical
+format, positional metadata, KV layout, and prefix identity must match
+before any object can be reused. This extends checkpoint-and-replay
+recovery~\cite{strati2024dejavu,cao2026lumen} with selective fast residency.
+
+Let $D_a$ denote the DRAM objects for this complete checkpoint, and let
+$H_a$ be the logical regions additionally copied into Peer HBM. The
+invariant is $H_a\subseteq D_a$: a Peer copy never replaces its DRAM
+backing. Execution KV belongs to the serving engine and is accounted
+separately. Physical DRAM objects shared by compatible prefixes are
+charged once, but every additional Peer, staging, or in-flight copy
+consumes capacity. The advertised DRAM service, token history, and
+takeover worker must remain reachable after the protected source failure;
+DRAM on the same host does not provide host-failure protection.
+
+\subsection{O1: Workflow-aware Agent Protection}
+\label{sec:teacher-agent-protection}
+
+O1 requires the system to value a checkpoint by the workflow delay it
+avoids. Tracker first constructs the visible residual invocation DAG.
+Completed nodes contribute no remaining work, and already running nodes
+contribute only their unfinished execution. An Agent may issue several
+invocations; dependency edges connect those calls to the rest of the
+workflow. The current snapshot does not invent unseen future branches.
+
+\paragraph{Estimating urgency.}
+A GBDT estimates each invocation's remaining duration from information
+available at the snapshot: model and Agent role, current input length,
+decoded-token progress, elapsed execution, and lengths and timings of
+completed calls. Training and calibration separate whole workflows;
+future outputs are never input features. Forward and backward
+critical-path passes~\cite{kelley1959cpm} compute earliest and latest
+finishes, $EF_v$ and $LF_v$. Tracker publishes guarded slack
+\begin{equation}
+ s_v=\max\{0,LF_v-EF_v-g_v\},
+ \label{eq:teacher-slack}
+\end{equation}
+where $g_v$ is a calibrated upper quantile of positive slack
+overestimation. Requests on the same residual path consume a shared
+margin; slack is not a separate allowance that can be spent repeatedly
+at every invocation. These estimates are advisory. Invalid or stale
+inputs grant no positive slack, and unsupported DAGs use the fallback
+priority described below. Slack guides urgency and queue tie-breaking;
+the joint workflow calculation determines the final replacement.
+
+\paragraph{Valuing a common failure.}
+For a placement $P$, a failure of source worker $f$ interrupts the entire
+set of invocations assigned to that worker. Router fixes compatible
+takeover targets for a planning snapshot. A recovery profiler schedules
+reconstruction or restoration and accepted-tail replay as prerequisite
+tasks of each interrupted invocation; only its remaining normal work
+follows them. If a later visible invocation needs history lost with the
+worker, its restoration is likewise scheduled before that invocation.
+The schedule includes concurrent recoveries, target
+admission, and actual shared transfer links. Streams
+contend only when they share a resource; the model does not impose a
+single global recovery queue. The same ready-time queue rule, with
+guarded slack and request ID breaking ties, is used for every candidate.
+
+Let $F_w^f(P)$ be the predicted completion time of workflow $w$ under
+this resource schedule and its residual DAG, and $F_w^0$ its finish
+without the failure in the same snapshot. Surviving requests delayed by
+shared recovery resources are included. Master compares
+\begin{equation}
+ J(P)=\sum_f \pi_f\sum_w\bigl(F_w^f(P)-F_w^0\bigr),
+ \label{eq:teacher-objective}
+\end{equation}
+where $\pi_f$ are fixed, normalized source-failure weights for the
+comparison; equal weights are the default. They are not measured fault
+probabilities. Each candidate uses the same workload snapshot, queue
+policy, and failure weights. At a join, finish time is determined by the
+maximum predecessor finish, so this calculation preserves O1's
+non-additive effect instead of summing isolated slack penalties.
+
+\paragraph{Admitting complete checkpoints.}
+DRAM admission chooses among complete sealed frontiers for each Agent,
+including the no-checkpoint option $M_a=0$. A candidate can admit a new
+checkpoint, advance an existing frontier, or retire a checkpoint whose
+capacity is more valuable elsewhere. A retiring checkpoint first loses
+its Peer replicas; its token history remains available for recomputation.
+For shared physical objects, a victim releases bytes only after the last
+retained manifest stops referencing them.
+
+Master evaluates single-Agent changes and small joint changes. In
+particular, it follows the currently limiting paths into each exposed
+join and offers one bundle containing the available checkpoint upgrades
+for all affected co-bottleneck Agents. For example, if either of two
+branches remains 10\,s late unless both are protected, their two-Agent
+bundle can advance the join even when each singleton has zero value.
+This is a candidate-generation rule, not an assumption that benefits
+become additive. Bounded search can still miss other combinations.
+
+When DRAM is full, a candidate includes its victims. Master tentatively
+removes the eligible checkpoint with the smallest recomputed increase
+in $J$ per released physical byte, repeating until the entire candidate
+fits. It then compares the whole replacement with the current plan.
+An optional change requires $J(P)-J(P')>\epsilon$, a configured
+hysteresis margin, and feasible copy and memory reservations. Ties keep
+the existing placement. Per-round work and transfer-byte limits bound
+decision overhead and churn. If no candidate fits, the previous
+checkpoint remains, or the Agent uses recomputation. The admission
+decision never advertises a partially copied checkpoint as complete.
+
+If Tracker cannot supply a valid residual DAG or timing profile, Master
+uses profiled request-recovery time saved per byte and deterministic
+ties. It retains the same capacity and commit rules, but makes no
+workflow-priority claim for this fallback. Invocation-level labels and
+held-out calibration are required before positive slack can guide
+protection.
+
+\subsection{O2: Selecting KV Regions by Exposed Recovery Delay}
+\label{sec:teacher-region-selection}
+
+For an Agent admitted to DRAM, O2 asks which parts of its checkpoint are
+worth an additional Peer copy. A managed region identifies a layer and
+a historical token block together with its required TP objects. Peer
+placement maps each shard to the corresponding rank of the takeover
+worker; budgets are checked per rank. Auxiliary state needed to execute
+the native selector or attention kernel is tracked as a dependency,
+rather than assumed to be free.
+
+\paragraph{Causal demand candidates.}
+The engine reports native attention selections over a recent completed
+window. For region $b$ in layer $\ell$, Master estimates
+\begin{equation}
+ \widehat p_{a,\ell,b}=
+ \frac{\text{eligible selection units that selected }b}
+      {\text{selection units for which }b\text{ was visible}}.
+ \label{eq:teacher-demand}
+\end{equation}
+The selection unit follows the model's native rule, rather than a
+kernel tile chosen for execution. Head duplicates count once within a
+unit; causal visibility is determined before sparse pruning. Small
+denominators use a calibrated layer prior. For dense attention,
+comparable visible historical blocks have access factor one.
+Historical frequency supplies a candidate ordering, not a guarantee
+about replay demand or the benefit of a Peer copy.
+
+Master considers individual regions and progressively larger hot sets
+within a layer. Mandatory state accompanies every candidate that needs
+it. Recent consecutive selection windows provide demand scenarios for
+profiling; keeping them together preserves correlated accesses and
+native reveal order. Both the window and the profiling budget are fixed
+configuration parameters. Missing or invalid sparse statistics use
+full-layer transfers as a conservative fallback. Protection never
+changes the model's native attention selections.
+
+\paragraph{Accounting for overlap.}
+The recovery profile executes the accepted tail against the saved
+prefix. It models transport from DRAM, bounded prefetch buffers, native
+demand misses, and layer computation on the same timeline. Prefetches
+can start early; a miss cannot be requested before its native selection
+reveals the demand. Let $q_\ell$ be the time layer $\ell$ is ready to
+consume historical KV, including query and selector preparation, and
+let $a_\ell(H_a)$ be the last required arrival under Peer set $H_a$.
+With remaining layer compute time $c_\ell$, the profiler uses
+\begin{equation}
+ \begin{aligned}
+ e_\ell(H_a)&=[a_\ell(H_a)-q_\ell]^+,\\
+ f_\ell(H_a)&=q_\ell+e_\ell(H_a)+c_\ell.
+ \end{aligned}
+ \label{eq:teacher-overlap}
+\end{equation}
+Later readiness depends on earlier finishes. Transfer completion times
+also depend on link sharing and the finite prefetch schedule, so a
+candidate must rerun the affected timeline. The opportunity to hide
+transfer comes from remaining replay computation, not computation
+already finished before the failure.
+
+For each candidate hot set, this profile produces a new recovery delay,
+which is inserted into Equation~\ref{eq:teacher-objective}. A frequently
+used block can have zero marginal benefit when its read is already
+hidden. Conversely, removing an exposed early-layer read can advance
+several later layers. Master chooses the feasible candidate with the
+largest positive reduction in $J$ per additional Peer byte, recomputes
+after each tentative change, and stops at the budget or work limit.
+Layer bundles and the co-bottleneck bundles from O1 allow jointly useful
+changes to be considered. This bounded heuristic claims neither
+globally optimal placement nor a universally optimal layer depth.
+
+Peer replacement evaluates its victims in the same comparison. If one
+rank cannot accommodate the required shards, the candidate waits rather
+than counting an incomplete cross-rank acceleration. A common snapshot
+fixes sampled demand windows across candidate evaluations. Prediction
+error can increase waiting, but every demand miss remains recoverable
+from the complete DRAM checkpoint.
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/teacher-selective-recovery.pdf}
+ \caption{Complete DRAM coverage and selective Peer acceleration.
+ The illustrative checkpoint has three layers and four historical
+ blocks; every cell represents its required TP shards. Peer holds
+ additional copies of L1/B0, L1/B2, and L2/B1. When L1 needs B0, B1,
+ and B2, the two Peer hits combine with B1 fetched from DRAM.
+ The accepted tail is replayed. Peer eviction discards only a replica
+ after readers drain; it neither removes DRAM coverage nor requires
+ writing the checkpoint back. This is a state diagram, not a timing result.}
+ \label{fig:teacher-selective-recovery}
+ \Description{A complete three-by-four DRAM grid and a separate Peer
+ grid containing three highlighted replicas. An uncommitted tail is
+ outside both checkpoint grids. Recovery consumes resident B0/B2 and a
+ DRAM fetch of B1, then replays accepted tail tokens.}
+\end{figure}
+
+\subsection{O3: Adapting the Peer HBM Budget}
+\label{sec:teacher-capacity}
+
+O3 separates content selection from capacity authorization. Master
+chooses which regions occupy Peer; Adapter determines how much Peer
+memory foreground execution can safely support. For takeover rank $k$,
+let $B^{\rm pool}_k$ exclude weights and fixed allocations,
+$B^{\rm serve}_k$ cover the serving high watermark and admitted execution
+reservations, and $B^{\rm reserve}_k$ reserve growth and workspace.
+The physical ceiling is
+\begin{equation}
+ C_k=\max\{0,\min(B^{\rm cap}_k,
+ B^{\rm pool}_k-B^{\rm serve}_k-B^{\rm reserve}_k)\}.
+ \label{eq:teacher-ceiling}
+\end{equation}
+Peer occupancy is not included in $B^{\rm serve}_k$ and is not subtracted
+twice. Every committed, reserved, copying, and retiring Peer byte counts
+against physical use. Distinct TP ranks have distinct ceilings.
+
+Adapter uses additive increase and multiplicative
+decrease~\cite{chiu1989aimd}. On allocation stalls, reserve violations,
+or memory-related admission waits, it multiplies the current quota
+$B_k$ by $0<\gamma<1$ and clips it to $C_k$. After $m$ consecutive
+stable windows below a lower wait threshold, it adds $\Delta$ bytes
+only if Master reports a beneficial candidate deferred for capacity.
+This demand signal is recorded before quota filtering, so a zero quota
+does not prevent later growth. Every update is page-aligned and clipped
+to the current ceiling; missing telemetry disables growth. The gap
+between pressure and stable thresholds suppresses rapid oscillation.
+
+When the budget shrinks, Master stops new Peer admissions and retires
+the eligible replicas with the smallest recomputed workflow penalty
+per byte until occupancy fits the new target. Mandatory shrink does
+not require a positive improvement in $J$. The complete DRAM backing
+makes this a discard operation, with no additional checkpoint offload.
+Reader and copy leases still delay physical release. Foreground
+admission uses actual occupancy and reservations; it cannot spend
+memory merely because a lower quota was published. Under immediate
+pressure, pending Peer copies can be cancelled and new foreground
+allocations wait until enough physical space is available.
+
+\subsection{Online Checkpointing and Recovery}
+\label{sec:teacher-execution}
+
+The decisions above run at request arrival and completion, DAG/progress
+updates, memory-pressure events, and a fixed block-aligned checkpoint
+interval $Z$. Prefill offers sealed prefix blocks; decode offers new
+sealed state every $Z$ accepted tokens and at final request completion.
+The interval controls review frequency, not the guaranteed replay tail:
+copy lag can leave $N_a>Z$. Only completed native observations update
+the next planning snapshot.
+
+Algorithm~\ref{alg:teacher-protection} summarizes the common event loop.
+\textsc{Candidates} produces the single-Agent, layer, and co-bottleneck
+changes described above. \textsc{FitWithVictims} adds any required
+retirements and recomputes their joint cost; its reservations include
+both old and new versions during copying. Benefit-per-byte ranking is
+used within one memory pool, not to treat a DRAM byte and a Peer byte
+as interchangeable. A bounded pass over DRAM precedes Peer selection;
+later events reconsider the resulting placement. \textsc{ReserveIfCurrent}
+checks graph, manifest, and quota versions as well as transient memory
+and copy limits. A stale or infeasible plan is requeued without publishing
+its proposed state.
+
+\par\medskip\noindent\begin{minipage}{\columnwidth}
+\raggedright
+\refstepcounter{designalgorithm}\label{alg:teacher-protection}
+\textbf{Algorithm \thedesignalgorithm: Observation-driven protection}
+\par\smallskip
+\begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
+\toprule
+1 & \textsc{ReconcileCopies}$(e)$; snapshot progress and budgets \\
+2 & $P\gets$ current committed placement \\
+3 & Retire expired state; apply mandatory Peer shrink \\
+4 & \textbf{for} pool $j\in[\mathrm{DRAM},\mathrm{Peer}]$ \textbf{do} \\
+5 & \quad $Q\gets\textsc{Candidates}(j,P)$ \\
+6 & \quad \textbf{while} work budget remains \textbf{do} \\
+7 & \qquad For each examined $c\in Q$, form \\
+8 & \qquad $P_c\gets\textsc{FitWithVictims}(P,c,j)$ \\
+9 & \qquad Recompute $J(P)-J(P_c)$ on one snapshot \\
+10 & \qquad $P^*\gets$ best feasible gain/byte candidate \\
+11 & \qquad \textbf{if} none exceeds $\epsilon$ \textbf{then break} \\
+12 & \qquad $P\gets P^*$; refresh affected candidates \\
+13 & \textbf{if not} \textsc{ReserveIfCurrent}$(P)$ \textbf{then} \\
+14 & \quad \textsc{Requeue}$(e)$; \textbf{return} \\
+15 & Submit DRAM commits, then dependent Peer copies \\
+16 & Copy completion or cancellation emits a new event \\
+\bottomrule
+\end{tabularx}
+\end{minipage}\par\medskip
+
+\paragraph{Publishing a checkpoint.}
+Connector copies immutable sealed objects to the advertised DRAM
+domain. Master advances $M_a$ only after every required layer, TP shard,
+and auxiliary object is confirmed, then atomically publishes the new
+manifest. Old objects remain charged until their references and readers
+drain. Peer installation starts from a committed manifest, and the
+directory publishes a hit only after the corresponding target copy
+finishes. Source failure during an incomplete update leaves the prior
+committed frontier usable. If temporary space is insufficient, the
+update is deferred rather than releasing the old checkpoint early.
+
+\paragraph{Resuming an interrupted invocation.}
+On confirmed failure, Router fences the old execution epoch and
+activates a compatible surviving target. Connector acquires a lease on
+the latest complete DRAM manifest, consumes valid Peer hits, and fetches
+missing regions under the bounded transfer schedule. It replays the
+accepted tail using the exact recorded token sequence and resumes
+generation without emitting accepted tokens twice. If the preferred
+target is unavailable, another compatible target restores from DRAM;
+Peer residency on the old target is not counted as a local hit.
+
+Checkpoint retirement stops new readers and invalidates dependent Peer
+replicas before releasing DRAM. Existing recovery leases keep their
+objects alive. If no valid checkpoint remains, the surviving input and
+token log define the explicit full-prefill fallback. Thus priority and
+demand estimates affect recovery time, while complete manifests,
+version matching, and reader lifetimes determine which state can safely
+be consumed. The mechanisms are a design specification; integrated
+fault-injection measurements are still required to establish WCT gains,
+prediction quality, and normal-service overhead.

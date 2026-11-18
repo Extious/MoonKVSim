@@ -1,0 +1,11 @@
+\paragraph{Scope and validation.}
+\label{sec:design-discussion}
+Sparse integration requires observable indices, recoverable selector
+state, and every required attention branch; token selectors must map
+to physical copy blocks. Poor rankings can fall back to full-layer
+loading; dense attention has $h=\widetilde u=1$. Standalone requests
+use zero slack. Prefill failures require calibration for the lost chunk,
+not a fixed 64-token decode tail. Agent-workload slack accuracy, profile
+drift, simultaneous retries, and foreground interference remain to be
+validated end to end; the trace study and analytical pipeline do not
+establish those properties.

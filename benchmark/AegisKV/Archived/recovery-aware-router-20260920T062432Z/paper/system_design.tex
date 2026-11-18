@@ -1,0 +1,716 @@
+\section{AegisKV Design}
+\label{sec:design}
+
+AegisKV combines workflow delay tolerance with each request's KV
+recovery demand. The Tracker estimates slack; the Recovery Manager binds
+takeover destinations at arrival; the KV Master chooses backup tiers,
+per-request layer depths, and hot blocks at backup-policy events.
+The checkpoint interval is configured, while Adapters update target-local
+Peer budgets at window boundaries. The following design
+separates these decisions from the evidence that motivates them.
+
+\subsection{Design Insights}
+\label{sec:design-insights}
+
+Three premises motivate the design (Figure~\ref{fig:design-insights}).
+The first draws on published agent-prediction results; the other two
+characterize selected sparse-attention releases and recovery demand.
+
+\begin{figure*}[t]
+  \centering
+  \captionsetup[subfigure]{font=normalsize,labelfont=normalfont,
+    textfont=normalfont,justification=centering,singlelinecheck=false,skip=3pt}
+  \begin{subfigure}[t]{0.32\textwidth}
+    \vspace{0pt}
+    \includegraphics[width=\linewidth]{figures/agent-prediction.pdf}
+    \caption{Agent trajectory prediction}
+    \label{fig:insight-agent-time}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.32\textwidth}
+    \vspace{0pt}
+    \includegraphics[width=\linewidth]{figures/sparse-models.pdf}
+    \caption{Selected sparse releases}
+    \label{fig:insight-sparse-adoption}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.32\textwidth}
+    \vspace{0pt}
+    \includegraphics[width=\linewidth]{figures/retry-kv-prediction.pdf}
+    \caption{Retry KV prediction}
+    \label{fig:insight-retry-kv}
+  \end{subfigure}
+  \caption{Design evidence. (a) Adapted from Heddle~\cite{zhang2026heddle},
+    Figure 13: Pearson correlation of predicted and actual remaining
+    trajectory length after one and two agent steps, with Qwen3-14B.
+    Values are extracted from the published vector figure; these are
+    literature results, not AegisKV runtime-error measurements.
+    (b) Selected releases and
+    native context: 1 MiniCPM4, 2 MiniCPM4.1, 3 DeepSeek-V3.2-Exp,
+    4 DeepSeek-V3.2, 5 GLM-5, 6 MiniCPM-SALA, 7 DeepSeek-V4 preview,
+    8 MiniMax-M3, 9 GLM-5.2, 10 LongCat-Flash-Lite-Sparse.
+    Dates follow announcements/model cards. Gray steps trace the sample
+    maximum; markers denote top-$k$ units in sparse branches.
+    (c) Three native PG19 captures/model: 32K history; queries
+    32,257--32,768 predict distinct historical KV for 32,769--32,832.
+    Objects are layer/64-token blocks containing all KV heads; both
+    policies include mandatory blocks in the 40\% budget.
+    Seer uses an experimental Qwen3-8B Prefill gate~\cite{song2026seerqwen3}
+    (threshold $10^{-3}$; final-block dense override disabled).
+    Bars/whiskers are document means/ranges, not fault-recovery runs.}
+  \label{fig:design-insights}
+  \Description{Three side-by-side panels show Heddle's published agent
+    trajectory prediction correlations, a primary-source survey of sparse model releases,
+    and held-out retry KV coverage. Past-frequency ranking improves
+    coverage substantially for NOSA and only modestly for MiniCPM4
+    and SeerAttention-Qwen3.}
+\end{figure*}
+
+\paragraph{Insight 1: execution context predicts remaining agent work.}
+Existing predictors exploit task semantics and execution progress.
+Heddle~\cite{zhang2026heddle} reports trajectory-length correlations of
+approximately 0.72, 0.88, and 0.94 for coding, search, and math agents
+after two steps, improving over one-step predictions
+(Figure~\ref{fig:design-insights}(\subref{fig:insight-agent-time})).
+AgentDecarbonizer~\cite{yan2026agentdecarbonizer} additionally estimates
+task durations and updates remaining time from observed progress.
+AegisKV builds on these capabilities: the Tracker converts remaining-time
+estimates into workflow slack for KV protection. Trajectory correlation
+supports predictability; runtime calibration remains deployment-specific.
+
+\paragraph{Insight 2: sparse attention changes the recovery objects.}
+Long-context models use sparse mechanisms including InfLLMv2,
+DSA, or compressed/hybrid attention~\cite{minicpm4model,
+openbmb2025minicpm41,deepseek2025v32exp,deepseek2025v32model,
+zai2026glm5model,openbmb2026sala,deepseek2026v4model,minimax2026m3,
+zai2026glm52,longcat2026sparse}.
+Figure~\ref{fig:design-insights}(\subref{fig:insight-sparse-adoption})
+establishes release examples, not deployment share.
+The KV Master therefore consumes actual layer/block selections and
+model-specific recovery state instead of valuing all KV bytes equally.
+
+\paragraph{Insight 3: past selections predict part of retry demand.}
+With 40\% of each model's historical KV bytes, historical frequency
+covers 77.8\%, 53.6\%, and 43.0\% of distinct needed KV for NOSA-3B,
+MiniCPM4-8B, and SeerAttention-Qwen3-8B, versus 59.7\%, 50.9\%, and
+42.0\% for recency
+(Figure~\ref{fig:design-insights}(\subref{fig:insight-retry-kv})).
+Seer's demand spans 92.5\% of historical blocks after the head union,
+limiting even oracle placement to 43.3\% coverage. Thus gains depend on
+the model and placement granularity. These held-out book-text suffixes
+motivate advance placement with exact demand fetches for misses;
+they do not establish performance on agentic failure retries.
+\subsection{System Overview}
+\label{sec:system-overview}
+
+Figure~\ref{fig:system-overview} separates applications, control, and
+inference engines. Applications report request/workflow IDs and DAG
+updates. The Router dispatches by load and locality; the AegisKV
+Controller owns slack, recovery assignments, and backup policy.
+KV Master sets each request's depth and hot blocks at checkpoints
+or policy changes. Each Adapter manages its local Peer budget
+and invokes a Connector to copy KV directly
+between engines and storage. Badges index the mechanisms below, not
+execution order.
+
+\begin{figure}[t]
+  \centering
+  % User-requested single-column placement; preserve the source aspect ratio.
+  \includegraphics[width=\columnwidth]{figures/system-overview.pdf}
+  \caption{AegisKV overview. Badges identify Tracker (1), Recovery
+    Manager (2), KV Master (3), and Adapter (4). Recovery targets are
+    assigned at arrival; backup policy flows to Adapters, which control
+    Peer budgets; KV Master selects each request's layer depth.
+    Peer and DRAM paths commit independently.
+    Equivalent DPs hold local KV and smaller Peer regions; memory
+    proportions are schematic.}
+  \label{fig:system-overview}
+  \Description{Three horizontal tiers show applications, control, and inference.
+    A workflow DAG feeds a Tracker with per-request slack bars. The Recovery
+    Manager binds target DPs and forks concurrent retries. The KV Master
+    selects protection tiers, request-specific depths, and hot-block candidates.
+    Equivalent DP0 and DP1 engines each contain an Adapter controlling Peer budgets,
+    a layer/block grid in Local KV, a smaller Peer KV region holding the other
+    DP's replicas, and a Connector. Adapters invoke Connectors; Peer transfers
+    and independent DRAM copy/restore paths bypass the control plane.}
+\end{figure}
+
+The Recovery Manager binds retry and Peer targets at arrival
+(\S\ref{sec:recovery-manager}). KV Master uses a fixed checkpoint
+interval and reviews each request's depth at policy events
+(\S\ref{sec:kv-master}). Adapters update budgets at window boundaries
+(\S\ref{sec:kv-runtime}). The Controller
+retains directory and commit metadata outside the source's failure domain.
+\subsection{Workflow Tracker: GBDT and CPM}
+\label{sec:workflow-protection}
+
+Tracker (1) predicts remaining execution time with GBDT, then computes
+slack by CPM~\cite{kelley1959cpm} (Algorithm~\ref{alg:slack-estimation}).
+GBDT is a replaceable predictor instantiation; the literature evidence
+in Figure~\ref{fig:insight-agent-time} concerns Heddle's predictor.
+At time $t$, the residual DAG $G_t=(V_t,E_t)$ contains unfinished agent
+execution segments. A segment groups sequential requests between
+dependency barriers; parent agents split at fork/join boundaries so
+child execution is not counted again as parent waiting. Completed
+segments are removed, and each live request $r$ maps to its segment $a(r)$.
+
+\paragraph{Predict remaining time.}
+The GBDT $f_\theta$ uses role/model, elapsed time, known prompt lengths,
+and completed-request counts, output lengths, and latencies.
+Historical running snapshots have target $t_a^{\mathrm{finish}}-t$;
+entry snapshots use segment duration, masking metadata unavailable
+before launch. Thus unstarted segments predict execution after their
+dependencies become ready. Future requests, outputs, and completion
+times are never input features. GBDT predicts the remaining duration
+directly; elapsed time is not subtracted again.
+
+\begin{figure}[t]
+  \raggedright
+  \refstepcounter{designalgorithm}\label{alg:slack-estimation}
+  \noindent\textbf{Algorithm \thedesignalgorithm: GBDT--CPM slack estimation}
+  \par\smallskip
+  \noindent Input: $G_t$, visible features $x(t)$, GBDT $f_\theta$, live
+  requests $\mathcal R_t$, and segment map $a(r)$.
+  Output: request slack $\sigma$.
+  \par\smallskip
+  \begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
+    \toprule
+     1 & $\sigma_r\gets0$ for all $r\in\mathcal R_t$ \\
+     2 & \textbf{if} DAG structure incomplete: \textbf{return} $\sigma$ \\
+     3 & $z_a\gets f_\theta(x_a(t))$ for all $a\in V_t$ \\
+     4 & \textbf{if} any prediction unavailable or invalid: \textbf{return} $\sigma$ \\
+     5 & $\widehat d_a\gets\max(\varepsilon,z_a)\ \forall a$; $\pi\gets\mathrm{Topo}(G_t)$ \\
+     6 & \textbf{for} $a$ in $\pi$: \\
+     7 & \quad $\mathrm{EF}_a\gets\widehat d_a+\max_{b\in P(a)}\mathrm{EF}_b$ \\
+     8 & $T\gets\max(\{0\}\cup\{\mathrm{EF}_a:a\in V_t\})$ \\
+     9 & \textbf{for} $a$ in reverse $\pi$: \\
+    10 & \quad $\mathrm{LF}_a\gets\min_{b\in S(a)}(\mathrm{LF}_b-\widehat d_b)$ \\
+    11 & \textbf{for} $r\in\mathcal R_t$: \\
+    12 & \quad $\sigma_r\gets\max(0,\mathrm{LF}_{a(r)}-\mathrm{EF}_{a(r)})$ \\
+    13 & \textbf{return} $\sigma$ \\
+    \bottomrule
+  \end{tabularx}
+  \par\smallskip
+  \noindent $P(a)$/$S(a)$: predecessors/successors. Empty predecessor
+  max is $0$; empty successor min is $T$; $\varepsilon>0$ is a
+  minimum remaining-time floor.
+  \Description{GBDT predicts remaining agent-segment durations. Forward
+    CPM computes earliest finishes and the workflow horizon; backward
+    CPM computes latest finishes. Requests inherit their segment's slack.
+    Incomplete dependency structure or unavailable predictions return zero slack.}
+\end{figure}
+
+\paragraph{Propagate and refresh slack.}
+The forward pass computes earliest finishes relative to now; the
+backward pass computes latest finishes without extending horizon $T$.
+Their difference is the segment slack inherited by its live requests.
+This shared margin is not an independent allowance for every request.
+Request arrivals/completions, DAG updates, and placement windows trigger
+refreshes; CPM costs $O(|V_t|+|E_t|)$. Unknown dependency structure or missing
+predictions force zero slack for that workflow. These are planning
+estimates, not delay guarantees; system evaluation must account for
+the selected predictor's runtime errors and overhead.
+
+The orchestrator must declare the remaining fork/join structure complete
+and map every live request to a segment. An unexpanded branch, unresolved
+dependency, or missing mapping makes it incomplete; discovering new work
+invalidates the prior declaration and triggers refresh. Queueing features
+may inform durations, but CPM does not model future resource contention.
+Train/test splits must separate workflows and time periods, not snapshots
+of one trajectory. Required diagnostics include seconds-scale error,
+false-positive slack, critical-path ranking, zero-slack fallback frequency,
+and decision regret against zero-slack, historical, and oracle baselines.
+Published correlation alone validates none of these runtime properties.
+\subsection{Recovery Manager: Preassigned Takeover}
+\label{sec:parallel-recovery}
+\label{sec:recovery-manager}
+
+Recovery Manager (2) decides where each request will resume before
+failure occurs. When request $r$ arrives and the Router selects source
+DP rank $g_r$, the Manager records a target assignment $p_r\ne g_r$
+in control state outside the source's failure domain. The same $p_r$
+is both the retry destination and the DP rank that will hold any
+Peer-HBM backup of $r$. A simple mapping for $n\ge2$ DPs is
+$p_r=(g_r+1)\bmod n$; per-request assignments may distribute load across
+several targets. The assignment does not reserve HBM: the KV Master
+chooses whether to request Peer protection, and the target Adapter
+controls its capacity. A TP group restores compatible shards as one DP.
+
+\paragraph{Activate the recorded route after failure.}
+The Manager combines membership, device errors, and GPU progress
+reported by Adapters; a process heartbeat alone does not prove GPU
+progress. After confirming and isolating a failed source, it obtains
+request token prefixes, commit frontiers, model/layout IDs, and replica
+locations from surviving control state, then submits retries to their
+recorded targets. Available Peer replicas are therefore local to takeover.
+DRAM or recomputation supplies the remaining state. Control-state
+survival, fencing, failure-domain separation, and retry deduplication
+are runtime contracts. A failed target requires a new valid assignment;
+copies on the old target cannot be treated as local to the new target.
+
+\paragraph{Recover a dependency-closed frontier.}
+A surviving authority assigns a monotonically increasing source epoch;
+copies, directory commits, and output acknowledgements reject stale epochs.
+Before acknowledging a generated token, persist its request ID, position,
+token ID, and epoch in a surviving ordered log. Prompt and accepted tool
+inputs are likewise recoverable. KV may lag this log; recovery reconstructs
+the acknowledged suffix and suppresses duplicate delivery. External tool
+side effects require the orchestrator's own idempotency contract.
+
+Publish a checkpoint manifest only after its full dependency closure is
+committed: compatible model, weights and layout, all required layers and TP
+shards, sealed token intervals, selector state, and the matching token-log
+prefix. A frontier is the latest valid common manifest, not the maximum
+of independently updated object locations. Peer and DRAM may commit in
+either order; each manifest entry must resolve to a matching surviving
+replica. An incomplete new manifest leaves the older one authoritative;
+without one, replay from recoverable inputs. Recovery validates versions
+and closure again after fencing. These checks define the minimum contract;
+their concurrent implementation remains to be validated.
+
+\paragraph{Share resources without serializing retries.}
+Retries enter independently and advance on their own layer-readiness
+events. Slack determines protection, not a request-level completion
+barrier. The engine reserves a positive dispatch share for feasible recovery
+work while continuing foreground batching. Within that share, ready admitted
+retries receive round-robin service in bounded prefill chunks or decode steps;
+eligible waiting retries use oldest-first admission subject to physical space.
+Blocked layers yield rather than holding a request-level barrier. These are
+required scheduler interfaces, not a claim of support in an unmodified engine.
+Each retry moves through waiting-for-space, waiting-for-data, ready, and
+running states. Reserve its bounded activation/KV workspace and transfer
+buffers before admitting an execution chunk. The batch coordinator admits
+compatible ready work and gives every TP rank the same batch, layer, and
+collective order. A newly discovered miss parks that work only at a legal
+kernel boundary, retaining and charging its activation buffer; it can split
+from a batch only if the backend supports that split. Otherwise the whole
+batch waits and the profile charges the resulting interference. Readiness
+does not authorize arbitrary layer reordering or unmatched collectives.
+Memory reservations precede I/O leases; release queue/directory locks before
+waiting on a copy or collective, and reserve demand-transfer progress space.
+Preassignment reserves neither compute nor retry workspace. Profiles
+include target foreground batches, available KV/workspace, readmission
+queues, shared links and failure domains. If the target has no feasible
+working set, queue the retry or remap through the Manager with a new
+placement check; never assume that local backup alone permits execution.
+
+Transfers contend at every shared link and at target HBM. Normal-state
+backup traffic has a configured aggregate cap (default 20\% of link
+capacity). During recovery or contraction, configure positive service
+shares for demand fetch and required writeback while retaining a foreground
+share; active shares sum to at most one per bottleneck and unused service
+can be borrowed. Actual demand precedes speculative preloads within recovery.
+The 20\% traffic cap is not a 20\% bound on foreground latency or overhead.
+Byte-based deficit round robin across eligible requests and a bounded
+outstanding-transfer count prevent one long context from monopolizing
+the recovery share. Migration writeback receives its own progress share,
+so shrinking does not depend on all decode requests ending. Service switches
+at supported DMA/kernel boundaries, not at an assumed arbitrary instant.
+
+The same sharing policy and foreground/retry load must enter the cost
+profiles. With positive available service, finite contenders, and bounded
+transfer quanta, eligible work progresses; this is not a latency guarantee
+under overload. No retry must complete before another can begin merely
+because its placement priority was higher.
+\subsection{KV Master: Request-Specific Backup Decisions}
+\label{sec:kv-placement}
+\label{sec:kv-master}
+
+KV Master (3) selects recovery tiers, each request's Peer depth $L_r$,
+and layer-local hot sets. Recovery Manager fixes the retry/Peer target;
+Adapter publishes its window-level capacity $B_p$. Requests may use
+different depths within the same capacity window.
+
+\paragraph{Decision events.}
+The Master establishes policy at arrival, offers sealed state after prefill,
+and reviews a request every additional $Z$ generated tokens. $Z$ is a
+block-aligned system configuration, not an Adapter output. Significant
+slack, budget, context, or copy-state changes can trigger an earlier review.
+A decision does not imply a completed checkpoint: the replay tail extends
+beyond the latest committed frontier and can exceed $Z$ when copying lags.
+Copy queues have configured byte and operation limits. Coalesce superseded
+unstarted plans, retain dependencies of in-flight or committed versions,
+and skip a new backup attempt if it cannot be reserved. Report the resulting
+commit lag; the trigger interval supplies no durability bound.
+Sealing only updates eligibility. Hot-block statistics use the preceding
+512 decode steps, independently of checkpoint and capacity windows.
+
+\paragraph{Choose protection tiers.}
+Let $T_{\mathrm{rc}}$ denote prefix recomputation, $T_{\mathrm{rp}}$ known-tail
+replay, $W_0$ exposed DRAM-loading wait, and $R_{\mathrm{floor}}$ detection,
+rerouting, and readmission time. Joint context/tail/load profiles give
+\begin{equation}
+\begin{aligned}
+ R_{\mathrm{base}}&=R_{\mathrm{floor}}+T_{\mathrm{rp}},\\
+ R_R&=R_{\mathrm{base}}+T_{\mathrm{rc}},\qquad
+ R_D=R_{\mathrm{base}}+W_0.
+\end{aligned}
+\label{eq:recovery-base}
+\end{equation}
+$R_R$ and $R_D$ use the weighted conditional means of the same
+future-state samples defined below; the tier test is a planning heuristic,
+not a deadline guarantee. Tier R needs no backup if $\sigma_r\ge R_R$.
+Otherwise choose D when $R_D<R_R$ and $\sigma_r\ge R_D$; remaining
+requests compete for Peer as tier P. There is no assumption that loading
+is faster than recomputation. The non-Peer fallback chooses the cheaper
+feasible route, preferring R on equal costs; a denied Peer increment does
+not force a slower DRAM restore. DRAM protection requires its own admission
+and commit (\S\ref{sec:kv-runtime}). Missing profiles request conservative
+DRAM protection when feasible, without claiming it is faster; failed
+admission uses an older valid checkpoint or R. Slack orders protection,
+not retry execution. At recovery, refresh costs and availability; overlapping
+cost intervals retain the feasible current route unless dominance is clear.
+
+\paragraph{K counts resident blocks, not selector outputs.}
+A protection object is an immutable sealed \emph{(layer, block)} including
+all KV heads; the trace study uses 64-token blocks. Let $H_{r,l}$ be
+request $r$'s published, committed Peer set at layer $l$. We define
+\begin{equation}
+ K_{r,l}=|H_{r,l}|.
+ \label{eq:hot-block-count}
+\end{equation}
+Thus $K$ counts Peer-resident blocks of one request and layer. It is not
+the model's per-query top-$k$, a hit-rate guarantee, or a count of copies
+still in flight. Physical allocation also charges retiring buffers,
+reservations, and selector state; shared copies are counted once per pool.
+
+A separately configured quota determines the desired hot-set size.
+The configuration declares either a fixed block limit or
+$\lceil h_l n_r\rceil$ blocks for $n_r$ sealed historical blocks.
+Mandatory sealed sink/window blocks are included in that limit: if they
+alone exceed it, request a larger explicitly charged quota or decline
+that layer's Peer admission, never silently drop native requirements.
+The rule is
+fixed in each comparison; this paper does not claim an optimal quota.
+Remaining slots rank native selection counts, then recency and stable
+block ID. Optional blocks leave after two consecutive statistics windows
+outside the target set. Required auxiliary state is budgeted separately.
+Before 512 steps are available, use the observed prefix; with no observations,
+rank mandatory blocks first and then recency and stable ID. This cold-start
+rule has no demonstrated prediction accuracy.
+For a replay of $N$ tokens, demand is the deduplicated union of native
+selections across queries and KV groups, not $N$ copies of a single top-$k$.
+
+\paragraph{Preview replacement as well as admission.}
+A candidate depth $d$ offers target hot sets in layers $1{:}d$;
+this prefix family restricts the search, rather than proving that arbitrary
+layer placements cannot do better.
+Its plan retains intersections, demotes owned blocks leaving the set,
+and admits new blocks. It cannot evict another request's protected copy.
+A shared object loses only the departing owner's reference.
+Dirty demotions, new transfers, and temporary space all enter the preview;
+slots become reusable only after actual release
+(\S\ref{sec:kv-runtime}). Shrinking $L_r$ can therefore retire the owner's
+deeper copies. An unchanged depth can still replace block identities.
+Uniform, fully admitted layers contain $L_r K$ layer-block objects;
+partial admission is reported through the actual sets $H_{r,l}$.
+
+\paragraph{A reproducible depth objective.}
+All candidates start from the same target snapshot $S$ and use the same
+planning horizon $H$, future-state samples $j$, and normalized weights $w_j$,
+conditional on a source failure within $H$. Current slack is held fixed
+within this local comparison and refreshed at the next policy event.
+A sample specifies committed history $M_j$, replay tail $N_j$, available
+copy time, and foreground/retry load. Samples come from a declared,
+versioned profile, including commit lag; they do not assume $N_j=Z$ or
+a uniform checkpoint phase. Co-located requests share the same source-event
+samples and contended target resources. For a configured Poisson model,
+$\pi_r=1-\exp(-\lambda_r H)$. Other risk models must provide the corresponding
+probability over the same $H$; a failure rate is not itself a probability.
+
+Let $G_d$ be the admitted-and-retired plan from the preview.
+$A_r(d)$ is the predicted aggregate change in foreground request-delay
+seconds, relative to keeping the current placement at $S$. The cohort
+contains active requests and arrivals within $H$, followed to completion
+under matched arrivals and a held policy, including completions after $H$.
+It includes replication, writeback, transient occupancy, and reduced or
+increased admission pressure, and may be negative. Let $R_r(d,j)$ be
+failure-to-ready latency for sample $j$, crediting only replicas predicted
+to commit before its failure. The Master minimizes
+\begin{equation}
+ J_r(d)=A_r(d)+\pi_r\sum_j w_j
+          \max\{0,R_r(d,j)-\sigma_r\}.
+ \label{eq:depth-score}
+\end{equation}
+Both terms have units of delay seconds. This is a local protection
+heuristic in slack order; it neither sums to workflow makespan nor
+optimizes all later requests' allocations.
+For example, two equally critical branches on one failed source each
+need 10\,s to recover. Protecting only one reduces their summed local
+penalties from 20 to 10\,s but leaves workflow delay at 10\,s. Source-event
+DAG replay and a feasible small-DAG oracle are required to assess this gap.
+
+\paragraph{Profile interface and validity.}
+A profile query takes the model/selector and weight revisions, KV layout,
+block size, hardware/link topology, $S$, $G_d$, the shared state samples,
+and the configured copy scheduler. It returns $A_r(d)$ and $R_r(d,j)$
+with uncertainty intervals, a generation ID, support ranges, and expiry.
+$A$ is obtained from matched normal-service traces with identical arrivals;
+$R$ uses matched recovery traces or a declared, calibrated event model.
+Transfer and compute overlap are evaluated on one timeline; adding their
+full durations would double-count hidden transfer. Rows state whether
+they are measured or modeled. Missing measurements are not filled with
+the Figure~\ref{fig:design-pipeline} example.
+
+The finite depth grid includes zero and the current depth, and an explicit
+\emph{keep} plan preserves current block identities. The lowest score wins;
+ties prefer smaller depth, then stable plan ID. Propagating the profile's
+intervals through (\ref{eq:depth-score}) gives lower and upper score bounds.
+A change is accepted only if its upper bound plus a configured margin
+is below the keep plan's lower bound. Unsupported candidates are excluded.
+An invalid generation or missing, expired, or drift-flagged keep profile
+freezes discretionary expansion and replacement; new requests attempt
+DRAM admission, with the stated fallback if it fails.
+Existing protection is retained only while feasible:
+Adapter contraction and correctness-driven retirement still take precedence.
+A generation is invalidated after a configured number of consecutive
+relative-error violations on comparable observed operations; unmatched
+observations do not count as validation. Thresholds, grid, horizon,
+risk model, quota rule, sample weights, and calibration version are
+recorded configuration, not inferred experimental constants.
+At zero failure probability, only $A$ affects the score; costly expansion
+has no recovery justification, while a zero-cost keep plan need not move.
+Uncertain route crossings do not justify an unprofiled migration.
+
+\begin{figure}[t]
+  \raggedright
+  \refstepcounter{designalgorithm}\label{alg:placement}
+  \noindent\textbf{Algorithm \thedesignalgorithm: Per-request backup policy}
+  \par\smallskip
+  \noindent Input: requests, slack, fixed $Z$, profiles, targets, budgets.
+  Output: admitted tiers, Peer plans, and committed $H_{r,l}$.
+  \par\smallskip
+  \begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
+    \toprule
+    1 & Snapshot copies, leases, budgets, and reservations as $S$ \\
+    2 & \textbf{for} affected $r$ in $(\sigma_r,\mathrm{ID}_r)$ order: \\
+    3 & \quad Choose R/D/P and the feasible non-Peer fallback \\
+    4 & \quad For D/P, request DRAM; report coverage/failure \\
+    5 & \quad Rank layer-local candidates under the quota rule \\
+    6 & \quad Form keep and depth plans; R/D target depth is zero \\
+    7 & \quad Preview each plan independently from the same $S$ \\
+    8 & \quad Query valid profiles; score by (\ref{eq:depth-score}) \\
+    9 & \quad Choose a stable improvement, or feasible fallback \\
+    10 & \quad Queue its retains, demotions, and new admissions \\
+    11 & \quad Update $S$ with only this chosen plan \\
+    12 & Atomically recheck reservations before physical execution \\
+    13 & Publish only committed residency and actual released bytes \\
+    \bottomrule
+  \end{tabularx}
+  \Description{The Master chooses per-request layers and hot sets using
+    a shared-sample cost objective. Only chosen plans change the virtual
+    allocation snapshot; execution rechecks space and safe retirement.}
+\end{figure}
+
+The preview is not a reservation. Actual grants may be smaller. The
+directory reports committed $K_{r,l}$ and frontiers; a mismatch triggers
+another review. Sorting $n$ requests takes $O(n\log n)$ time. Candidate
+work scales with the grid, sample count, and affected blocks. Profile
+calibration and accuracy remain evaluation work.
+
+\paragraph{Keep selection and placement separate.}
+Recovery restores model-specific selector state before invoking the
+unchanged native selector. The selector may name any causally eligible
+historical or recomputed KV, including DRAM-only objects. The Connector
+resolves logical IDs to committed replicas, fetches actual misses, and
+returns readiness events; attention waits for every required input.
+Forecast mistakes add traffic or waiting, not a new attention approximation.
+Tier R and missing committed prefixes use dependency-correct recomputation
+of logged tokens. A batched replay is eligible only if its native selector
+and state evolution are equivalent to the original token-wise path under
+the declared numerical contract; otherwise replay token by token. A native
+prefill gate or an unresolved numerical diagnostic does not establish this
+equivalence. Compatible weights, layout, and operators are required;
+future stochastic samples need not be bitwise identical across floating-point
+execution schedules.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/recovery-pipeline.pdf}
+  \caption{Modeled recovery pipelines: MiniCPM4-8B, 32 layers, 32K
+    history, 64-token known tail; $C=2.87$\,ms/layer (A100-derived average)
+    and $D=5.37$\,ms at an assumed 6.25\,GB/s. In (d), 147\,MiB of Peer
+    residency removes preload wait. Totals end at tail-KV reconstruction.
+    The homogeneous, preemptible-copy model excludes detection,
+    queuing, and interference.}
+  \label{fig:design-pipeline}
+  \Description{Four timelines compare token-block transfer, full-layer
+    pipelining, hot preloads with demand fetch, and Peer-resident hot sets.}
+\end{figure}
+
+Figure~\ref{fig:design-pipeline} illustrates one fixed-tail example:
+layer pipelining, hot preloads, and seven resident hot sets reduce exposed
+wait from 172 to 83, 44, and 20\,ms. It does not calibrate
+(\ref{eq:depth-score}), establish multi-request WCT gains, or make seven
+layers appropriate for every checkpoint state.
+Here $C$ is a five-repeat median of a batch-one, 64-token native-path
+forward over resident history on an A100 80GB PCIe, divided by 32 layers;
+individual layer timings were not measured. The assumed bandwidth is a
+25\,GB/s pool link equally shared by four recoveries, not measured H2D.
+With 1\,KiB/token/layer, the Peer payload is
+$7\times0.65845\times32$\,MiB $\simeq147.49$\,MiB, excluding auxiliary
+state and temporary buffers. Fractions are trace-derived means, not an
+integer per-layer grant. The model leaves 38.69\,ms of cold-copy work
+after tail readiness; subsequent token latency requires separate evaluation.
+\subsection{Adapter: Windowed Peer Capacity Control}
+\label{sec:kv-runtime}
+\label{sec:capacity-allocation}
+
+Adapter (4) sets the total Peer budget $B_p$ on its target DP at each
+control-window boundary. The target remains fixed within the window;
+every allocation also checks physical space. The Master owns fixed-$Z$
+backup decisions and per-request $L_r$ and hot sets. Adapter controls
+capacity, not a common depth or an adaptive checkpoint interval.
+
+\paragraph{Reserve memory for foreground inference.}
+Subtract predicted foreground KV demand and admission headroom from the
+managed KV pool, clamping the result to zero through half the pool.
+The pool excludes weights and fixed runtime state but includes existing
+Peer copies; $B_p$ is total permitted occupancy, not newly available space.
+KV watermarks and memory-related admission stalls inform demand.
+Increased pressure shrinks the budget; sustained relief allows expansion.
+Report physical occupancy, ownership references, I/O leases, pending
+copies, and safely reclaimable bytes separately.
+
+\begin{figure}[t]
+  \raggedright
+  \refstepcounter{designalgorithm}\label{alg:adapter}
+  \noindent\textbf{Algorithm \thedesignalgorithm: Windowed Peer budget update}
+  \par\smallskip
+  \noindent Input: pool, foreground demand, headroom, replica/lease state.
+  Output: budget $B_p$, retirement work, and actual capacity reports.
+  \par\smallskip
+  \begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
+    \toprule
+    1 & \textbf{for each} target DP $p$ at the window boundary: \\
+    2 & \quad Snapshot occupancy, owners, leases, and reservations \\
+    3 & \quad Estimate foreground KV demand and headroom \\
+    4 & \quad$B_p\gets\mathrm{pool}-\mathrm{demand}-\mathrm{headroom}$ \\
+    5 & \quad Clamp $B_p$ to $[0,\mathrm{pool}/2]$ \\
+    6 & \quad Publish $B_p$; block reservations exceeding it \\
+    7 & \quad Reclaim safe zero-reference copies first \\
+    8 & \quad If needed, select protected copies for demotion \\
+    9 & \quad Commit DRAM; redirect; retire the old generation \\
+    10 & \quad Drain old users before releasing each buffer \\
+    11 & \quad Publish actual coverage and released/pending bytes \\
+    \bottomrule
+  \end{tabularx}
+  \Description{Adapter controls only Peer capacity. When safe unreferenced
+    victims are insufficient, protected copies may be demoted to committed
+    DRAM, with a directory transition and I/O lease drain before release.}
+\end{figure}
+
+The migration steps are asynchronous and continue after the control tick;
+a later budget update reconciles their outstanding reservations.
+Algorithm~\ref{alg:adapter} does not wait for all migrations before allowing
+unrelated ready requests to run.
+
+% Capacity execution and replica lifetime, part of section 3.6.
+\paragraph{Admit DRAM protection explicitly.}
+Each backing pool has a finite byte ledger charging committed objects,
+pending reservations, retiring buffers, and required metadata. Shared
+objects are charged once. Reserve the missing dependency closure before
+accepting a checkpoint; publish only completed coverage. Live checkpoint
+and reader references protect DRAM objects; zero-reference objects enter
+LRU reclamation, with physical release delayed until I/O leases drain.
+Newer valid manifests, request completion, or an explicit transition to
+recomputation release obsolete ownership. An old manifest remains retained
+until its replacement is committed or its recovery claim is withdrawn.
+If reservation or commit fails, keep the earlier valid frontier and replay
+its missing suffix, or use R from logged inputs. A Peer denial does not
+imply DRAM admission, and partial copies do not establish full D protection.
+DRAM exhaustion is an operational limit, not hidden unlimited backing.
+
+\paragraph{Protect ownership, not a permanent HBM address.}
+A request reference prevents \emph{other requests} from taking its Peer
+capacity, even when they have smaller slack. Normal admission uses free
+space or safely reclaimable zero-reference copies; otherwise the new
+Peer increment is denied. An inference request need not wait to obtain
+Peer protection. The owner can replace its own hot set or reduce its
+depth. Completion, including a handoff to a tool, drops that request's
+references, while other owners of shared blocks retain theirs.
+
+These ownership references differ from short-lived \emph{I/O leases}.
+A lease pins the physical buffer while a kernel, read, or copy uses it.
+An owner update removes only its own reference and cannot free a shared
+copy still protected by another owner. Adapter contraction has explicit
+system-level authority to demote even protected copies; it never overrides
+an outstanding I/O lease or deletes the logical KV state.
+
+\paragraph{Demote through a committed DRAM copy.}
+The Connector and directory expose four operations:
+reserve space, commit a versioned replica, acquire/release an I/O lease,
+and retire a location. A block ID includes model/weights/layout, request-prefix
+identity, layer, shard, and sealed token interval; a location generation
+prevents reuse of a stale address. A pending copy is never readable.
+A checkpoint frontier advances only when its required shards, layers,
+selector state, and token log are recoverable in the declared failure model.
+Independent Peer and DRAM transfers do not imply an atomic joint commit.
+
+Retiring a Peer location follows the same order for an owner update and
+an Adapter contraction:
+\begin{enumerate}
+  \item Reserve DRAM if needed, copy the immutable block, and commit
+    a complete matching replica outside the failed source's domain.
+    A valid existing DRAM replica avoids another writeback.
+  \item Atomically redirect the directory to DRAM and mark the old
+    Peer generation retiring. This transition closes new lease acquisition
+    on that address; a lookup racing the transition must retry.
+  \item Wait for all old-generation readers, writers, and DMA operations
+    to release their leases. Existing holders may finish; no fresh holder
+    can enter through a cached stale address.
+  \item Free the Peer buffer and then return its bytes to the allocator.
+\end{enumerate}
+Before the directory transition, an unsuccessful writeback leaves the
+surviving Peer location authoritative; afterward new readers resolve DRAM.
+If DRAM allocation, transfer, or commit fails, retain the Peer copy and
+report the unfulfilled shrink.
+Fault detection fences stale writers and retries; directory generations
+and metadata survive the source failure. These are required runtime
+interfaces, not claims of a verified implementation.
+
+\paragraph{Bound replacement and contraction.}
+For old and new hot sets, retain their intersection, retire departing
+owned blocks, and fetch only new arrivals. With no spare space, safe
+retirement precedes admission; overlapping copies require explicit
+temporary reservations. Thus changing $\{A,B,C,D\}$ to $\{C,D,E,F\}$
+can retain four blocks after migration, without pinning every historical
+hot set until request completion. Shared replicas and incomplete transfers
+remain separately charged until physically releasable.
+
+When occupancy exceeds a new $B_p$, stop new Peer reservations and reclaim
+zero-reference copies first. If insufficient, Adapter requests protected
+demotions in the Master's order: larger slack first, then deeper layer,
+lower recent selection count, and stable object ID. A shared object's
+priority uses the smallest slack of its remaining owners. This ordering
+chooses victims; it does not serialize independent migrations or retries.
+Publish the reduced coverage to the Master, and do not re-admit it beyond
+the new budget. The Master subsequently reassesses request-specific $L_r$.
+
+Contraction waits for bounded transfers and leases, not for the LLM
+request to finish. Actual usage may temporarily exceed the target;
+foreground admission can still wait for physical space if headroom is
+exhausted. The scheduler reserves progress for required writeback, and
+the controller reports pending bytes rather than claiming an instantaneous
+shrink. Insufficient backing capacity remains an explicit operational limit.
+\paragraph{Scope and validation.}
+\label{sec:design-discussion}
+Sparse integration needs native selection indices, recoverable selector
+state and all attention branches, physical-block mapping, and the directory/
+lease interface above. Poor predictions can use exact demand fetch or
+full-layer loading; dense attention uses the full historical set.
+Standalone requests use zero slack. Prefill failures require profiles for
+the lost chunk, not a universal 64-token tail.
+
+The present evidence consists of native selection traces, attributed
+prediction results, and a single-request pipeline model using measured
+forward latency and assumed transfer bandwidth. It does
+not validate the depth-score profiles, failure-risk calibration, checkpoint
+sensitivity, active hot-set migration, concurrent retry fairness, or
+foreground interference. End-to-end tests must include recovery during
+demotion, stale-location races, DRAM exhaustion, copy backlogs, and shared
+bandwidth pressure. The specified interfaces and fallbacks make those
+claims testable; they do not establish performance or a completed implementation.
+Validation must also replay common source failures through the dependency
+DAG, compare the local policy with feasible small-DAG allocations, and
+report regret, including zero or negative Peer benefit. Native selector
+traces and the measured batched forward do not by themselves validate
+recovery equivalence to token-wise decoding.

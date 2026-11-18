@@ -1,0 +1,19 @@
+{
+  "model": "Qwen3-8B",
+  "layers": 36,
+  "hidden_size": 4096,
+  "intermediate_size": 12288,
+  "query_heads": 32,
+  "kv_heads": 8,
+  "head_dim": 128,
+  "kv_element_bytes": 2,
+  "tp": 1,
+  "effective_compute_TFLOP_s_ASSUMED": 100,
+  "effective_transfer_GB_s_ASSUMED": 25,
+  "model_config_url": "https://huggingface.co/Qwen/Qwen3-8B/raw/main/config.json",
+  "config_checked_on": "2026-09-13",
+  "evidence": "Analytical example, not model execution or hardware measurement",
+  "physical_experiments": 0,
+  "statistical_replicates": null,
+  "figure_width_mm": 178
+}

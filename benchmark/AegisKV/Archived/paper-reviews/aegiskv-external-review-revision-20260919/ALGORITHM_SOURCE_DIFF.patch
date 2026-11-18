@@ -1,0 +1,1004 @@
+--- before/draft/abstract.md
++++ after/draft/abstract.md
+@@ -1,21 +1,5 @@
+-# AegisKV: Slack- and Sparsity-Aware KV Backup for Fault-Tolerant Multi-Agent LLM Serving
++# Abstract
+ 
+-<!-- EuroSys 2027 投稿雏形（中文写作，图内文字为英文，可直接替换进 LaTeX 模板）。
+-     证据分级：measured = 真实观测；analytic = 锚定在测量参数上的闭式模型；illustrative = 为固定实验设计而生成的模型数据，图上带红色水印，投稿前必须用模拟器/实机数据替换。
+-     当前设计：请求可并行 retry，H2D 与计算可重叠；Slack 只决定备份优先级，不规定请求级串行恢复顺序。
+-     Motivation 图 1：(a) 分支时间差，(b) 五分支 Workflow 结构，(c) WCT 损失；图 2 为独立重算代价图（原图 4）；原调研图 3 撤出本节并保留为资料。设计章暂保留原编号，全文整合时同步：图 5 架构，图 6 集中度（§3.3，实线，256/512-query 窗口），图 7–9 机制。支撑方法选择的 Observation 由 §3 承担。2026-09-15 编号的原图 5（重放所需比例）撤出正文，恢复并集分析保留于 §3.3；旧串行 cascade 与评估图仍为历史材料。
+-     图源：paper/figures/（MANIFEST.json 区分当前图与历史输出）。
+-     生成脚本：experiments/scripts/paper/render_motivation_row.py（图 1(a)/(c)、图 2）、build_motivation_workflow.py（图 1(b)，Draw.io 原生导出）、render_draft_20260915.py（原单栏图与图 6–9）、build_draft_overview.py（图 5）；
+-     模型数据：experiments/native-sparse/20260915/（MiniCPM4-8B、NOSA-1B 的选块轨迹、prefill 与重放时延、交叉模型统计）；
+-     工作流轨迹：experiments/data/motivation-real-cc/（CC/Weka 轨迹的分支重建）。
+-     正文引用的每个数字都能在上述脚本的输出（MANIFEST.json、*.json、*.csv）中找到。 -->
++多智能体应用通过相互依赖的 LLM 请求完成任务，并在交互过程中积累长上下文。KV 状态丢失后的恢复代价可能很高，但它对工作流完成时间的影响取决于各请求的延迟容忍度。AegisKV 是一个基于多层存储的工作流感知 KV 容错框架：利用依赖关系和剩余执行时间估计计算请求 Slack，再结合恢复代价选择保护层级并分配有限的备份资源。在请求内部，稀疏注意力访问与逐层执行顺序指导 KV Block 放置和恢复，将有限 Peer HBM 用于减少影响工作流完成的恢复等待。
+ 
+-**作者：** 待定 · **单位：** 待定
+-
+-## Abstract
+-
+-多智能体（multi-agent）应用把一个用户任务展开成由多个 LLM 请求组成的依赖图（workflow），用户感知的是整张图的完成时间（Workflow Completion Time，WCT），而不是某一个请求的时延。GPU fail-stop 故障会让该卡上所有请求的 KV cache 一起丢失；随着 agent 上下文越来越长，重算这些 KV 需要数秒到数十秒。现有 KV 备份把每个请求当作同等重要、把请求内部每个 KV 块当作同等重要，而 Peer GPU 的空闲 HBM 远不足以容纳全部 KV。
+-
+-本文提出 AegisKV，一个面向多智能体工作流、适用于原生稀疏注意力模型的 KV 备份与恢复系统。它采用两级保护优先级：请求之间，用 workflow 的 Slack（最多可以晚多久而不推迟 workflow 的完成）区分不备份、只备份到 DRAM、Peer HBM + DRAM 三层，优先给低 Slack 请求分配有限的 Peer HBM，并按该请求仍能减少的恢复等待限制配额；请求内部，以 `(layer, block)` 为单位，用层序与稀疏热度选择驻留块，恢复时按热度预取、按选择器的实际需求补取。请求可以并行 retry，H2D 与计算可以重叠，AegisKV 不规定请求级串行恢复队列。系统只读取稀疏 kernel 已有的选块索引，不改变模型的注意力选择。
+-
+-在 124 个真实多智能体工作流中，91% 的并行分支持续时间差超过在 A100 上实测的 128K 前缀重算时间 22 s，说明不同分支的执行时间显著不均衡；恢复是否被吸收仍取决于具体请求的 Slack，而非持续时间差本身。在两个公开的原生稀疏注意力模型（MiniCPM4-8B 的 InfLLM-v2、NOSA-1B）的真实选块轨迹上，最热 20% 的 `(layer, block)` 字节分别承担 66% 和 90% 以上的访问，而重放一个 64-token 未密封块只需一层 44%–77% 的字节经过恢复路径。闭式流水线模型表明，在拥塞的 6.25 GB/s 路径上，这一顺序把 32K 上下文的装载等待从 115 ms 降到 77 ms（MiniCPM4-8B）或 20 ms（NOSA-1B），MiniCPM4-8B 再将前 17 层的 Top-k 热块驻留 Peer HBM 后，计入预测未命中的按需补取，等待约为 20 ms。这些测量与解析结果支撑两级保护的动机；并行恢复下的端到端 WCT 收益、前台干扰与备份流量仍需通过配对的无故障/故障实验验证，本文不沿用旧串行队列模型的收益数字。
++设计区分故障后 KV 的可恢复性与有限 Peer HBM 驻留，允许所属请求更新热集，并在容量收缩时安全降级至 DRAM，同时保持原生稀疏选择语义。原生选择轨迹，以及采用实测 forward 时间和假设传输带宽的流水线模型，为这些机制提供依据；端到端工作流收益和正常服务开销仍待评估。
+--- before/draft/system_design.md
++++ after/draft/system_design.md
+@@ -63,109 +63,82 @@
+ 
+ **传播并更新 Slack。** 活跃请求继承所属执行段的 $\sigma_r=\max(0,\mathrm{LF}_{a(r)}-\mathrm{EF}_{a(r)})$；同段请求共享这份余量，不能将其视为每个请求可独立累加的延迟预算。请求到达/完成、DAG 更新和放置窗口触发重算，CPM 的复杂度为 $O(|V_t|+|E_t|)$。若依赖结构尚不明确或预测不可用，该 workflow 的 Slack 取零；已知但尚未完成的前驱正常参与 CPM。这是规划估计，不是延迟保证；系统评估需计入所选预测器的时间误差与在线开销。
+ 
+-### 3.4 Recovery Manager：预定接管目标 ②
++Tracker 的 DAG 完整性由 orchestrator 声明：剩余 fork/join 已展开且所有 live request 映射已知；新分支或未解析依赖使声明失效并回到零 Slack。CPM 本身不模拟未来资源排队。训练测试按 workflow 与时间隔离，不能混合同轨迹 snapshots；需报告秒级误差、false-safe Slack、关键路径排序、零 Slack fallback 比例与 regret。Heddle 的相关性不代替这些验证。
+ 
+-Recovery Manager 在故障前决定每个请求的恢复去向。请求 $r$ 到达、Router 选定源 DP rank $g_r$ 后，Manager 将目标 $p_r\ne g_r$ 记录到源故障域之外的控制状态。**同一个 $p_r$ 同时是故障后的 retry 目标和该请求 Peer HBM 所在的 DP rank**。例如 $n\ge2$ 个 DP 可采用 $p_r=(g_r+1)\bmod n$，也可以按请求将负载分散到多个预定目标。绑定目标本身不预留 HBM：是否申请 Peer 保护由 KV Master 决定，实际容量由目标 Adapter 控制。TP 组按兼容分片作为一个 DP 恢复。
++### 3.4 Recovery Manager：预定接管与并发恢复
+ 
+-**故障后激活既定路由。** Manager 综合成员状态、设备错误及 Adapter 上报的 GPU 进度，进程心跳不能独自证明 GPU 正常。确认并隔离失效源后，从存活控制状态取得 token 前缀、提交前沿、模型/布局标识及副本位置，向记录的目标提交 retry。目标可以直接读取本地已提交 Peer 副本，其余状态通过 DRAM 或重算恢复。控制状态存活、写隔离、故障域分离和重试去重是运行时契约。若预定目标本身失效，需建立新的有效绑定，不能把旧目标上的副本当作新目标的本地副本。
++请求到达时记录 source DP 与不同的 retry/Peer DP；固定目标不意味着已分配 HBM。故障后先确认并隔离失效源，再从存活的控制状态获取 token 日志、提交前沿、模型/布局/分片信息和副本位置，提交到已记录的目标。若目标也不可用，则重新分配，不能把旧目标的副本视作新目标本地数据。
+ 
+-各请求独立进入恢复，仍受前台准入、连续批处理及共享计算/复制容量约束，并依据自身逐层就绪事件推进。放置优先级不产生请求级完成屏障，Manager 不因某请求 Slack 较小而等待它恢复完才提交下一个。
++恢复请求按各自的逐层就绪事件推进，不等待更高备份优先级的请求先恢复完成。引擎为物理上可运行的恢复任务保留正的调度份额，同时继续前台 continuous batching；恢复份额内按有限 prefill chunk 或 decode step 轮转，待准入请求按年龄处理并核对真实显存，阻塞层主动让出执行机会。这是需要实现的接口，不是未经修改的引擎已经具备的保证。
+ 
+-### 3.5 KV Master：逐请求备份与层数决策 ③
++正常备份复制受配置的总带宽上限约束（默认链路容量 20%）。故障补取与必要降级回写分别获得正的服务份额，前台保有自己的份额；每条共享链路及目标 HBM 都要计账，份额之和不超过可用能力，空闲份额可借用。恢复中实际 miss 优先于推测预取，各请求按字节 deficit round robin 共享补取份额并限制在途数量。DMA/内核只能在真实支持的边界让出。有限竞争者、有限操作粒度和正的可用服务量支持进展，不等于过载下仍有延迟保证；这些条件必须进入恢复 profile。
+ 
+-KV Master 在备份决策时选择请求的 Recompute/DRAM/Peer 保护层级、各自的目标层数 $L_r$ 和候选热块。Recovery Manager 已在请求到达时绑定 retry/Peer 目标；Adapter 只提供目标 DP 的窗口级容量预算（§3.6）。同一容量窗口内，不同请求的 $L_r$ 可以不同。
++**批处理边界。** retry 依次处于等空间、等数据、ready 和 running；执行 chunk 前预留激活/KV 工作集和传输缓冲。TP 各 rank 使用相同 batch、layer、collective 顺序。缺块只能在合法 kernel 边界暂停；只有后端支持时才拆批，否则整批等待并计入 profile。保留的激活仍收费，不允许逐层任意乱序；先预留内存再取 I/O lease，等待 DMA/collective 时不持目录或队列锁。
+ 
+-**何时决策。** 请求到达时建立策略，prefill 完成后提供首批密封状态，之后每增加 $Z$ 个生成 token 复核该请求。$Z$ 是与物理块大小对齐的固定系统配置，既不由 Adapter 调整，也不随故障率在线变化。显著 Slack/DAG 变化、预算更新，以及历史长度或复制条件的实质变化，可以提前触发策略复核；块密封只更新候选资格，不要求每生成一个 token 就重新求 $L_r$。请求结束后释放其 Peer 引用并保留其他请求的共享引用；策略不变则不重复传输。热块统计使用此前 512 个解码步，与 checkpoint 和容量控制窗口独立计量。
++**最小恢复合同。** 存活控制端持有单调递增 source epoch；新副本提交、目录写入、输出 ACK 均拒绝失效 epoch。ACK 前持久化请求 ID、token 位置/值及 epoch，输入和已接纳 tool 结果也需可恢复；KV 可落后于日志，重放后按位置去重交付。工具外部副作用由 orchestrator 的幂等契约负责。checkpoint manifest 只有在同一 token 前缀对应的模型/权重/布局、全部层/TP 分片、密封区间、selector 状态和日志依赖闭包完整提交后发布；frontier 取最新合法公共 manifest，不能取独立对象位置的最大值。Peer/DRAM 独立提交可以任意先后；恢复再查存活副本与版本，不完整的新 manifest 不替代旧版本。
+ 
+-checkpoint 触发一次决策，不代表复制已经提交。实际尾部 $N_r$ 是已知 token 前沿超出最新有效提交前沿的部分；异步排队可使它超过 $Z$。Master 使用实际提交进度估计尾部；Tier R 可以不做 checkpoint。
++预绑定不预留计算、工作空间或准入资格；成本须包括目标前台批次、重试工作集、队列、共享链路和故障域。目标没有可行工作空间时排队或由 Manager 重新检查路由及放置，不把本地副本等同于能立即执行。20% 是流量 cap，不能声称正常推理开销 ≤20%。
+ 
+-**选择保护层级。** 设 $T_{\mathrm{rc}}$ 为历史重算代价，$T_{\mathrm{rp}}$ 为已知尾部重放计算代价，$W_0$ 为无 Peer 时暴露的 DRAM 等待；$R_{\mathrm{floor}}$ 包含检测、重路由与准入。Master 使用
++### 3.5 KV Master：逐请求备份与迁移决策
+ 
+-$$R_{\mathrm{base}}=R_{\mathrm{floor}}+T_{\mathrm{rp}},\qquad R_R=R_{\mathrm{base}}+T_{\mathrm{rc}},\qquad R_D=R_{\mathrm{base}}+W_0.$$
++Recovery Manager 决定接管目标，Adapter 提供窗口级容量。KV Master 决定 Recompute/DRAM/Peer 层级、请求自己的 $L_r$ 和各层热块，不使用窗口内统一 L。
+ 
+-代价按模型、已提交历史、尾长、设备与代表性并发联合建模。若 $\sigma_r\ge R_R$，请求为 **Tier R**，计划无需备份、故障后重算；否则若 $\sigma_r\ge R_D$，为 **Tier D**，保留 DRAM；其余为 **Tier P**，保留 DRAM 并申请 Peer 保护。层级切换在上述名义边界周围采用 20% 滞回。没有 Peer 准入的 Tier P 请求仍走 DRAM。Slack 决定竞争顺序，不缩放每层热集比例，也不规定串行 retry 顺序。
++**触发与 Z。** 到达时建立策略，prefill 完成后提供密封状态，此后每增加固定配置的 Z 个生成 token 复核该请求。显著 Slack、预算、上下文和复制状态变化可提前触发。Z 与物理块对齐，不由 Adapter 调整。决策并非提交：复制排队使实际尾部 N 可能超过 Z。块密封只更新候选资格。热度统计使用此前 512 个 decode step，独立于 checkpoint 和容量窗口。复制队列设字节与操作数上限；合并被替代且尚未开始的计划，不丢弃在途/已提交版本的依赖，无法预留时跳过本次备份并报告 commit lag。
+ 
+-**定义与选择保护对象。** 对象为包含全部 KV heads 的 (layer, block)；当前画像使用 64-token 块。密封后才可复制，但故障可用前缀以提交前沿为准。未提交的密封块与活跃尾部使用已知 token ID 重放，不重新采样。
++**保护层级。** 对同一组条件故障状态样本求恢复代价的加权均值：
++$R_R=R_{\mathrm{floor}}+T_{\mathrm{rp}}+T_{\mathrm{rc}}$，
++$R_D=R_{\mathrm{floor}}+T_{\mathrm{rp}}+W_0$。
++Slack 能覆盖 $R_R$ 时允许 R；否则仅当 $R_D<R_R$ 且 Slack 能覆盖 $R_D$ 时取 D，其余为竞争 Peer 的 P。不假设 DRAM 比重算快；Peer 未获准入后选择更便宜的可行非 Peer 路径，代价相同取 R。DRAM 必须独立预留/提交，失败时退回旧合法 frontier 加尾部重放，或从日志重算。缺 profile 时尝试保守 DRAM 准入，不声称更快；实际恢复重新检查代价和可用性，区间重叠时保持可行当前路径，只有明确支配才切换。这些均为计划启发式，不是 deadline 保证。
+ 
+-第 $l$ 层长度 $n$ 重放所需的历史块并集为 $U_l(n)=\bigcup_{q=1}^{n}\bigcup_g S_{l,q,g}$，$S$ 为原生选择器输出，重复读取只计一块。按模型及稀疏方式配置固定预取比例 $h$；它不等于每次选择的 Top-k 比例或保证命中率。时刻 $\tau$，请求 $r$ 每层有 $n_r(\tau)$ 个密封历史块，则每层热块候选数为
++**K 的含义。** $H_{r,l}$ 是请求 r 在第 l 层已发布、已提交的 Peer 副本集合，$K_{r,l}=|H_{r,l}|$。K 仅表示每请求每层实际 Peer 驻留 Block 数；原生 selector 的 top-k、候选配额、复制预留和池的总物理占用另行计量。正在退休的缓冲区在释放前仍占物理空间，不能算作可用空闲。共享物理副本在池中只计一次。
+ 
+-$$K_r(\tau)=\lceil h n_r(\tau)\rceil.$$
++候选数量由单独声明的 quota rule 决定：固定块数上限，或按密封历史块数使用 $\lceil h_l n_r\rceil$。一次比较固定该规则，本文不声称已找到最优 K。强制 sink/window 块必须容纳在 quota 内；若超额，显式申请并计费更大的配额，否则拒绝该层 Peer 准入，不能删减原生要求。其余按原生选块频次、最近性、稳定 Block ID 排序。可选块连续两个统计窗口离开目标才退出。必需 selector/压缩状态另计。多 token 重放需求是跨 query 与 KV group 的块并集，不把单次 top-k 直接乘 N。不足 512 步时使用已有观测；零观测先排必需块，再按最近性与稳定 ID，尚无冷启动准确率证据。
+ 
+-强制密封起始/窗口块计入该名额，配置须能容纳它们；剩余槽按实际选择频次填充，同频时最近优先。可选旧块连续两个解码统计窗口跌出热集后移出候选；仍被引用的旧副本不能仅因热度变化就复用物理槽，替换块需要新准入。
++**同请求热集更新。** 前 d 层只是受限候选族，不声称任意层放置不能更优。深度候选 d 提供前 d 层目标集合：保留交集，降级退出的自有块，换入新块。普通请求竞争不能抢占其他请求的引用。一个请求退出共享块，只释放自身引用；旧块若仍被别人保护，不能释放物理空间。增加空间仍需准入，回写和迁移临时空间计入预演。降低 L 可退出自身深层块；L 不变也能更新块身份。实际部分准入通过 $H_{r,l}$ 和 K 报告。
+ 
+-**为每个请求选择层数。** Master 在策略事件中根据该请求的已提交历史 $M_r$、生成进度、Slack 和恢复画像复核 $L_r$。传输字节与重放计算均随上下文变化，按需未命中也可随尾长变化。对于每个候选深度，使用相同的请求增长轨迹和可能故障状态，平均未来 checkpoint 阶段及提交滞后的代价；不把当前 $N_r$ 或 $N=Z$ 当成确定的未来故障状态。
++**深度评分。** 每个请求的候选都从相同快照 S 开始，使用相同时间范围 H、条件故障状态样本及权重。样本包含未来 M、N、故障发生前可复制时间与前台/重试负载，并记录提交落后；既不固定 N=Z，也不默认 checkpoint phase 均匀。当前 Slack 在一次局部比较中固定。同源请求使用共同故障事件样本及目标资源竞争；$p_r$ 保留表示目标 DP，故障概率另用 $\pi_r$。若选用 Poisson 模型，$\pi_r=1-\exp(-\lambda_r H)$；其他风险模型须给出同一 H 内的概率。
+ 
+-请求按 Slack 排序逐个处理。对请求 $r$，比较包含零和当前深度的少量配置候选；所有候选从相同的目标状态快照预演增量准入，计入共享副本、已有引用、在途预留和复制限额。恢复估计只计预计能提交的覆盖，也计入仍然保留的旧副本。得分由候选的备份工作/内存占用引入的前台延迟，以及超出该请求 Slack 的恢复延迟组成，后者按配置风险模型中同一策略时间范围内的源故障概率加权。这是 Slack 优先级下的局部决策代理，不是全局最优，也不是可直接相加的 Workflow 完成时间。
++预演产生迁移计划 $G_d$。$A_r(d)$ 是该计划相对保持现状引起的前台请求延迟变化之和，单位秒，可为负。影响集合是当前活跃请求及 H 内到达请求；使用匹配到达轨迹和固定策略，跟踪至完成（包括 H 之后的完成）；包含复制、脏块回写、临时显存及准入压力变化。$R_r(d,j)$ 是样本 j 的故障至状态就绪时间，只计故障发生前预计已提交的副本。评分为
+ 
+-选择最低得分，同分优先较小深度；已有目标只有在改善超过配置的不确定性余量时才改变。缺少适用画像时保留已有目标，新请求从零 Peer 深度和 DRAM 保护开始。仅将胜出候选的计划加入虚拟快照，再评估下一请求；实际分配仍需原子复核空间，可能少于预演覆盖。
++$$J_r(d)=A_r(d)+\pi_r\sum_j w_j\max(0,R_r(d,j)-\sigma_r).$$
+ 
+-同质层下，P 类请求的目标为前 $L_r$ 层热集，即 $L_rK_r(\tau)$ 个逻辑层块对象及必需状态；R/D 的目标深度为零。$L_r$ 在策略事件之间保持，候选块数随密封历史增长；D/P 都保留逐层热集用于恢复预取。实际 Peer 覆盖可以不完整，减小 $L_r$ 不撤销旧副本引用。
++这是 Slack 顺序下的局部保护启发式，不是各工作流 WCT 之和或全局最优。候选网格包含 0、当前深度以及保留现有块身份的 keep 计划；比较后仅胜出计划推进虚拟快照，再处理下一请求。同源的两条等长关键分支各需 10 秒恢复，只保护一条可把局部罚项之和从 20 降到 10 秒，工作流仍延迟 10 秒；需共同事件的 DAG replay、小 DAG 可行 oracle/regret 验证这一局限。
+ 
+-**算法 2：逐请求 KV 备份策略**
++**Profile 接口与回退。** 输入模型/权重/selector 版本、布局与块大小、硬件/链路、快照、迁移计划、条件样本及共享资源调度配置。输出 A、各样本 R、误差区间、generation、支持范围和过期时间。A 来自相同到达轨迹的成对正常执行估计，R 来自成对恢复轨迹或明确标注的校准事件模型。计算与传输只在同一时间轴上统计，不能将完整传输时长与完整计算时长直接相加。缺失项保持未知，不用 Figure 5 的单一例子填补所有请求的 profile。
+ 
+-~~~text
+-Input: requests, Slack, profiles, targets, budgets, copy state
+-Output: desired DRAM set Ds, depths {Lr}, ordered Peer plans {Qp}
+-1  Ds, H ← ∅; Qp ← [] for each target p
+-2  snapshot retained copies and reserved capacity as S
+-3  for r in (Slack, stable request ID) order:
+-4      τr ← Tier(r, RR, RD, σr)
+-5      if τr = R: Lr ← 0; continue
+-6      add sealed(r) and state(r) to Ds
+-7      Hr,l ← HotSet(r, l, Kr) for each layer
+-8      if τr = D: Lr ← 0; continue
+-9      for each candidate depth d, including zero and current Lr:
+-10         Gd ← Preview(S, r, Hr,1:d)
+-11         score profiled costs; mark missing profiles unknown
+-12     Lr ← StableBest(r, {Gd})
+-13     append (r, Lr, Hr,1:Lr, GLr) to Qpr
+-14     update S with the chosen plan only
+-15 return Ds, H, {Lr}, {Qp}
+-~~~
++先按均值评分选择候选，同分取较小深度和稳定计划 ID；仅当新方案的评分上界加切换余量仍低于 keep 下界时切换。不受支持的候选排除；generation 无效或 keep 的 profile 缺失、过期、漂移时冻结主动扩容/热集迁移，新请求尝试 DRAM 准入，失败再回退 R。已有驻留只能在仍满足预算与正确性时保持，不能阻止 Adapter 必要缩容。对同类可比操作连续出现相对误差超阈值时作废对应 profile generation；不把不可比观测当成验证。参数、条件样本、风险模型与校准版本必须作为配置记录。零故障概率时只剩 A，不能用恢复收益解释有正开销的扩容；零成本 keep 仍可保留。
+ 
+-算法展示全量刷新；token 间隔事件只更新受影响请求，保留其他策略和预留。Tier 对已有层级应用滞回；StableBest 实现切换余量和画像不足时的回退。虚拟快照不等于真实空间预留。排序为 $O(n\log n)$，随后进行有限候选扫描；物理分配去重共享对象，按策略执行差量复制并反馈实际驻留和提交进度。
++算法 2：snapshot → 按 Slack 处理受影响请求 → 选 tier，仅为 D/P 申请 DRAM 并报告实际覆盖/失败 → 排热块 → 对每个 keep/depth 方案独立预演 → profile 与区间评分 → 稳定切换或可行回退 → 排保留/降级/换入计划 → 仅推进胜出快照 → 执行前原子核对预算与预留 → 发布真实提交与释放。预演不是物理预留，实际少于计划时报告并触发复核。
+ 
+-**按实际就绪状态提交和恢复。** Peer 与故障域外 DRAM 独立提交，在传输完成并验证模型、布局和分片后发布可读副本。低优先级复制流默认限制在链路容量的 20%，同时核算目标 HBM 带宽。恢复只读已提交对象：逐层预取热块，新揭示的缺失块优先于推测性复制，选择器状态先于选择操作就绪；每层等待全部必需输入到齐。实际 DMA 粒度可能限制复制抢占，Tier R 重建历史。放置不改变选择器输出或已知重放 token；兼容权重、布局与算子恢复同一逻辑 KV，不引入新的注意力近似，但不保证不同浮点调度下后续随机采样逐 token 一致。
++**正确性与证据。** 先恢复 selector 必需状态，保持原生选择不变；选择可指向 DRAM 中的历史 KV，也可包含已正确重建的尾部 KV。Connector 解析逻辑 ID、补取实际 miss 并返回就绪事件，attention 等齐全部必需输入才执行。预测影响传输/等待，不新增注意力近似。重放使用记录 token，不对已知尾部重新采样。批量 replay 只有在原生 selector 与状态演进满足逐 token 路径的声明数值契约时可用，否则采用原生逐 token 路径；prefill gate 或尚未解决的数值诊断不是该等价性的证明。Figure 5 的四条时间线与数值保持不变；它不校准本评分，不证明逐请求最优 L 或并发 WCT 收益。C 是 A100 80GB PCIe 上 batch=1、64-token forward 的 5 次中位数除以 32，并非逐层计时。6.25 GB/s 是 25 GB/s 链路被四路均分的假设；Peer 载荷为 7 × 0.65845 × 32 MiB = 147.49 MiB，未计辅助状态/临时缓冲。尾部就绪后仍有 38.69 ms 冷数据搬运，后续 TPOT 待测。
+ 
+-<figure class="paper-figure">
++### 3.6 Adapter：窗口级容量与安全降级
+ 
+-[<img src="../figures/design-single/design-layer-pipeline.png" width="480" alt="图 5 四种恢复流水线">](../figures/design-single/design-layer-pipeline.pdf)
++Adapter 每个时间窗口发布目标 DP 的 Peer 总预算 Bp，窗口内目标不变但每次分配检查物理空间。预算为 KV pool 减去预测前台需求与准入余量，限制在 0 到 pool 一半之间。pool 排除了权重与固定运行时状态，包含现有 Peer 占用。Adapter 只调容量，不决定共同 L 或动态 Z。
+ 
+-**图 5：模型化恢复流水线。** MiniCPM4-8B，32 层、32K 历史、已知 64-token 尾部；每层 $C=2.87$ ms 来自测量，$D=5.37$ ms 对应假设的 6.25 GB/s 带宽。(d) 将 147 MiB 热集驻留 Peer；时间终点为尾部 KV 重建完成。模型采用同质层及理想可抢占复制流，不含检测、排队和干扰。
++**DRAM 也要准入。** 有限 backing pool 账本计入已提交对象、pending 预留、retiring 缓冲及必需元数据，共享对象只计一次。接纳 checkpoint 前先为缺失依赖闭包预留；活跃 checkpoint/reader 引用保护对象，零引用进入 LRU，等 I/O lease 归零才释放。新 manifest 提交前保留旧 manifest；完成或显式撤回备份承诺后可释放旧引用。分配/提交失败报告真实覆盖并使用旧 frontier 或 R，Peer 失败不代表 DRAM 自动成功。
+ 
+-</figure>
++**引用的权限。** 活跃请求引用防止其他请求抢占其 Peer 副本。所属请求可主动替换自己的热集或减小 L；请求结束（包括返回工具调用）释放自身引用。Adapter 为正常服务缩容时先回收无引用副本，仍不足则有权降级带请求引用的副本。I/O lease 则保护具体物理缓冲区，无论谁触发降级都不能越过正在进行的读写。
+ 
+-图 5 在固定尾长下说明层数的作用：逐层流水线、热集预取和前七层热集驻留依次将暴露等待从 172 ms 降至 83、44 和 20 ms。这是一个校准画像，不能验证逐请求深度选择，也不能推出所有请求都应保护七层。
++**提交与目录接口。** Connector/目录提供 reserve、commit、acquire/release lease、retire。Block ID 绑定模型/权重/布局、规范前缀身份、层、分片和密封区间；location generation 防止旧地址在复用后被误用。PENDING 不可读；只有所需层、分片、selector 状态和 token 日志在故障模型下可恢复时才推进 checkpoint frontier。Peer 与 DRAM 可以独立传输、独立提交，不声称跨路径原子提交。
+ 
+-### 3.6 Adapter：逐窗口 Peer 容量控制 ④
++每次退出 Peer 驻留的顺序固定为：
+ 
+-Adapter 的自适应输出只有每个目标 DP 的 Peer HBM 总预算 $B_p$。它在**时间窗口边界**发布下一窗口预算，窗口内目标不变，每次实际分配仍检查即时空间。KV Master 负责固定 $Z$ 下的备份决策、请求层级和各自的 $L_r$；同一容量窗口内，不同请求的层数可以不同，也可在策略事件中更新。
++1. 确保同版本且可用于恢复的 DRAM 副本已经提交；已有有效副本则不重复回写。
++2. 原子地把目录解析切换到 DRAM，并将旧 Peer generation 标为 retiring、关闭新 lease；持旧 lookup 的调用必须核对 generation 后重试。
++3. 等待旧 generation 的读、写与 DMA lease 全部归零。
++4. 释放物理 HBM 后才归还容量。
+ 
+-**先为正常推理保留容量。** 从可管理 KV 池中扣除下一窗口的前台 KV 需求估计及准入余量，将剩余量作为 Peer 预算，最少为零、最多为 KV 池的一半。池已扣除模型权重和固定运行时开销，但包含现有 Peer 副本；$B_p$ 是总占用目标，不是新增空闲量。需求根据 KV 水位与内存不足造成的准入等待估计，不仅依赖 GPU 计算利用率。前台需求增加时缩减 Peer 目标，压力持续下降时允许扩张。Adapter 上报实际空闲、引用中、复制中及可回收字节，供 Master 评估各请求计划。
++切换前若回写失败，保留旧 Peer；切换后新读走 DRAM，旧 lease 可以完成。请求逻辑 KV 没有被删除。元数据须在源故障后存活，失败源写入被 fencing；上述是实现契约而非已通过竞态验证的事实。
+ 
+-**算法 3：逐窗口更新 Peer 预算**
++**缩容推进。** 超预算时停止新 Peer 预留。无引用安全副本不足时，由 Master 提供稳定的降级顺序：较大 Slack 优先，其次更深层、更低近期选中频次、稳定对象 ID；共享块按剩余 owner 的最小 Slack 保护。该顺序用于选 victim，不把独立迁移或 retry 串行化。降级后的覆盖与 K 返回 Master，不能马上把收回的额度填回。
+ 
+-~~~text
+-Input: KV pool, foreground demand, headroom, copy state
+-Output: next-window total Peer budget Bp for each target
+-1  for each target DP p at the window boundary:
+-2      snapshot pool, occupancy, references, and copies
+-3      estimate next-window foreground KV demand
+-4      Bp ← pool − demand − admission headroom
+-5      clamp Bp between zero and half of the pool
+-6      publish Bp and capacity state to KV Master
+-7      pause new space reservations above the budget
+-8      reclaim safe zero-reference copies as needed
+-9      count bytes until physical release completes
+-~~~
++缩容等待的是必要迁移和 I/O lease，而不是整个长 decode 结束。必要回写获得正的服务份额，但如果 DRAM 满、链路失效或显存余量耗尽，仍可能暂时超目标并阻塞前台物理准入，必须报告 pending bytes，不能宣称瞬时释放。窗口之间持续推进并核对未完成预留。
+ 
+-**按引用状态准入和回收。** Master 按 Slack 顺序提出各请求前 $L_r$ 层热块，同 Slack 时使用稳定 ID。已有副本可以共享；新增对象在复制前必须取得预算和真实空间预留。压力下只有引用为零、无在途读写、已有有效 DRAM 后备的对象进入 LRU 淘汰队列。空闲与安全可回收空间仍不足时，拒绝 Peer 增量，保留 DRAM 路径；正常推理不等待 Peer，高优先级不能撤销活跃引用。
++算法 3：窗口快照 → 估计前台需求 → Bp 截断 → 发布并限制新预留 → 先回收无引用 → 必要时选择带引用副本 → DRAM commit → 原子目录切换/关闭旧 lease → drain → 物理释放 → 发布实际覆盖与待处理字节。各对象异步推进，不等全体结束才允许其他 ready 请求运行。
+ 
+-成功取得的副本保留请求引用，直到该次 LLM 请求结束，包括返回外部 tool 调用的情况。共享引用全部释放后才可回收，归零不等于立即删除。热集增长或替换需要新准入，旧副本仍计账，因此候选数不保证当前热集完整驻留，也不是保留旧副本后的占用上限。
++**验证边界。** 尚需逐请求评分/profile 校准、故障风险与 Z 敏感性、真实 Agent Slack 误差、活跃热集迁移、并发公平性和前台干扰实验。必须覆盖迁移中故障、旧地址竞态、DRAM 容量不足、复制积压和共享带宽竞争。原生轨迹和单请求分析流水线不能代替这些实验；同源故障 DAG oracle、选择器重放等价性也需验证，保留零或负收益结果。
+ 
+-预算下调后，超过目标时暂停新空间预留并先释放安全副本，其余随请求结束逐步回收；减小请求的 $L_r$ 同样不撤销已有引用。实际占用可暂时超过新目标，只有物理释放完成后才归还前台。增大 $L_r$ 增加候选范围，新对象仍需准入。复制中、已提交与回收中的字节在物理释放前持续计账。
+-
+-**范围与验证。** 稀疏接入需可观测索引、可恢复的选择器状态和全部必需注意力分支，并将 token 选择映射到物理块。热度不准时可退回完整层装载，稠密注意力取 $h=1$。独立请求取零 Slack，prefill 故障按丢失 chunk 校准。逐请求 $M_r,N_r$ 联合画像、深度切换、竞争准入、预算预测和引用释放滞后仍需验证；轨迹分析与单请求流水线不能替代这些证据。
+ 
+ ---
+ 
+@@ -188,3 +161,5 @@
+ 
+ 
+ 编辑记录（2026-09-19 最新修订）：用户将层数改为逐请求调整，Adapter 仅调 Peer HBM 容量，并明确 Z 固定为系统配置。§3.5 和算法 2 由 KV Master 选择各自 L_r；§3.6 和算法 3 仅发布窗口级 B_p。撤回动态 Z 与统一 L 的控制职责；旧编辑记录保留历史含义。Figure 5 的单请求流水线移回 §3.5，数据不变。引用保护、零引用回收和 DRAM 回退继续适用。
++
++编辑记录（2026-09-19 外部评审修订）：移除摘要未经验证的实验结论；K 改为逐层已提交 Peer 驻留块数，候选 quota 另行配置；允许 owner 热集更新和 Adapter 必要降级，明确 committed DRAM、目录 generation/lease 关闭、drain、物理释放顺序。补上深度评分、profile 接口与失效回退，明确并发恢复的公平服务与资源竞争。Figure 4 保留原生源和比例，改为本轮明确允许的双栏放置以达到 >=10 pt 普通标签；Figure 3/5 数据不变。尚未完成的实证不转写为已有结果。
+--- before/sections/README.md
++++ after/sections/README.md
+@@ -39,10 +39,7 @@
+ 
+ ## 设计图与复现
+ 
+-当前 Overview 使用 `../figures/system-overview-v11.drawio`，按 `width=\columnwidth` **等比缩小**原矢量 PDF。
+-原图约 1.11:1；单栏 84.65 mm 下高度约 76.2 mm。编号 ①–④ 各一次，位于独立 `Paper annotations` 图层。
+-按 2026-09-18 用户纠正，取消高约 153 mm 的纵向重排；该候选 `system-overview-single.drawio` 仍保留。
+-原版整体缩小也使最小文字缩至约 5 pt；这是本次保留原图比例的实际结果，不再声称单栏达到 10 pt。
++当前 Overview 保留 `../figures/system-overview-v11.drawio` 原生可编辑源与比例，按本轮外部评审修订明确允许的双栏 `width=\textwidth` 放置。普通标签最小值在独立论文预览中为 10.44 pt；不再使用产生约 4.97 pt 小字的单栏插入。没有通过非等比拉伸或缩小字号压图；历史单栏版本和纵向候选保留作追溯。编号 ①–④ 仍各一次，位于独立 `Paper annotations` 图层。
+ 图源与导出说明见 [`system-overview-v11.md`](../figures/system-overview-v11.md)。
+ 
+ 整稿编号为 Figure 1（Motivation 三子图）、2（三路径恢复延迟估计）、3（三项 Insight）、4（Overview）、5（恢复流水线）。
+@@ -69,13 +66,15 @@
+ 后续 Overview v11 的逐轮导出与论文嵌入检查位于 `output/pdf/aegiskv-overview-v11/`。
+ 当前单栏修订、图内页脚删除及旧 Figure 3(b) 查找记录在 `output/pdf/aegiskv-single-column-20260918/`。
+ 
+-## 当前组件职责（2026-09-19）
++## 当前组件职责（2026-09-19 外部评审修订）
+ 
+-最新正文顺序为 §3.4 Recovery Manager、§3.5 KV Master、§3.6 Adapter；旧记录中的 Planner/节号只描述历史版本。
+-Recovery Manager 在到达时固定 retry/Peer 目标；KV Master 在配置的固定 Z、prefill 完成及显著策略事件中决定各请求层级、L_r、热块与准入顺序。Adapter 仅在时间窗口边界更新目标 DP 的 Peer 总预算 B_p。固定 h 决定每层 K_r；历史增长在备份策略事件中更新该请求的目标，不要求逐 token 重算 L_r。
+-算法 2 输出 DRAM、逐请求 L_r 和按目标排序的 Peer 计划；实际覆盖受增量准入、共享对象、在途预留和引用保护约束，不是整请求全放或全不放。算法 3 仅更新容量目标；预算或 L_r 收缩均不撤销活跃引用。
+-逐请求层数选择及 Figure 5 流水线解释位于 §3.5，预算与安全回收位于 §3.6；图数据未改。Overview 保留原比例与双 DP 对称能力，同步名称、编号和接口标注。
+-本次是论文规格更新，旧实现和历史结果不构成新策略的端到端验证。编译、差异和最终页面检查见 `output/pdf/aegiskv-request-depth-20260919/`。
++§3.4 Recovery Manager 在到达时固定 retry/Peer 目标并组织并发恢复；§3.5 KV Master 在固定 Z、prefill 完成及策略事件中决定 tier、逐请求 L 和热集；§3.6 Adapter 只按时间窗口更新 Peer 总预算 Bp。
++
++K 是每请求每层已提交的 Peer 驻留块数，候选 quota 另行声明。普通请求不能抢占活跃引用；owner 可以替换自己的热集，Adapter 必要缩容可以将带引用副本降级到 DRAM。物理释放遵守 DRAM commit、原子目录/lease 切换、drain、free 的顺序，共享对象与在途空间持续计账。
++
++算法 2 给出条件故障样本上的深度评分和 profile/区间回退；算法 3 包含必要的受保护副本降级，不等整个长 decode 结束才回收。并发恢复保留公平资源份额与逐层就绪执行，不把 Slack 排序变为请求级串行恢复。具体复算接口见 [depth-policy-contract-20260919.md](../draft/supporting/depth-policy-contract-20260919.md)。
++
++Figure 4 改用保持比例的双栏放置，实际普通标签 >=10 pt；Figure 3/5 数据与源图未变。摘要不再声称已验证的 WCT 收益或可忽略正常开销。独立编译与验证位于 `output/pdf/aegiskv-external-review-revision-20260919/`；已在动机任务完成后统一更新主 PDF：12 页、27 个引用解析成功，无 Overfull 或未定义引用；最终回执见同目录 FINAL_HANDOFF.md。新规则仍需实现与端到端实证。
+ 
+ ## System Design 篇幅压缩（2026-09-18）
+ 
+--- before/sections/abstract.tex
++++ after/sections/abstract.tex
+@@ -11,11 +11,10 @@
+ guide KV block placement and recovery. By coordinating request-level
+ protection with block-level placement, AegisKV focuses limited backup
+ resources on reducing recovery delays that affect workflow completion.
+-% Provisional qualitative result sentence requested for the writing draft.
+-% Detailed results are not yet available: neither benefit nor overhead
+-% is verified here. Confirm both claims against current-design experiments
+-% and the chosen baselines before submission; revise if unsupported.
+-Experiments show that AegisKV substantially reduces workflow completion
+-time under failures while introducing negligible overhead during normal
+-inference.
++The design separates fault-safe KV availability from limited Peer-HBM
++residency, allowing request-local hot-set replacement and capacity-driven
++demotion without changing the model's sparse selections. Native selection
++traces and a pipeline model using measured forward latency and assumed
++transfer bandwidth motivate these mechanisms;
++end-to-end workflow benefits and normal-service overhead remain to be evaluated.
+ \end{abstract}
+--- before/sections/capacity_allocation.tex
++++ after/sections/capacity_allocation.tex
+@@ -1,28 +1,88 @@
+-% Reference-aware execution of the window targets, part of section 3.6.
+-\paragraph{Admit and reclaim without evicting live references.}
+-The Master offers hot blocks from each request's first $L_r$ layers in slack order,
+-using stable request IDs to break ties. Existing copies can be shared;
+-new copies require both budget and physical space, reserved before
+-transfer. Under pressure, only zero-reference objects with no in-flight
+-reader or writer and valid DRAM backing enter the LRU eviction queue.
+-These are runtime checks against the Master's ordered plan.
+-If free space and safe victims are insufficient, the Peer increment is
+-denied and the request retains its DRAM path. Normal inference does not
+-wait for a Peer grant, and priority does not revoke a live reference.
++% Capacity execution and replica lifetime, part of section 3.6.
++\paragraph{Admit DRAM protection explicitly.}
++Each backing pool has a finite byte ledger charging committed objects,
++pending reservations, retiring buffers, and required metadata. Shared
++objects are charged once. Reserve the missing dependency closure before
++accepting a checkpoint; publish only completed coverage. Live checkpoint
++and reader references protect DRAM objects; zero-reference objects enter
++LRU reclamation, with physical release delayed until I/O leases drain.
++Newer valid manifests, request completion, or an explicit transition to
++recomputation release obsolete ownership. An old manifest remains retained
++until its replacement is committed or its recovery claim is withdrawn.
++If reservation or commit fails, keep the earlier valid frontier and replay
++its missing suffix, or use R from logged inputs. A Peer denial does not
++imply DRAM admission, and partial copies do not establish full D protection.
++DRAM exhaustion is an operational limit, not hidden unlimited backing.
+ 
+-A successful grant holds a request reference until that LLM request
+-ends, including a response that hands control to an external tool.
+-Completion decrements shared references; zero references make a copy
+-eligible for reclamation, not immediate deletion. Growing or changed
+-hot sets require fresh admission. Previously granted objects remain
+-protected, so the current candidate count is a target rather than a
+-guarantee of complete Peer coverage or a bound on retained old copies.
++\paragraph{Protect ownership, not a permanent HBM address.}
++A request reference prevents \emph{other requests} from taking its Peer
++capacity, even when they have smaller slack. Normal admission uses free
++space or safely reclaimable zero-reference copies; otherwise the new
++Peer increment is denied. An inference request need not wait to obtain
++Peer protection. The owner can replace its own hot set or reduce its
++depth. Completion, including a handoff to a tool, drops that request's
++references, while other owners of shared blocks retain theirs.
+ 
+-When the budget shrinks, new allocations stop above the target and
+-safe zero-reference copies are reclaimed first. Referenced copies drain
+-as requests finish; reducing a request's $L_r$ likewise does not revoke their pins.
+-Physical usage can therefore exceed a newly reduced target, and memory
+-is returned to foreground inference only after release completes.
+-Increasing $L_r$ queues additional candidates subject to the same checks.
+-Copying, committed, and reclaiming bytes remain charged until physical
+-release. Window targets never imply instant copies or instant free space.
++These ownership references differ from short-lived \emph{I/O leases}.
++A lease pins the physical buffer while a kernel, read, or copy uses it.
++An owner update removes only its own reference and cannot free a shared
++copy still protected by another owner. Adapter contraction has explicit
++system-level authority to demote even protected copies; it never overrides
++an outstanding I/O lease or deletes the logical KV state.
++
++\paragraph{Demote through a committed DRAM copy.}
++The Connector and directory expose four operations:
++reserve space, commit a versioned replica, acquire/release an I/O lease,
++and retire a location. A block ID includes model/weights/layout, request-prefix
++identity, layer, shard, and sealed token interval; a location generation
++prevents reuse of a stale address. A pending copy is never readable.
++A checkpoint frontier advances only when its required shards, layers,
++selector state, and token log are recoverable in the declared failure model.
++Independent Peer and DRAM transfers do not imply an atomic joint commit.
++
++Retiring a Peer location follows the same order for an owner update and
++an Adapter contraction:
++\begin{enumerate}
++  \item Reserve DRAM if needed, copy the immutable block, and commit
++    a complete matching replica outside the failed source's domain.
++    A valid existing DRAM replica avoids another writeback.
++  \item Atomically redirect the directory to DRAM and mark the old
++    Peer generation retiring. This transition closes new lease acquisition
++    on that address; a lookup racing the transition must retry.
++  \item Wait for all old-generation readers, writers, and DMA operations
++    to release their leases. Existing holders may finish; no fresh holder
++    can enter through a cached stale address.
++  \item Free the Peer buffer and then return its bytes to the allocator.
++\end{enumerate}
++Before the directory transition, an unsuccessful writeback leaves the
++surviving Peer location authoritative; afterward new readers resolve DRAM.
++If DRAM allocation, transfer, or commit fails, retain the Peer copy and
++report the unfulfilled shrink.
++Fault detection fences stale writers and retries; directory generations
++and metadata survive the source failure. These are required runtime
++interfaces, not claims of a verified implementation.
++
++\paragraph{Bound replacement and contraction.}
++For old and new hot sets, retain their intersection, retire departing
++owned blocks, and fetch only new arrivals. With no spare space, safe
++retirement precedes admission; overlapping copies require explicit
++temporary reservations. Thus changing $\{A,B,C,D\}$ to $\{C,D,E,F\}$
++can retain four blocks after migration, without pinning every historical
++hot set until request completion. Shared replicas and incomplete transfers
++remain separately charged until physically releasable.
++
++When occupancy exceeds a new $B_p$, stop new Peer reservations and reclaim
++zero-reference copies first. If insufficient, Adapter requests protected
++demotions in the Master's order: larger slack first, then deeper layer,
++lower recent selection count, and stable object ID. A shared object's
++priority uses the smallest slack of its remaining owners. This ordering
++chooses victims; it does not serialize independent migrations or retries.
++Publish the reduced coverage to the Master, and do not re-admit it beyond
++the new budget. The Master subsequently reassesses request-specific $L_r$.
++
++Contraction waits for bounded transfers and leases, not for the LLM
++request to finish. Actual usage may temporarily exceed the target;
++foreground admission can still wait for physical space if headroom is
++exhausted. The scheduler reserves progress for required writeback, and
++the controller reports pending bytes rather than claiming an instantaneous
++shrink. Insufficient backing capacity remains an explicit operational limit.
+--- before/sections/design_discussion.tex
++++ after/sections/design_discussion.tex
+@@ -1,14 +1,23 @@
+ \paragraph{Scope and validation.}
+ \label{sec:design-discussion}
+-Sparse integration requires observable indices, recoverable selector
+-state, and every required attention branch; token selectors must map
+-to physical copy blocks. Poor rankings can fall back to full-layer
+-loading; dense attention uses the full historical set ($h=1$). Standalone requests
+-use zero slack. Prefill failures require calibration for the lost chunk,
+-not a fixed 64-token decode tail. Agent-workload slack accuracy, profile
+-drift, simultaneous retries, and foreground interference remain to be
+-validated end to end. Request-specific depth selection requires joint
+-context/tail profiles and tests of switching margins and competing admissions.
+-The capacity controller requires demand-prediction and reference-drain studies.
+-The configured checkpoint interval needs sensitivity analysis;
+-the trace study and analytical pipeline do not establish those properties.
++Sparse integration needs native selection indices, recoverable selector
++state and all attention branches, physical-block mapping, and the directory/
++lease interface above. Poor predictions can use exact demand fetch or
++full-layer loading; dense attention uses the full historical set.
++Standalone requests use zero slack. Prefill failures require profiles for
++the lost chunk, not a universal 64-token tail.
++
++The present evidence consists of native selection traces, attributed
++prediction results, and a single-request pipeline model using measured
++forward latency and assumed transfer bandwidth. It does
++not validate the depth-score profiles, failure-risk calibration, checkpoint
++sensitivity, active hot-set migration, concurrent retry fairness, or
++foreground interference. End-to-end tests must include recovery during
++demotion, stale-location races, DRAM exhaustion, copy backlogs, and shared
++bandwidth pressure. The specified interfaces and fallbacks make those
++claims testable; they do not establish performance or a completed implementation.
++Validation must also replay common source failures through the dependency
++DAG, compare the local policy with feasible small-DAG allocations, and
++report regret, including zero or negative Peer benefit. Native selector
++traces and the measured batched forward do not by themselves validate
++recovery equivalence to token-wise decoding.
+--- before/sections/design_insights.tex
++++ after/sections/design_insights.tex
+@@ -3,7 +3,7 @@
+ 
+ Three premises motivate the design (Figure~\ref{fig:design-insights}).
+ The first draws on published agent-prediction results; the other two
+-characterize sparse-attention adoption and recovery demand.
++characterize selected sparse-attention releases and recovery demand.
+ 
+ \begin{figure*}[t]
+   \centering
+@@ -18,7 +18,7 @@
+   \begin{subfigure}[t]{0.32\textwidth}
+     \vspace{0pt}
+     \includegraphics[width=\linewidth]{figures/design-insights/sparse-attention-survey.pdf}
+-    \caption{Sparse attention adoption}
++    \caption{Selected sparse releases}
+     \label{fig:insight-sparse-adoption}
+   \end{subfigure}\hfill
+   \begin{subfigure}[t]{0.32\textwidth}
+--- before/sections/kv_placement.tex
++++ after/sections/kv_placement.tex
+@@ -2,173 +2,220 @@
+ \label{sec:kv-placement}
+ \label{sec:kv-master}
+ 
+-KV Master (3) makes checkpoint decisions, choosing recovery tiers, each request's
+-Peer depth $L_r$, and historical hot blocks. The Recovery Manager fixes
+-the retry/Peer target at arrival; the target Adapter publishes only a
+-window-level Peer capacity budget (\S\ref{sec:kv-runtime}).
+-Different requests can use different depths within the same window.
+-
+-\paragraph{Decision triggers and checkpoint interval.}
+-The Master establishes a policy at arrival, offers sealed state at
+-prefill completion, and reviews an active request after each additional
+-$Z$ generated tokens. The block-aligned interval $Z$ is a fixed system
+-configuration, not an adaptive output. Significant slack or DAG changes, revised budgets,
+-and material changes in context or copy conditions can refresh policy
+-earlier. Sealing updates block eligibility without triggering a depth
+-decision for every token. Completion releases that request's Peer
+-references while preserving shared references; unchanged decisions
+-produce no new transfer. Hot-block statistics use the preceding 512
+-decoding steps, independently of checkpoint and capacity-control windows.
+-
+-A trigger requests a decision, not a completed replica. The replay tail
+-contains known tokens beyond the latest valid committed frontier;
+-queued copies can make it longer than $Z$. Tier R need not checkpoint.
+-The Master uses reported commit progress when estimating this tail.
++KV Master (3) selects recovery tiers, each request's Peer depth $L_r$,
++and layer-local hot sets. Recovery Manager fixes the retry/Peer target;
++Adapter publishes its window-level capacity $B_p$. Requests may use
++different depths within the same capacity window.
++
++\paragraph{Decision events.}
++The Master establishes policy at arrival, offers sealed state after prefill,
++and reviews a request every additional $Z$ generated tokens. $Z$ is a
++block-aligned system configuration, not an Adapter output. Significant
++slack, budget, context, or copy-state changes can trigger an earlier review.
++A decision does not imply a completed checkpoint: the replay tail extends
++beyond the latest committed frontier and can exceed $Z$ when copying lags.
++Copy queues have configured byte and operation limits. Coalesce superseded
++unstarted plans, retain dependencies of in-flight or committed versions,
++and skip a new backup attempt if it cannot be reserved. Report the resulting
++commit lag; the trigger interval supplies no durability bound.
++Sealing only updates eligibility. Hot-block statistics use the preceding
++512 decode steps, independently of checkpoint and capacity windows.
+ 
+ \paragraph{Choose protection tiers.}
+-Let $T_{\mathrm{rc}}$ be historical-prefix recomputation cost,
+-$T_{\mathrm{rp}}$ known-tail replay cost, and $W_0$ exposed DRAM-loading
+-wait without Peer residency. Detection, rerouting, and readmission
+-contribute $R_{\mathrm{floor}}$. The Master uses
++Let $T_{\mathrm{rc}}$ denote prefix recomputation, $T_{\mathrm{rp}}$ known-tail
++replay, $W_0$ exposed DRAM-loading wait, and $R_{\mathrm{floor}}$ detection,
++rerouting, and readmission time. Joint context/tail/load profiles give
+ \begin{equation}
+ \begin{aligned}
+  R_{\mathrm{base}}&=R_{\mathrm{floor}}+T_{\mathrm{rp}},\\
+- R_R&=R_{\mathrm{base}}+T_{\mathrm{rc}},\quad
++ R_R&=R_{\mathrm{base}}+T_{\mathrm{rc}},\qquad
+  R_D=R_{\mathrm{base}}+W_0.
+ \end{aligned}
+ \label{eq:recovery-base}
+ \end{equation}
+-Costs are profiled jointly by model, committed context, replay tail,
+-hardware, and representative concurrency.
+-Tier \emph{R} requires no backup when $\sigma_r\ge R_R$;
+-tier \emph{D} retains DRAM when $R_D\le\sigma_r<R_R$;
+-tier \emph{P} retains DRAM and requests Peer protection otherwise.
+-Tier changes use 20\% hysteresis around these nominal boundaries.
+-A tier-P request without a Peer grant retains DRAM recovery.
+-Slack orders competing requests; it does not scale their hot-set
+-fraction or impose a serial retry order.
+-
+-\paragraph{Define and rank protection objects.}
+-A protection object is a \emph{(layer, block)} containing all KV heads;
+-the profiled selectors use 64-token blocks. Sealing makes a full block
+-eligible for copying; the commit frontier determines the prefix that
+-survives failure. Known uncommitted tokens are replayed without resampling.
+-
+-The historical blocks needed by a length-$n$ replay form the union
+-$U_l(n)=\bigcup_{q=1}^{n}\bigcup_g S_{l,q,g}$, where $S_{l,q,g}$ is the
+-native selector output. Repeated reads count once. A fixed preload
+-fraction $h$ is configured for each model and sparse-attention method;
+-it is not the selector's instantaneous Top-$k$ fraction or a guaranteed
+-hit rate. With $n_r(\tau)$ sealed historical blocks per layer, the Master uses
++$R_R$ and $R_D$ use the weighted conditional means of the same
++future-state samples defined below; the tier test is a planning heuristic,
++not a deadline guarantee. Tier R needs no backup if $\sigma_r\ge R_R$.
++Otherwise choose D when $R_D<R_R$ and $\sigma_r\ge R_D$; remaining
++requests compete for Peer as tier P. There is no assumption that loading
++is faster than recomputation. The non-Peer fallback chooses the cheaper
++feasible route, preferring R on equal costs; a denied Peer increment does
++not force a slower DRAM restore. DRAM protection requires its own admission
++and commit (\S\ref{sec:kv-runtime}). Missing profiles request conservative
++DRAM protection when feasible, without claiming it is faster; failed
++admission uses an older valid checkpoint or R. Slack orders protection,
++not retry execution. At recovery, refresh costs and availability; overlapping
++cost intervals retain the feasible current route unless dominance is clear.
++
++\paragraph{K counts resident blocks, not selector outputs.}
++A protection object is an immutable sealed \emph{(layer, block)} including
++all KV heads; the trace study uses 64-token blocks. Let $H_{r,l}$ be
++request $r$'s published, committed Peer set at layer $l$. We define
+ \begin{equation}
+- K_r(\tau)=\lceil h n_r(\tau)\rceil
++ K_{r,l}=|H_{r,l}|.
+  \label{eq:hot-block-count}
+ \end{equation}
+-slots in each layer, including mandatory sealed sink/window blocks.
+-The configured quota must accommodate them. Remaining slots follow
+-observed selection counts, breaking ties by recency. An optional block
+-leaves the candidate set after two successive decoding-statistics windows
+-outside the top set. A replacement needs fresh admission if the old
+-replica still has a request reference.
+-
+-\paragraph{Select a depth for each request.}
+-At a policy decision, the Master reviews $L_r$ using that request's
+-committed history, generation progress, slack, and recovery profiles.
+-Both transfer bytes and replay computation depend on context; hot-set
+-misses can also vary with the replay tail. Candidate costs average over
+-plausible future checkpoint phases and commit lag, using the same
+-request-growth and fault-state samples across depths. This does not
+-assume that a future failure occurs at the current tail or at $N=Z$.
+-
+-For each request in slack order, the Master compares a small configured
+-set of depths within the model, including zero and its current depth. Each candidate
+-previews incremental admission against the same target-state snapshot,
+-accounting for shared copies, live references, in-flight reservations,
+-and copy limits. Recovery estimates credit only expected committed
+-coverage, including retained old copies. The score adds predicted
+-foreground delay from the candidate's backup work and memory occupancy
+-to recovery delay beyond the request's slack, weighted by source-failure
+-probability from the configured risk model over the same policy horizon. It is a local decision
+-heuristic under slack priority, not a global optimum or workflow-makespan sum.
+-
+-The minimum-score candidate wins, with smaller depths breaking ties.
+-An existing depth changes only when its advantage exceeds a configured
+-uncertainty margin. Missing applicable profiles retain an existing target;
+-a new request starts with zero Peer depth and DRAM protection.
+-Only the chosen plan updates the preview state before the next request.
+-Real allocation rechecks availability atomically; it may admit fewer
+-objects than the preview.
+-
+-For uniform layer layouts, a tier-P request offers the first $L_r$
+-hot sets: $L_rK_r(\tau)$ logical layer-block objects plus required state.
+-Tiers R/D have a zero target depth. The target is held between policy
+-decisions, while the hot-block quota grows with sealed history.
+-D/P keep per-layer hot sets as recovery-preload hints. Actual Peer
+-coverage can be partial; lowering $L_r$ does not revoke references to
+-old copies (\S\ref{sec:kv-runtime}).
++Thus $K$ counts Peer-resident blocks of one request and layer. It is not
++the model's per-query top-$k$, a hit-rate guarantee, or a count of copies
++still in flight. Physical allocation also charges retiring buffers,
++reservations, and selector state; shared copies are counted once per pool.
++
++A separately configured quota determines the desired hot-set size.
++The configuration declares either a fixed block limit or
++$\lceil h_l n_r\rceil$ blocks for $n_r$ sealed historical blocks.
++Mandatory sealed sink/window blocks are included in that limit: if they
++alone exceed it, request a larger explicitly charged quota or decline
++that layer's Peer admission, never silently drop native requirements.
++The rule is
++fixed in each comparison; this paper does not claim an optimal quota.
++Remaining slots rank native selection counts, then recency and stable
++block ID. Optional blocks leave after two consecutive statistics windows
++outside the target set. Required auxiliary state is budgeted separately.
++Before 512 steps are available, use the observed prefix; with no observations,
++rank mandatory blocks first and then recency and stable ID. This cold-start
++rule has no demonstrated prediction accuracy.
++For a replay of $N$ tokens, demand is the deduplicated union of native
++selections across queries and KV groups, not $N$ copies of a single top-$k$.
++
++\paragraph{Preview replacement as well as admission.}
++A candidate depth $d$ offers target hot sets in layers $1{:}d$;
++this prefix family restricts the search, rather than proving that arbitrary
++layer placements cannot do better.
++Its plan retains intersections, demotes owned blocks leaving the set,
++and admits new blocks. It cannot evict another request's protected copy.
++A shared object loses only the departing owner's reference.
++Dirty demotions, new transfers, and temporary space all enter the preview;
++slots become reusable only after actual release
++(\S\ref{sec:kv-runtime}). Shrinking $L_r$ can therefore retire the owner's
++deeper copies. An unchanged depth can still replace block identities.
++Uniform, fully admitted layers contain $L_r K$ layer-block objects;
++partial admission is reported through the actual sets $H_{r,l}$.
++
++\paragraph{A reproducible depth objective.}
++All candidates start from the same target snapshot $S$ and use the same
++planning horizon $H$, future-state samples $j$, and normalized weights $w_j$,
++conditional on a source failure within $H$. Current slack is held fixed
++within this local comparison and refreshed at the next policy event.
++A sample specifies committed history $M_j$, replay tail $N_j$, available
++copy time, and foreground/retry load. Samples come from a declared,
++versioned profile, including commit lag; they do not assume $N_j=Z$ or
++a uniform checkpoint phase. Co-located requests share the same source-event
++samples and contended target resources. For a configured Poisson model,
++$\pi_r=1-\exp(-\lambda_r H)$. Other risk models must provide the corresponding
++probability over the same $H$; a failure rate is not itself a probability.
++
++Let $G_d$ be the admitted-and-retired plan from the preview.
++$A_r(d)$ is the predicted aggregate change in foreground request-delay
++seconds, relative to keeping the current placement at $S$. The cohort
++contains active requests and arrivals within $H$, followed to completion
++under matched arrivals and a held policy, including completions after $H$.
++It includes replication, writeback, transient occupancy, and reduced or
++increased admission pressure, and may be negative. Let $R_r(d,j)$ be
++failure-to-ready latency for sample $j$, crediting only replicas predicted
++to commit before its failure. The Master minimizes
++\begin{equation}
++ J_r(d)=A_r(d)+\pi_r\sum_j w_j
++          \max\{0,R_r(d,j)-\sigma_r\}.
++ \label{eq:depth-score}
++\end{equation}
++Both terms have units of delay seconds. This is a local protection
++heuristic in slack order; it neither sums to workflow makespan nor
++optimizes all later requests' allocations.
++For example, two equally critical branches on one failed source each
++need 10\,s to recover. Protecting only one reduces their summed local
++penalties from 20 to 10\,s but leaves workflow delay at 10\,s. Source-event
++DAG replay and a feasible small-DAG oracle are required to assess this gap.
++
++\paragraph{Profile interface and validity.}
++A profile query takes the model/selector and weight revisions, KV layout,
++block size, hardware/link topology, $S$, $G_d$, the shared state samples,
++and the configured copy scheduler. It returns $A_r(d)$ and $R_r(d,j)$
++with uncertainty intervals, a generation ID, support ranges, and expiry.
++$A$ is obtained from matched normal-service traces with identical arrivals;
++$R$ uses matched recovery traces or a declared, calibrated event model.
++Transfer and compute overlap are evaluated on one timeline; adding their
++full durations would double-count hidden transfer. Rows state whether
++they are measured or modeled. Missing measurements are not filled with
++the Figure~\ref{fig:design-pipeline} example.
++
++The finite depth grid includes zero and the current depth, and an explicit
++\emph{keep} plan preserves current block identities. The lowest score wins;
++ties prefer smaller depth, then stable plan ID. Propagating the profile's
++intervals through (\ref{eq:depth-score}) gives lower and upper score bounds.
++A change is accepted only if its upper bound plus a configured margin
++is below the keep plan's lower bound. Unsupported candidates are excluded.
++An invalid generation or missing, expired, or drift-flagged keep profile
++freezes discretionary expansion and replacement; new requests attempt
++DRAM admission, with the stated fallback if it fails.
++Existing protection is retained only while feasible:
++Adapter contraction and correctness-driven retirement still take precedence.
++A generation is invalidated after a configured number of consecutive
++relative-error violations on comparable observed operations; unmatched
++observations do not count as validation. Thresholds, grid, horizon,
++risk model, quota rule, sample weights, and calibration version are
++recorded configuration, not inferred experimental constants.
++At zero failure probability, only $A$ affects the score; costly expansion
++has no recovery justification, while a zero-cost keep plan need not move.
++Uncertain route crossings do not justify an unprofiled migration.
+ 
+ \begin{figure}[t]
+   \raggedright
+   \refstepcounter{designalgorithm}\label{alg:placement}
+   \noindent\textbf{Algorithm \thedesignalgorithm: Per-request backup policy}
+   \par\smallskip
+-  \noindent Input: requests, slack, profiles, targets, budgets, copy state.
+-  Output: DRAM set $D_s$, depths $\{L_r\}$, and Peer plans $\{Q_p\}$.
++  \noindent Input: requests, slack, fixed $Z$, profiles, targets, budgets.
++  Output: admitted tiers, Peer plans, and committed $H_{r,l}$.
+   \par\smallskip
+   \begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
+     \toprule
+-    1 & $D_s,H\gets\varnothing$; $Q_p\gets[\,]$ for each target $p$ \\
+-    2 & Snapshot retained copies and reserved capacity as $S$ \\
+-    3 & \textbf{for} $r$ in $(\sigma_r,\mathrm{ID}_r)$ order: \\
+-    4 & \quad$\tau_r\gets\mathrm{Tier}(r,R_R,R_D,\sigma_r)$ \\
+-    5 & \quad\textbf{if} $\tau_r=R$: $L_r\gets0$; \textbf{continue} \\
+-    6 & \quad Add $\mathrm{sealed}(r)\cup\mathrm{state}(r)$ to $D_s$ \\
+-    7 & \quad$H_{r,l}\gets\mathrm{HotSet}(r,l,K_r)$ for each layer \\
+-    8 & \quad\textbf{if} $\tau_r=D$: $L_r\gets0$; \textbf{continue} \\
+-    9 & \quad\textbf{for each} candidate depth $d$: \\
+-    10 & \qquad$G_d\gets\mathrm{Preview}(S,r,H_{r,1:d})$ \\
+-    11 & \qquad Score $G_d$; keep missing costs unknown \\
+-    12 & \quad$L_r\gets\mathrm{StableBest}(r,\{G_d\})$ \\
+-    13 & \quad Append $(r,L_r,H_{r,1:L_r},G_{L_r})$ to $Q_{p_r}$ \\
+-    14 & \quad Update $S$ with the chosen plan only \\
+-    15 & \textbf{return} $D_s,H,\{L_r\},\{Q_p\}$ \\
++    1 & Snapshot copies, leases, budgets, and reservations as $S$ \\
++    2 & \textbf{for} affected $r$ in $(\sigma_r,\mathrm{ID}_r)$ order: \\
++    3 & \quad Choose R/D/P and the feasible non-Peer fallback \\
++    4 & \quad For D/P, request DRAM; report coverage/failure \\
++    5 & \quad Rank layer-local candidates under the quota rule \\
++    6 & \quad Form keep and depth plans; R/D target depth is zero \\
++    7 & \quad Preview each plan independently from the same $S$ \\
++    8 & \quad Query valid profiles; score by (\ref{eq:depth-score}) \\
++    9 & \quad Choose a stable improvement, or feasible fallback \\
++    10 & \quad Queue its retains, demotions, and new admissions \\
++    11 & \quad Update $S$ with only this chosen plan \\
++    12 & Atomically recheck reservations before physical execution \\
++    13 & Publish only committed residency and actual released bytes \\
+     \bottomrule
+   \end{tabularx}
+-  \Description{KV Master chooses recovery tiers, hot blocks, and a
+-    separate Peer depth for each request. Depth previews share a common
+-    snapshot within a request; only its selected plan advances the
+-    snapshot. Target Adapters enforce capacity and report committed copies.}
++  \Description{The Master chooses per-request layers and hot sets using
++    a shared-sample cost objective. Only chosen plans change the virtual
++    allocation snapshot; execution rechecks space and safe retirement.}
+ \end{figure}
+ 
+-Algorithm~\ref{alg:placement} shows a full refresh; a token-interval
+-event updates only the affected request while retaining other policies
+-and reservations. \textsc{Tier} applies hysteresis, and
+-\textsc{StableBest} implements the switching margin and profile fallback.
+-The state snapshot is virtual, not a physical reservation.
+-Sorting costs $O(n\log n)$, followed by bounded candidate scans.
+-Runtime allocation deduplicates shared objects and reconciles policy
+-with committed copies, reporting actual residency and commit progress.
+-
+-\paragraph{Commit and recover by actual readiness.}
+-Peer and fault-independent DRAM paths commit separately, after transfer
+-completion and model/layout/shard validation. Low-priority copying is
+-rate-limited (default 20\% of link capacity), with target HBM bandwidth
+-also accounted for. Recovery reads committed objects, preloads hot
+-blocks in layer order, and gives newly revealed misses priority over
+-speculative copies. Selector state arrives before selection; each layer
+-waits for all required inputs. Actual DMA granularity can limit copy
+-preemption. Tier R rebuilds history. Placement changes neither selector
+-outputs nor known replay tokens and adds no attention approximation;
+-compatible weights, layout, and operators reconstruct the same logical
+-KV state, without promising identical future stochastic samples across
+-floating-point schedules.
++The preview is not a reservation. Actual grants may be smaller. The
++directory reports committed $K_{r,l}$ and frontiers; a mismatch triggers
++another review. Sorting $n$ requests takes $O(n\log n)$ time. Candidate
++work scales with the grid, sample count, and affected blocks. Profile
++calibration and accuracy remain evaluation work.
++
++\paragraph{Keep selection and placement separate.}
++Recovery restores model-specific selector state before invoking the
++unchanged native selector. The selector may name any causally eligible
++historical or recomputed KV, including DRAM-only objects. The Connector
++resolves logical IDs to committed replicas, fetches actual misses, and
++returns readiness events; attention waits for every required input.
++Forecast mistakes add traffic or waiting, not a new attention approximation.
++Tier R and missing committed prefixes use dependency-correct recomputation
++of logged tokens. A batched replay is eligible only if its native selector
++and state evolution are equivalent to the original token-wise path under
++the declared numerical contract; otherwise replay token by token. A native
++prefill gate or an unresolved numerical diagnostic does not establish this
++equivalence. Compatible weights, layout, and operators are required;
++future stochastic samples need not be bitwise identical across floating-point
++execution schedules.
+ 
+ \begin{figure}[t]
+   \centering
+   \includegraphics[width=\columnwidth]{figures/design-single/design-layer-pipeline.pdf}
+   \caption{Modeled recovery pipelines: MiniCPM4-8B, 32 layers, 32K
+-    history, 64-token known tail; $C=2.87$\,ms/layer (measured) and
+-    $D=5.37$\,ms at an assumed 6.25\,GB/s. In (d), 147\,MiB of Peer
++    history, 64-token known tail; $C=2.87$\,ms/layer (A100-derived average)
++    and $D=5.37$\,ms at an assumed 6.25\,GB/s. In (d), 147\,MiB of Peer
+     residency removes preload wait. Totals end at tail-KV reconstruction.
+     The homogeneous, preemptible-copy model excludes detection,
+     queuing, and interference.}
+@@ -177,8 +224,17 @@
+     pipelining, hot preloads with demand fetch, and Peer-resident hot sets.}
+ \end{figure}
+ 
+-Figure~\ref{fig:design-pipeline} illustrates the depth tradeoff at one
+-fixed tail length: layer pipelining, hot preloads, and seven resident
+-hot sets reduce exposed wait from 172 to 83, 44, and 20\,ms.
+-This calibrated example does not validate request-specific depth selection
+-or make seven layers appropriate for every request and checkpoint state.
++Figure~\ref{fig:design-pipeline} illustrates one fixed-tail example:
++layer pipelining, hot preloads, and seven resident hot sets reduce exposed
++wait from 172 to 83, 44, and 20\,ms. It does not calibrate
++(\ref{eq:depth-score}), establish multi-request WCT gains, or make seven
++layers appropriate for every checkpoint state.
++Here $C$ is a five-repeat median of a batch-one, 64-token native-path
++forward over resident history on an A100 80GB PCIe, divided by 32 layers;
++individual layer timings were not measured. The assumed bandwidth is a
++25\,GB/s pool link equally shared by four recoveries, not measured H2D.
++With 1\,KiB/token/layer, the Peer payload is
++$7\times0.65845\times32$\,MiB $\simeq147.49$\,MiB, excluding auxiliary
++state and temporary buffers. Fractions are trace-derived means, not an
++integer per-layer grant. The model leaves 38.69\,ms of cold-copy work
++after tail readiness; subsequent token latency requires separate evaluation.
+--- before/sections/kv_runtime.tex
++++ after/sections/kv_runtime.tex
+@@ -2,50 +2,53 @@
+ \label{sec:kv-runtime}
+ \label{sec:capacity-allocation}
+ 
+-The Adapter (4) controls the total Peer HBM budget $B_p$ on each
+-target DP. At a control-window boundary it publishes the next budget;
+-that target stays fixed within the window while every allocation checks
+-current physical space. KV Master owns backup decisions at the configured
+-checkpoint interval, request tiers,
+-and request-specific depths $L_r$. These depths can differ and change
+-at policy events inside the same capacity window.
++Adapter (4) sets the total Peer budget $B_p$ on its target DP at each
++control-window boundary. The target remains fixed within the window;
++every allocation also checks physical space. The Master owns fixed-$Z$
++backup decisions and per-request $L_r$ and hot sets. Adapter controls
++capacity, not a common depth or an adaptive checkpoint interval.
+ 
+ \paragraph{Reserve memory for foreground inference.}
+-The next budget is the managed KV pool minus estimated foreground
+-KV demand and admission headroom, clamped between zero and half of
+-the pool. The pool excludes weights and fixed runtime state, but includes
+-existing Peer copies. Thus $B_p$ is a total target, not newly free space.
+-KV watermarks and memory-related admission stalls inform demand;
+-compute utilization alone does not imply insufficient KV capacity.
+-Increased foreground demand reduces the Peer target; sustained relief
+-permits expansion. The Adapter reports available, referenced, in-flight,
+-and reclaimable bytes so the Master can assess request-specific plans.
++Subtract predicted foreground KV demand and admission headroom from the
++managed KV pool, clamping the result to zero through half the pool.
++The pool excludes weights and fixed runtime state but includes existing
++Peer copies; $B_p$ is total permitted occupancy, not newly available space.
++KV watermarks and memory-related admission stalls inform demand.
++Increased pressure shrinks the budget; sustained relief allows expansion.
++Report physical occupancy, ownership references, I/O leases, pending
++copies, and safely reclaimable bytes separately.
+ 
+ \begin{figure}[t]
+   \raggedright
+   \refstepcounter{designalgorithm}\label{alg:adapter}
+   \noindent\textbf{Algorithm \thedesignalgorithm: Windowed Peer budget update}
+   \par\smallskip
+-  \noindent Input: KV pool, foreground demand, headroom, copy state.
+-  Output: next-window total Peer budget $B_p$ for each target.
++  \noindent Input: pool, foreground demand, headroom, replica/lease state.
++  Output: budget $B_p$, retirement work, and actual capacity reports.
+   \par\smallskip
+   \begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
+     \toprule
+     1 & \textbf{for each} target DP $p$ at the window boundary: \\
+-    2 & \quad Snapshot pool, occupancy, references, and copies \\
+-    3 & \quad Estimate next-window foreground KV demand \\
+-    4 & \quad$B_p\gets$ pool $-$ demand $-$ admission headroom \\
+-    5 & \quad Clamp $B_p$ to $[0,\ \text{half of pool}]$ \\
+-    6 & \quad Publish $B_p$ and capacity state to KV Master \\
+-    7 & \quad Pause new space reservations above the budget \\
+-    8 & \quad Reclaim safe zero-reference copies as needed \\
+-    9 & \quad Count bytes until physical release completes \\
++    2 & \quad Snapshot occupancy, owners, leases, and reservations \\
++    3 & \quad Estimate foreground KV demand and headroom \\
++    4 & \quad$B_p\gets\mathrm{pool}-\mathrm{demand}-\mathrm{headroom}$ \\
++    5 & \quad Clamp $B_p$ to $[0,\mathrm{pool}/2]$ \\
++    6 & \quad Publish $B_p$; block reservations exceeding it \\
++    7 & \quad Reclaim safe zero-reference copies first \\
++    8 & \quad If needed, select protected copies for demotion \\
++    9 & \quad Commit DRAM; redirect; retire the old generation \\
++    10 & \quad Drain old users before releasing each buffer \\
++    11 & \quad Publish actual coverage and released/pending bytes \\
+     \bottomrule
+   \end{tabularx}
+-  \Description{Each Adapter updates only its Peer capacity budget at
+-    a window boundary, reserving space for foreground inference and
+-    preserving live references during reclamation. KV Master selects
+-    each request's layer depth separately.}
++  \Description{Adapter controls only Peer capacity. When safe unreferenced
++    victims are insufficient, protected copies may be demoted to committed
++    DRAM, with a directory transition and I/O lease drain before release.}
+ \end{figure}
+ 
++The migration steps are asynchronous and continue after the control tick;
++a later budget update reconciles their outstanding reservations.
++Algorithm~\ref{alg:adapter} does not wait for all migrations before allowing
++unrelated ready requests to run.
++
+ \input{sections/capacity_allocation}
+--- before/sections/parallel_recovery.tex
++++ after/sections/parallel_recovery.tex
+@@ -25,8 +25,67 @@
+ are runtime contracts. A failed target requires a new valid assignment;
+ copies on the old target cannot be treated as local to the new target.
+ 
+-Retries enter independently, subject to foreground admission, continuous
+-batching, and shared compute/copy capacity. Each request advances on its
+-own layer-readiness events. Slack determines protection, not a request-level
+-completion barrier; the Manager never waits for earlier retries merely
+-because they had higher placement priority.
++\paragraph{Recover a dependency-closed frontier.}
++A surviving authority assigns a monotonically increasing source epoch;
++copies, directory commits, and output acknowledgements reject stale epochs.
++Before acknowledging a generated token, persist its request ID, position,
++token ID, and epoch in a surviving ordered log. Prompt and accepted tool
++inputs are likewise recoverable. KV may lag this log; recovery reconstructs
++the acknowledged suffix and suppresses duplicate delivery. External tool
++side effects require the orchestrator's own idempotency contract.
++
++Publish a checkpoint manifest only after its full dependency closure is
++committed: compatible model, weights and layout, all required layers and TP
++shards, sealed token intervals, selector state, and the matching token-log
++prefix. A frontier is the latest valid common manifest, not the maximum
++of independently updated object locations. Peer and DRAM may commit in
++either order; each manifest entry must resolve to a matching surviving
++replica. An incomplete new manifest leaves the older one authoritative;
++without one, replay from recoverable inputs. Recovery validates versions
++and closure again after fencing. These checks define the minimum contract;
++their concurrent implementation remains to be validated.
++
++\paragraph{Share resources without serializing retries.}
++Retries enter independently and advance on their own layer-readiness
++events. Slack determines protection, not a request-level completion
++barrier. The engine reserves a positive dispatch share for feasible recovery
++work while continuing foreground batching. Within that share, ready admitted
++retries receive round-robin service in bounded prefill chunks or decode steps;
++eligible waiting retries use oldest-first admission subject to physical space.
++Blocked layers yield rather than holding a request-level barrier. These are
++required scheduler interfaces, not a claim of support in an unmodified engine.
++Each retry moves through waiting-for-space, waiting-for-data, ready, and
++running states. Reserve its bounded activation/KV workspace and transfer
++buffers before admitting an execution chunk. The batch coordinator admits
++compatible ready work and gives every TP rank the same batch, layer, and
++collective order. A newly discovered miss parks that work only at a legal
++kernel boundary, retaining and charging its activation buffer; it can split
++from a batch only if the backend supports that split. Otherwise the whole
++batch waits and the profile charges the resulting interference. Readiness
++does not authorize arbitrary layer reordering or unmatched collectives.
++Memory reservations precede I/O leases; release queue/directory locks before
++waiting on a copy or collective, and reserve demand-transfer progress space.
++Preassignment reserves neither compute nor retry workspace. Profiles
++include target foreground batches, available KV/workspace, readmission
++queues, shared links and failure domains. If the target has no feasible
++working set, queue the retry or remap through the Manager with a new
++placement check; never assume that local backup alone permits execution.
++
++Transfers contend at every shared link and at target HBM. Normal-state
++backup traffic has a configured aggregate cap (default 20\% of link
++capacity). During recovery or contraction, configure positive service
++shares for demand fetch and required writeback while retaining a foreground
++share; active shares sum to at most one per bottleneck and unused service
++can be borrowed. Actual demand precedes speculative preloads within recovery.
++The 20\% traffic cap is not a 20\% bound on foreground latency or overhead.
++Byte-based deficit round robin across eligible requests and a bounded
++outstanding-transfer count prevent one long context from monopolizing
++the recovery share. Migration writeback receives its own progress share,
++so shrinking does not depend on all decode requests ending. Service switches
++at supported DMA/kernel boundaries, not at an assumed arbitrary instant.
++
++The same sharing policy and foreground/retry load must enter the cost
++profiles. With positive available service, finite contenders, and bounded
++transfer quanta, eligible work progresses; this is not a latency guarantee
++under overload. No retry must complete before another can begin merely
++because its placement priority was higher.
+--- before/sections/system_overview.tex
++++ after/sections/system_overview.tex
+@@ -11,10 +11,11 @@
+ between engines and storage. Badges index the mechanisms below, not
+ execution order.
+ 
+-\begin{figure}[t]
++\begin{figure*}[t]
+   \centering
+-  % Preserve v11 geometry; only uniform width scaling, as requested.
+-  \includegraphics[width=\columnwidth]{figures/system-overview-v11.drawio.pdf}
++  % Review revision: preserve native geometry and use the explicitly
++  % authorized two-column placement; minimum ordinary label is about 10.44 pt.
++  \includegraphics[width=\textwidth]{figures/system-overview-v11.drawio.pdf}
+   \caption{AegisKV overview. Badges identify Tracker (1), Recovery
+     Manager (2), KV Master (3), and Adapter (4). Recovery targets are
+     assigned at arrival; backup policy flows to Adapters, which control
+@@ -31,7 +32,7 @@
+     a layer/block grid in Local KV, a smaller Peer KV region holding the other
+     DP's replicas, and a Connector. Adapters invoke Connectors; Peer transfers
+     and independent DRAM copy/restore paths bypass the control plane.}
+-\end{figure}
++\end{figure*}
+ 
+ The Recovery Manager binds retry and Peer targets at arrival
+ (\S\ref{sec:recovery-manager}). KV Master uses a fixed checkpoint
+--- before/sections/workflow_protection.tex
++++ after/sections/workflow_protection.tex
+@@ -67,3 +67,14 @@
+ predictions force zero slack for that workflow. These are planning
+ estimates, not delay guarantees; system evaluation must account for
+ the selected predictor's runtime errors and overhead.
++
++The orchestrator must declare the remaining fork/join structure complete
++and map every live request to a segment. An unexpanded branch, unresolved
++dependency, or missing mapping makes it incomplete; discovering new work
++invalidates the prior declaration and triggers refresh. Queueing features
++may inform durations, but CPM does not model future resource contention.
++Train/test splits must separate workflows and time periods, not snapshots
++of one trajectory. Required diagnostics include seconds-scale error,
++false-positive slack, critical-path ranking, zero-slack fallback frequency,
++and decision regret against zero-slack, historical, and oracle baselines.
++Published correlation alone validates none of these runtime properties.

@@ -1,0 +1,267 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" version="31.1.5">
+  <diagram id="mooncake-aegiskv-implementation" name="02  增加 AegisKV 后的 Mooncake 架构">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageScale="1" pageWidth="1800" pageHeight="1760" background="#FFFFFF" math="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="02  增加 AegisKV 后的 Mooncake 架构" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=36;fontColor=#22334A;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="40" y="25" width="1720" height="58" />
+        </mxCell>
+        <mxCell id="subtitle" value="实现增量：Application Slack + Router 版本与备用绑定 + native Controller + Worker 保护 / 恢复" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#62748B;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="40" y="88" width="1720" height="35" />
+        </mxCell>
+        <mxCell id="legend0" value="蓝色：已有基础能力" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=20;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="300" y="323" width="390" height="38" />
+        </mxCell>
+        <mxCell id="legend1" value="紫色：AegisKV 新增或扩展" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=20;fontColor=#7543B5;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="700" y="323" width="390" height="38" />
+        </mxCell>
+        <mxCell id="legend2" value="实线：KV 写入" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=20;fontColor=#C36816;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1120" y="323" width="300" height="38" />
+        </mxCell>
+        <mxCell id="legend3" value="绿色：读取 / 恢复" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=20;fontColor=#14806B;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1450" y="323" width="300" height="38" />
+        </mxCell>
+        <mxCell id="application" value="" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#7543B5;fillColor=#FAF7FE;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#7543B5;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;container=1;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="40" y="140" width="1720" height="160" />
+        </mxCell>
+        <mxCell id="application-title" value="APPLICATION  ·  应用层  /  新增 Algorithm 1" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=25;fontColor=#7543B5;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=left;fontStyle=1;" vertex="1" parent="application">
+          <mxGeometry as="geometry" x="16" y="8" width="1688" height="45" />
+        </mxCell>
+        <mxCell id="app0" value="观测 workflow 进度&#10;request / tool return" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#7543B5;fillColor=#FFFFFF;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#7543B5;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="application">
+          <mxGeometry as="geometry" x="40" y="65" width="350" height="75" />
+        </mxCell>
+        <mxCell id="app1" value="GBDT 预测残余时间&#10;仅使用因果可见特征" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#7543B5;fillColor=#FFFFFF;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#7543B5;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="application">
+          <mxGeometry as="geometry" x="470" y="65" width="350" height="75" />
+        </mxCell>
+        <mxCell id="app2" value="残余 DAG 上运行 CPM&#10;校准后发布 branch Slack" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#7543B5;fillColor=#FFFFFF;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#7543B5;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="application">
+          <mxGeometry as="geometry" x="900" y="65" width="350" height="75" />
+        </mxCell>
+        <mxCell id="app3" value="LLM request + Slack&#10;缺图 / 缺预测时取零" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#7543B5;fillColor=#FFFFFF;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#7543B5;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="application">
+          <mxGeometry as="geometry" x="1330" y="65" width="350" height="75" />
+        </mxCell>
+        <mxCell id="app-edge0" edge="1" parent="1" source="app0" target="app1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=3;strokeColor=#7543B5;endArrow=block;endFill=1;endSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="app-edge1" edge="1" parent="1" source="app1" target="app2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=3;strokeColor=#7543B5;endArrow=block;endFill=1;endSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="app-edge2" edge="1" parent="1" source="app2" target="app3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=3;strokeColor=#7543B5;endArrow=block;endFill=1;endSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="router" value="" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#7543B5;fillColor=#FAF7FE;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#7543B5;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;container=1;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="40" y="390" width="440" height="350" />
+        </mxCell>
+        <mxCell id="router-title" value="AEGIS ROUTER" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=25;fontColor=#7543B5;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=left;fontStyle=1;" vertex="1" parent="router">
+          <mxGeometry as="geometry" x="16" y="8" width="408" height="45" />
+        </mxCell>
+        <mxCell id="routing" value="Rendezvous 路由&#10;primary + 兼容 standby&#10;request salt 隔离不同请求" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#7543B5;fillColor=#FFFFFF;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#7543B5;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="router">
+          <mxGeometry as="geometry" x="20" y="65" width="400" height="115" />
+        </mxCell>
+        <mxCell id="route-state" value="执行权与输出状态&#10;route version / fence&#10;恢复编排 / CompleteRequest" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#7543B5;fillColor=#FFFFFF;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#7543B5;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="router">
+          <mxGeometry as="geometry" x="20" y="220" width="400" height="105" />
+        </mxCell>
+        <mxCell id="master" value="" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#F7FAFE;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;container=1;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="650" y="390" width="1110" height="350" />
+        </mxCell>
+        <mxCell id="master-title" value="MOONCAKE STORE MASTER  ·  元数据与资源控制，不承载 KV bytes" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=25;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=left;fontStyle=1;" vertex="1" parent="master">
+          <mxGeometry as="geometry" x="16" y="8" width="1078" height="45" />
+        </mxCell>
+        <mxCell id="master-base" value="保留原生 Master：对象目录 / 放置 / ReplicaInfo / 租约 / RPC" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#EAF2FC;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="master">
+          <mxGeometry as="geometry" x="20" y="60" width="1070" height="60" />
+        </mxCell>
+        <mxCell id="aegis-controller" value="" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#7543B5;fillColor=#F4EEFC;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#7543B5;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;container=1;pointerEvents=0;" vertex="1" parent="master">
+          <mxGeometry as="geometry" x="20" y="140" width="1070" height="190" />
+        </mxCell>
+        <mxCell id="aegis-controller-title" value="新增 AegisController  ·  native C++ / 内部 mutex 串行元数据" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#7543B5;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=left;fontStyle=1;" vertex="1" parent="aegis-controller">
+          <mxGeometry as="geometry" x="16" y="8" width="1038" height="45" />
+        </mxCell>
+        <mxCell id="policy" value="Alg. 2 · SlackLandlord&#10;本层 harm / credit / rent&#10;suffix victims + 独立准入" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#7543B5;fillColor=#FFFFFF;fontFamily=Noto Sans CJK SC;fontSize=20;fontColor=#7543B5;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="aegis-controller">
+          <mxGeometry as="geometry" x="20" y="65" width="330" height="105" />
+        </mxCell>
+        <mxCell id="directory" value="请求保护目录 / 恢复队列&#10;request · route · tier · ordinal&#10;PENDING / COMMITTED / ABORTED" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#7543B5;fillColor=#FFFFFF;fontFamily=Noto Sans CJK SC;fontSize=20;fontColor=#7543B5;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="aegis-controller">
+          <mxGeometry as="geometry" x="370" y="65" width="330" height="105" />
+        </mxCell>
+        <mxCell id="aimd" value="Alg. 3 · HBMQuotaAIMD&#10;压力下降 / 稳定后增加 α&#10;只调节 Peer-HBM 配额" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#7543B5;fillColor=#FFFFFF;fontFamily=Noto Sans CJK SC;fontSize=20;fontColor=#7543B5;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="aegis-controller">
+          <mxGeometry as="geometry" x="720" y="65" width="330" height="105" />
+        </mxCell>
+        <mxCell id="route-registration" edge="1" parent="1" source="routing" target="master" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#7543B5;endArrow=block;endFill=1;endSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.35;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;dashed=1;dashPattern=6 5;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="route-registration-label" value="注册请求&#10;route + Slack" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=20;fontColor=#7543B5;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="480" y="430" width="165" height="64" />
+        </mxCell>
+        <mxCell id="application-request" edge="1" parent="1" source="application" target="router" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#7543B5;endArrow=block;endFill=1;endSize=10;exitX=0.128;exitY=1;entryX=0.5;entryY=0;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;dashed=1;dashPattern=6 5;">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="260" y="345" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="data-heading" value="DATA PLANE  ·  KV 数据面" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=23;fontColor=#22334A;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="500" y="821" width="450" height="40" />
+        </mxCell>
+        <mxCell id="source" value="" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#F7FAFE;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;container=1;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="40" y="880" width="440" height="470" />
+        </mxCell>
+        <mxCell id="source-title" value="SOURCE WORKER  ·  扩展 vLLM" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=25;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=left;fontStyle=1;" vertex="1" parent="source">
+          <mxGeometry as="geometry" x="16" y="8" width="408" height="45" />
+        </mxCell>
+        <mxCell id="source-kv" value="真实推理引擎&#10;Scheduler + 主 KV pages&#10;GPU HBM / K、V tensors" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#EAF2FC;fontFamily=Noto Sans CJK SC;fontSize=23;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="source">
+          <mxGeometry as="geometry" x="20" y="70" width="400" height="130" />
+        </mxCell>
+        <mxCell id="source-connector" value="AegisKVConnector + gate&#10;4096 prompt / 256 decode&#10;共享 ordinal；两层独立准入&#10;Source copy → 分层 ACK" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#7543B5;fillColor=#F4EEFC;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#7543B5;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="source">
+          <mxGeometry as="geometry" x="20" y="270" width="400" height="130" />
+        </mxCell>
+        <mxCell id="source-caption" value="完成 forward 后&#10;才可保护其 KV" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=19;fontColor=#62748B;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="source">
+          <mxGeometry as="geometry" x="20" y="407" width="230" height="60" />
+        </mxCell>
+        <mxCell id="source-publish" edge="1" parent="1" source="source-kv" target="source-connector" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=3;strokeColor=#C36816;endArrow=block;endFill=1;endSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="peer" value="" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#7543B5;fillColor=#FAF7FE;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#7543B5;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;container=1;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="650" y="880" width="440" height="470" />
+        </mxCell>
+        <mxCell id="peer-title" value="备用 WORKER  ·  route-bound target" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=23;fontColor=#7543B5;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=left;fontStyle=1;" vertex="1" parent="peer">
+          <mxGeometry as="geometry" x="16" y="8" width="408" height="45" />
+        </mxCell>
+        <mxCell id="peer-kv" value="新增 Peer-HBM 保护副本&#10;位于绑定的备用 GPU&#10;COMMITTED 才能恢复" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#7543B5;fillColor=#F4EEFC;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#7543B5;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="peer">
+          <mxGeometry as="geometry" x="20" y="70" width="400" height="130" />
+        </mxCell>
+        <mxCell id="peer-primary" value="恢复后独立的主 KV slots&#10;真实 HBM → HBM copy&#10;继续 vLLM forward / replay" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#FFFFFF;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="peer">
+          <mxGeometry as="geometry" x="20" y="270" width="400" height="130" />
+        </mxCell>
+        <mxCell id="peer-caption" value="备份与主 KV 同时占容量；不是零拷贝改名" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=19;fontColor=#62748B;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="peer">
+          <mxGeometry as="geometry" x="15" y="413" width="410" height="44" />
+        </mxCell>
+        <mxCell id="hbm-protect" edge="1" parent="1" source="source-kv" target="peer-kv" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=4;strokeColor=#C36816;endArrow=block;endFill=1;endSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="hbm-protect-label" value="① 独立 HBM copy" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#C36816;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="485" y="948" width="160" height="67" />
+        </mxCell>
+        <mxCell id="hbm-load" edge="1" parent="1" source="peer-kv" target="peer-primary" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=4;strokeColor=#14806B;endArrow=block;endFill=1;endSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="hbm-load-label" value="恢复加载" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=20;fontColor=#14806B;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="885" y="1090" width="170" height="45" />
+        </mxCell>
+        <mxCell id="store" value="" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#F7FAFE;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;container=1;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1260" y="880" width="500" height="470" />
+        </mxCell>
+        <mxCell id="store-title" value="MOONCAKE STORE  ·  共享 DRAM" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=25;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=left;fontStyle=1;" vertex="1" parent="store">
+          <mxGeometry as="geometry" x="16" y="8" width="468" height="45" />
+        </mxCell>
+        <mxCell id="store-te" value="Store-side Client + TransferEngine&#10;注册内存 / 收发实际 bytes" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#FFFFFF;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="store">
+          <mxGeometry as="geometry" x="20" y="70" width="460" height="90" />
+        </mxCell>
+        <mxCell id="segment0" value="Store Node A&#10;DRAM segment&#10;base + offset" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#EAF2FC;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;shape=cylinder3;" vertex="1" parent="store">
+          <mxGeometry as="geometry" x="20" y="205" width="220" height="140" />
+        </mxCell>
+        <mxCell id="segment1" value="Store Node B&#10;DRAM segment&#10;base + offset" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#EAF2FC;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;shape=cylinder3;" vertex="1" parent="store">
+          <mxGeometry as="geometry" x="260" y="205" width="220" height="140" />
+        </mxCell>
+        <mxCell id="store-caption" value="承载请求私有的 DRAM 保护对象&#10;与 Peer-HBM 独立提交 / 独立释放" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#62748B;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="store">
+          <mxGeometry as="geometry" x="20" y="370" width="460" height="80" />
+        </mxCell>
+        <mxCell id="store-segment0" edge="1" parent="1" source="store-te" target="segment0" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#2463A0;endArrow=block;endFill=1;endSize=10;exitX=0.24;exitY=1;entryX=0.5;entryY=0;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="store-segment1" edge="1" parent="1" source="store-te" target="segment1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#2463A0;endArrow=block;endFill=1;endSize=10;exitX=0.76;exitY=1;entryX=0.5;entryY=0;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="route-to-source" edge="1" parent="1" source="router" target="source" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#7543B5;endArrow=block;endFill=1;endSize=10;exitX=0.3;exitY=1;entryX=0.3;entryY=0;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;dashed=1;dashPattern=6 5;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="route-source-label" value="请求路由" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=20;fontColor=#7543B5;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="55" y="752" width="170" height="44" />
+        </mxCell>
+        <mxCell id="worker-master-rpc" edge="1" parent="1" source="source" target="master" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#7543B5;endArrow=block;endFill=1;endSize=10;exitX=0.85;exitY=0;entryX=0.16;entryY=1;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;dashed=1;dashPattern=6 5;startArrow=block;startFill=1;startSize=10;">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="414" y="795" />
+              <mxPoint x="828" y="795" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="worker-master-label" value="Admit / CompleteCopy" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=20;fontColor=#7543B5;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="438" y="753" width="360" height="40" />
+        </mxCell>
+        <mxCell id="register-store" edge="1" parent="1" source="store" target="master" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#2463A0;endArrow=block;endFill=1;endSize=10;exitX=0.7;exitY=0;entryX=0.865;entryY=1;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;dashed=1;dashPattern=6 5;startArrow=block;startFill=1;startSize=10;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="register-store-label" value="MountSegment&#10;放置 / 目录" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=20;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1425" y="752" width="215" height="65" />
+        </mxCell>
+        <mxCell id="aimd-quota" edge="1" parent="1" source="master" target="peer" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#7543B5;endArrow=block;endFill=1;endSize=10;exitX=0.38;exitY=1;entryX=0.8;entryY=0;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;dashed=1;dashPattern=6 5;startArrow=block;startFill=1;startSize=10;">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="1072" y="785" />
+              <mxPoint x="1002" y="785" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="aimd-label" value="αM 配额&#10;压力反馈" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=20;fontColor=#7543B5;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1110" y="750" width="250" height="64" />
+        </mxCell>
+        <mxCell id="direct-dram-write" edge="1" parent="1" source="source-connector" target="store-te" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=4;strokeColor=#C36816;endArrow=block;endFill=1;endSize=10;exitX=0.75;exitY=1;entryX=1;entryY=0.5;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="360" y="1400" />
+              <mxPoint x="1790" y="1400" />
+              <mxPoint x="1790" y="995" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dram-write-label" value="② 独立 DRAM PUT：来自 Source buffers，不经过 Peer-HBM" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#C36816;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="410" y="1355" width="1130" height="43" />
+        </mxCell>
+        <mxCell id="store-read" edge="1" parent="1" source="store-te" target="peer-primary" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=4;strokeColor=#14806B;endArrow=block;endFill=1;endSize=10;exitX=0;exitY=0.7;entryX=1;entryY=0.5;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="1240" y="1013" />
+              <mxPoint x="1240" y="1215" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="store-read-label" value="③ DRAM&#10;加载缺失 keys" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=20;fontColor=#14806B;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1100" y="1110" width="130" height="85" />
+        </mxCell>
+        <mxCell id="lifecycle-heading" value="故障恢复  ·  只有 COMMITTED、连续且版本兼容的 prefix 可用" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=25;fontColor=#22334A;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="40" y="1460" width="1720" height="45" />
+        </mxCell>
+        <mxCell id="step0" value="故障 fencing&#10;冻结旧 route 输出" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#14806B;fillColor=#EFF9F5;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#14806B;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="40" y="1525" width="320" height="100" />
+        </mxCell>
+        <mxCell id="step1" value="激活绑定 target&#10;按剩余 Slack 排序" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#14806B;fillColor=#EFF9F5;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#14806B;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="390" y="1525" width="320" height="100" />
+        </mxCell>
+        <mxCell id="step2" value="预留独立主 KV&#10;先 HBM，再 DRAM" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#14806B;fillColor=#EFF9F5;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#14806B;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="740" y="1525" width="320" height="100" />
+        </mxCell>
+        <mxCell id="step3" value="重算缺失 suffix&#10;silent replay 输出位置" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#14806B;fillColor=#EFF9F5;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#14806B;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1090" y="1525" width="320" height="100" />
+        </mxCell>
+        <mxCell id="step4" value="恢复输出 / 请求结束&#10;drain 后清理保护" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#14806B;fillColor=#EFF9F5;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#14806B;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1440" y="1525" width="320" height="100" />
+        </mxCell>
+        <mxCell id="step-edge0" edge="1" parent="1" source="step0" target="step1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#14806B;endArrow=block;endFill=1;endSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="step-edge1" edge="1" parent="1" source="step1" target="step2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#14806B;endArrow=block;endFill=1;endSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="step-edge2" edge="1" parent="1" source="step2" target="step3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#14806B;endArrow=block;endFill=1;endSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="step-edge3" edge="1" parent="1" source="step3" target="step4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#14806B;endArrow=block;endFill=1;endSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="footnote" value="实现图：AegisKV on Mooncake / vLLM。两层分别 ACK；PENDING 不可恢复。&#10;4090 pilot 的跨 GPU 保护经 host-staged TCP；图中逻辑 copy 不代表已验证直接 NVLink / RDMA。" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=20;fontColor=#62748B;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="40" y="1658" width="1720" height="70" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,59 @@
+--- a/python/moonkvsim/aegiskv/current/runtime.py
++++ b/python/moonkvsim/aegiskv/current/runtime.py
+@@ -285,10 +285,12 @@
+         return duration
+ 
+     def _demand(self, state: State, layer: int, query: int, blocks: int) -> set[int]:
++        # Providers see this query's causal domain, never a batched forward's
++        # future end. Normal and recovery calls use the same contract.
++        visible = min(blocks, query // self.config.block_tokens + 1)
+         if self.demand_provider is None:
+-            return demand(self.config, layer, query, blocks)
+-        selected = set(self.demand_provider(self.config, state.invocation, layer, query, blocks))
+-        visible = min(blocks, query // self.config.block_tokens + 1)
++            return demand(self.config, layer, query, visible)
++        selected = set(self.demand_provider(self.config, state.invocation, layer, query, visible))
+         if any(type(b) is not int or not 0 <= b < visible for b in selected):
+             raise ValueError("demand_provider selected an invalid or causally invisible KV block")
+         return selected
+@@ -1173,13 +1175,22 @@
+             hit_references = references = 0
+             if cp:
+                 for query, weight in self._query_groups(start, end):
++                    # Select from the full causal domain before separating
++                    # checkpoint objects from the tail produced locally by
++                    # this recovery forward. Only the former need DRAM.
+                     selected = {
+                         (layer, b)
+-                        for b in self._demand(state, layer, query, cp.frontier // c.block_tokens)
++                        for b in self._demand(state, layer, query, ceil(end / c.block_tokens))
+                     }
+-                    required.update(selected)
++                    checkpoint_selected = {
++                        obj for obj in selected if obj[1] < cp.frontier // c.block_tokens
++                    }
++                    required.update(checkpoint_selected)
+                     references += len(selected) * weight
+-                    hit_references += len(selected & state.available) * weight
++                    hit_references += (
++                        len(selected - checkpoint_selected)
++                        + len(checkpoint_selected & state.available)
++                    ) * weight
+             # Metadata-only timing model: proportional hit work overlaps
+             # transfer. No QK/softmax/LSE numerical kernel executes here.
+             hit_ns = layer_ns * hit_references // references if references else layer_ns
+--- a/tests/aegiskv/test_current_algorithm_20260924.py
++++ b/tests/aegiskv/test_current_algorithm_20260924.py
+@@ -188,10 +188,10 @@
+     done = []
+     runtime._layer_step(state, 256, 257, 0, 200_000_000, lambda: done.append(runtime.des.now_ns))
+     runtime.des.run()
+-    # Hit work = 3/4*200ms=150ms; the 131.072ms miss is fully hidden.
++    # Hit work includes local self KV: 4/5*200ms=160ms; the 131.072ms miss is hidden.
+     assert done == [200_000_000]
+     assert runtime.metrics["recovery_exposed_miss_wait_ns"] == 0
+-    assert runtime.metrics["recovery_hit_compute_ns"] == 150_000_000
++    assert runtime.metrics["recovery_hit_compute_ns"] == 160_000_000
+ 
+ 
+ def test_duration_provider_and_light_logs_preserve_results():

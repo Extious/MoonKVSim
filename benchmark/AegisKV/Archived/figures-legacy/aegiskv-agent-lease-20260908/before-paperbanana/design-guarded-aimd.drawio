@@ -1,0 +1,80 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" version="31.1.5">
+  <diagram id="design-guarded-aimd" name="design-guarded-aimd">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageWidth="1200" pageHeight="680" background="#FFFFFF" math="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="canvas" value="" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#FFFFFF;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#FFFFFF;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="0" y="0" width="1200" height="680" />
+        </mxCell>
+        <mxCell id="title" value="Memory ceiling and foreground feedback control different decisions" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="18" y="5" width="1164" height="38" />
+        </mxCell>
+        <mxCell id="account-title" value="Same 40 GiB physical device" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="18" y="63" width="1164" height="38" />
+        </mxCell>
+        <mxCell id="mem0" value="Fixed&#10;16" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#69737E;fillColor=#EEF0F3;fontFamily=DejaVu Sans;fontSize=26;fontColor=#69737E;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="25" y="123" width="457.6" height="100" />
+        </mxCell>
+        <mxCell id="mem1" value="Foreground&#10;14" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#D8DDE2;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="482.6" y="123" width="400.40000000000003" height="100" />
+        </mxCell>
+        <mxCell id="mem2" value="Reserve&#10;4" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#007D60;fillColor=#E9F5EF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#007D60;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="883.0" y="123" width="114.4" height="100" />
+        </mxCell>
+        <mxCell id="mem3" value="Backup&#10;4" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#0072B2;fillColor=#E4F1F8;fontFamily=DejaVu Sans;fontSize=26;fontColor=#0072B2;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="997.4" y="123" width="114.4" height="100" />
+        </mxCell>
+        <mxCell id="mem4" value="Free&#10;2" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#B86B00;fillColor=#FFF0DB;fontFamily=DejaVu Sans;fontSize=26;fontColor=#B86B00;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1111.8" y="123" width="57.2" height="100" />
+        </mxCell>
+        <mxCell id="cap" value="Available backup ceiling C = 6 GiB; granted Q = 4 GiB; physical copies = 4 GiB" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="18" y="242" width="1164" height="49" />
+        </mxCell>
+        <mxCell id="rule1" edge="1" parent="1" style="edgeStyle=none;rounded=0;strokeColor=#CAD0D6;strokeWidth=1.2;endArrow=none;endSize=7;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="18" y="307" />
+            <mxPoint as="targetPoint" x="1182" y="307" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="stable" value="Stable foreground" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=center;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="22" y="331" width="360" height="38" />
+        </mxCell>
+        <mxCell id="warn" value="Normalized step warning" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=center;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="423" y="331" width="360" height="38" />
+        </mxCell>
+        <mxCell id="shrink" value="Foreground grows by 4 GiB" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=center;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="822" y="331" width="360" height="38" />
+        </mxCell>
+        <mxCell id="action0" value="Q: 4 → 5 GiB" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#007D60;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#007D60;align=center;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="22" y="403" width="365" height="50" />
+        </mxCell>
+        <mxCell id="action1" value="Q: 4 → 2 GiB" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#B83C46;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#B83C46;align=center;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="420" y="403" width="365" height="50" />
+        </mxCell>
+        <mxCell id="action2" value="C: 6 → 2 GiB" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#0072B2;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#0072B2;align=center;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="818" y="403" width="365" height="50" />
+        </mxCell>
+        <mxCell id="cond0" value="4 valid windows + demand&#10;+ previous release complete" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=center;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="22" y="469" width="365" height="79" />
+        </mxCell>
+        <mxCell id="cond1" value="β = 0.5; stop new copies&#10;while charged bytes exceed Q" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=center;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="420" y="469" width="365" height="79" />
+        </mxCell>
+        <mxCell id="cond2" value="Clip grant immediately&#10;wait for physical free ACK" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=center;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="818" y="469" width="365" height="79" />
+        </mxCell>
+        <mxCell id="rule2" edge="1" parent="1" style="edgeStyle=none;rounded=0;strokeColor=#CAD0D6;strokeWidth=1.2;endArrow=none;endSize=7;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="18" y="581" />
+            <mxPoint as="targetPoint" x="1182" y="581" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="footer" value="Q is permission, not occupied memory; a free command does not make bytes available" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="18" y="603" width="1164" height="51" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

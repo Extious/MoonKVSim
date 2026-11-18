@@ -1,0 +1,69 @@
+\subsection{Workflow Tracker: GBDT and CPM}
+\label{sec:workflow-protection}
+
+Tracker (1) predicts remaining execution time with GBDT, then computes
+slack by CPM~\cite{kelley1959cpm} (Algorithm~\ref{alg:slack-estimation}).
+GBDT is a replaceable predictor instantiation; the literature evidence
+in Figure~\ref{fig:insight-agent-time} concerns Heddle's predictor.
+At time $t$, the residual DAG $G_t=(V_t,E_t)$ contains unfinished agent
+execution segments. A segment groups sequential requests between
+dependency barriers; parent agents split at fork/join boundaries so
+child execution is not counted again as parent waiting. Completed
+segments are removed, and each live request $r$ maps to its segment $a(r)$.
+
+\paragraph{Predict remaining time.}
+The GBDT $f_\theta$ uses role/model, elapsed time, known prompt lengths,
+and completed-request counts, output lengths, and latencies.
+Historical running snapshots have target $t_a^{\mathrm{finish}}-t$;
+entry snapshots use segment duration, masking metadata unavailable
+before launch. Thus unstarted segments predict execution after their
+dependencies become ready. Future requests, outputs, and completion
+times are never input features. GBDT predicts the remaining duration
+directly; elapsed time is not subtracted again.
+
+\begin{figure}[t]
+  \raggedright
+  \refstepcounter{designalgorithm}\label{alg:slack-estimation}
+  \noindent\textbf{Algorithm \thedesignalgorithm: GBDT--CPM slack estimation}
+  \par\smallskip
+  \noindent Input: $G_t$, visible features $x(t)$, GBDT $f_\theta$, live
+  requests $\mathcal R_t$, and segment map $a(r)$.
+  Output: request slack $\sigma$.
+  \par\smallskip
+  \begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
+    \toprule
+     1 & $\sigma_r\gets0$ for all $r\in\mathcal R_t$ \\
+     2 & \textbf{if} DAG structure incomplete: \textbf{return} $\sigma$ \\
+     3 & $z_a\gets f_\theta(x_a(t))$ for all $a\in V_t$ \\
+     4 & \textbf{if} any prediction unavailable or invalid: \textbf{return} $\sigma$ \\
+     5 & $\widehat d_a\gets\max(\varepsilon,z_a)\ \forall a$; $\pi\gets\mathrm{Topo}(G_t)$ \\
+     6 & \textbf{for} $a$ in $\pi$: \\
+     7 & \quad $\mathrm{EF}_a\gets\widehat d_a+\max_{b\in P(a)}\mathrm{EF}_b$ \\
+     8 & $T\gets\max(\{0\}\cup\{\mathrm{EF}_a:a\in V_t\})$ \\
+     9 & \textbf{for} $a$ in reverse $\pi$: \\
+    10 & \quad $\mathrm{LF}_a\gets\min_{b\in S(a)}(\mathrm{LF}_b-\widehat d_b)$ \\
+    11 & \textbf{for} $r\in\mathcal R_t$: \\
+    12 & \quad $\sigma_r\gets\max(0,\mathrm{LF}_{a(r)}-\mathrm{EF}_{a(r)})$ \\
+    13 & \textbf{return} $\sigma$ \\
+    \bottomrule
+  \end{tabularx}
+  \par\smallskip
+  \noindent $P(a)$/$S(a)$: predecessors/successors. Empty predecessor
+  max is $0$; empty successor min is $T$; $\varepsilon>0$ is a
+  minimum remaining-time floor.
+  \Description{GBDT predicts remaining agent-segment durations. Forward
+    CPM computes earliest finishes and the workflow horizon; backward
+    CPM computes latest finishes. Requests inherit their segment's slack.
+    Incomplete dependency structure or unavailable predictions return zero slack.}
+\end{figure}
+
+\paragraph{Propagate and refresh slack.}
+The forward pass computes earliest finishes relative to now; the
+backward pass computes latest finishes without extending horizon $T$.
+Their difference is the segment slack inherited by its live requests.
+This shared margin is not an independent allowance for every request.
+Request arrivals/completions, DAG updates, and placement windows trigger
+refreshes; CPM costs $O(|V_t|+|E_t|)$. Unknown dependency structure or missing
+predictions force zero slack for that workflow. These are planning
+estimates, not delay guarantees; system evaluation must account for
+the selected predictor's runtime errors and overhead.

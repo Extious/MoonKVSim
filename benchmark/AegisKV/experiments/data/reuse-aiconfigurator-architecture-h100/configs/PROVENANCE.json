@@ -1,0 +1,40 @@
+[
+  {
+    "model": "Qwen/Qwen3-14B",
+    "revision": "40c069824f4251a91eefaf281ebe4c544efd3e18",
+    "url": "https://huggingface.co/Qwen/Qwen3-14B/resolve/40c069824f4251a91eefaf281ebe4c544efd3e18/config.json",
+    "sha256": "e73c3664ca09b10a673fef0c22e8a6b456201d49bd4713c9691f775720e8857a",
+    "path": "benchmark/AegisKV/experiments/data/reuse-aiconfigurator-architecture-h100/configs/Qwen3-14B/config.json",
+    "source_path": "benchmark/AegisKV/experiments/data/reuse-aiconfigurator-a100/configs/Qwen3-14B/config.json"
+  },
+  {
+    "model": "meta-llama/Llama-3.1-70B",
+    "source_kind": "verbatim AIConfigurator bundled configuration",
+    "revision": "4b9d9dc51e02b5e9d4acc3688f3edf41693834c6",
+    "url": "https://github.com/ai-dynamo/aiconfigurator/blob/4b9d9dc51e02b5e9d4acc3688f3edf41693834c6/src/aiconfigurator/model_configs/meta-llama--Meta-Llama-3.1-70B_config.json",
+    "upstream_model_card": "https://huggingface.co/meta-llama/Llama-3.1-70B",
+    "path": "benchmark/AegisKV/experiments/data/reuse-aiconfigurator-architecture-h100/configs/Llama-3.1-70B/config.json",
+    "sha256": "5866f0abbb3050fd6948c0afde03651b2445a16480338ff01dc11d4a12ccd3f2",
+    "source_path": "/home/comp/zhanzhao/aiconfigurator/src/aiconfigurator/model_configs/meta-llama--Meta-Llama-3.1-70B_config.json"
+  },
+  {
+    "model": "Qwen/Qwen3-235B-A22B",
+    "source_kind": "verbatim AIConfigurator bundled configuration",
+    "revision": "4b9d9dc51e02b5e9d4acc3688f3edf41693834c6",
+    "url": "https://github.com/ai-dynamo/aiconfigurator/blob/4b9d9dc51e02b5e9d4acc3688f3edf41693834c6/src/aiconfigurator/model_configs/Qwen--Qwen3-235B-A22B_config.json",
+    "upstream_model_card": "https://huggingface.co/Qwen/Qwen3-235B-A22B",
+    "path": "benchmark/AegisKV/experiments/data/reuse-aiconfigurator-architecture-h100/configs/Qwen3-235B-A22B/config.json",
+    "sha256": "0ecd5d6fe6f2db6739e4e36ab06b88ebe7bd013ef31b9583f43796059a2b23a4",
+    "source_path": "/home/comp/zhanzhao/aiconfigurator/src/aiconfigurator/model_configs/Qwen--Qwen3-235B-A22B_config.json"
+  },
+  {
+    "model": "deepseek-ai/DeepSeek-V3.2",
+    "source_kind": "verbatim AIConfigurator bundled configuration",
+    "revision": "4b9d9dc51e02b5e9d4acc3688f3edf41693834c6",
+    "url": "https://github.com/ai-dynamo/aiconfigurator/blob/4b9d9dc51e02b5e9d4acc3688f3edf41693834c6/src/aiconfigurator/model_configs/deepseek-ai--DeepSeek-V3.2_config.json",
+    "upstream_model_card": "https://huggingface.co/deepseek-ai/DeepSeek-V3.2",
+    "path": "benchmark/AegisKV/experiments/data/reuse-aiconfigurator-architecture-h100/configs/DeepSeek-V3.2/config.json",
+    "sha256": "c7fa8b191e9936d8e6a57d864baab82b792fae16a116416cdd3a75ba76bc5af1",
+    "source_path": "/home/comp/zhanzhao/aiconfigurator/src/aiconfigurator/model_configs/deepseek-ai--DeepSeek-V3.2_config.json"
+  }
+]

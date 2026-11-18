@@ -1,0 +1,252 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" version="31.1.5">
+  <diagram id="flow" name="2 · 独立 Agent 收益与共享 Credit：统一租金流程">
+    <mxGraphModel math="1" grid="0" page="1" pageWidth="3760" pageHeight="3520" background="#FFFFFF">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="sla-flow-canvas" value="&lt;div style=&quot;line-height:1.4&quot;&gt;&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=28;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;locked=1;connectable=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="0" y="0" width="3760" height="3520" />
+        </mxCell>
+        <mxCell id="sla-flow-title" value="&lt;div style=&quot;line-height:1.4&quot;&gt;SlackLandlord  ·  独立 Agent 收益，共享块合并 Credit&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=40;fontColor=#000000;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="60" y="25" width="3640" height="80" />
+        </mxCell>
+        <mxCell id="sla-flow-subtitle" value="&lt;div style=&quot;line-height:1.4&quot;&gt;新请求实际复用时续租；空间不足时，新块与可释放尾块按信用竞争。&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=28;fontColor=#000000;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="60" y="115" width="3640" height="65" />
+        </mxCell>
+        <mxCell id="sla-flow-symbols-0" value="&lt;div style=&quot;line-height:1.4&quot;&gt;\(x\)：本次 KV 块；\(a\)：引用 Agent；\(s_a\)：该 Agent 最近请求的 Slack；\(b_x\)：物理字节数&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=26;fontColor=#000000;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="70" y="225" width="3620" height="58" />
+        </mxCell>
+        <mxCell id="sla-flow-symbols-1" value="&lt;div style=&quot;line-height:1.4&quot;&gt;\(G_{a,x}\)：单独考虑 Agent a 时，备份 x 减少的 Slack 外恢复延迟；\(c_{a,x}\)：该 Agent 的剩余信用&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=26;fontColor=#000000;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="70" y="283" width="3620" height="58" />
+        </mxCell>
+        <mxCell id="sla-flow-symbols-2" value="&lt;div style=&quot;line-height:1.4&quot;&gt;\(\mathrm{Credit}_x=\sum_a c_{a,x}\)；\(\delta\)：每字节收取的租金；共享块只占一份物理空间&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=26;fontColor=#000000;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="70" y="341" width="3620" height="58" />
+        </mxCell>
+        <mxCell id="sla-flow-symbols-3" value="&lt;div style=&quot;line-height:1.4&quot;&gt;\(Q\)：可释放尾块；\(Y\)：计划淘汰的块；\(f\)：计划可用字节；\(y\)：参与收租的块&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=26;fontColor=#000000;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="70" y="399" width="3620" height="58" />
+        </mxCell>
+        <mxCell id="sla-flow-symbols-4" value="&lt;div style=&quot;line-height:1.4&quot;&gt;\(T_a(k)\)：使用前 k 块备份恢复已生成 KV 的时间；\(k_a\)：x 之前的块数；不计未知未来 KV&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=26;fontColor=#000000;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="70" y="457" width="3620" height="58" />
+        </mxCell>
+        <mxCell id="sla-flow-candidate" value="&lt;div style=&quot;line-height:1.4&quot;&gt;新请求复用 x，或生成完整 x&lt;br&gt;登记引用、请求号与 Slack；本轮 Slack 不变&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=29;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1200" y="570" width="1300" height="110" />
+        </mxCell>
+        <mxCell id="sla-flow-resident" value="&lt;div style=&quot;line-height:1.4&quot;&gt;本 Pool 已有 x 的备份？&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=27;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rhombus;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1430" y="790" width="840" height="140" />
+        </mxCell>
+        <mxCell id="sla-flow-prefix" value="&lt;div style=&quot;line-height:1.4&quot;&gt;必要前缀已提交，且源完整可读？&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=27;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rhombus;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1430" y="1020" width="840" height="140" />
+        </mxCell>
+        <mxCell id="sla-flow-wait-prefix" value="&lt;div style=&quot;line-height:1.4&quot;&gt;从缺失前缀开始处理&lt;br&gt;前缀或源未就绪时，暂不备份后续块&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=27;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="53" y="1115" width="960" height="150" />
+        </mxCell>
+        <mxCell id="sla-flow-gain" value="&lt;div style=&quot;line-height:1.4&quot;&gt;逐个计算各引用 Agent 的恢复收益&lt;br&gt;\(G_{a,x}=\min\{T_a(k_a)-T_a(k_a+1),\max(T_a(k_a)-s_a,0)\}\)&lt;br&gt;使用全部可用前缀；其后已生成的 KV 重算&lt;br&gt;内部块按“前缀到 x 之前 / 到 x”为止估值&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=27;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1200" y="1270" width="1300" height="235" />
+        </mxCell>
+        <mxCell id="sla-flow-initial" value="&lt;div style=&quot;line-height:1.4&quot;&gt;为新块建立临时信用&lt;br&gt;\(c_{a,x}\leftarrow G_{a,x},\qquad \mathrm{Credit}_x\leftarrow\sum_a c_{a,x}\)&lt;br&gt;每个 Agent 单独授信；此时尚未分配备份&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=27;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1200" y="1620" width="1300" height="150" />
+        </mxCell>
+        <mxCell id="sla-flow-plan" value="&lt;div style=&quot;line-height:1.4&quot;&gt;建立回收计划，保护 x 的必要前缀&lt;br&gt;\(Y\leftarrow\varnothing,\qquad f\leftarrow\text{Pool 空闲字节}\)&lt;br&gt;以下收租与试删只修改临时记录&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=27;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1200" y="1880" width="1300" height="140" />
+        </mxCell>
+        <mxCell id="sla-flow-fits" value="&lt;div style=&quot;line-height:1.4&quot;&gt;空间足够？\(f\ge b_x\)&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=27;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rhombus;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1430" y="2170" width="840" height="150" />
+        </mxCell>
+        <mxCell id="sla-flow-copy" value="&lt;div style=&quot;line-height:1.4&quot;&gt;核验代次与余额版本，提交收租和回收计划&lt;br&gt;释放 Y 后分配并复制 x；冲突则重新决策&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=27;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1200" y="2480" width="1300" height="160" />
+        </mxCell>
+        <mxCell id="sla-flow-done" value="&lt;div style=&quot;line-height:1.4&quot;&gt;复制成功后发布 x，保留竞争后的信用余额&lt;br&gt;记录各 Agent 本请求已授信；更新 Q&lt;br&gt;不重新授信，不补回已支付的租金&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=27;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1200" y="2800" width="1300" height="145" />
+        </mxCell>
+        <mxCell id="sla-flow-queue" value="&lt;div style=&quot;line-height:1.4&quot;&gt;更新 Q：无备份后继、未被读取的已提交块&lt;br&gt;排除 x、必要前缀及释放中的块&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=26;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="70" y="1830" width="960" height="125" />
+        </mxCell>
+        <mxCell id="sla-flow-has-tail" value="&lt;div style=&quot;line-height:1.4&quot;&gt;还有尾块且 x 尚有信用？&lt;br&gt;\(Q\ne\varnothing\ \land\ \mathrm{Credit}_x&amp;gt;0\)&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=26;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rhombus;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="145" y="2090" width="810" height="140" />
+        </mxCell>
+        <mxCell id="sla-flow-rent" value="&lt;div style=&quot;line-height:1.4&quot;&gt;x 与 Q 中各块一起收租&lt;br&gt;\(\delta=\min\{\mathrm{Credit}_x/b_x,\min_{y\in Q}\mathrm{Credit}_y/b_y\}\)&lt;br&gt;\(c_{a,y}\leftarrow c_{a,y}(1-b_y\delta/\mathrm{Credit}_y),\quad y\in Q\cup\{x\}\)&lt;br&gt;各块 Credit 取剩余份额之和；零余额跳过除法&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=25;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="70" y="2320" width="960" height="240" />
+        </mxCell>
+        <mxCell id="sla-flow-alive" value="&lt;div style=&quot;line-height:1.4&quot;&gt;收租后 x 仍有信用？&lt;br&gt;\(\mathrm{Credit}_x&amp;gt;0\)&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=27;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rhombus;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="165" y="2700" width="770" height="160" />
+        </mxCell>
+        <mxCell id="sla-flow-remove" value="&lt;div style=&quot;line-height:1.4&quot;&gt;选一个 Credit = 0 的旧尾块 y，加入回收计划&lt;br&gt;\(Y\leftarrow Y\cup\{y\},\qquad f\leftarrow f+b_y\)&lt;br&gt;同值按块 ID 选择；前驱成为尾块后再参与收租&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=26;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="70" y="2960" width="960" height="160" />
+        </mxCell>
+        <mxCell id="sla-flow-no-space" value="&lt;div style=&quot;line-height:1.4&quot;&gt;不备份 x，丢弃本次临时记录&lt;br&gt;已有备份与余额不变；信用同时归零也拒绝 x&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=26;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="70" y="3230" width="960" height="110" />
+        </mxCell>
+        <mxCell id="sla-flow-renew" value="&lt;div style=&quot;line-height:1.4&quot;&gt;按左侧收益式，用 a 的新 Slack 重算 \(G_{a,x}\)&lt;br&gt;仅该 Agent 的新请求首次复用时续租&lt;br&gt;\(c_{a,x}\leftarrow G_{a,x},\quad \mathrm{Credit}_x\leftarrow\sum_a c_{a,x}\)&lt;br&gt;其他 Agent 余额不变；重复事件保留原余额&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=26;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="2790" y="1650" width="820" height="260" />
+        </mxCell>
+        <mxCell id="sla-flow-renew-done" value="&lt;div style=&quot;line-height:1.4&quot;&gt;立即保存余额与本请求已处理记录&lt;br&gt;内部块、读取中的块也可续租；更新 Q&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=27;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="2790" y="2090" width="820" height="130" />
+        </mxCell>
+        <mxCell id="sla-flow-copy-failed" value="&lt;div style=&quot;line-height:1.4&quot;&gt;复制未完成则等待；失败则清理本次分配&lt;br&gt;旧 ACK 不发布；已释放的备份不回滚&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=26;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="2790" y="2480" width="820" height="160" />
+        </mxCell>
+        <mxCell id="sla-flow-layout-title" value="&lt;div style=&quot;line-height:1.4&quot;&gt;一个共享 KV 块&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=30;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="2830" y="580" width="790" height="60" />
+        </mxCell>
+        <mxCell id="sla-flow-layout-card" value="&lt;div style=&quot;line-height:1.4&quot;&gt;块 x · 大小 \(b_x\)&lt;br&gt;Agent A：Slack、剩余信用、续租请求号&lt;br&gt;Agent B：Slack、剩余信用、续租请求号&lt;br&gt;共享备份只占一份空间&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=26;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="2830" y="665" width="790" height="205" />
+        </mxCell>
+        <mxCell id="sla-flow-layout-pool-label" value="&lt;div style=&quot;line-height:1.4&quot;&gt;Peer HBM Pool&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=29;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="2830" y="965" width="790" height="60" />
+        </mxCell>
+        <mxCell id="sla-flow-layout-slot-0" value="&lt;div style=&quot;line-height:1.4&quot;&gt;共享 x&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=27;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="2830" y="1050" width="245" height="80" />
+        </mxCell>
+        <mxCell id="sla-flow-layout-slot-1" value="&lt;div style=&quot;line-height:1.4&quot;&gt;A2&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=27;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="3095" y="1050" width="245" height="80" />
+        </mxCell>
+        <mxCell id="sla-flow-layout-slot-2" value="&lt;div style=&quot;line-height:1.4&quot;&gt;A3&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=27;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="3360" y="1050" width="245" height="80" />
+        </mxCell>
+        <mxCell id="sla-flow-layout-slot-3" value="&lt;div style=&quot;line-height:1.4&quot;&gt;B2&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=27;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="2830" y="1155" width="245" height="80" />
+        </mxCell>
+        <mxCell id="sla-flow-layout-slot-4" value="&lt;div style=&quot;line-height:1.4&quot;&gt;C1&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=27;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="3095" y="1155" width="245" height="80" />
+        </mxCell>
+        <mxCell id="sla-flow-layout-slot-5" value="&lt;div style=&quot;line-height:1.4&quot;&gt;空闲&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=27;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="3360" y="1155" width="245" height="80" />
+        </mxCell>
+        <mxCell id="sla-flow-layout-note" value="&lt;div style=&quot;line-height:1.4&quot;&gt;内部块有后继：可续租，不可淘汰&lt;br&gt;无后继且未被读取：可进入 Q&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=27;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="2830" y="1315" width="790" height="110" />
+        </mxCell>
+        <mxCell id="sla-flow-edge-0" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.4;endArrow=block;endFill=1;endSize=9;jettySize=20;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="sla-flow-candidate" target="sla-flow-resident" parent="1">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="sla-flow-edge-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.4;endArrow=block;endFill=1;endSize=9;jettySize=20;jumpStyle=arc;jumpSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" source="sla-flow-resident" target="sla-flow-renew" parent="1">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="2670" y="860" />
+              <mxPoint x="2670" y="1780" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sla-flow-edge-1-label" value="&lt;div style=&quot;line-height:1.4&quot;&gt;是：实际复用立即续租&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="2680" y="1490" width="940" height="65" />
+        </mxCell>
+        <mxCell id="sla-flow-edge-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.4;endArrow=block;endFill=1;endSize=9;jettySize=20;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="sla-flow-resident" target="sla-flow-prefix" parent="1">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="sla-flow-edge-2-label" value="&lt;div style=&quot;line-height:1.4&quot;&gt;否：新备份准入&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1900" y="940" width="300" height="50" />
+        </mxCell>
+        <mxCell id="sla-flow-edge-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.4;endArrow=block;endFill=1;endSize=9;jettySize=20;jumpStyle=arc;jumpSize=10;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" source="sla-flow-prefix" target="sla-flow-wait-prefix" parent="1">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="1110" y="1090" />
+              <mxPoint x="1110" y="1190" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sla-flow-edge-3-label" value="&lt;div style=&quot;line-height:1.4&quot;&gt;否&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1200" y="1025" width="80" height="50" />
+        </mxCell>
+        <mxCell id="sla-flow-edge-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.4;endArrow=block;endFill=1;endSize=9;jettySize=20;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="sla-flow-prefix" target="sla-flow-gain" parent="1">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="sla-flow-edge-4-label" value="&lt;div style=&quot;line-height:1.4&quot;&gt;是&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1890" y="1180" width="80" height="50" />
+        </mxCell>
+        <mxCell id="sla-flow-edge-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.4;endArrow=block;endFill=1;endSize=9;jettySize=20;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="sla-flow-gain" target="sla-flow-initial" parent="1">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="sla-flow-edge-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.4;endArrow=block;endFill=1;endSize=9;jettySize=20;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="sla-flow-initial" target="sla-flow-plan" parent="1">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="sla-flow-edge-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.4;endArrow=block;endFill=1;endSize=9;jettySize=20;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="sla-flow-plan" target="sla-flow-fits" parent="1">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="sla-flow-edge-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.4;endArrow=block;endFill=1;endSize=9;jettySize=20;jumpStyle=arc;jumpSize=10;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" source="sla-flow-fits" target="sla-flow-queue" parent="1">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="1120" y="2245" />
+              <mxPoint x="1120" y="1892.5" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sla-flow-edge-8-label" value="&lt;div style=&quot;line-height:1.4&quot;&gt;否&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1260" y="2185" width="80" height="50" />
+        </mxCell>
+        <mxCell id="sla-flow-edge-9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.4;endArrow=block;endFill=1;endSize=9;jettySize=20;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="sla-flow-queue" target="sla-flow-has-tail" parent="1">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="sla-flow-edge-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.4;endArrow=block;endFill=1;endSize=9;jettySize=20;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="sla-flow-has-tail" target="sla-flow-rent" parent="1">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="sla-flow-edge-10-label" value="&lt;div style=&quot;line-height:1.4&quot;&gt;是&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="590" y="2240" width="80" height="50" />
+        </mxCell>
+        <mxCell id="sla-flow-edge-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.4;endArrow=block;endFill=1;endSize=9;jettySize=20;jumpStyle=arc;jumpSize=10;exitX=0;exitY=0.5;entryX=0;entryY=0.5;" edge="1" source="sla-flow-has-tail" target="sla-flow-no-space" parent="1">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="25" y="2160" />
+              <mxPoint x="25" y="3285" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sla-flow-edge-11-label" value="&lt;div style=&quot;line-height:1.4&quot;&gt;否&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="60" y="2240" width="80" height="50" />
+        </mxCell>
+        <mxCell id="sla-flow-edge-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.4;endArrow=block;endFill=1;endSize=9;jettySize=20;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="sla-flow-rent" target="sla-flow-alive" parent="1">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="sla-flow-edge-13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.4;endArrow=block;endFill=1;endSize=9;jettySize=20;jumpStyle=arc;jumpSize=10;exitX=0;exitY=0.5;entryX=0;entryY=0.5;" edge="1" source="sla-flow-alive" target="sla-flow-no-space" parent="1">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="25" y="2780" />
+              <mxPoint x="25" y="3285" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sla-flow-edge-13-label" value="&lt;div style=&quot;line-height:1.4&quot;&gt;否 / 同时归零&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="65" y="2850" width="360" height="55" />
+        </mxCell>
+        <mxCell id="sla-flow-edge-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.4;endArrow=block;endFill=1;endSize=9;jettySize=20;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="sla-flow-alive" target="sla-flow-remove" parent="1">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="sla-flow-edge-14-label" value="&lt;div style=&quot;line-height:1.4&quot;&gt;是&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="590" y="2880" width="80" height="50" />
+        </mxCell>
+        <mxCell id="sla-flow-edge-15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.4;endArrow=block;endFill=1;endSize=9;jettySize=20;jumpStyle=arc;jumpSize=10;exitX=1;exitY=0.5;entryX=0.15;entryY=1;" edge="1" source="sla-flow-remove" target="sla-flow-fits" parent="1">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="1090" y="3040" />
+              <mxPoint x="1090" y="2350" />
+              <mxPoint x="1556" y="2350" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sla-flow-edge-16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.4;endArrow=block;endFill=1;endSize=9;jettySize=20;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="sla-flow-fits" target="sla-flow-copy" parent="1">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="sla-flow-edge-16-label" value="&lt;div style=&quot;line-height:1.4&quot;&gt;是：无需淘汰时允许零信用&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1890" y="2370" width="630" height="65" />
+        </mxCell>
+        <mxCell id="sla-flow-edge-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.4;endArrow=block;endFill=1;endSize=9;jettySize=20;jumpStyle=arc;jumpSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" source="sla-flow-copy" target="sla-flow-copy-failed" parent="1">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="sla-flow-edge-17-label" value="&lt;div style=&quot;line-height:1.4&quot;&gt;未成功&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="2550" y="2460" width="140" height="50" />
+        </mxCell>
+        <mxCell id="sla-flow-edge-18" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.4;endArrow=block;endFill=1;endSize=9;jettySize=20;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="sla-flow-copy" target="sla-flow-done" parent="1">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="sla-flow-edge-18-label" value="&lt;div style=&quot;line-height:1.4&quot;&gt;成功&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1890" y="2700" width="110" height="50" />
+        </mxCell>
+        <mxCell id="sla-flow-edge-19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.4;endArrow=block;endFill=1;endSize=9;jettySize=20;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="sla-flow-renew" target="sla-flow-renew-done" parent="1">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="sla-flow-footer" value="&lt;div style=&quot;line-height:1.4&quot;&gt;估值范围：各 Agent 独立使用自己的 Slack；Credit 是可累加的租金信用，不等同于多个 Agent 同时恢复时的精确 WCT 改善。&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=25;fontColor=#000000;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="65" y="3400" width="3630" height="65" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

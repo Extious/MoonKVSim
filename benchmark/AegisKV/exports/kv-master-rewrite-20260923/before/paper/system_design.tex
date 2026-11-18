@@ -1,0 +1,516 @@
+\section{System Design}
+\label{sec:design}
+
+\system selects which Agents' histories deserve protection (O1),
+which KV regions within those histories should be retained (O2), and
+how much HBM replication may occupy as foreground demand changes (O3). 
+Figure~\ref{fig:system-overview} shows our four cooperating components.
+\emph{Tracker} estimates remaining workflow work and recovery urgency.
+\emph{Router} chooses execution workers and replica destinations.
+\emph{KV Master} selects Agent histories and KV regions, evaluates
+candidate placements, and manages replica retention and reclamation.
+\emph{Adapter} adjusts the HBM replication budget to foreground demand. Rank-local
+Connectors execute transfers and report completion to KV Master.
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/system-overview.pdf}
+ \caption{\system: Four-component architecture. Each workflow node is one
+ invocation. Letters identify Agents, and parentheses give invocation
+ ordinals, B and C are each invoked twice.
+ Each host contains one TP=2 DP worker. Each rank's HBM holds execution
+ and replica regions. Rank-matched Connectors copy KV between hosts;
+ each host's DRAM connects to its own Connectors. Blue paths carry
+ KV; dashed paths carry control.}
+ \label{fig:system-overview}
+\end{figure}
+
+
+\subsection{Tracker}
+\label{sec:tracker}
+
+% 中文：一个 Agent 通过多步完成其任务，每步对应一次模型调用。Tracker 按调用粒度
+% 记录执行和历史使用关系，按 Agent 剩余工作的粒度估计其对工作流完成时间的影响。
+An Agent completes its assigned task through a sequence of steps, each
+corresponding to one model invocation. Tracker records execution and
+history use at invocation granularity, and estimates remaining Agent
+work to determine workflow urgency.
+
+% 中文：本文考虑 Agent 任务 DAG 预先已知且固定的工作流。Agent 集合及依赖关系已知，
+% 但每个 Agent 内部的调用次数和完成时间未知。
+We target workflows with a fixed Agent-task DAG known before execution.
+Agent identities and dependencies are fixed, while each Agent's
+invocation count and completion time are unknown.
+
+\subsubsection{Remaining-Time Prediction}
+\label{sec:tracker-prediction}
+
+% 中文：以 (w,a,r) 标识工作流 w 中 Agent a 的第 r 次调用，当依赖满足后，workflow runtime 将这次 invocation 提交给 serving 系统调度执行。
+% 后续调用可以复用兼容前缀的已选择 KV；调用结束不等于历史失效，直到 Agent 结束。
+Tracker identifies invocation $r$ of Agent $a$ in workflow $w$ as
+$v=(w,a,r)$. Once its dependencies are satisfied, the workflow runtime
+submits the invocation to the serving system for scheduling. Successive
+invocations of the same Agent may reuse selected KV for a compatible
+history prefix. Completing an invocation does not end the Agent's
+history; Tracker tracks that history until the Agent finishes its task.
+
+% 中文：每次调用提交时，Tracker 根据本次调用的信息预测 Agent 距离完成任务还需多久。
+% 一次调用只预测一次，下一次调用到来时再更新，直到 Agent 结束。
+At each invocation submission, Tracker predicts how long the Agent will
+take to finish its task using the invocation's input and the Agent's
+observed history. Each invocation triggers one prediction, which is
+updated at each subsequent invocation until the Agent finishes its task.
+
+% 中文：将预测建模为基于上下文的回归问题。文本编码器提取任务描述、本次新增输入
+% 和近期已接受输出的语义表示，再与提交时已知的模型、角色、输入长度、已完成调用
+% 次数、历史调用的长度和耗时，以及 Agent 已运行时间结合。
+% 回归器直接预测 Agent 的剩余完成时间，供后续工作流 Slack 计算使用。
+We formulate this prediction as context-conditioned regression. A text
+encoder represents the Agent's task description, newly appended input,
+and recent accepted outputs. A regressor combines this semantic
+representation with features available at submission: the model and
+Agent role, input length, completed-call count, previous calls' lengths
+and timings, and elapsed Agent time. It directly predicts Agent $a$'s
+remaining completion time, $\widehat R_{a,r}$, for workflow slack
+computation.
+
+% 中文：训练样本将每次调用提交时的特征与该次提交到 Agent 任务结束的实际时间配对。
+Training examples pair these submission-time features with the observed
+duration from submission of invocation $r$ to completion of Agent $a$'s
+task.
+
+% 中文：尚未启动的 Agent 使用同模型、同角色历史任务的时长先验 D。
+% 首次调用提交时，以该先验初始化剩余时间估计 R，并记录提交时间 tau。
+% 每次调用触发的预测返回后，以新预测替换 R，tau 始终取该预测对应的调用提交时间。
+For an unstarted Agent, Tracker uses a duration prior $\bar D_a$ from
+historical tasks with the same model and role. Its first invocation
+submission initializes $\widehat R_a$ to this prior and $\tau_a$ to the
+submission time. Each prediction $\widehat R_{a,r}$ replaces
+$\widehat R_a$ when available, with $\tau_a$ set to invocation $r$'s
+submission time.
+
+\subsubsection{Slack Computation}
+\label{sec:tracker-slack}
+
+% 中文：注册工作流时，runtime 从固定编排图导出所有 Agent 任务的工作流 ID、Agent ID
+% 和前驱 Agent ID 列表；边 a→b 表示 b 等待 a 完成任务后才能开始。
+% runtime 报告任务完成事件，Tracker 移除已完成节点，得到剩余 DAG。
+% 该 DAG 每个节点是一个尚未完成的 Agent 任务，其内部可以有多次 invocation。
+At workflow registration, the runtime exports each Agent task's workflow
+ID, Agent ID, and predecessor Agent IDs from the fixed orchestration graph.
+An edge $a\to b$ means that $b$ waits for Agent $a$ to finish its task.
+The runtime reports task completion, allowing Tracker to remove finished
+tasks and maintain the residual DAG $G_t=(A_t,E_t)$. Each node in this
+graph is one unfinished Agent task, which may contain multiple invocations.
+
+% 中文：算法以剩余 Agent DAG、时长先验、已启动 Agent 的最新估计及提交时间、误差裕量为输入。
+% 未启动 Agent 保留完整时长先验；已启动 Agent 的估计换算到当前时刻。
+% 正向计算最早完成时间，反向计算最晚完成时间。
+% 后向遍历以预测的工作流完成时间为终点；每个 Agent 的剩余工作只计算一次。
+% pred 和 succ 分别表示剩余前驱与后继；g 是经校准的 Slack 高估误差裕量。
+Algorithm~\ref{alg:slack-estimation} computes guarded Agent slack using
+forward and backward critical-path passes~\cite{kelley1959cpm}.
+Unstarted Agents retain their full duration priors, while estimates for
+started Agents are adjusted to the current time $t$. The algorithm counts
+each Agent's remaining work once and uses the predicted workflow finish
+$T$ as the backward-pass endpoint. The two passes compute earliest and
+latest finishes, $EF_a$ and $LF_a$. Here $\operatorname{pred}(a)$ and
+$\operatorname{succ}(a)$ denote residual predecessors and successors,
+and $g_a$ is a calibrated upper quantile of slack overestimation.
+
+% 中文：所需时长估计缺失、过期或无效时，整个工作流暂不授予正 Slack。
+% 正向遍历：EF = 本节点剩余时间 + 最晚完成的前驱；后向遍历：
+% LF = 后继最晚开始时间的最小值，汇点从 T 开始回推。
+% 最终 Slack 为 max(0, LF - EF - g)；两次遍历的复杂度均为 O(|A_t|+|E_t|)。
+\par\medskip\noindent\begin{minipage}{\columnwidth}
+\raggedright
+\refstepcounter{designalgorithm}\label{alg:slack-estimation}
+\textbf{Algorithm \thedesignalgorithm: Compute Agent slack}
+\par\smallskip
+\begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
+\toprule
+ & \textbf{Input:} $G_t=(A_t,E_t)$; Agent states; priors $\bar D_a$;
+ estimates $(\widehat R_a,\tau_a)$; guards $g_a$; time $t$ \\
+ & \textbf{Output:} guarded slack $\boldsymbol{s}=\{s_a:a\in A_t\}$ \\
+\midrule
+1 & $s_a\gets0,\quad \forall a\in A_t$ \\
+2 & \textbf{for} $a\in A_t$ \textbf{do} \\
+3 & \quad \textbf{if} $a$ is unstarted \textbf{then} $d_a\gets\bar D_a$ \\
+4 & \quad \textbf{else} $d_a\gets\widehat R_a-(t-\tau_a)$ \\
+5 & \textbf{if} any required estimate is missing or invalid, or
+ any $d_a\le0$, \textbf{then return} $\boldsymbol{s}$ \\
+6 & $\pi\gets\textsc{TopologicalOrder}(G_t)$ \\
+7 & \textbf{for} $a$ in $\pi$ \textbf{do} \\
+8 & \quad $EF_a\gets d_a+
+ \max\bigl(\{0\}\cup\{EF_p:p\in\operatorname{pred}(a)\}\bigr)$ \\
+9 & $T\gets\max\bigl(\{0\}\cup\{EF_a:a\in A_t\}\bigr)$ \\
+10 & \textbf{for} $a$ in reverse $\pi$ \textbf{do} \\
+11 & \quad $LF_a\gets
+ \min\bigl(\{T\}\cup\{LF_b-d_b:b\in\operatorname{succ}(a)\}\bigr)$ \\
+12 & \quad $s_a\gets\max\{0,LF_a-EF_a-g_a\}$ \\
+13 & \textbf{return} $\boldsymbol{s}$ \\
+\bottomrule
+\end{tabularx}
+\end{minipage}\par\medskip
+
+% 中文：调用继承所属 Agent 的 Slack。
+Invocation $v=(w,a,r)$ inherits its Agent's slack, $s_v=s_a$.
+
+% 中文：预测和 Slack 更新在 Controller 中异步执行，调用调度和 token 生成无需等待。
+Prediction and slack updates run asynchronously in the controller, so
+invocation dispatch and token generation do not wait for them.
+
+\subsection{Router and Connector}
+\label{sec:router}
+
+% 中文：Router 根据队列负载和前缀 KV 的位置调度调用，与此同时 Router 还会决定如果 Failure 发生时，该 Agent 调用 retry 到哪个DP Replica
+% 这一选择也决定了如果要备份该调用对应的 KV，备份在哪里。
+% retry 目标位于执行节点的受保护故障域之外，选择时考虑负载、可用内存和复制路径竞争。
+Router schedules invocations based on queue load and prefix locality.
+It also selects a retry DP replica for each Agent invocation in case of
+failure. If the invocation's KV is selected for backup, it is placed at
+this retry target. The target lies outside the execution worker's
+protected failure domain and is chosen based on load, available memory,
+and copy-path contention.
+
+% 中文：已选 KV 存于 retry 目标的 GPU 内存（Peer HBM）或主机内存（Peer DRAM）。
+% 配置的前 L 层中的已选区域按 KV Master 的优先级优先放入 HBM；溢出区域和后续层
+% 的已选区域放入 DRAM。两层都是部分备份，每个已选区域只有一个稳定备份。
+% 容量不足时，Router 将缺口返回 KV Master，重新选择保护区域。
+At this target, selected KV resides in GPU memory (\emph{Peer HBM}) or
+host memory (\emph{Peer DRAM}). Selected regions in the configured first
+$L$ layers prefer Peer HBM according to KV Master's priorities; overflow
+and selected regions in later layers use Peer DRAM. Both tiers hold
+partial backups, with one stable backup per selected region.
+If the selected set does not fit, Router returns the capacity shortfall
+to KV Master for reselection.
+
+% 中文：各 TP rank 的 Connector 执行 KV 复制并向 KV Master 报告完成状态。
+% 故障后 Router 使旧执行失效，并将调用重定向到 retry 目标；Engine 直接复用目标
+% HBM 中的 KV，Connector 将 DRAM 中的 KV 搬入 GPU。目标成为执行节点后，
+% Router 为后续备份重新选择 Peer。
+Rank-local Connectors execute KV copies and report completion to KV
+Master. After a failure, Router fences the old execution and redirects
+the invocation to the retry target. The engine reuses resident Peer HBM
+KV, while Connectors move DRAM-resident KV into GPU memory.
+If that target becomes the execution worker, Router selects a new peer
+for subsequent backups.
+
+% 中文：上述路由与传输机制处理已选状态；接下来由 KV Master 决定保护哪些
+% Agent 历史，以及保留其中哪些 KV 区域。
+These routing and transfer mechanisms operate on selected state.
+KV Master determines which Agent histories and which KV regions to
+protect, as described next.
+
+\subsection{KV Master}
+\label{sec:master}
+
+% 中文：KV Master 根据工作流收益分配有限的备份内存：先选择要保护的 Agent 历史，
+% 再选择其中值得保留的 KV 区域，分别对应 O1 和 O2。它使用 Tracker 的剩余时间与
+% Slack，以及 Router 的 retry 目标评估方案，并管理副本的更新、保留和回收。
+KV Master allocates backup memory according to its predicted benefit to
+workflow completion. It first selects Agent histories (O1), then KV
+regions within those histories (O2). Tracker supplies remaining-time
+estimates and slack, while Router supplies retry destinations. Master
+evaluates the resulting protection plans and manages replica lifetimes.
+
+\subsubsection{Agent Selection}
+\label{sec:agent-protection}
+
+% 中文：候选来自尚未完成任务的 Agent 所产生的 KV 历史。先比较历史恢复耗时和
+% Tracker 给出的 Slack，优先检查可能暴露在工作流完成路径上的恢复延迟。
+% 同一故障可能影响汇合点的多个前驱，因此同时考虑单个 Agent 和需要共同保护的小组。
+Master starts from materialized histories of unfinished Agents.
+It compares the profiled restoration delay with Tracker's guarded slack
+$s_a$ to prioritize histories whose recovery may delay the workflow
+(Equation~\ref{eq:isolated_penalty}). A failure can interrupt several
+predecessors of the same join, so candidates include both individual
+histories and small groups of Agents whose recovery delays must be
+reduced together.
+
+% 中文：最终选择比较完整方案对工作流完成时间的影响。P 包含已选区域及其放置位置；
+% F_w^0 是正常执行时的预测完成时间，F_w^f 是源 worker f 故障后的预测完成时间。
+% 目标函数同时计入正常运行和故障恢复，用相同的工作流、Router 目标和权重比较候选方案。
+For a protection plan $P$, including selected regions and their
+locations, let $F_w^0(P)$ be workflow $w$'s predicted finish during normal
+execution and $F_w^f(P)$ its predicted finish after source worker $f$
+fails. Master compares plans using
+\begin{equation}
+ J(P)=(1-\lambda)\sum_w F_w^0(P)
+       +\lambda\sum_f\pi_f\sum_w F_w^f(P),
+ \label{eq:objective}
+\end{equation}
+% 中文（续）：lambda 控制恢复目标的权重；pi_f 是预先设定并归一化的故障场景权重，
+% 默认等权，不将其解释为实测故障概率。
+where $\lambda\in[0,1]$ controls the recovery weight and $\pi_f$ are fixed,
+normalized failure-scenario weights, equal by default. Candidate
+comparisons use the same workflow snapshot, Router targets, and weights;
+the weights express policy preferences rather than measured failure
+probabilities.
+
+% 中文：评估以 Tracker 的剩余 Agent 工作为基准，每个 Agent 只计一次，再计入方案
+% 改变的 KV 复制、读取和重建开销。故障评估同时考虑该故障影响的调用，以及它们在
+% retry 目标实际共享的队列和带宽；就绪调用采用固定顺序，以 Slack 和请求 ID 打破平局。
+% 汇合点仍等待所有前驱完成，因此方案收益不能简单相加各 Agent 的独立恢复收益。
+The evaluation uses Tracker's remaining Agent work as its baseline,
+counting each Agent once and accounting for changes in KV copy,
+retrieval, and reconstruction costs. Each failure scenario includes the
+affected invocations and the queues and bandwidth they share at their
+retry targets. A fixed ready-time order uses slack and request ID to
+break ties. Join completion remains the maximum predecessor finish,
+so the value of a group is evaluated together.
+
+% 中文：正常复用收益取决于 Router 选定执行位置的实际 KV 获取成本，原执行 KV 已可用时
+% 不重复计算备份收益。候选 Agent 进入下一步 KV 区域选择，待放置方案形成后评估
+% J(P)-J(P')。若时间预测不可用，则以估计的调用耗时节省/字节排序，并保留容量约束。
+Normal reuse contributes value when a replica reduces the KV retrieval
+or reconstruction cost of a submitted invocation; state already
+available in execution HBM earns no additional backup benefit.
+Agent candidates proceed to region selection and placement before
+Master evaluates their marginal benefit, $J(P)-J(P')$.
+If timing estimates are unavailable, Master orders candidates by
+profiled invocation time saved per byte under the same capacity rules.
+
+\subsubsection{KV Region Selection}
+\label{sec:region-selection}
+
+% 中文：KV 区域对应某一层的历史 token 块，以及所需的 TP 分片和注意力元数据。
+% 对每个候选 Agent，Master 先从已完成物化的区域中形成部分备份集合 S_a，
+% 再交由 Router 放置；选择 Agent 不代表为其分配完整检查点。
+A KV region identifies one layer and one historical token block,
+together with its required TP shards and attention metadata.
+For each candidate Agent $a$, Master forms a selected set $S_a$ from
+sealed, materialized regions before asking Router to place it.
+Selecting an Agent therefore opens its region candidates rather than
+allocating a complete checkpoint.
+
+% 中文：先用近期已完成的原生注意力访问记录生成候选。区域的访问因子等于选中该区域
+% 的选择单元数，除以该区域在因果关系上可见的选择单元数。
+Master uses recent completed native-attention observations to identify
+frequently accessed regions. For region $b$ in layer $\ell$, its access
+factor is
+\begin{equation}
+ \widehat p_{a,\ell,b}=
+ \frac{\text{eligible selection units that selected }b}
+      {\text{selection units for which }b\text{ was visible}}.
+ \label{eq:demand}
+\end{equation}
+% 中文（续）：计数遵循模型原生选择粒度，跨 head 重复访问按单元去重，在剪枝前确定
+% 因果可见性。样本不足时使用层级先验；稠密注意力中可见块的访问因子为 1。
+% 访问因子用于排列候选，最终保留价值由恢复耗时评估决定。
+Counts follow the model's native selection unit, with head duplicates
+counted once and causal visibility determined before pruning.
+Small denominators use a calibrated layer prior; visible blocks in
+dense attention have access factor one. The factor orders candidates,
+while their retention value comes from the restoration-time evaluation.
+
+% 中文：候选包括单个区域、逐步扩大的热点集合，以及恢复这些区域所需的依赖组合。
+% 连续的历史需求窗口保留访问相关性和需求揭示顺序；统计无效时用完整因果需求范围
+% 进行保守评估，但仍由收益和容量决定备份哪些区域。
+Master considers individual regions, progressively larger hot sets,
+and dependency bundles needed for useful restoration. Recent consecutive
+demand windows preserve correlated accesses and their reveal order.
+When sparse statistics are invalid, profiling uses the full causal
+demand envelope; the selected backup set remains subject to benefit
+and capacity constraints.
+
+% 中文：放置后的每个方案区分本地执行 KV、Peer HBM、Peer DRAM 和无存活副本四种情况。
+% DRAM 需要传输，未备份状态需要从持久化 token 和可复用状态重建；重建要计入前序层、
+% 前序 token、原生选择器及位置元数据等依赖，并对共享重建工作只计一次。
+For each proposed placement, the profiler distinguishes an execution-KV
+hit, a Peer HBM hit, a Peer DRAM transfer, and missing state.
+Missing state is reconstructed from durable tokens and reusable KV,
+including required lower-layer activations, preceding KV, and native
+selector and positional state. Shared reconstruction work is counted
+once in the recovery schedule.
+
+% 中文：恢复评估按照需求揭示、传输和计算的实际先后关系构建时间线，并计入共享资源竞争。
+% q_l 表示该层准备好消费历史的时间，a_l 表示所需 KV 全部就绪的时间，c_l 是剩余计算。
+% 只有计算不能覆盖的等待 e_l 会推迟该层完成；[x]^+ 表示 max(0,x)。
+The profile schedules demand revelation, transfers, reconstruction, and
+remaining computation on the retry resources, including their shared
+queues and bandwidth. Let $q_\ell$ be the time a layer is ready to consume
+history, $a_\ell(P)$ the time its required KV becomes available, and
+$c_\ell$ its remaining computation. Exposed waiting and layer completion
+are
+\begin{equation}
+ \begin{aligned}
+ e_\ell(P)&=[a_\ell(P)-q_\ell]^+,\\
+ f_\ell(P)&=q_\ell+e_\ell(P)+c_\ell,
+ \end{aligned}
+ \label{eq:overlap}
+\end{equation}
+% 中文（续）：这里 [x]^+ = max(0,x)。这些等待和完成时间用于计算工作流目标 J；
+% HBM 相比 DRAM 的放置优先级取决于每字节能够进一步减少的暴露等待。
+where $[x]^+=\max(0,x)$. These timings feed the workflow objective in
+Equation~\ref{eq:objective}. For HBM-eligible regions, Master supplies
+Router with priorities based on the additional exposed waiting avoided
+over DRAM per byte.
+
+% 中文：只有执行引擎能够正确组合部分 KV 与缺失状态重建时，才计入相应的重建节省。
+% 若不支持这种恢复方式，则按完整前缀 Prefill 评估，不把不可用的部分副本计为收益。
+% 图中展示的是先选择区域、再放入 HBM/DRAM 的构造示例。
+The profiler credits partial restoration only when the engine supports
+combining retained regions with reconstruction. Otherwise it models
+full-prefix Prefill and gives unusable partial state no avoided-compute
+credit. Figure~\ref{fig:selective-recovery} illustrates selection followed
+by partial placement in the two memory tiers.
+
+% 中文（图示）：12 个逻辑区域中选出 5 个，再按前 L 层限制和容量放入 Peer HBM 或
+% Peer DRAM；其余区域没有受管理的备份。这是放置示意，不是性能测量。
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/selective-recovery.pdf}
+ \caption{Partial selection before placement, on one selected peer, with $L=2$.
+ Five of twelve logical regions are selected. Peer HBM holds L1/B0 and
+ L1/B2; L2/B1 falls back to Peer DRAM because the illustrative HBM quota is
+ full. Selected L3/B0 and L3/B2 also go to Peer DRAM. Unselected cells have
+ no managed backup. A demand uses a surviving copy or reconstructs its
+ missing dependencies. Each cell denotes all required TP shards;
+ this is a constructed state, not a timing result.}
+ \label{fig:selective-recovery}
+ \Description{A selected-region mask followed by an exclusive Peer HBM/Peer DRAM
+ placement map. Two selected first-layer regions reside in Peer HBM, an
+ overflowing second-layer region resides in Peer DRAM, and two third-layer
+ regions reside in Peer DRAM. Seven regions are unselected. The two tiers
+ together store five regions, not a complete twelve-region checkpoint.}
+\end{figure}
+
+\subsubsection{Replica Management}
+\label{sec:master-online}
+\label{sec:execution}
+
+% 中文：新调用、调用完成、Tracker 估计更新及内存预算变化触发重新规划。
+% 历史增长按配置的、与块边界对齐的 token 间隔 Z 批量处理，只复制新增或变化的已选区域。
+Master revisits selection on invocation arrivals and completions,
+Tracker updates, and memory-budget changes. A configured block-aligned
+token interval $Z$ batches updates as histories grow.
+Only newly selected or changed regions require copying; existing
+selected replicas remain available across invocations.
+
+% 中文：候选方案同时包含新增区域、放置位置和为腾出容量需要移除的副本。
+% 优先尝试移除单位释放字节造成工作流损失较小的副本，再重新评估完整替换方案。
+% 自主替换要求收益超过阈值 epsilon；强制容量收缩可以移除区域，并保留重建路径。
+A candidate plan includes its selected regions, destinations, and any
+victims needed to fit. Master considers victims in increasing
+recomputed workflow loss per released byte, then evaluates the complete
+replacement. Optional changes require a benefit greater than a
+configured margin $\epsilon$. Mandatory capacity relief may instead
+deselect regions, whose missing state remains reconstructible.
+
+% 中文：算法先生成 Agent 候选，再选择区域并请求 Router 放置，重新计算完整方案收益。
+% 可行且收益超过阈值的候选按收益/变化区域字节排序；同一物理区域只计一次。
+% 所有 TP rank 的 HBM、实际主机的共享 DRAM 以及迁移期间的临时副本都需满足容量限制。
+Algorithm~\ref{alg:protection} performs this bounded search.
+For candidate $c$, let $\Delta_c=J(P)-J(P_c)$ and let $B_c$ be the physical
+bytes of distinct KV regions added, removed, or moved by the candidate.
+Feasible candidates with $\Delta_c>\epsilon$ are ordered by
+$\Delta_c/B_c$. Feasibility accounts for every TP rank's HBM limit,
+shared host DRAM, and transient allocations during migration.
+
+% 中文（算法）：对当前历史、Slack、副本和预算取快照，先处理必要的容量收缩。
+% 在规划预算内循环完成 Agent 选择、区域选择、放置及淘汰比较；先过滤低收益候选，
+% 再按单位字节收益选择。执行前检查快照和预留，复制完成后发布，使用结束后释放旧副本。
+\par\medskip\noindent\begin{minipage}{\columnwidth}
+\raggedright
+\refstepcounter{designalgorithm}\label{alg:protection}
+\textbf{Algorithm \thedesignalgorithm: Update selected replicas}
+\par\smallskip
+\begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
+\toprule
+1 & Snapshot histories, slack, replicas, and budgets \\
+2 & $P\gets$ current plan with required capacity relief \\
+3 & \textbf{while} planning work budget remains \textbf{do} \\
+4 & \quad $A\gets\textsc{AgentCandidates}(P)$, including groups \\
+5 & \quad $\{S_c\}\gets\textsc{SelectRegions}(A,P)$ \\
+6 & \quad For each $c$, form $P_c\gets\textsc{Router.Place}(S_c)$ \\
+7 & \quad Fit victims; re-place and evaluate each whole plan \\
+8 & \quad Keep feasible candidates with $\Delta_c>\epsilon$ \\
+9 & \quad \textbf{if} none remain \textbf{then break} \\
+10 & \quad $P\gets P_{c^*}$, where $c^*=\arg\max_c\Delta_c/B_c$ \\
+11 & \textbf{if not} \textsc{ReserveIfCurrent}$(P)$ \textbf{then} \\
+12 & \quad Requeue update; \textbf{return} \\
+13 & Copy newly selected or moved regions to their destinations \\
+14 & Publish completed regions; release retired copies after use \\
+\bottomrule
+\end{tabularx}
+\end{minipage}\par\medskip
+
+% 中文：执行前重新检查历史、目录和预算版本，并预留复制所需资源。目录记录层、
+% token 区间、TP 分片、兼容性和位置；所有必需分片及元数据就绪后才发布副本。
+% 迁移期间新旧副本同时计账，目的副本完成且旧副本的读取或传输结束后才释放旧副本。
+Before execution, Master revalidates the history, manifest, and budget
+versions and reserves the required resources. The replica manifest
+records each region's layer, token range, TP shards, compatibility, and
+location. A replica becomes visible only after all required shards and
+metadata are ready. During migration, both allocations count until the
+destination commits and reads or transfers using the old copy finish.
+
+% 中文：一次调用结束不会自动回收其 Agent 历史中的副本；后续调用可以复用已保留的
+% 前缀，并只扩展新增的已选状态。保留集合随使用者和收益变化更新；没有已登记使用者时，
+% 可在配置的空闲窗口内保留，内存压力仍可触发替换。工作流结束释放逻辑引用，
+% 无剩余使用者的副本在实际读取和传输结束后回收。
+Completing an invocation does not retire its Agent's selected replicas.
+Later invocations can reuse retained prefixes and extend the selected
+state. Master updates retention as consumers and marginal benefits
+change; histories without registered consumers may remain for a
+configured idle window, subject to memory pressure. Workflow completion
+releases logical references, and unreferenced replicas are reclaimed
+after active reads and transfers finish.
+
+% 中文：后续调用或 retry 使用目录中已完成的副本，Connector 负责传输，引擎重建缺失
+% 状态并按需重放已接受的 token，避免重复输出。目录显式保留未备份的区域，
+% 只有经验证完整覆盖所有层及分片的前缀才按完整前缀使用。
+For reuse or retry, Master grants access to committed regions,
+Connectors transfer them, and the engine reconstructs missing state.
+Accepted tokens are replayed where needed without emitting them twice,
+following checkpoint-and-replay recovery~\cite{strati2024dejavu,cao2026lumen}.
+The manifest preserves gaps in coverage; only a verified all-layer,
+all-shard prefix is treated as complete.
+
+\subsection{Adapter}
+\label{sec:capacity}
+
+Adapter realizes O3 by determining the HBM replication capacity
+foreground execution can support. For takeover rank $k$,
+$B^{\rm pool}_k$ excludes weights and fixed allocations,
+$B^{\rm serve}_k$ covers the serving high watermark and execution
+reservations, and $B^{\rm reserve}_k$ reserves growth and workspace.
+The ceiling is
+\begin{equation}
+ C_k=\max\{0,\min(B^{\rm cap}_k,
+ B^{\rm pool}_k-B^{\rm serve}_k-B^{\rm reserve}_k)\}.
+ \label{eq:ceiling}
+\end{equation}
+HBM replica use is not part of $B^{\rm serve}_k$ and is not subtracted twice.
+Committed, reserved, copying, and retiring allocations all count toward
+physical occupancy. Distinct TP ranks have distinct ceilings.
+
+Adapter uses additive increase and multiplicative
+decrease~\cite{chiu1989aimd}. Allocation stalls, reserve violations, or
+memory-related admission waits multiply quota $B_k$ by $0<\gamma<1$.
+After $m$ stable windows below a lower wait threshold, Adapter adds
+$\Delta$ bytes if Master reports beneficial early-layer candidates
+currently in Peer DRAM or deferred for HBM capacity. The signal is computed
+before quota filtering, allowing growth from zero. Updates are
+page-aligned and clipped to $C_k$; missing telemetry disables growth.
+Adapter changes total quota, while the configured depth $L$ remains
+unchanged.
+
+When quota shrinks, Master stops new HBM admissions and asks Router
+to move the least valuable HBM placements to the same peer's DRAM if
+their regions remain selected. The plan reserves that host's DRAM
+space; Connectors copy and validate the destination. Master then
+redirects the manifest and releases the HBM allocation after readers
+drain. If that peer's DRAM cannot accommodate the migration, Master
+reselects the finite backup set, explicitly removing regions and their
+predicted protection benefit as needed.
+Their token histories still permit reconstruction. Mandatory pressure
+relief need not improve $J$, but cannot bypass active physical leases.
+Foreground admission uses actual occupancy; a reduced quota alone
+does not free memory. Pending copies may be cancelled, and allocations
+wait when immediate physical space is unavailable.
+
+The four components specify a design. Integrated measurements are
+still needed to establish recovery gains, cross-invocation reuse, and
+normal-service overhead.

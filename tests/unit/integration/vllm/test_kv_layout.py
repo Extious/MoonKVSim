@@ -38,6 +38,7 @@ def _locked_inputs() -> LockedLayoutInputs:
             "sliding_window": None,
             "use_sliding_window": False,
         },
+        model_weights_bytes=16_381_470_720,
         model_files=(
             {"path": "config.json", "sha256": "1" * 64},
             {"path": "tokenizer.json", "sha256": "2" * 64},
@@ -193,6 +194,7 @@ def test_layout_artifact_is_repeatable_and_accounts_each_stage_rank() -> None:
 
     assert first == second
     assert canonical_kv_layout_bytes(first) == canonical_kv_layout_bytes(second)
+    assert first["model"]["weights_bytes"] == 16_381_470_720
     assert len(first["stage_rank_layouts"]) == 4
     entry = first["stage_rank_layouts"][0]
     assert entry["cache_spec"]["local_num_kv_heads"] == 1
@@ -239,6 +241,7 @@ def test_model_hybrid_or_group_layout_fails_closed() -> None:
         model_id=inputs.model_id,
         model_revision=inputs.model_revision,
         model_config=model_config,
+        model_weights_bytes=inputs.model_weights_bytes,
         model_files=inputs.model_files,
         tokenizer=inputs.tokenizer,
         proposed_context=inputs.proposed_context,

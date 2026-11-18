@@ -1,0 +1,351 @@
+U165 equation 
+\begin{equation}
+ D_{w,p}=\mathrm{WCT}^{\mathrm{fault}}_{w,p}
+          -\mathrm{WCT}^{\mathrm{healthy}}_{w,p}.
+ \label{eq:eval-penalty}
+\end{equation}
+
+U166 prose 
+Every policy has its own healthy mate. Positive
+$D_{w,\mathrm{LRU}}-D_{w,p}$ favors $p$, but we also report absolute healthy
+and faulty WCT, completion, and SLO goodput. Separate directly interrupted
+workflows, other workflows sharing recovery resources, and an isolated
+control cohort. The second cohort establishes interference only when
+the actual shared link, queue, or GPU is identified. Report p50/p95/p99
+only with adequate completed samples, along with timeouts and the common
+observation horizon. Hit rate, restore latency, and workflow latency have
+different denominators and are never interchangeable.
+
+U167 heading 
+Declared analytical instance.
+
+U168 prose 
+Four branches A0--A3 have 4/8/12/16\,GiB state, remaining durations
+12/10/5/1\,s, and next-use weights 0.15/0.35/0.60/0.85. Rates are
+20\,GiB/s DRAM, 4\,GiB/s storage, 12\,GiB/s shared network, and
+20\,GiB/s H2D per target, with two surviving targets. The common recovery
+floor is 0.25\,s, replay is 0.4\,s, and reconstruction costs 8\,s/GiB.
+DRAM is limited to 16\,GiB and storage to 160\,GiB. The event calendar
+schedules 0.25\,GiB chunks in round-robin request order through shared
+readers, a shared network, and target-local H2D/compute. Tail replay starts
+after the required state arrives. Transport overlaps, but this particular
+model has no layer-wise replay overlap or online revaluation controller.
+Static admission greedily maximizes marginal value per byte with
+failure-episode probability 0.05 and next-use probability 0.02 over a
+60\,s horizon. These are sensitivity inputs, not observed production rates.
+
+U169 heading 4.2
+One Failure: End-to-End Benefit
+
+U171 heading 
+Controlled intervention.
+
+U172 prose 
+The primary campaign kills the same source replica when a specified
+workflow, Agent, and request reaches 80\% of its frozen logical token progress.
+The cohort includes every interrupted request on that source, not only
+the request that triggers injection. Baseline and candidate runs preserve
+the same input, token history, arrival trace, target resources, and failure
+identity. Separate the detection floor, routing/admission, checkpoint
+lookup, restore, replay, and resumed execution in raw logs. A common
+wall-clock kill would confound progress with policy speed.
+Mechanism-attribution runs freeze the pre-fault source assignment and
+committed coverage. Full-system runs allow policies to change routing
+and achieved frontiers, and use the fixed original arrival cohort for
+intent-to-treat comparisons; they also report changes in which workflows
+were directly interrupted. These two experiments answer different questions.
+
+U173 prose 
+The analytical grid spans state-size factors 0.5/1/2, slack factors
+0/0.3/1/3, and storage rates 1/4/12\,GiB/s, giving 36 configurations.
+DRAM scales with state size in this grid. Figure~\ref{fig:eval-workflow-outcomes} shows the distributions. We also compute matched differences for every configuration. Workflow value improves 17 configurations and ties 19;
+the absence of a loss in this grid is not a worst-case guarantee.
+LRU and reuse-only happen to choose the same order in this declared
+instance, so their agreement is not independent evidence against all
+reuse policies. Physical comparisons must include other recency/reuse
+orders and each workload family separately.
+
+U174 caption 
+Single-failure penalties over 36 declared configurations of state size, residual-branch slack, and storage bandwidth. The same configuration is used for every policy. The CDF weights configurations equally; it is not a distribution of measured workflows. The allocation oracle searches the same whole-group candidate family.
+
+U176 prose 
+In the base case, storage-only adds 5.5583\,s to workflow completion,
+LRU adds 3.6208\,s, and workflow value adds 1.6125\,s. The reduction
+relative to LRU is 2.0083\,s, or 55.5\% of the \emph{failure penalty};
+it is not a 55.5\% end-to-end WCT reduction. The healthy residual join
+is 12\,s, giving faulty residual completion times 15.6208 and 13.6125\,s.
+Reconstruction's 190.65\,s penalty illustrates the value of reliable
+coverage, while the LRU comparison isolates fast-tier placement beyond
+that coverage. Measure full workflow lifetimes in the physical experiment;
+do not replace them with this residual-window example.
+
+U177 heading 4.3
+One Failure: Explaining the Gain
+
+U178 heading 
+Dependency exposure.
+
+U179 prose 
+For a single fork/join instance with residual durations $d_i$ and restored
+ready times $R_i$, the exact local join penalty is
+
+U180 equation 
+\begin{equation}
+ D=\max_i(d_i+R_i)-\max_i d_i.
+\end{equation}
+
+U181 prose 
+The base join slack is 0/2/7/11\,s. LRU retains the 16\,GiB A3 history;
+workflow value retains A0 and A1 (12\,GiB total). Figure~\ref{fig:eval-branch-exposure}
+shows why these choices differ. A3's long restoration can remain inside
+its available margin, whereas A0 cannot hide any delay. Whole-group
+granularity leaves 4\,GiB unused; it is part of the candidate restriction,
+not free capacity secretly assigned to another policy.
+
+U182 caption 
+Where the base-case benefit originates. A0--A3 have join slack 0, 2, 7, and 11\,s. Bars compare that slack with actual modeled restoration completion after the common fault. Speeding up the largest history A3 has little workflow value here; delaying A0 directly extends the join.
+
+U184 heading 
+Critical-path accounting.
+
+U185 prose 
+An ordered counterfactual attributes the final join penalty using controlled interventions. Placement is frozen. We start with negligible
+read/network/H2D service time and zero floor/replay, then restore detection-floor, read, network, H2D, and replay costs in that order. Consecutive join differences sum to the final
+penalty. This decomposition can assign interactions to different stages
+if the intervention order changes. It is therefore an explanatory model
+decomposition, not unique causal attribution. In hardware, additionally
+record a dependency-linked critical path from event timestamps: sum only
+non-overlapping intervals on that path, and report total GPU/I/O work
+separately. Neither method may add all SSD, H2D, and GPU durations and
+call that wall-clock recovery time.
+
+U186 heading 
+Cost of prioritization.
+
+U187 prose 
+Resource accounting shows the cost of prioritization.
+Workflow value reads 28\,GiB from storage, versus LRU's 24\,GiB, and
+occupies the complete recovery pool for 7.6833 rather than 6.6833\,s.
+It finishes this workflow earlier while consuming the resource longer.
+Collect useful bytes, unused prefetched bytes, duplicate reads, checkpoint
+writes, and reconstruction work in addition to the critical path. A claim
+of lower storage traffic, lower GPU cost, or lower recovery makespan
+would be false for this example.
+
+U188 heading 4.4
+One Failure: Collateral Delay and Recovery Backlog
+
+U189 heading 
+Shared-resource experiment.
+
+U190 prose 
+Cross 1/2/4/8 interrupted workflows with 30/60/85\% pre-fault load and
+one/two/four compatible recovery targets. Keep the faulted logical state
+and healthy arrival stream fixed. Report direct-workflow delay, collateral
+workflow delay, retry-queue occupancy, storage/NIC backlog, and time to
+return to the predeclared latency band. Separately remove the common
+reader/link by giving targets independent channels. If the collateral
+effect disappears, that supports the resource-sharing explanation.
+If there is no physical shared bottleneck, do not claim a cross-target
+cascade from a model that imposes one.
+
+U191 caption 
+FIFO recovery-pool stress model: a simultaneous burst of identical interrupted workflows shares one two-target pool. The pool is reserved until each workflow's last restore completes. Queue delay is added to the join penalty. This deliberately restrictive policy exposes externalities that an isolated-fault comparison misses.
+
+U193 prose 
+The FIFO stress model in Figure~\ref{fig:eval-burst-interference} holds
+one recovery pool until all four branch restores finish. For $n$
+simultaneous identical workflows, mean penalty is
+$D+(n-1)S/2$, where $S=\max_i R_i$ is pool occupancy. Workflow value
+loses its isolated advantage once the additional pool waiting dominates:
+at $n=8$, mean penalties are 28.5042\,s for workflow value and
+27.0125\,s for LRU. This is a falsification of extrapolating the
+isolated placement result to arbitrary bursts, not a measurement of the
+proposed load-aware router. With normal I/O using 70\% of the 4\,GiB/s reader, a fluid backlog model exposes a longer drain interval for the larger recovery byte volume. This calculation concerns I/O backlog, not measured TTFT or collateral WCT. The physical test must include concurrent scheduling and
+the joint value of affected and collateral workflows.
+
+U194 heading 4.5
+Failure Position and Checkpoint Freshness
+
+U195 prose 
+Repeat the same-ID experiment at 20/50/80/95\% logical progress, during
+prefill, during decode, during a tool wait, and immediately around a
+demotion commit. State precisely whether progress counts accepted total
+tokens or generated tokens; never mix denominators. An analytical sweep scales checkpoint bytes with logical progress while holding remaining work fixed.
+Real phase sweeps also change the remaining graph, native demand, and
+checkpoint frontier, which must be taken from the actual run.
+
+U196 prose 
+For $Z=64/256/1024$, enumerate every ideal checkpoint phase when presenting
+an analytical average, pairing policies at the same $Z$ and phase.
+The physical experiment records trigger, copy start, committed frontier,
+acknowledged frontier, and retry start. Report lost/uncommitted tail
+length, replay time, failed commits, and write backlog. Actual tail length
+can exceed $Z$ under backpressure. A short trigger interval can worsen
+recovery if it congests the write path. Sweep read/write interference,
+write rate, and queue capacity while holding total retention budgets fixed.
+
+U197 heading 4.6
+Real Traces: Provenance and Event Semantics
+
+U198 heading 
+Historical node outages.
+
+U199 prose 
+LANL documents node interruptions with start/end times, node/system IDs,
+and cause categories~\cite{lanlFailureData,schroeder2006failures}. We use
+a revision-pinned public redistribution because the original FTP archive
+was unavailable during preparation. Its CSV has 23,739 records, whereas
+the official page describes 23,741; byte identity and the two-record
+difference remain unresolved. This limitation is recorded in the artifact
+and must be resolved before presenting the copy as an authenticated
+original release. The present result is explicitly for the supplied
+redistributed CSV, not for an asserted identical original archive.
+
+U200 prose 
+We retain rows with purpose exactly \texttt{compute}, exclude 1,648 other
+rows and 122 zero-duration rows, and merge overlapping or touching
+intervals per node, removing 231 additional interval boundaries. No
+negative-duration or unparseable compute intervals occur. The resulting
+21,738 intervals cover 3,542 observed nodes across 22 systems. We retain
+all recorded cause categories, including interruptions that may involve
+maintenance; this is not a hardware-only crash sample. Original row IDs
+and every exclusion/merge are recoverable from the cleaning output.
+
+U201 prose 
+Recorded starts have minute resolution. Equal timestamps identify
+coincident \emph{recorded} starts, not proof of a common physical cause.
+There are 19,561 within-system start groups, 568 with multiple nodes,
+and a maximum of 45 nodes. Systems have separate observation calendars
+and are never superimposed as one cluster. These historical CPU/HPC
+outages test clustered timing; they do not estimate a 2027 GPU fleet's
+failure rate, repair latency, or workload mix. Missing exposure information
+also prevents using the observed failing-node count as the denominator
+of a fleet-wide availability estimate.
+
+U202 heading 
+Modern GPU alerts as a separate check.
+
+U203 prose 
+The Reflex release contains 98 LLM-training jobs, 344,175 alerts, and
+144 faulty node/job labels~\cite{ding2026reflex,reflexDataset}.
+We audit these labels separately from outage calendars.
+Of the faulty labels, 108 have no alert on the labeled node. Moreover,
+timestamps are shifted independently per job and repair times are absent.
+We therefore neither stitch jobs into a calendar nor label the first
+alert as the fault time. This dataset can support within-job alert-pattern
+or diagnosis studies, but it cannot supply an unqualified fail-stop/repair
+schedule for this paper. A modern serving outage trace with explicit
+event semantics remains an important external-validity target.
+
+U204 heading 4.7
+Trace-Driven Recovery: Benefits and Tail Regressions
+
+U205 heading 
+Reproducible conditional replay.
+
+U206 prose 
+Each cleaned LANL node-outage start releases one assumed four-branch
+workflow requiring recovery. Each original system has an independent
+FIFO recovery pool with two surviving targets. Its service occupation
+$S_p$ and intrinsic join penalty $D_p$ are the base-case values already
+derived from bytes and rates. For consecutive arrivals at $a_i$, pool
+waiting is $q_i=\max(0,q_{i-1}+S_p-(a_i-a_{i-1}))$, and workflow
+penalty is $q_i+D_p$. Ties use node-ID order. Starts retain their original
+spacing. There is no service-time fitting to the trace and no tuned
+policy-specific arrival schedule.
+
+U207 prose 
+This replay is conditional on available independent recovery capacity
+and complete committed histories. It does not replay healthy serving,
+provision failed nodes, model finite spare exhaustion, or infer which
+historical nodes actually hosted active agents. End times are used for
+outage characterization, not as measured GPU repair times. Accordingly,
+the result is a recovery-load experiment, not an availability or SLO-goodput
+measurement of an operating cluster.
+
+U208 caption 
+LANL-start-time-driven FIFO recovery model, one assumed four-branch workflow per cleaned node outage, preserving per-system start times at their original rate. Curves show 21,738 conditional recovery episodes. The observed input is the outage calendar; recovery durations and workflow penalties are modeled.
+
+U210 prose 
+Figure~\ref{fig:eval-trace-penalty} reports the conditional recovery distribution.
+At original spacing, mean modeled penalty is 10.4533\,s for LRU and
+9.4673\,s for workflow value, a 9.4\% reduction. Mean queue wait rises
+from 6.8324 to 7.8548\,s. The p95 penalty worsens from 37.0375 to
+40.0292\,s, and p99 from 204.1208 to 232.1125\,s. Thus this input
+supports a conditional average benefit and simultaneously refutes a
+blanket tail-latency claim. Per-system aggregation also retains losses, including the negative mean benefit for System 2. Neither thousands of events nor small
+arithmetic error bars turn one historical trace into independent serving
+experiments.
+
+U211 heading 
+Controls and full-system extension.
+
+U212 prose 
+The evenly spaced control preserves each system's event count and
+calendar span while removing original clustering. Timestamp compression
+and within-minute spreading distinguish load and timestamp-resolution
+sensitivity. Spreading equal-minute starts over 59\,s gives LRU/workflow-value
+means 8.0997/7.0224\,s and p99 values 163.8936/191.8852\,s; the adverse
+tail remains. These constructed timestamps are not inferred ground truth.
+Compression
+factors 10/100/1000 increase load explicitly; factor 1 alone retains the
+original rate. For a full serving replay, freeze a workload-to-failure-domain
+mapping before comparing policies, publish its seed, and use original
+start/end intervals to remove and return capacity. Replay arrivals even
+during outages, allow failures during unfinished recovery, and retain
+incomplete workflows at a common horizon. Repeat mappings at fixed
+1/2/4 active workflows per source, different spare fractions, and both
+independent and shared backing domains. Preserve correlated event groups
+when mapping to fewer machines; never silently serialize a 45-node event
+onto one injector. Over-capacity groups must be reported as unsupported
+or simulated at the stated scale. Trace amplification and synthetic
+repair-time assumptions belong in sensitivity panels, not the primary
+real-time trace result.
+
+U213 heading 4.8
+Complete Value and Dependency Ablations
+
+U214 prose 
+Every ablation changes one specified mechanism while retaining the same
+fault-safe backing, candidate budget, workloads, and physical resources.
+The physical matrix includes: no DAG/Slack information; no normal-reuse
+term; no failure term; fixed placement; direct revaluation without rent;
+no actual-use renewal; no pressure aging; no shared-Agent aggregation;
+eager instead of lazy refresh; raw counts instead of opportunity-normalized
+selection; serial instead of layer overlap; and locality-only instead of
+load-aware routing. More expensive joint-DAG and adaptive-depth references
+quantify the loss from separable priorities and fixed Peer slots.
+Removing a value term never
+disables the underlying safety protocol or ordinary cache eligibility.
+Correctness mechanisms are tested by injected interleavings, not by
+benchmarking an unsafe variant as a valid baseline.
+
+U215 caption 
+Static value ablations over the same 12 size/slack scenarios at 4\,GiB/s storage bandwidth. Each policy has a failure-penalty bar and a normal next-use-cost bar; these are distinct costs, not additive phases. The six policies use identical weights, capacity, and candidate groups. Keeping both outcomes visible exposes the normal-reuse cost of recovery prioritization. This is a static placement model, not the full online system.
+
+U217 prose 
+Figure~\ref{fig:eval-value-ablation} reports failure and normal next-use costs together for the same six policies
+on the 12-case size/slack subset at 4\,GiB/s storage bandwidth; their
+means are not the 36-case bandwidth-mixed means in the outcome CDF.
+For each real campaign, additionally log changes in resident objects,
+predicted plan value, admitted/rejected migrations, actual critical-path
+branches, bytes moved, and controller time. This distinguishes a useful
+signal from a coincidentally equivalent placement. The common-failure
+example shows why summing isolated losses is insufficient: complementary
+required branches can make the marginal value of a bundle different
+from the sum of its singleton values. Compare the factorized policy with
+bounded-pair and full-DAG references, then enumerate small cases to quantify
+approximation loss. The selected online policy does not perform that search.
+
+U218 prose 
+Use factorial experiments for interacting mechanisms: Slack
+$\times$ shared-Agent aggregation; demand normalization $\times$ layer overlap;
+rental screening $\times$ lazy refresh; and load-aware routing $\times$ shared-link
+contention. Keep all four cells of each $2\!\times\!2$ design. The
+interaction is the paired difference of differences, not the sum of
+individual speedups. A tied or negative ablation is informative and
+cannot be removed merely because it weakens the proposed narrative.
+
+U219 heading 4.9
+Sparse Demand and Layer-Overlap Ablations

@@ -1,0 +1,136 @@
+% NOT APPLIED. Independent prose candidate; no manuscript or sealed input changed.
+% Block A replaces only the complete Methodology subsection in evaluation-v3-draft.tex.
+% Block B is a separate optional Operating Range insertion, not part of Methodology.
+% Keep Workflow Structure, Operating Range controls, and Scope unchanged: their
+% adverse outcomes, coupled interventions, and model limits are not removed here.
+% The v3 primary outcome paragraph/table/figure remain outside this proposal.
+% Basis: evaluation-v3-draft.tex SHA256
+% 79d8071b7ad022d15b2c2c4dbe6f269bc85e3ff83b626f5a1028a214f933fb2c.
+% Prose word counts: original Methodology 1014; Block A 769; Block B 137.
+% Counting removes comments, subsection/paragraph/label/cite commands, converts
+% LaTeX thin spaces to spaces, then splits whitespace; math expressions count
+% as whitespace tokens. Headers and citation keys are excluded consistently.
+% Retained boundaries: constructed/context-selected inputs, complete-workflow
+% split; uncalibrated profiles and FCFS; TP/resources; grouped walltime training
+% and empirical guard; service-proxy control identity; same-policy same-ID F0/F1;
+% cohort/target disagreement and dependent scenarios. No primary result numbers.
+% Block B binds to quota-pressure-postreview-v1/FINAL_AUDIT.json SHA256
+% a095d6ea57f70cd52cb37f08e548eb93727df370a4c5a20699d4afeaf63113e0.
+% Merge the blocks separately; this is not a whole-Evaluation replacement.
+
+% BEGIN BLOCK A: METHOD REPLACEMENT
+\subsection{Methodology}
+\label{sec:eval-method}
+
+\paragraph{Simulator and timing model.}
+MoonKVSim models dependency release, queues, asynchronous prediction,
+checkpoint publication and recovery on one event clock. Transfers contend for
+rank H2D/D2H, host DRAM/NIC and fabric resources; pending copies consume capacity
+and every TP shard must commit before use. Worker failures remove a TP group;
+host failures also remove DRAM. Audits check token counts, fencing, capacity
+and release, not generated-token identities.
+Pinned AIConfigurator HYBRID estimates\cite{eval2026aiconfigurator} provide
+dense Qwen3-8B TP1 and Qwen3-32B TP4 A100-SXM durations through bounded
+interpolation over 196 shapes; decode sums individual steps. Mixed
+empirical/silicon provenance is retained, without end-to-end calibration.
+Each grid has 49 prefixes (0--98,304, step 2,048), prefill extensions of
+1/64/256 tokens, and one-token decode.
+FCFS permits one active invocation per worker, excluding continuous batching
+and production-throughput conclusions.
+
+\paragraph{Workload and split.}
+Constructed, evidence-provided FanOutQA replays\cite{eval2024fanoutqa} retain
+explicit dependencies. A frozen task-ID order/context guard selected 160 of
+310 development questions; keeping whole workflows within 40,960 tokens leaves
+74. A predeclared workflow-ID hash gives 12 training workflows (95 tasks) and
+62 evaluation workflows (503 tasks). These exclusions constrain
+representativeness. Each DAG runs once; each task is a distinct,
+single-invocation Agent. Pinned tokenizers encode prompts and gold answers;
+reservation uses a declared 512-token output limit, not eventual output length
+or future calls.
+Separate constructed four-Agent fork--joins test branch skew, repeated-Agent
+history, long decode with synthetic demand, and shared hosts: eight workflows,
+four TP1 workers, seeds 7/19/41 varying token identities/length jitter, and
+16,384-token output caps. Shared-host cases colocate two workers per host.
+These are interventions, not natural multi-call traces.
+
+\paragraph{Resources and prediction.}
+Primary runs use eight independently hosted workers (8/32 GPUs for 8B/32B).
+Each GPU has 80\,GiB minus profile allocations and a 4\,GiB runtime allowance;
+each host has 256\,GiB Peer DRAM. Effective H2D/D2H, NIC/fabric and DRAM rates
+are 32/25/100\,GB/s. Per-rank Peer HBM starts at 128\,MiB, grows by 64\,MiB
+after stable windows, and caps at 4\,GiB with 2\,GiB foreground reserve.
+Blocks/checkpoints span 64/256 tokens; prefill chunks span 256.
+We use $K=16$, $\beta=0.9$, $\epsilon=0.1$, $\lambda=10$\,ms and
+16 selector-state and eight counter bytes per block/layer/rank.
+
+A submission-time hashed-text regressor with 40 Context features predicts
+same-Agent final completion minus submission, including queueing. Six healthy
+training runs (two models, three loads) yield 570 labels from 12 workflows.
+Grouped leave-one-workflow-out calibration holds all three loads together and
+fits role priors only on other workflows. The guard is the training 90th
+percentile of workflow-maximum positive Slack overestimation: 0.910/0.995\,s
+for 8B/32B, referenced to healthy realized completion, not queue-free timing.
+All training Agents have one invocation; validation therefore does not test
+future-call prediction. This empirical guard is not a probabilistic delay bound.
+Evaluation labels tune neither predictor nor guard; semantic-encoder accuracy
+is unvalidated. Reconstruction estimates share execution's profile, an idealization.
+Checkpoint-aligned training-median context (8,704 tokens), dense demand/metadata and uniform
+layer compute fix $L=11/1$ offline; constructed controls use declared priors
+and $L=4$. Earlier resource/Slack controls retain a service-only proxy using
+prompt work and training role-median outputs, excluding queueing.
+
+\paragraph{Policies and faults.}
+One runtime implements Restart; All-DRAM (no exposure threshold, same ordering);
+DRAM (workflow selection without extra HBM); Static-HBM (128\,MiB initially,
+no growth, foreground shrink allowed); and \system. These controlled variants
+are not prior-system reproductions; DRAM isolates the HBM increment.
+Arrivals use training work, eight workers and nominal
+$\rho\in\{0.3,0.65,0.9\}$, not measured utilization.
+Each model/load/policy has F0 and five faults (180 runs), targeting equally
+spaced source-order workflows, alternating sink/middle Agents at 80\% of
+invocation-total logical tokens: four prefill faults and one decode fault.
+The 135 constructed runs instead target 80\% of each phase.
+Detection takes 1\,ms; failed capacity remains lost. The post-failure work-rate
+proxy $8\rho/7$ reaches 1.03. Matched logical identities/positions can differ
+in wall time and co-victims; splitting prefill can also change profiled cost.
+
+\paragraph{Endpoints and provenance.}
+WCT spans external arrival to last-Agent completion. Co-primary endpoints
+are same-workflow $\Delta\mathrm{WCT}=\mathrm{WCT}_{F1}-\mathrm{WCT}_{F0}$
+and interrupted-Agent failure-to-first-new-token latency, decomposed into
+detection, retry queue and post-admission service. Each F1 subtracts its own
+policy's F0 for that workflow. Sink/non-sink identities, all-workflow means,
+and adverse outcomes remain separate; cohort outcomes can oppose target gains.
+Five fixed faults
+are descriptive; workflows share queues, reused F0 is no new sample, and
+62-workflow interpolated p95/p99 are not reliable population tails.
+Deterministic reruns receive no confidence intervals.
+Artifacts seal sources, inputs, predictors/guards and accounting. The original
+483 conditions comprise 180 service-proxy primary, 135 structural, 126 sensitivity,
+32 capacity/Slack and ten post-hoc cases; new primary runs change only predictor,
+priors and guard. DMA/quota extensions add 24/72 conditions, not independent
+repetitions; DMA retains the service proxy, quota uses the new predictor.
+Artifacts retain absolute F0/F1 WCT, checkpoint lag, transfer bytes,
+occupancy/byte-time, active co-victims and queued-history restores separately,
+with full transfer intervals for selected runs.
+Common runtime checks cover causal KV/local tails, queued-history
+restoration, accepted-EOS cancellation and 74 regressions; historical versions
+remain separate.
+% END BLOCK A
+
+% BEGIN BLOCK B: OPTIONAL QUOTA PARAGRAPH FOR OPERATING RANGE
+Using the frozen walltime predictor, priors and guard, a 72-run four-workflow post-hoc O3
+diagnostic crosses Restart, DRAM, fixed 32/128/4096\,MiB and adaptive with
+three margins, assumed DMA coefficients 0/0.005 and F0/F1. Every invocation fits a constructed
+pool of maximum declared foreground bytes (including metadata) plus
+2\,GiB reserve and 0/32/128\,MiB.
+Fixed targets regrow within the live ceiling. Pressure occurs in 12/36 F0
+runs, after target completion, and no F1 runs; no capacity-denied admissions
+occur. Adaptive quotas decrease twice, 32 to 24\,MiB, yet all workflow
+endpoints match fixed 128/4096\,MiB. These improve target delta-WCT over DRAM
+by 1.444\,ms. DMA=0.005 adds 28.840\,ms healthy mean WCT over Restart for
+every protected variant. These null differences establish neither AIMD recovery benefit nor
+recovery under pressure; this FCFS boundary does not demonstrate production
+80\,GB or continuous-batching pressure.
+% END BLOCK B

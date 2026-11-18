@@ -1,0 +1,24 @@
+{
+  "sealed_utc": "2026-09-23T20:58:22.524890+00:00",
+  "sha256": {
+    "INPUT_MATCH.json": "26127e61ece958943d8d0091135b3a73cba95225b69f905970b9105861c40521",
+    "MANIFEST.json": "0991836f07ee254b6378650fa1fcc910f7e0a500b3243b1966a5cf5cbb7c4afa",
+    "PLAN.json": "b355ad6f8e8b02dcbae1eed8195ff34c0c3afa00445855d0dae7119096f104d4",
+    "PRIORS.json": "774af0492f1ab67a37241e95c6b1c1c9e3263590e14310db742de58891a0c83a",
+    "PROTOCOL.json": "4fafae079ba360505c25aabc3150cbaf7f8274847d2647fc61f32a5e69c7b189",
+    "models/Qwen3-32B.json": "60a7065746ce96bd95bbd58d71e8f706a5d85a5e05b429f1e393ac8a1cf68a3f",
+    "models/Qwen3-8B.json": "e6e2e9d3f96a75bd9df911f37c8ca751e54f41d421997eb4f74f550111e04368",
+    "original/MANIFEST.json": "ec6d14716667a11f0af1235558c9c517e31c9bde7b0e94b97ef3085843163eea",
+    "original/PLAN.json": "de278c575fe249b07af5f6109e79d04285d3fad4d7249b13c5e73d71e21fa343",
+    "original/PRIORS.json": "5cc6a1619cf9c82e66b498b09f0dad874fe0e73bc00f3090e0acd6487cd8f21c",
+    "original/REPLAY_MANIFEST.json": "7ff28dc4cdb011349cd17beb9ef1ee7c01e5af3424078ab4ada28990ac0734d7",
+    "profiles/Qwen3-32B.json": "97c79b8c60e0de483fb323012dc5e5e49b9bad595ba92815df38a34a57725187",
+    "profiles/Qwen3-8B.json": "1307a2b8be1b86dbb41acde6c8c068145d5f67e216ec209ce93b3e73e687c17c",
+    "training/DELIVERY.json": "eeb5073fc6503bc043483baf16ee21edcfaa9f2dfd969805fbe88039d5d4f4e5",
+    "training/INDEPENDENT_ARTIFACT_AUDIT.json": "d16e5d8490c37941249588ac85e19d5fcff70cd710d9bc4a81c841bb9c49cb00",
+    "training/MODELS_COMPLETE.json": "a0280da0c4308e2b26d34a20c4f1cc4fedc28eb01ff0bc5af695bf049b384665",
+    "training/REPORT.json": "33e17182604952ec8141dd4f08345ddd91bbf85711ed8c418feb6d59e4e37fd8",
+    "training/TRAINING_PROTOCOL.json": "d32b84f98043aca41a869e756e987f8ff0f7ee2c9ab5263a3e7705f906003777",
+    "training/TRAINING_SEAL.json": "65f5b723f954fd926def12e9580ae93bfc0adc41308f264ef1be4d5918386e09"
+  }
+}

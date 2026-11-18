@@ -1,0 +1,54 @@
+% Integrated preview of Sections 2 and 3; not a complete submission.
+% Uses the same local SIGPLAN configuration as motivation-preview.tex.
+\documentclass[sigplan,10pt,anonymous,nonacm]{acmart}
+\setkeys{acmart.cls}{balance=false}
+\usepackage{subcaption}
+\usepackage{tabularx}
+\setcopyright{none}
+\settopmatter{printacmref=false,printccs=false,printfolios=true}
+\acmConference[EuroSys '27]{European Conference on Computer Systems}
+  {April 19--23, 2027}{Rabat, Morocco}
+\acmYear{2027}
+\acmDOI{}
+\acmISBN{}
+\title{AegisKV: Background, Motivation, and System Design}
+\renewcommand{\bibfont}{\normalfont\normalsize}
+\newcounter{designalgorithm}
+\AtBeginDocument{%
+  \typeout{AEGISKV-GEOMETRY: width=\the\textwidth; height=\the\textheight;
+    columnsep=\the\columnsep; baseline=\the\baselineskip}%
+}
+\begin{document}
+\fancypagestyle{aegispreview}{%
+  \fancyhf{}%
+  \renewcommand{\headrulewidth}{0pt}%
+  \renewcommand{\footrulewidth}{0pt}%
+  \fancyfoot[C]{\normalsize\thepage}%
+}
+\pagestyle{aegispreview}
+\maketitle
+\thispagestyle{aegispreview}
+\raggedbottom
+\setcounter{section}{1}
+\input{sections/background_and_motivation}
+% Concise English counterpart of draft/system_design.md.
+\section{AegisKV Design}
+\label{sec:design}
+
+AegisKV combines workflow delay tolerance with each request's KV
+recovery demand. The Tracker estimates slack; the Planner selects
+protection tiers and capacity-bounded layer/block sets; the runtime
+commits replicas and executes concurrent retries. The following design
+separates these decisions from the evidence that motivates them.
+
+\input{/home/comp/zhanzhao/MoonKVSim/output/pdf/aegiskv-runtime-relatedwork-20260918/design-insights-candidate.tex}
+\input{sections/system_overview}
+\input{sections/workflow_protection}
+\input{sections/kv_placement}
+\input{sections/parallel_recovery}
+\input{sections/kv_runtime}
+\input{sections/design_discussion}
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{references,sections/background_and_motivation,/home/comp/zhanzhao/MoonKVSim/output/pdf/aegiskv-runtime-relatedwork-20260918/candidate-reference}
+\end{document}

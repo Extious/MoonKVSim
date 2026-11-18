@@ -1,0 +1,93 @@
+{
+  "model": "Qwen3-8B",
+  "layers": 36,
+  "history_tokens": 32768,
+  "effective_compute_TFLOP_s_assumed": 100,
+  "initial_Peer_HBM_MiB_per_layer": 128,
+  "batch_layers_and_initial_resident_layers": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36
+  ],
+  "reference": {
+    "H2D_GB_s": 25,
+    "replay_tokens": 512
+  },
+  "right_panel": {
+    "replay_tokens": 512,
+    "H2D_GB_s": [
+      12.5,
+      25,
+      50
+    ]
+  },
+  "bottom_panel": {
+    "H2D_GB_s": 25,
+    "replay_tokens": [
+      128,
+      256,
+      512,
+      1024,
+      2048
+    ]
+  },
+  "latency": "All 36-layer replay compute plus exposed KV loading wait from ready-to-replay t=0",
+  "relative_gain": "Latency saved divided by the applicable no-Peer-HBM-backup total latency, expressed as percent",
+  "main_baseline": "For each fixed bandwidth/replay condition, minimum zero-backup latency over batch sizes 1..36, held constant for all protected points",
+  "matched_companion_baseline": "Zero initial residency, same batch size as each protected point; denominator varies along each curve",
+  "zero_backup": "All historical KV initially in Host DRAM, first batch loads at t=0, next batch copies at current batch compute start",
+  "main_pareto_objectives": [
+    "minimize initial Peer HBM bytes",
+    "maximize common-baseline relative latency gain"
+  ],
+  "main_pareto_scope": "Within each fixed bandwidth and replay condition; same exact frontier as actual latency",
+  "companion_markers": "Ordinary candidate markers, not old absolute-latency Pareto classifications",
+  "y_orientation": "Low numeric values at bottom, high values at top; user explicitly confirmed that higher relative benefit should be higher on the page",
+  "layout": "Baseline upper left, bandwidth upper right, replay below",
+  "schedule": "Only next batch, entire batch ready before compute, actual partial tail, single compute and single H2D streams, copied KV retained",
+  "time_exclusions": [
+    "failure detection",
+    "takeover queueing",
+    "weight loading",
+    "backup maintenance",
+    "foreground interference",
+    "transfer launch overhead"
+  ],
+  "capacity_scope": "Initial Peer HBM historical KV only; not peak recovery allocation or lifecycle cost",
+  "evidence": "Analytical and uncalibrated; zero physical runs or statistical replicates",
+  "placed_width_mm": 178,
+  "placed_height_mm": 185
+}

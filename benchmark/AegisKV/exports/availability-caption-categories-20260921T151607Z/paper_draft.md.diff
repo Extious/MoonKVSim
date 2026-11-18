@@ -1,0 +1,11 @@
+--- before/paper_draft.md
++++ paper_draft.md
+@@ -64,7 +64,7 @@
+ 
+ ![图 2](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/gpu-server-availability.png)
+ 
+-**图 2：** 根据 InfiniteHBD 生产训练集群 trace 重建的 GPU 服务器可用数量[[32]](#ref-32)：以 400 台减去处于记录故障区间内的服务器数。同一服务器的重叠区间合并，保留全部记录类别，包括测试和变更。此处的可用性是节点级概念，不表示空闲 GPU 容量或端到端服务可用性。
++**图 2：** 根据 InfiniteHBD 生产训练集群 trace 重建的 GPU 服务器可用数量[[32]](#ref-32)：以 400 台减去处于记录不可用区间内的服务器数。记录包括 GPU、网络、电源与散热以及软件故障，同时保留未知原因、测试、排障和变更记录。同一服务器的重叠区间合并，可用性按节点统计。
+ 
+ **跨存储层级保留 KV。**
+ 

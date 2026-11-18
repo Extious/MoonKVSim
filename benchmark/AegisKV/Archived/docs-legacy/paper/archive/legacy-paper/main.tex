@@ -1,0 +1,125 @@
+\documentclass[sigplan,review,anonymous]{acmart}
+
+% EuroSys 2027 review configuration.  Compile with TEXINPUTS/BSTINPUTS as
+% documented in README.md so that the downloaded ACM template is used.
+\setcopyright{none}
+\settopmatter{printfolios=true,printacmref=false,printccs=false}
+\renewcommand\footnotetextcopyrightpermission[1]{}
+\pagestyle{plain}
+\raggedbottom
+\acmConference[EuroSys '27]{European Conference on Computer Systems}%
+  {April 19--23, 2027}{Rabat, Morocco}
+\acmYear{2027}
+\copyrightyear{2027}
+\acmDOI{}
+\acmISBN{}
+
+\usepackage{amsmath}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{url}
+% EuroSys requires at least 10 pt text on 12 pt leading, including references.
+% acmart inherits an 8 pt bibliography from amsart, so restore the body size.
+\renewcommand{\bibliofont}{\normalsize}
+% The project-local TinyTeX tree may not have user font maps configured.  Keep
+% microtype protrusion but disable font expansion so the draft is reproducible
+% without mutating the system TeX installation.
+\microtypesetup{expansion=false}
+\setlength{\emergencystretch}{1.5em}
+
+\newcommand{\system}{\textsc{AegisKV}}
+\newcommand{\HBM}{\textsc{HBM}}
+\newcommand{\DRAM}{\textsc{DRAM}}
+\newcommand{\SSD}{\textsc{SSD}}
+
+% A compact, dependency-free pseudocode float for the two controller algorithms.
+\floatstyle{ruled}
+\newfloat{algorithm}{tbp}{loa}
+\floatname{algorithm}{Algorithm}
+
+\begin{document}
+
+\title{AegisKV: Slack-Aware KV Management for Fault-Tolerant Agentic LLM Serving}
+
+\author{Anonymous Author(s)}
+\affiliation{%
+  \institution{Anonymous Institution}
+  \country{Anonymous}%
+}
+
+\begin{CCSXML}
+<ccs2012>
+ <concept>
+  <concept_id>10010520.10010575.10010755</concept_id>
+  <concept_desc>Computer systems organization~Reliability</concept_desc>
+  <concept_significance>500</concept_significance>
+ </concept>
+ <concept>
+  <concept_id>10011007.10010940.10010971</concept_id>
+  <concept_desc>Software and its engineering~Software fault tolerance</concept_desc>
+  <concept_significance>300</concept_significance>
+ </concept>
+</ccs2012>
+\end{CCSXML}
+\ccsdesc[500]{Computer systems organization~Reliability}
+\ccsdesc[300]{Software and its engineering~Software fault tolerance}
+\keywords{large language model serving, KV cache, fault tolerance,
+agentic workflow, recovery}
+
+\begin{abstract}
+Agentic applications turn one task into a dependency graph of long model and
+tool calls.  A worker failure can discard substantial live key--value (KV)
+state, but protecting every byte burdens healthy serving; moreover, equal-size
+prefixes can have unequal workflow impact because parallel branches have
+different Slack.  We present \system{}, which uses causal residual-workflow
+Slack to couple normal-period protection with failure-time recovery.  At
+request and tool boundaries, GBDT predicts visible remaining work and CPM
+computes Slack.  \textsc{SlackLandlord} converts the resulting fail-now harm
+reduction into independent DRAM and route-bound Peer-HBM admission and
+eviction credits.  The source Worker owns both physical paths, and
+\textsc{HBMQuotaAIMD} adjusts only the Peer-HBM envelope in response to
+foreground HBM pressure.  On failure, the same Slack orders committed-prefix
+loading and recomputation; complete-chunk commit, version checks, and output
+fencing preserve correctness.  We re-analyze frozen SGLSim WCT artifacts from
+an earlier prototype.  In a paired DP8 trial, legacy AegisKV lowers mean WCT
+by 4.3\% versus no backup but is worse than host-only and peer-GPU backup; a
+DP64 model projection predicts an 11.8\% reduction, and a heavy-failure
+logical stress smoke reports 18.9--30.4\%.  These historical results
+establish the value of avoiding KV recomputation, not the performance of the
+current design: they predate its source-owned independent paths, include one
+projection and small smoke tests, and execute neither physical failover nor
+serving contention.  A separate 3,110-run current-design mechanism campaign
+shows mean pressure rising 0.018$\rightarrow$0.590 and alpha falling
+0.868$\rightarrow$0.129 as concurrency grows from 32 to 224; 92.63\% of
+requests and 98.31\% of prompt tokens exhibit workflow-local prefix reuse.
+These are occupancy, control, and coverage diagnostics rather than WCT or
+physical-serving measurements.
+\end{abstract}
+
+\maketitle
+
+\input{sections/01-introduction}
+\input{sections/02-background-motivation}
+\input{sections/03-system-design-v2}
+\input{sections/04-implementation}
+\input{sections/05-evaluation}
+\input{sections/06-discussion}
+\input{sections/07-related-work}
+\input{sections/08-conclusion}
+
+\section*{Use of AI Tools}
+OpenAI Codex assisted with code drafting, test generation, language editing,
+and figure preparation.  The authors reviewed the resulting source, ran the
+reported experiments and audits, and take responsibility for every claim,
+artifact, and citation.  No AI-generated output is treated as empirical
+evidence without a traceable simulator artifact.
+
+% Keep technical content separate from references for explicit page accounting.
+\clearpage
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{references}
+
+\end{document}

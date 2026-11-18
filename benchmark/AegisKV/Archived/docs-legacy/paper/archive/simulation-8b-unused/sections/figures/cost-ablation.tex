@@ -1,0 +1,19 @@
+\begin{figure*}[tp]
+\centering
+\includegraphics[width=\textwidth]{figures/cost-and-ablation.pdf}
+\caption{Cost, policy components, and adverse cases.
+(a,b) Seven sensitivity points relate protection bytes actually transferred
+and restored prompt fraction to focus completion gains, with seed intervals
+on both axes. Restored fraction counts selected Peer and Store tokens and
+excludes normal-HBM reuse. Marker shapes identify F/C settings in the shared
+legend. These are associations, not a Pareto frontier.
+(c) Ablation-minus-full focus failure penalty, after each arm's own F0
+subtraction. Positive values favor full; all five seeds remain visible.
+The LRU arm replaces the retention subsystem, including its tail lifecycle.
+(d) The five lowest focus-workflow gains across the complete F/C matrix,
+retained by a fixed ranking rule. Full request identities and raw hashes
+are recorded in the figure's machine-readable evidence.}
+\Description{Two cost-effect plots, paired algorithm ablations, and a table
+of the five least favorable sensitivity cases.}
+\label{fig:cost-ablation}
+\end{figure*}

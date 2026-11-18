@@ -1,0 +1,214 @@
+{
+  "evidence": "calibrated analytic illustration",
+  "size_in": [
+    3.34,
+    3.05
+  ],
+  "note": "Four restore-and-replay schedules, relabeled (a)-(d). Full-recompute reference removed; history prefill is covered by the Motivation figure. Same inputs, waits, and completion times as design-paper.",
+  "sources": [
+    "benchmark/AegisKV/experiments/native-sparse/20260915/prefill-latency-minicpm4-8b-a100-152626.json",
+    "benchmark/AegisKV/experiments/native-sparse/20260915/replay-latency-minicpm4-8b-a100-152626.json",
+    "benchmark/AegisKV/experiments/native-sparse/20260915/needed_fraction_models.csv",
+    "benchmark/AegisKV/experiments/scripts/paper/render_draft_20260915.py"
+  ],
+  "files": {
+    "pdf": "08870137fb479b18df155c89664a7b42d2068700a4906fd9fde108e73334c02d",
+    "svg": "9325093d734612a734217f8eb8784de28fc8672d77039c90edd1f779be29caa7",
+    "png": "715a246a9c827f633f0d59c4f5dff4ae8ddd0681dd6642cc9d931fb5f4354664"
+  },
+  "generator": "benchmark/AegisKV/experiments/scripts/paper/render_pipeline_single.py",
+  "generator_sha256": "4f94f19ab1c8103cc4b5d6580d35d2da699b909c2a29745daad339ab885afce3",
+  "typography": {
+    "family": "Linux Libertine O",
+    "font_pt": 10.05,
+    "regular_path": "/home/comp/zhanzhao/miniforge3/envs/latex/tinytex/texmf-dist/fonts/opentype/public/libertine/LinLibertine_R.otf",
+    "font_sha256": {
+      "regular": "6332761e4fc08e30bce6f47e4a08e7d5332abe000ab6ca06c8e86bd88f456114",
+      "bold": "5a7e41f3610e8b2ed91e53a2d0db975ce31dc81477217702728bfec3c3933d84"
+    },
+    "helper_sha256": "65ffa4eafa395de238caca43704dafdb05f422f89c0abe4be1b9468e44485290"
+  },
+  "source_hashes": {
+    "benchmark/AegisKV/experiments/native-sparse/20260915/prefill-latency-minicpm4-8b-a100-152626.json": "167f1282b047cf482478155ddc9c94e6201f493edf43fd57c78984b2833f0d8a",
+    "benchmark/AegisKV/experiments/native-sparse/20260915/replay-latency-minicpm4-8b-a100-152626.json": "b1a229780a67b8bcfc7567e759bdc46c84442de791e1b1ccfae30e72d9de0bad",
+    "benchmark/AegisKV/experiments/native-sparse/20260915/needed_fraction_models.csv": "461b1182becba631b832e7e5a35e9151092f01f50aaaca1cf9029e3394884922",
+    "benchmark/AegisKV/experiments/scripts/paper/render_draft_20260915.py": "a9dd7e7d601b0d42120136e8c99f92341bd88024971d8960cd866434c728fc36"
+  },
+  "h": 0.658447265625,
+  "effective_fraction": 0.7748209635416666,
+  "C_ms": 2.869690506486222,
+  "D_ms": 5.36870912,
+  "peer_layers": 7,
+  "peer_mib": 147.4921875,
+  "demand_floor_ms": 19.99284906666666,
+  "waits_ms": [
+    171.79869184,
+    82.83828613892712,
+    44.15282224559374,
+    19.992849066666636
+  ],
+  "totals_ms": [
+    263.6287880475591,
+    174.66838234648623,
+    135.98291845315285,
+    111.82294527422575
+  ],
+  "transfers_ms": [
+    {
+      "preload": 171.79869184,
+      "demand": 0,
+      "cold": 0
+    },
+    {
+      "preload": 171.79869184,
+      "demand": 0,
+      "cold": 0
+    },
+    {
+      "preload": 113.12037887999996,
+      "demand": 19.99284906666666,
+      "cold": 38.68546389333334
+    },
+    {
+      "preload": 88.37529599999999,
+      "demand": 19.99284906666666,
+      "cold": 38.68546389333334
+    }
+  ],
+  "full_recompute_s": 4.787128861993551,
+  "frontier_scan": [
+    {
+      "peer_front_layers": 0,
+      "exposed_wait_ms": 44.15282224559374
+    },
+    {
+      "peer_front_layers": 1,
+      "exposed_wait_ms": 40.61781040559373
+    },
+    {
+      "peer_front_layers": 2,
+      "exposed_wait_ms": 37.08279856559369
+    },
+    {
+      "peer_front_layers": 3,
+      "exposed_wait_ms": 33.547786725593696
+    },
+    {
+      "peer_front_layers": 4,
+      "exposed_wait_ms": 30.0127748855937
+    },
+    {
+      "peer_front_layers": 5,
+      "exposed_wait_ms": 26.477763045593704
+    },
+    {
+      "peer_front_layers": 6,
+      "exposed_wait_ms": 22.94275120559371
+    },
+    {
+      "peer_front_layers": 7,
+      "exposed_wait_ms": 19.992849066666636
+    },
+    {
+      "peer_front_layers": 8,
+      "exposed_wait_ms": 19.992849066666636
+    },
+    {
+      "peer_front_layers": 9,
+      "exposed_wait_ms": 19.992849066666636
+    },
+    {
+      "peer_front_layers": 10,
+      "exposed_wait_ms": 19.992849066666636
+    },
+    {
+      "peer_front_layers": 11,
+      "exposed_wait_ms": 19.992849066666636
+    },
+    {
+      "peer_front_layers": 12,
+      "exposed_wait_ms": 19.992849066666636
+    },
+    {
+      "peer_front_layers": 13,
+      "exposed_wait_ms": 19.992849066666636
+    },
+    {
+      "peer_front_layers": 14,
+      "exposed_wait_ms": 19.992849066666636
+    },
+    {
+      "peer_front_layers": 15,
+      "exposed_wait_ms": 19.992849066666636
+    },
+    {
+      "peer_front_layers": 16,
+      "exposed_wait_ms": 19.992849066666636
+    },
+    {
+      "peer_front_layers": 17,
+      "exposed_wait_ms": 19.992849066666636
+    },
+    {
+      "peer_front_layers": 18,
+      "exposed_wait_ms": 19.992849066666636
+    },
+    {
+      "peer_front_layers": 19,
+      "exposed_wait_ms": 19.992849066666636
+    },
+    {
+      "peer_front_layers": 20,
+      "exposed_wait_ms": 19.992849066666636
+    },
+    {
+      "peer_front_layers": 21,
+      "exposed_wait_ms": 19.992849066666636
+    },
+    {
+      "peer_front_layers": 22,
+      "exposed_wait_ms": 19.992849066666636
+    },
+    {
+      "peer_front_layers": 23,
+      "exposed_wait_ms": 19.992849066666636
+    },
+    {
+      "peer_front_layers": 24,
+      "exposed_wait_ms": 19.992849066666636
+    },
+    {
+      "peer_front_layers": 25,
+      "exposed_wait_ms": 19.992849066666636
+    },
+    {
+      "peer_front_layers": 26,
+      "exposed_wait_ms": 19.992849066666636
+    },
+    {
+      "peer_front_layers": 27,
+      "exposed_wait_ms": 19.992849066666636
+    },
+    {
+      "peer_front_layers": 28,
+      "exposed_wait_ms": 19.992849066666636
+    },
+    {
+      "peer_front_layers": 29,
+      "exposed_wait_ms": 19.992849066666636
+    },
+    {
+      "peer_front_layers": 30,
+      "exposed_wait_ms": 19.992849066666636
+    },
+    {
+      "peer_front_layers": 31,
+      "exposed_wait_ms": 19.992849066666636
+    },
+    {
+      "peer_front_layers": 32,
+      "exposed_wait_ms": 19.992849066666636
+    }
+  ],
+  "previous_manifest_sha256": "4a4abd1e6bccedd3a8895d2b39e205cb947c67e1b9aeb340a8742334f9150a61"
+}

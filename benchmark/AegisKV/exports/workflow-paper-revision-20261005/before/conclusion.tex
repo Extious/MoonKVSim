@@ -1,0 +1,13 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+\system keeps a complete peer-DRAM checkpoint and a Top-$K$ HBM copy, placed
+by Router on a peer outside the failed worker. On the recorded BLSC
+A100-PCIe configuration, captured NOSA, NSA, and MiniCPM arrivals finish at
+the same time as a restart when no worker fails. One GPU failure during a
+24{,}576-token workflow shortens that workflow and every later one by
+1{,}585.4\,ms relative to restarting with no copy. The saving is 128.0\,ms
+at 2{,}048 tokens and grows with the checkpointed prefix. The HBM blocks
+move completion by at most 0.217\,ms. $K{=}16$ covers only a few percent of
+the distinct blocks in the trace, so the DRAM checkpoint remains the copy
+that matters.

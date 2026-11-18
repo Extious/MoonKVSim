@@ -1,0 +1,194 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" version="31.1.5">
+  <diagram id="design-prefix-admission" name="design-prefix-admission">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageWidth="1200" pageHeight="590" background="#FFFFFF" math="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="canvas" value="" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#FFFFFF;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#FFFFFF;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="0" y="0" width="1200" height="590" />
+        </mxCell>
+        <mxCell id="title" value="A single-chunk decision preserves every retained prefix" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="18" y="5" width="1164" height="38" />
+        </mxCell>
+        <mxCell id="h0" value="Committed forest" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=center;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="22" y="70" width="368" height="44" />
+        </mxCell>
+        <mxCell id="r0" value="R" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#EEF0F3;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="27" y="231" width="75" height="50" />
+        </mxCell>
+        <mxCell id="0A-label" value="Agent A" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#B86B00;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#B86B00;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="134" y="114" width="240" height="38" />
+        </mxCell>
+        <mxCell id="0A1" value="A1" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#B86B00;fillColor=#FFF0DB;fontFamily=DejaVu Sans;fontSize=26;fontColor=#B86B00;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="147" y="163" width="88" height="50" />
+        </mxCell>
+        <mxCell id="0A-fork" edge="1" parent="1" style="edgeStyle=none;rounded=0;strokeColor=#B86B00;strokeWidth=2.3;endArrow=block;endSize=7;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="102" y="256" />
+            <mxPoint as="targetPoint" x="147" y="188" />
+            <Array as="points">
+              <mxPoint x="122" y="256" />
+              <mxPoint x="122" y="188" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="0B-label" value="Agent B" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#0072B2;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#0072B2;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="134" y="257" width="240" height="38" />
+        </mxCell>
+        <mxCell id="0B1" value="B1" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#0072B2;fillColor=#E4F1F8;fontFamily=DejaVu Sans;fontSize=26;fontColor=#0072B2;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="147" y="306" width="88" height="50" />
+        </mxCell>
+        <mxCell id="0B-fork" edge="1" parent="1" style="edgeStyle=none;rounded=0;strokeColor=#0072B2;strokeWidth=2.3;endArrow=block;endSize=7;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="102" y="256" />
+            <mxPoint as="targetPoint" x="147" y="331" />
+            <Array as="points">
+              <mxPoint x="122" y="256" />
+              <mxPoint x="122" y="331" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="0a2-0" value="A2" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#B86B00;fillColor=#FFF0DB;fontFamily=DejaVu Sans;fontSize=26;fontColor=#B86B00;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="283" y="163" width="88" height="50" />
+        </mxCell>
+        <mxCell id="0a-edge" edge="1" parent="1" style="edgeStyle=none;rounded=0;strokeColor=#B86B00;strokeWidth=2.3;endArrow=block;endSize=7;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="235" y="188" />
+            <mxPoint as="targetPoint" x="283" y="188" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="shared0" value="R: one physical shared object" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=center;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="22" y="395" width="368" height="55" />
+        </mxCell>
+        <mxCell id="h1" value="Released tail; x pending" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=center;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="420" y="70" width="368" height="44" />
+        </mxCell>
+        <mxCell id="r1" value="R" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#EEF0F3;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="425" y="231" width="75" height="50" />
+        </mxCell>
+        <mxCell id="1A-label" value="Agent A" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#B86B00;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#B86B00;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="532" y="114" width="240" height="38" />
+        </mxCell>
+        <mxCell id="1A1" value="A1" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#B86B00;fillColor=#FFF0DB;fontFamily=DejaVu Sans;fontSize=26;fontColor=#B86B00;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="545" y="163" width="88" height="50" />
+        </mxCell>
+        <mxCell id="1A-fork" edge="1" parent="1" style="edgeStyle=none;rounded=0;strokeColor=#B86B00;strokeWidth=2.3;endArrow=block;endSize=7;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="500" y="256" />
+            <mxPoint as="targetPoint" x="545" y="188" />
+            <Array as="points">
+              <mxPoint x="520" y="256" />
+              <mxPoint x="520" y="188" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="1B-label" value="Agent B" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#0072B2;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#0072B2;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="532" y="257" width="240" height="38" />
+        </mxCell>
+        <mxCell id="1B1" value="B1" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#0072B2;fillColor=#E4F1F8;fontFamily=DejaVu Sans;fontSize=26;fontColor=#0072B2;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="545" y="306" width="88" height="50" />
+        </mxCell>
+        <mxCell id="1B-fork" edge="1" parent="1" style="edgeStyle=none;rounded=0;strokeColor=#0072B2;strokeWidth=2.3;endArrow=block;endSize=7;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="500" y="256" />
+            <mxPoint as="targetPoint" x="545" y="331" />
+            <Array as="points">
+              <mxPoint x="520" y="256" />
+              <mxPoint x="520" y="331" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="1a2-0" value="A2" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#B83C46;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#B83C46;align=center;verticalAlign=middle;spacing=3;dashed=1;dashPattern=4 3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="681" y="163" width="88" height="50" />
+        </mxCell>
+        <mxCell id="1a2-0-x" edge="1" parent="1" style="edgeStyle=none;rounded=0;strokeColor=#B83C46;strokeWidth=2.3;endArrow=none;endSize=7;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="686" y="208" />
+            <mxPoint as="targetPoint" x="764" y="168" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="1a-edge" edge="1" parent="1" style="edgeStyle=none;rounded=0;strokeColor=#B86B00;strokeWidth=2.3;endArrow=block;endSize=7;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="633" y="188" />
+            <mxPoint as="targetPoint" x="681" y="188" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="1new-0" value="x" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#0072B2;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#0072B2;align=center;verticalAlign=middle;spacing=3;dashed=1;dashPattern=4 3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="681" y="306" width="88" height="50" />
+        </mxCell>
+        <mxCell id="1x-edge" edge="1" parent="1" style="edgeStyle=none;rounded=0;strokeColor=#0072B2;strokeWidth=2.3;endArrow=block;endSize=7;endFill=1;dashed=1;dashPattern=5 4;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="633" y="331" />
+            <mxPoint as="targetPoint" x="681" y="331" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="shared1" value="R: one physical shared object" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=center;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="420" y="395" width="368" height="55" />
+        </mxCell>
+        <mxCell id="h2" value="Copy complete" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=center;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="818" y="70" width="368" height="44" />
+        </mxCell>
+        <mxCell id="r2" value="R" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#EEF0F3;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="823" y="231" width="75" height="50" />
+        </mxCell>
+        <mxCell id="2A-label" value="Agent A" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#B86B00;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#B86B00;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="930" y="114" width="240" height="38" />
+        </mxCell>
+        <mxCell id="2A1" value="A1" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#B86B00;fillColor=#FFF0DB;fontFamily=DejaVu Sans;fontSize=26;fontColor=#B86B00;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="943" y="163" width="88" height="50" />
+        </mxCell>
+        <mxCell id="2A-fork" edge="1" parent="1" style="edgeStyle=none;rounded=0;strokeColor=#B86B00;strokeWidth=2.3;endArrow=block;endSize=7;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="898" y="256" />
+            <mxPoint as="targetPoint" x="943" y="188" />
+            <Array as="points">
+              <mxPoint x="918" y="256" />
+              <mxPoint x="918" y="188" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="2B-label" value="Agent B" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#0072B2;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#0072B2;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="930" y="257" width="240" height="38" />
+        </mxCell>
+        <mxCell id="2B1" value="B1" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#0072B2;fillColor=#E4F1F8;fontFamily=DejaVu Sans;fontSize=26;fontColor=#0072B2;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="943" y="306" width="88" height="50" />
+        </mxCell>
+        <mxCell id="2B-fork" edge="1" parent="1" style="edgeStyle=none;rounded=0;strokeColor=#0072B2;strokeWidth=2.3;endArrow=block;endSize=7;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="898" y="256" />
+            <mxPoint as="targetPoint" x="943" y="331" />
+            <Array as="points">
+              <mxPoint x="918" y="256" />
+              <mxPoint x="918" y="331" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="2new-0" value="x" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#0072B2;fillColor=#E4F1F8;fontFamily=DejaVu Sans;fontSize=26;fontColor=#0072B2;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1079" y="306" width="88" height="50" />
+        </mxCell>
+        <mxCell id="2x-edge" edge="1" parent="1" style="edgeStyle=none;rounded=0;strokeColor=#0072B2;strokeWidth=2.3;endArrow=block;endSize=7;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="1031" y="331" />
+            <mxPoint as="targetPoint" x="1079" y="331" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="shared2" value="R: one physical shared object" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=center;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="818" y="395" width="368" height="55" />
+        </mxCell>
+        <mxCell id="rule" edge="1" parent="1" style="edgeStyle=none;rounded=0;strokeColor=#CAD0D6;strokeWidth=1.2;endArrow=none;endSize=7;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="18" y="469" />
+            <mxPoint as="targetPoint" x="1182" y="469" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="gates" value="Free space: G(x) ≥ 0; replacement: G(x) &gt; D(victims)" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="18" y="489" width="1164" height="45" />
+        </mxCell>
+        <mxCell id="commit" value="Pending x is unreadable; a failed copy does not restore an already released A2" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="18" y="535" width="1164" height="38" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

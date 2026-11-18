@@ -1,0 +1,286 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://moonkvsim.local/schemas/aegiskv-qwen3-8b-acceptance-manifest.schema.json",
+  "title": "Qwen3-8B paper artifact acceptance manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "status",
+    "registry",
+    "attempts",
+    "summary",
+    "modeled_uncalibrated",
+    "physical_execution",
+    "paper_ready",
+    "fingerprint"
+  ],
+  "properties": {
+    "schema": {
+      "const": "moonkvsim.aegiskv.qwen3-8b-acceptance-manifest.v1"
+    },
+    "status": {
+      "const": "PASS"
+    },
+    "registry": {
+      "$ref": "#/$defs/artifactReference"
+    },
+    "attempts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/attempt"
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ADVERSE_DIRECT",
+        "FAILED",
+        "HISTORICAL",
+        "INFEASIBLE",
+        "MIXED_DIRECT",
+        "NULL_DIRECT",
+        "STALE",
+        "VALID"
+      ],
+      "properties": {
+        "ADVERSE_DIRECT": {"$ref": "#/$defs/nonnegativeInteger"},
+        "FAILED": {"$ref": "#/$defs/nonnegativeInteger"},
+        "HISTORICAL": {"$ref": "#/$defs/nonnegativeInteger"},
+        "INFEASIBLE": {"$ref": "#/$defs/nonnegativeInteger"},
+        "MIXED_DIRECT": {"$ref": "#/$defs/nonnegativeInteger"},
+        "NULL_DIRECT": {"$ref": "#/$defs/nonnegativeInteger"},
+        "STALE": {"$ref": "#/$defs/nonnegativeInteger"},
+        "VALID": {"$ref": "#/$defs/nonnegativeInteger"}
+      }
+    },
+    "modeled_uncalibrated": {"const": true},
+    "physical_execution": {"const": false},
+    "paper_ready": {"const": false},
+    "fingerprint": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "nonnegativeInteger": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "jsonObject": {
+      "type": "object"
+    },
+    "artifactReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "fingerprint"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "fingerprint": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "verifier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "source_sha256", "fingerprint"],
+      "properties": {
+        "name": {
+          "const": "moonkvsim.aegiskv.qwen3_8b_acceptance"
+        },
+        "version": {
+          "enum": ["1", "2"]
+        },
+        "source_sha256": {"$ref": "#/$defs/sha256"},
+        "source_files": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {"$ref": "#/$defs/sha256"}
+        },
+        "fingerprint": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "gateBase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gate", "status", "verifier", "reason_codes", "evidence"],
+      "properties": {
+        "gate": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8
+        },
+        "status": {
+          "enum": ["PASS", "FAIL", "NOT_APPLICABLE"]
+        },
+        "verifier": {"$ref": "#/$defs/verifier"},
+        "reason_codes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "evidence": {"$ref": "#/$defs/jsonObject"}
+      }
+    },
+    "attempt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attempt_id",
+        "scenario",
+        "disposition",
+        "artifact",
+        "gates",
+        "terminal_class",
+        "accepted_for_numerical_aggregates",
+        "allowed_panel_ids",
+        "statistics",
+        "direct_classifier",
+        "reason_codes",
+        "fingerprint"
+      ],
+      "properties": {
+        "attempt_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scenario": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": ["kind"],
+          "properties": {
+            "kind": {
+              "enum": [
+                "NO_FAILURE",
+                "PRIMARY_FAILURE",
+                "RECOVERY_SELECTOR",
+                "FAILURE_CAMPAIGN",
+                "SENSITIVITY_SWEEP",
+                "ABLATION_STUDY",
+                "TIMING_ROBUSTNESS"
+              ]
+            }
+          }
+        },
+        "disposition": {
+          "enum": ["COMPLETED", "FAILED", "INFEASIBLE", "ABORTED", "MISSING"]
+        },
+        "artifact": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "path",
+                "sha256",
+                "fingerprint",
+                "raw_artifact_count",
+                "raw_artifact_hashes"
+              ],
+              "properties": {
+                "path": {"type": "string", "minLength": 1},
+                "sha256": {"$ref": "#/$defs/sha256"},
+                "fingerprint": {"$ref": "#/$defs/sha256"},
+                "raw_artifact_count": {"$ref": "#/$defs/nonnegativeInteger"},
+                "raw_artifact_hashes": {
+                  "type": "array",
+                  "items": {"$ref": "#/$defs/sha256"}
+                }
+              }
+            }
+          ]
+        },
+        "gates": {
+          "type": "array",
+          "minItems": 8,
+          "maxItems": 8,
+          "prefixItems": [
+            {"allOf": [{"$ref": "#/$defs/gateBase"}, {"properties": {"gate": {"const": 1}}}]},
+            {"allOf": [{"$ref": "#/$defs/gateBase"}, {"properties": {"gate": {"const": 2}}}]},
+            {"allOf": [{"$ref": "#/$defs/gateBase"}, {"properties": {"gate": {"const": 3}}}]},
+            {"allOf": [{"$ref": "#/$defs/gateBase"}, {"properties": {"gate": {"const": 4}}}]},
+            {"allOf": [{"$ref": "#/$defs/gateBase"}, {"properties": {"gate": {"const": 5}}}]},
+            {"allOf": [{"$ref": "#/$defs/gateBase"}, {"properties": {"gate": {"const": 6}}}]},
+            {"allOf": [{"$ref": "#/$defs/gateBase"}, {"properties": {"gate": {"const": 7}}}]},
+            {"allOf": [{"$ref": "#/$defs/gateBase"}, {"properties": {"gate": {"const": 8}}}]}
+          ],
+          "items": false
+        },
+        "terminal_class": {
+          "enum": [
+            "VALID",
+            "FAILED",
+            "INFEASIBLE",
+            "STALE",
+            "HISTORICAL",
+            "NULL_DIRECT",
+            "MIXED_DIRECT",
+            "ADVERSE_DIRECT"
+          ]
+        },
+        "accepted_for_numerical_aggregates": {
+          "type": "boolean"
+        },
+        "allowed_panel_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "FIGURE_2_A",
+              "FIGURE_2_B",
+              "FIGURE_2_C",
+              "FIGURE_2_D",
+              "FIGURE_3_A",
+              "FIGURE_3_B",
+              "FIGURE_3_C",
+              "FIGURE_3_D",
+              "FIGURE_4_B",
+              "FIGURE_4_C",
+              "FIGURE_4_D",
+              "FIGURE_5_A",
+              "FIGURE_5_B",
+              "FIGURE_5_C",
+              "FIGURE_5_D",
+              "FIGURE_5_E",
+              "FIGURE_5_F",
+              "FIGURE_6_A",
+              "FIGURE_6_B",
+              "FIGURE_6_C",
+              "FIGURE_6_D",
+              "FIGURE_7_A",
+              "FIGURE_7_B"
+            ]
+          }
+        },
+        "statistics": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/jsonObject"}
+          ]
+        },
+        "direct_classifier": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/jsonObject"}
+          ]
+        },
+        "reason_codes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "fingerprint": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}

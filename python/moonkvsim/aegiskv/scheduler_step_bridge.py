@@ -662,13 +662,21 @@ class AegisSchedulerStepBridge:
             self.scheduler.rollback_unstarted_request(request.request_id)
             raise
 
-    def prioritize_waiting_recovery(self, request_id: str) -> None:
+    def prioritize_waiting_recovery(
+        self,
+        request_id: str,
+        *,
+        priority_key: tuple[int, int, str],
+    ) -> None:
         """Give one externally requeued failure owner bounded admission priority."""
 
         self._require_mutable()
         if request_id not in self._requests:
             raise KeyError(f"unknown bridge request: {request_id}")
-        self.scheduler.prioritize_waiting_recovery(request_id)
+        self.scheduler.prioritize_waiting_recovery(
+            request_id,
+            priority_key=priority_key,
+        )
 
     def admit_restored_request(self, request: Request, *, restored_tokens: int) -> None:
         """Queue a proven remote prefix behind ordinary scheduler admission.
@@ -1002,16 +1010,17 @@ def _scheduled_request_produces_output(item: ScheduledRequest, request: Request)
     remaining_before = request.num_tokens - item.num_computed_tokens_before
     if remaining_before <= 0:
         raise SchedulerStepBridgeError("scheduled request had no materialized work")
-    if item.chunked != (item.num_scheduled_tokens < remaining_before):
-        raise SchedulerStepBridgeError("scheduled chunked flag disagrees with request counters")
     if item.phase is SchedulingPhase.PREFILL:
         if item.num_computed_tokens_before >= request.prompt_tokens:
             raise SchedulerStepBridgeError("prefill begins beyond the prompt boundary")
         if item.num_computed_tokens_after > request.prompt_tokens:
             raise SchedulerStepBridgeError("prefill crosses the prompt boundary")
+        expected_chunked = item.num_computed_tokens_after < request.prompt_tokens
+        if item.chunked is not expected_chunked:
+            raise SchedulerStepBridgeError(
+                "scheduled chunked flag disagrees with prompt-boundary counters"
+            )
         if item.chunked:
-            if item.num_computed_tokens_after >= request.prompt_tokens:
-                raise SchedulerStepBridgeError("chunked prefill cannot sample output")
             return False
         if item.num_computed_tokens_after != request.prompt_tokens:
             raise SchedulerStepBridgeError("terminal prefill did not compute the prompt")

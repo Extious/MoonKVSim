@@ -1,0 +1,389 @@
+U220 heading 
+Controlled mechanism model.
+
+U221 prose 
+An eight-layer example uses an SSD payload cost of 4\,ms, H2D cost of
+1\,ms, and required compute of 3\,ms/layer at full selected demand.
+DRAM retains two payloads, either early or late; transient workspace
+holds only the current and next layer. Serial and pipeline modes use
+the same demand and resources. Payload density scales I/O for all
+policies equally and is not a change to the native attention algorithm.
+Figure~\ref{fig:eval-layer-factorial} isolates the placement/scheduling interaction. A separate prefetch-correctness sweep holds required demand fixed to isolate prediction errors.
+
+U222 caption 
+Equal-budget $2\!\times\!2$ layer-placement/scheduling experiment on eight synthetic layer payloads. Early/late policies retain two payloads; serial/pipeline schedules use the same selected demand, rates, and two-layer transient workspace. The x-axis changes selected payload density for all policies equally, not attention semantics.
+
+U224 prose 
+At full demand, both serial placements take 56\,ms; pipelining gives
+34\,ms with late placement and 32\,ms with early placement. Required
+compute is always 24\,ms. The remaining 10 versus 8\,ms is exposed
+waiting, not avoided historical prefill. Prediction errors consume
+extra reads and force demand-reveal stalls; perfect prediction is only
+one sensitivity point.
+
+U225 heading 
+Matched three-tier extension.
+
+U226 prose 
+Hold the same cross-tier checkpoint coverage, fault IDs, native demand
+and recovery scheduler fixed; compare Peer disabled, equal-byte
+recency/frequency Peer, fixed-quota Slack admission and an adaptive L/K
+reference. Freeze the chosen L/K/Z using calibration workflows, then test
+on held-out workflows and contexts. Under identical fixed slots, compare
+FCFS, recency, Slack and estimated recovery-benefit request ordering.
+Run Peer position $\times$ overlap as a four-cell comparison. Charge
+Peer against the same physical HBM pool, including displaced healthy
+execution, cross-DP traffic, actual Peer-to-DRAM demotion and temporary
+copies. Compare exclusive ownership with duplicated backing separately
+at equal physical budgets. Sweep history $M$, actual tail $N$, configured
+$Z$, hot-set drift and target rebindings. Report WCT gain, moved bytes and
+healthy throughput together. The historical HBM-reuse microbenchmark is
+a local-resident reference, not a measurement of Peer placement. These
+matched cells remain an experiment specification.
+
+U227 heading 
+Native implementation experiment.
+
+U228 prose 
+Capture the actual per-layer demand union over the retry tail, with
+selection metadata and reveal timestamps from the pinned native kernel.
+Use historical queries only for prediction and a later held-out replay
+window for evaluation; split by document/workflow, not individual blocks.
+Compare recency, past access frequency, and the proposed causal profile
+at equal physical bytes, mandatory sink/window reservations, and full
+checkpoint coverage. Cross each with serial and bounded pipeline restore.
+Report all-layer coverage, useful/unused prefetch bytes, missed demand,
+reveal-to-ready wait, exposed GPU stalls, workspace peak, total replay,
+and WCT. A high early-layer hit rate does not establish high total
+coverage. Dense demand is a control, not an implementation failure.
+Do not reduce native selections, omit auxiliary state, or count an
+approximate answer as exact recovery to make an offload policy faster.
+
+U229 heading 4.10
+Rental Diagnosis and Direct-Revaluation Control
+
+U231 prose 
+The proposed controller combines lower-tier renewable credit and lazy
+refresh with fixed-quota, zero-slack Peer admission. We retain a negative result for
+an earlier rental screen as a regression, not as evidence that the new
+controller improves WCT. Its isolated additive model has eight slots,
+24 equal-byte objects and 512 deterministic candidate opportunities with
+smoothly drifting values. All policies receive the same candidate and
+next-use streams, movement cost and replacement threshold. The original
+screen renews on candidate revisits, not on scored next-use hits, and
+checks one minimum-credit victim. A rejected preview leaves rent unchanged.
+This model contains neither multi-Agent shares nor prefix dependencies,
+three-tier demotions, physical leases or a serving scheduler.
+
+U232 caption 
+Preserved historical rental regression, in abstract delay-cost
+ units. The earlier one-victim trial-rent screen migrates slightly less
+ but incurs higher miss-plus-movement cost than direct revaluation.
+ These curves do not implement the revised three-tier controller.
+
+U234 prose 
+Figure~\ref{fig:eval-rental-cost} reports direct cost 462.96 and original
+rental cost 506.39. They make 108 and 106 migrations and each performs
+396 scalar replacement checks, not full DAG passes or CPU measurements.
+Removing hysteresis increases migrations to 121; removing renewal reduces
+them to 77 while raising cost to 526.05. On the original rental trajectory,
+104 rejected opportunities have another resident that satisfies the
+current-value gain threshold. These are diagnostic observations, not an
+additive causal decomposition of the total gap.
+
+U235 prose 
+Bounded repairs keep that input and its thresholds unchanged. Renewing
+on actual scored hits alone increases cost to 512.67. Refreshing current
+value without refunding paid rent reduces it to 477.86; also examining
+two low-credit victims reduces it to 466.76. The last repair closes
+91.26\% of the original gap but remains 0.82\% above direct revaluation.
+Across a fixed grid of four phases, three drift periods and three
+capacities, it improves on original rent in all 36 cases, but beats direct
+value in only nine. These constructed sensitivity cases are neither
+independent repetitions nor held-out workload validation. The repair
+also uses 747 replacement checks and 4,088 resident-key updates in the
+base case; the result does not establish lower controller overhead.
+
+U236 prose 
+These diagnostics motivate two explicit design choices: preserve paid
+rent when value changes and examine alternative legal victim chains.
+They do not measure the revised per-Agent, tiered controller. Its matched
+comparison includes ordinary GDS/Landlord and the same-value direct policy.
+Use the same value model, candidate opportunities,
+work budget, safety protocol and resources for direct revaluation,
+original screening and the revised mechanism. Ablations remove renewal,
+pressure aging, value refresh, shared-Agent aggregation or alternative-victim
+exploration individually. Compare lazy and eager refresh using both the same
+work budget and an unrestricted eager reference; report victim-rank error,
+scan age, WCT and CPU time. Test normalized selection probabilities against
+raw counts on future queries with matched bytes, block age and new-block
+cohorts. Small denominators and unseen phases must retain their errors. Replay multi-round tool waits, growing contexts, shared-role
+prefixes, phase changes, full lower tiers and Adapter shrink. Log grants,
+paid rent, trial/committed clocks, snapshot invalidations, DAG passes,
+controller CPU time, movements, achieved frontiers, misses and WCT. The
+negative base case remains part of this regression set.
+
+U237 heading 4.11
+Capacity, Storage, and Recovery Coverage
+
+U238 prose 
+Sweep DRAM/unique-checkpoint-working-set ratios 0/0.1/0.25/0.5/1 and
+storage ratios 0.5/1/2. Count unique physical bytes and record the
+time-varying working set. The finite-storage cells must exercise final-copy
+deletion and valid fallback frontiers; they cannot silently turn a DRAM
+demotion into unlimited backing storage. Cross equal budgets with
+context length and source concurrency. Report unsupported memory/kernel
+configurations explicitly. Figure~\ref{fig:eval-capacity-frontier} shows capacity sensitivity; the experiment package also retains bandwidth sweeps. The base model assumes sufficient backing and therefore does not validate final-copy eviction performance.
+
+U239 prose 
+The value objective is not fault-only WCT. At budgets 16 and 28\,GiB,
+the feasible oracle's joint score improves from 0.15049 to 0.14383\,s,
+while its fault penalty increases from 1.6125 to 1.9458\,s because
+normal reuse also benefits from retention and transfers share resources.
+The raw capacity table therefore records both objectives and chosen
+objects. A nonmonotone fault-only curve is not evidence that extra
+capacity worsens the oracle's optimized joint objective.
+
+U240 caption 
+Single-failure DRAM-capacity sweep at fixed storage capacity, rates, and logical fault. Value and oracle policies optimize the joint normal-use/failure score; their fault-only penalty need not decrease monotonically. Equal DRAM capacity is required for deployable-policy comparisons.
+
+U242 prose 
+For each real backend, measure read and write bandwidth, request-size
+dependence, concurrent reader/writer contention, commit durability, and
+end-to-end GPU-ready time. Cold client cache, warm client cache, and
+documented server-cache state are separate cells. Direct I/O controls
+the client path only; an uncontrollable shared-filesystem server cache
+must remain labeled unknown. Read the same payload and use the same
+transport schedule across policies. Add a shared-storage slowdown or
+loss experiment to distinguish surviving checkpoint coverage from
+nominally low-latency placement. A system cannot recover unavailable
+state just because its expected value was high.
+
+U243 heading 4.12
+Prediction, Stale Profiles, and Missing Information
+
+U245 prose 
+Existing diagnostics use 1,443 request-2 agents in 170 CC/Weka workflows,
+with whole-agent remaining time as the target. The five workflow-disjoint
+folds give MAEs of 438.6, 406.7 and 407.1\,s for a training-fold median,
+basic GBDT and GBDT with history. The paired basic-minus-median interval
+$[-80.9,4.9]$\,s crosses zero; the six feature-correlation intervals also
+cross zero. These results neither establish a reliable mean improvement
+nor validate residual-segment Slack. The raw predictions, complete error
+tails and correlation plots remain in the experiment artifact.
+
+U246 prose 
+Train remaining-time prediction on earlier complete workflows, tune on
+a disjoint validation split, and evaluate on later workflows. Features
+must be visible at the decision landmark. Report raw remaining-time
+error, false-positive slack, critical-path ranking, fallback frequency,
+and inference/update cost. A correlation or aggregate WAPE does not
+determine a per-agent error CDF. Compare the trained model with duration
+medians, zero-slack fallback, and an oracle-duration reference.
+
+U247 prose 
+The present perturbation model alternates the sign across branches;
+at $-25\%$, its 4.5583\,s penalty is worse than LRU's 3.6208\,s.
+The physical robustness matrix includes independent and correlated
+$\pm10/25/50/100\%$ duration error, missing edges, late tool completion,
+stale bandwidth profiles, cold starts, model shifts, and failure-probability
+miscalibration. Recompute decisions against actual outcomes rather than
+adding an error bar to a nominal curve. Include conservative fallback
+and compare the cost of lost opportunity with the cost of false slack.
+High predictor accuracy alone is insufficient if it does not change
+useful placement decisions.
+
+U248 heading 4.13
+Healthy Service and When Protection Pays
+
+U249 prose 
+Run the same workflows without faults at each fixed baseline-defined
+load. Include first calls, tool waits, and every Agent request in the
+denominator. Report healthy WCT, TTFT, inter-token delay, SLO goodput,
+GPU-seconds, controller CPU/memory, checkpoint write volume, and per-tier
+request/token hits. Distinguish trace-observed prefix sharing from
+realized runtime hits. Compare no new checkpoint protection, LRU,
+reuse-only, full value, and no-reuse value with identical storage limits.
+
+U250 prose 
+A separate M/D/1 calculation with constant service time models I/O queueing only; it does not measure TTFT or GPU interference. For the isolated base case, a simple horizon-level
+break-even calculation is $p_f\Delta D-C_h$, where $C_h$ includes
+healthy-service and migration costs in the same objective units.
+Under this model, a fixed cost of 0.05\,s
+requires $p_f>0.0249$ under the assumed 2.0083\,s benefit. This threshold
+changes with workload, horizon, and queue externalities. Neither the
+illustrative 0.05 probability nor the historical outage trace establishes
+the production value of $p_f$. The physical study must report conditional
+recovery benefit and amortized net benefit separately. Failure rarity
+can invalidate a system-wide value claim even when recovery is faster.
+
+U251 heading 4.14
+Correctness, Safety, and Pressure Transitions
+
+U252 prose 
+Exercise zero-slack Peer admission, request-end/tool-handoff eligibility,
+descending-slack active eviction, stable admission ties, forced-shrink
+ties and fixed-slot hot-set replacement. Physical leases remain binding.
+Check complete coverage across all three owning tiers during object
+migration. A rebound target must retrieve reachable owners or publish a
+valid older-checkpoint/replay fallback after sole-owner loss; it cannot
+claim old Peer bytes as local. Test Peer-to-DRAM-to-storage cascades, full
+destinations, temporary double occupancy and retained paid rent after
+tier round trips. A quota reduction must not report uncompleted demotions
+as free memory.
+
+U253 prose 
+Inject failures immediately before/after reservation, partial copy,
+checksum completion, storage commit, directory redirection, token
+acknowledgement, and final reader drain. Include duplicate completions,
+stale epochs, target loss, missing TP shards/selector state, write timeouts,
+and full tiers. A published manifest must identify complete compatible
+state; PENDING bytes cannot satisfy a restore. Validate durable accepted
+tokens, all-layer replay state, next greedy output under the stated
+numerical tolerance, and absence of duplicate acknowledged output.
+Tool-side effects require application idempotency evidence separately.
+
+U254 prose 
+The 24-to-16\,GiB pressure example retains physical bytes until 5.5\,s,
+despite the earlier target change and copy completion. Reproduce this
+trajectory with overlapping leases, reverse pressure, copy failure,
+and last-copy eviction. Check physical, reserved, committed, retiring,
+and actually free bytes at every transition; a lower target is not free
+memory. Exhaustively enumerate the small state machine and run at least
+100 randomized interleavings per transition class in the implementation.
+Report the number of distinct injected interleavings, failures, and
+unresolved cases. Analytical invariants do not replace protocol execution.
+
+U255 heading 4.15
+Scale and Controller Cost
+
+U256 prose 
+Sweep DP=2/4/8, DAG sizes 10/100/1,000, live groups
+$10^2/10^3/10^4$, and candidate limits 16/64/256. Independently vary
+source-domain concurrency and surviving target count. Record p50/p95/p99
+decision time, profile calls, graph visits, edge visits, lock duration,
+metadata bytes, plan age, and foreground stalls under a fixed CPU budget.
+Small-instance oracle comparisons measure solution quality only where
+enumeration is feasible; absence of an oracle at scale is not a zero gap.
+
+U257 prose 
+The analytical operation-cost projection multiplies an assumed node-visit cost by declared passes/episodes. It establishes neither actual control latency nor full
+algorithmic complexity once candidate enumeration and shared-object
+owners are included. A useful scaling result must show bounded queues,
+acceptable stale-decision rates, and maintained workflow outcomes, not
+only a fast isolated scorer. Report saturation and failed configurations
+rather than omitting them from a log-scale axis.
+
+U258 heading 4.16
+Statistics, Reproducibility, and Execution Order
+
+U260 prose 
+Start physical primary cells with ten independently launched paired
+campaigns. Randomize policy order, retain identical workflow/fault IDs,
+and log what each seed changes. Within a campaign, compute each policy's
+fault-minus-healthy outcome by workflow ID, then the paired difference
+against LRU. Aggregate within campaign before bootstrapping campaigns
+(10,000 resamples with a fixed analysis seed); resampling individual
+tokens or correlated failures does not create independent repetitions.
+For repeated trace windows, use non-overlapping calendar blocks and
+report both event-weighted and system/window-weighted summaries.
+The deterministic model and finite public-trace descriptions shown here
+have zero physical repetitions and no fabricated confidence intervals.
+
+U261 prose 
+Report common-horizon completion and deadline goodput for every input
+workflow, including timeouts. Complete-case latency must use the same
+eligible set across policies and show exclusions. If using restricted
+mean completion time, state the estimator and censoring assumptions;
+do not assign a timeout an invented finish time or let success-only
+p99 appear to improve as more workflows fail. Release raw manifests,
+arrivals, faults, workflow/request outcomes, dependency-linked events,
+prediction snapshots, and all table-generation commands with hashes.
+Fixed single-column figure canvases and a separate visual specification
+allow replacement data to use the same axes, fonts, and layout.
+
+U262 prose 
+Execute correctness and backend calibration first, then the same-ID
+single-failure matrix and its decomposition, then healthy overhead and
+the four factorial ablations, followed by continuous real-trace replay
+and pressure/scale tests. Resolve the LANL redistribution discrepancy
+and obtain a modern outage trace with trustworthy semantics before
+making general fleet claims. The present tail and rental regressions
+are explicit decision points for refining or simplifying the design.
+An empirical claim is supported only after the corresponding matched
+campaign exists; completing an experiment specification does not make
+its expected advantage a measured result.
+
+U263 heading 4.17
+Reusable Figures and Measurement Replacement
+
+U264 prose 
+All evaluation plots use individual single-column canvases with fixed
+physical typography, a separate visual specification, and long-form CSV
+tables. PDF, SVG, and PNG exports retain stable filenames. The manifest
+records source and table hashes, evidence type, units, aggregation command,
+and independent-run count. Measured replacement accepts only tables tied
+to declared physical raw logs and campaign-level sample accounting;
+changing an evidence badge alone is rejected. A partial measured release
+replaces only the completed figure cells while other figures retain their
+original labels. Data ranges expand to include negative outcomes and
+tails. Changing a metric, such as replacing I/O response time with TTFT,
+requires its own explicit semantic specification rather than a renamed
+axis. The numerical narrative and captions must be revised with new
+results; stable plotting configuration does not automatically validate
+an earlier analytical interpretation.
+
+U265 heading 5
+Related Work
+
+U267 heading 
+Fault-tolerant LLM serving.
+
+U268 prose 
+D\'ej\`aVu streams and replicates KV~\cite{strati2024dejavu}; GhostServe
+protects it with host-memory erasure-coded parity~\cite{jayakody2026ghostserve}.
+RaidServe addresses TP resilience and imbalance through cyclic placement,
+hybrid attention and recovery routing~\cite{xu2026raidserve}. LUMEN
+coordinates checkpoints, request redistribution and capacity restoration
+under reduced load~\cite{cao2026lumen}. Placement comparisons must use the same strong recovery scheduler.
+
+U269 heading 
+Hierarchical context caching.
+
+U270 prose 
+Mooncake pools KV and schedules around locality~\cite{qin2025mooncake};
+its SSD offload spills state under memory pressure~\cite{mooncake2026ssdoffload}.
+CachedAttention uses hierarchical caching, layer-wise preload and
+asynchronous saving~\cite{gao2024cachedattention}. Strata addresses
+fragmented I/O, delay hits and cache-aware scheduling~\cite{xie2026strata}.
+HCache restores intermediate activations while balancing I/O and
+computation~\cite{gao2025hcache}. Our proposed distinction is common-failure workflow value
+with safe demotion and explicit final-copy fallback.
+
+U271 heading 
+Workflow-aware serving and prediction.
+
+U272 prose 
+Parrot optimizes application-level execution~\cite{lin2024parrot}; KVFlow
+uses future invocation distance for prefix eviction~\cite{pan2025kvflow}.
+Pythia and Cortex exploit workflow semantics~\cite{yu2026pythia,pagonas2025cortex}.
+TOPAS schedules retention and execution using remaining paths, reuse and
+movement cost~\cite{ni2026topas}; adding a critical-path score to caching
+is thus insufficient novelty. The intended distinction is recovery after
+a common worker failure with stale checkpoints and finite-tier transitions.
+Heddle predicts trajectories~\cite{zhang2026heddle}, which does not establish
+AegisKV's remaining-wall-time accuracy.
+
+U273 heading 
+Placement mechanisms.
+
+U274 prose 
+Critical-path analysis~\cite{kelley1959cpm} and cost/size-based caching~\cite{young2002landlord}
+provide building blocks. AegisKV's values depend on the DAG, shared queues,
+and object locations, so Landlord's competitive bound does not transfer. The
+small-instance feasible oracle measures approximation loss. AegisKV
+uses lower-tier renewable credit with lazy refresh and factorized request/block
+priority, alongside fixed-quota Peer admission. Independent ablations against
+direct revaluation must establish the benefit of rent, actual-use renewal
+and value refresh, alongside sparse ranking and overlap, under matched
+resource and control-work budgets.

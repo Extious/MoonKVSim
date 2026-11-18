@@ -1,0 +1,424 @@
+\section{System Design}
+\label{sec:design}
+
+\system selects which Agents' histories deserve protection (O1),
+which KV regions within those histories should be retained (O2), and
+how much HBM replication may occupy as foreground demand changes (O3). 
+Figure~\ref{fig:system-overview} shows our four cooperating components.
+\emph{Tracker} estimates remaining workflow work and recovery urgency.
+\emph{Router} chooses execution workers and replica destinations.
+\emph{KV Master} selects Agent histories and KV regions, evaluates
+candidate placements, and manages replica retention and reclamation.
+\emph{Adapter} adjusts the HBM replication budget to foreground demand. Rank-local
+Connectors execute transfers and report completion to KV Master.
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/system-overview.pdf}
+ \caption{\system: Four-component architecture. Each workflow node is one
+ invocation. Letters identify Agents, and parentheses give invocation
+ ordinals, B and C are each invoked twice.
+ Each host contains one TP=2 DP worker. Each rank's HBM holds execution
+ and replica regions. Rank-matched Connectors copy KV between hosts;
+ each host's DRAM connects to its own Connectors. Blue paths carry
+ KV; dashed paths carry control.}
+ \label{fig:system-overview}
+\end{figure}
+
+
+\subsection{Tracker}
+\label{sec:tracker}
+
+% 中文：Tracker 维护剩余调用 DAG，以 (w,a,r) 标识工作流 w 中 Agent a 的第 r 次调用。
+% 运行中的节点只计入未完成的工作；已完成节点不再贡献执行时间，但保留其历史状态的使用关系。
+Tracker maintains the residual invocation DAG, where a node $v=(w,a,r)$
+identifies invocation $r$ of Agent $a$ in workflow $w$. Running nodes
+contribute only unfinished work; completed nodes contribute no execution
+but retain links to their history consumers.
+
+% 中文：跟踪历史依赖。Tracker 将每份 Agent 历史关联到当前可见、会使用它的调用。
+% 例如，若输入共享兼容的前缀，a 的第 2、3 次调用可以复用第 1 次调用产生的已选择 KV。
+% 第 1 次调用完成后，Tracker 更新这些使用关系；KV Master 据此决定副本的保留或回收。
+\paragraph{Tracking history dependencies.}
+Tracker associates each Agent history with its currently visible
+invocation consumers. For example, $a^{(2)}$ and $a^{(3)}$ may reuse selected
+KV from $a^{(1)}$ when their inputs share a compatible prefix.
+Completing $a^{(1)}$ updates these consumer links; KV Master uses the
+updated dependencies to decide whether to retain or reclaim the replicas
+(Section~\ref{sec:master-online}).
+
+% 中文：估计紧迫性。GBDT 根据模型与 Agent 角色、输入长度、已解码进度、已运行时间，
+% 以及已完成调用的长度和耗时，预测当前调用的剩余时间；训练与校准使用不同的工作流。
+% 随后通过关键路径的前向、后向遍历求出最早和最晚完成时间，并计算扣除误差裕量的 Slack。
+\paragraph{Estimating urgency.}
+A GBDT predicts remaining invocation duration from the model and Agent
+role, input length, decoded-token progress, elapsed execution, and
+completed calls' lengths and timings. Training and calibration use
+disjoint workflows. Forward and backward critical-path
+passes~\cite{kelley1959cpm} use these estimates to compute earliest and
+latest finishes, $EF_v$ and $LF_v$, and guarded slack
+\begin{equation}
+ s_v=\max\{0,LF_v-EF_v-g_v\},
+ \label{eq:slack}
+\end{equation}
+% 中文（续）：g_v 是经校准的 Slack 高估误差的高分位数；估计过期或无效时令 Slack 为零。
+% 同一路径上的连续调用共享 Slack，不能各自独立使用整份余量。Slack 用于排列紧急的历史
+% 使用者；KV Master 则在联合工作流调度中评估保护决策的整体效果。
+where $g_v$ is a calibrated upper quantile of slack overestimation.
+Stale or invalid estimates yield zero slack. Successive invocations share
+path slack, so their tolerances cannot be used independently. Slack orders
+urgent history consumers; KV Master evaluates protection decisions in a
+joint workflow schedule.
+
+\subsection{Router}
+\label{sec:router}
+
+Router schedules invocations by queue load and compatible prefix
+locality. Moving an invocation must justify its transfer and
+reconstruction cost. Router also chooses where selected replicas reside.
+
+\paragraph{Choosing a peer worker.}
+For a history selected by KV Master, Router chooses a compatible
+\emph{peer worker} $p(a)$ outside the execution worker's protected
+failure domain. This peer is the preferred takeover target. Its GPU
+memory used for replicas is \emph{Peer HBM}; the host DRAM allocated to
+those replicas is \emph{Peer DRAM}. Both belong to the selected peer's
+serving resources. Recovery on that peer consumes resident HBM directly
+and transfers its DRAM-resident KV into the GPU when needed.
+
+Peer choice considers projected takeover load, available memory, and
+copy-path contention. An existing feasible binding is retained on ties.
+Router fixes the proposed bindings for a planning snapshot so that KV
+Master compares candidates under the same destinations and resource
+conditions. Choosing a peer does not allocate a complete checkpoint;
+only selected regions receive reservations and copies.
+
+Peer DRAM is accounted at its actual host. If several workers share a
+host, their DRAM reservations draw from the same physical capacity
+ledger. HBM limits are checked separately for each TP rank. A different
+worker on the same host is not a valid peer for host-failure protection.
+The workflow history and replica directory also remain outside the
+protected source failure domain.
+
+\paragraph{Choosing HBM or DRAM.}
+KV Master supplies a selected region set $S_a$ and its current marginal
+priorities. A region identifies one layer and one historical token block
+together with its required TP shards and attention metadata. Router
+maps it to a memory tier on $p(a)$. The stable backup placement is
+\begin{equation}
+ S_a=H_a\mathbin{\dot\cup}D_a,\qquad
+ H_a\subseteq\{b\in S_a:\operatorname{layer}(b)\le L\},
+ \label{eq:placement}
+\end{equation}
+where $H_a$ resides in Peer HBM and $D_a$ in Peer DRAM. The disjoint
+union denotes one managed backup per selected region; source execution
+KV is accounted separately. Neither tier nor their union is required
+to cover the full history.
+
+The first $L$ model layers are eligible for HBM replication, with $L$
+configured for a compatible model and layout. Router first offers the
+selected regions in these layers to Peer HBM, ordered by KV Master's
+profiled incremental workflow benefit of HBM over DRAM per byte.
+Admissions must fit every required TP rank. Early-layer regions that
+do not fit go to Peer DRAM, together with selected regions beyond $L$.
+Thus, the depth limits placement, rather than requiring full copies
+of the first $L$ layers. If the peer's DRAM budget is also insufficient,
+Router returns the capacity shortfall to KV Master for reselection.
+
+\paragraph{Maintaining the binding.}
+On confirmed execution failure, Router fences the old epoch and
+activates the peer. If a later invocation starts executing on its former
+peer, Router chooses a new peer outside the new execution failure
+domain. The existing local state remains useful for execution, but no
+longer counts as an independent backup there. KV Master creates the
+new selected replicas and publishes their protection only when copies
+complete. Changing a binding accounts for migration, transient memory,
+and any interval without a surviving backup. When the preferred peer
+is unavailable, Router uses another compatible worker and charges
+remote retrieval or reconstruction instead of assuming local hits.
+
+\subsection{KV Master}
+\label{sec:master}
+
+KV Master translates Tracker's estimates into Agent selection (O1)
+and region selection (O2), then evaluates Router's proposed placement.
+Connectors execute the accepted plan and return copy status to Master.
+
+\subsubsection{Selecting Agent Histories (O1)}
+\label{sec:agent-protection}
+
+\paragraph{Reuse and recovery value.}
+For a selected set and placement $P$, let $F_w^0(P)$ be the predicted
+finish of workflow $w$ during normal execution, and $F_w^f(P)$ its finish
+after a common failure of source worker $f$. Normal execution includes
+the Router's actual prefix locations, expected execution-KV retention,
+and replica-copy interference. A backup earns no normal-reuse benefit
+when the same prefix remains available in execution HBM. If the Router
+uses a backup for a later invocation, any required transfer and
+missing-state reconstruction precede that invocation.
+
+The failure schedule includes all interrupted invocations and later
+visible consumers of history lost with the worker. Restoration,
+dependency reconstruction, and accepted-token replay precede unfinished
+execution. Takeover admission and transfers contend on the resources
+they actually share. A fixed ready-time rule, using guarded slack and
+request ID to break ties, applies to every candidate. Master compares
+\begin{equation}
+ J(P)=(1-\lambda)\sum_w F_w^0(P)
+       +\lambda\sum_f\pi_f\sum_w F_w^f(P),
+ \label{eq:objective}
+\end{equation}
+where $0\le\lambda\le1$ is a configured recovery weight and $\pi_f$ are
+fixed normalized source-failure weights, equal by default. These are
+policy weights, not measured fault probabilities. The comparison fixes
+the workload snapshot, Router targets, weights, and queue rules.
+
+A single physical history can accelerate several later invocations,
+but each invocation appears only once in each schedule. The objective
+therefore avoids adding a full-history benefit for every reference.
+Normal prefix reuse is evaluated separately from the fault-time slack
+of the currently running call. At a join, the maximum predecessor
+finish determines progress, preserving O1's non-additive effect.
+
+\paragraph{Generating Agent candidates.}
+Master first identifies Agent histories with active or visible future
+consumers. Candidates include single-history changes and small bundles
+covering co-bottleneck paths into an exposed join. Protecting only one
+of two equally delayed branches may have zero effect, while protecting
+both can advance the join. Each Agent candidate passes to O2 to
+select useful regions; selection does not reserve a full checkpoint.
+Master evaluates the resulting candidate, placement, and victims
+together. Bounded search can miss other combinations and does not claim
+global optimality. Without a valid DAG profile, it uses profiled
+invocation time saved per byte with deterministic ties, retaining the
+same correctness and capacity rules.
+
+\subsubsection{Selecting KV Regions (O2)}
+\label{sec:region-selection}
+
+Within a candidate Agent history, Master selects sealed, materialized
+regions whose retention reduces exposed waiting or reconstruction.
+The logical set $S_a$ is formed before Router assigns its locations.
+Master profiles the resulting placement and revises selection when its
+cost or capacity is unsuitable; neither memory tier receives a full
+history as a prerequisite.
+
+\paragraph{Selecting KV regions.}
+For region $b$ in layer $\ell$, recent completed native attention
+observations supply
+\begin{equation}
+ \widehat p_{a,\ell,b}=
+ \frac{\text{eligible selection units that selected }b}
+      {\text{selection units for which }b\text{ was visible}}.
+ \label{eq:demand}
+\end{equation}
+The unit follows the model's native selection rule; execution tiling
+does not redefine it. Head duplicates count once per unit, and causal
+visibility is determined before pruning. Small denominators use a
+calibrated layer prior. Comparable visible blocks in dense attention
+have access factor one. Frequency orders region candidates; it neither
+guarantees future demand nor establishes a time saving.
+
+Master considers individual regions and progressively larger hot sets,
+including dependency bundles needed to make a proposed restoration
+useful. Recent consecutive demand windows preserve correlated access
+and native reveal order. Their size and the profiling work budget are
+fixed parameters. Invalid sparse statistics use a conservative full
+causal demand envelope for profiling, without forcing a full backup.
+Neither selection nor placement changes native attention semantics.
+
+\paragraph{Cost of a missing region.}
+The profiler distinguishes a valid local execution hit, a Peer HBM hit, a
+Peer DRAM fetch, and a region with no surviving copy. For the last case,
+the engine reconstructs the required dependency closure from durable
+tokens and reusable state. Rebuilding a block's upper-layer KV may
+require lower-layer activations and causally preceding KV; the cost is
+not an independent one-block Prefill. Native selector and positional
+state are also dependencies. Shared reconstruction tasks are executed
+and charged once within a recovery schedule.
+
+If the engine cannot safely combine partial state with reconstruction,
+it prefills the complete required prefix and gives those unusable
+partial replicas no avoided-compute credit. A partial backup therefore
+does not promise to avoid full reconstruction. Predictions can affect
+latency, but every native demand must be satisfied before attention
+continues. This is the correctness path for both later invocations
+and failure recovery.
+
+\paragraph{Measuring exposed delay.}
+The profile schedules copies, bounded prefetches, dependency computation,
+and unfinished invocation work on a common timeline. Replica creation
+uses the inter-worker path; restoration from the selected peer's DRAM
+uses its host-to-device path. Concurrent work shares the corresponding
+network, host-memory, and GPU resources. A demand-driven
+fetch cannot begin before the selector reveals it. If $q_\ell$ is the
+time a layer is ready to consume history, $a_\ell(P)$ the time its last
+required region becomes available, and $c_\ell$ its remaining compute,
+then
+\begin{equation}
+ \begin{aligned}
+ e_\ell(P)&=[a_\ell(P)-q_\ell]^+,\\
+ f_\ell(P)&=q_\ell+e_\ell(P)+c_\ell.
+ \end{aligned}
+ \label{eq:overlap}
+\end{equation}
+Availability may require a transfer or reconstruction. Query and
+selector preparation, resource queues, and dependencies determine
+readiness; later layers depend on earlier finishes. Only computation
+that remains to execute can hide a transfer. The resulting schedule
+feeds Equation~\ref{eq:objective}; historical frequency is not
+used as a substitute for exposed delay.
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/selective-recovery.pdf}
+ \caption{Partial selection before placement, on one selected peer, with $L=2$.
+ Five of twelve logical regions are selected. Peer HBM holds L1/B0 and
+ L1/B2; L2/B1 falls back to Peer DRAM because the illustrative HBM quota is
+ full. Selected L3/B0 and L3/B2 also go to Peer DRAM. Unselected cells have
+ no managed backup. A demand uses a surviving copy or reconstructs its
+ missing dependencies. Each cell denotes all required TP shards;
+ this is a constructed state, not a timing result.}
+ \label{fig:selective-recovery}
+ \Description{A selected-region mask followed by an exclusive Peer HBM/Peer DRAM
+ placement map. Two selected first-layer regions reside in Peer HBM, an
+ overflowing second-layer region resides in Peer DRAM, and two third-layer
+ regions reside in Peer DRAM. Seven regions are unselected. The two tiers
+ together store five regions, not a complete twelve-region checkpoint.}
+\end{figure}
+
+\subsubsection{Online Management}
+\label{sec:master-online}
+\label{sec:execution}
+
+A candidate includes both its selected regions and any victims needed
+to make Router's placement fit. Master considers removals in increasing
+recomputed workflow loss per released byte, then evaluates the complete
+replacement. Optional changes require $J(P)-J(P')>\epsilon$, a configured
+hysteresis margin, and feasible transient memory and copy reservations.
+Mandatory capacity relief can instead require deselection and its
+explicit reconstruction fallback. Work and copy-byte limits bound
+planning overhead and churn; no candidate claims globally optimal
+selection or placement.
+
+Planning runs on invocation arrival and completion, history or DAG
+updates, memory pressure, and a fixed block-aligned interval $Z$ of
+accepted tokens. Prefill and decode offer immutable materialized regions
+as they become available. Final invocation completion offers its sealed
+state and updates future-consumer references. The interval controls
+review frequency; it is not a complete-checkpoint or replay-tail bound.
+
+Algorithm~\ref{alg:protection} applies O1 and O2 before asking Router to assign
+memory locations. Every candidate comparison includes current replicas,
+victims, migrations, and normal-service copy interference. Version checks
+cover the DAG, history, manifest, and quotas. A stale or infeasible
+plan is requeued without advertising its proposed replicas. Candidate
+gain is normalized by changed destination bytes for ordering; each
+tier's physical capacity is enforced separately. Shared host DRAM is
+charged once across all of that host's worker allocations.
+
+\par\medskip\noindent\begin{minipage}{\columnwidth}
+\raggedright
+\refstepcounter{designalgorithm}\label{alg:protection}
+\textbf{Algorithm \thedesignalgorithm: Select, place, and reconcile}
+\par\smallskip
+\begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
+\toprule
+1 & Reconcile copies; snapshot invocations and history references \\
+2 & $P\gets$ current placement; apply mandatory capacity relief \\
+3 & $A\gets\textsc{AgentCandidates}(P)$, including joint bundles \\
+4 & \textbf{while} planning work budget remains \textbf{do} \\
+5 & \quad Form candidate sets $S_c\gets\textsc{SelectRegions}(A,P)$ \\
+6 & \quad For each $c$, get $P_c\gets\textsc{Router.Place}(S_c)$ \\
+7 & \quad Fit victims and re-place if a budget is exceeded \\
+8 & \quad Reprofile each whole plan, including missing-state work \\
+9 & \quad $P^*\gets$ best feasible gain/byte candidate \\
+10 & \quad \textbf{if} no gain exceeds $\epsilon$ \textbf{then break} \\
+11 & \quad $P\gets P^*$; refresh affected candidates \\
+12 & \textbf{if not} \textsc{ReserveIfCurrent}$(P)$ \textbf{then} \\
+13 & \quad Requeue event; \textbf{return} \\
+14 & Copy selected regions directly to their assigned tier \\
+15 & Publish completed objects; retire old owners after drain \\
+\bottomrule
+\end{tabularx}
+\end{minipage}\par\medskip
+
+\paragraph{Publishing and retaining partial state.}
+A manifest records each committed region's token interval, layer,
+required shards, compatibility metadata, and current owner. Master
+publishes a region only after Connectors validate all required objects;
+pending copies cannot satisfy a lookup. For migration, old and new
+allocations are both charged until the destination commits and old
+readers drain. Failed copies leave the previous committed owner valid
+when it survives. Retention follows live history references and current
+selection value, including successors of a completed invocation.
+
+The highest saved token position is not a complete checkpoint frontier.
+Only an explicitly verified all-layer, all-shard prefix may be treated
+as complete. Sparse manifests preserve holes, and the planner includes
+their reconstruction cost. References from future invocations inform
+value without permanently pinning replicas; only physical readers and transfers delay release.
+With no active or visible future consumer, a configured idle-history
+window permits retention subject to pressure. The history expires
+at that limit; workflow completion releases its remaining logical references. Physical reuse
+by another compatible consumer or an existing reader delays release.
+
+\paragraph{Restoring a partial history.}
+For a subsequent or interrupted invocation, Master leases the compatible
+surviving regions and Connectors supply the required transfers. The
+engine combines execution hits, Peer HBM hits, Peer DRAM reads, and
+dependency reconstruction without omitting native attention demands.
+Only validated, materialized KV can serve a prefix. Accepted tokens
+are replayed where necessary without emitting them twice, extending
+checkpoint-and-replay recovery~\cite{strati2024dejavu,cao2026lumen}.
+Full-prefix Prefill remains the fallback when partial restoration is
+unsupported or no useful state survives. Prediction changes latency;
+compatibility, committed copies, and complete dependency evaluation
+determine which state may safely be consumed.
+
+\subsection{Adapter}
+\label{sec:capacity}
+
+Adapter realizes O3 by determining the HBM replication capacity
+foreground execution can support. For takeover rank $k$,
+$B^{\rm pool}_k$ excludes weights and fixed allocations,
+$B^{\rm serve}_k$ covers the serving high watermark and execution
+reservations, and $B^{\rm reserve}_k$ reserves growth and workspace.
+The ceiling is
+\begin{equation}
+ C_k=\max\{0,\min(B^{\rm cap}_k,
+ B^{\rm pool}_k-B^{\rm serve}_k-B^{\rm reserve}_k)\}.
+ \label{eq:ceiling}
+\end{equation}
+HBM replica use is not part of $B^{\rm serve}_k$ and is not subtracted twice.
+Committed, reserved, copying, and retiring allocations all count toward
+physical occupancy. Distinct TP ranks have distinct ceilings.
+
+Adapter uses additive increase and multiplicative
+decrease~\cite{chiu1989aimd}. Allocation stalls, reserve violations, or
+memory-related admission waits multiply quota $B_k$ by $0<\gamma<1$.
+After $m$ stable windows below a lower wait threshold, Adapter adds
+$\Delta$ bytes if Master reports beneficial early-layer candidates
+currently in Peer DRAM or deferred for HBM capacity. The signal is computed
+before quota filtering, allowing growth from zero. Updates are
+page-aligned and clipped to $C_k$; missing telemetry disables growth.
+Adapter changes total quota, while the configured depth $L$ remains
+unchanged.
+
+When quota shrinks, Master stops new HBM admissions and asks Router
+to move the least valuable HBM placements to the same peer's DRAM if
+their regions remain selected. The plan reserves that host's DRAM
+space; Connectors copy and validate the destination. Master then
+redirects the manifest and releases the HBM allocation after readers
+drain. If that peer's DRAM cannot accommodate the migration, Master
+reselects the finite backup set, explicitly removing regions and their
+predicted protection benefit as needed.
+Their token histories still permit reconstruction. Mandatory pressure
+relief need not improve $J$, but cannot bypass active physical leases.
+Foreground admission uses actual occupancy; a reduced quota alone
+does not free memory. Pending copies may be cancelled, and allocations
+wait when immediate physical space is unavailable.
+
+The four components specify a design. Integrated measurements are
+still needed to establish recovery gains, cross-invocation reuse, and
+normal-service overhead.

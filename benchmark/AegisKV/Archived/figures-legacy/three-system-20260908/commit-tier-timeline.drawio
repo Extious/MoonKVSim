@@ -1,0 +1,68 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" version="31.1.5">
+  <diagram id="commit-tier-timeline" name="commit-tier-timeline">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageWidth="1200" pageHeight="365" background="#FFFFFF" math="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="canvas" value="" style="rounded=0;strokeWidth=1.7;strokeColor=#FFFFFF;fillColor=#FFFFFF;fontFamily=Cantarell;fontSize=26;fontColor=#FFFFFF;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="0" y="0" width="1200" height="365" />
+        </mxCell>
+        <mxCell id="seal" value="Seal / reserve" style="rounded=0;strokeWidth=1.7;strokeColor=#243444;fillColor=#FFFFFF;fontFamily=Cantarell;fontSize=26;fontColor=#243444;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="190" y="0" width="220" height="48" />
+        </mxCell>
+        <mxCell id="ack" value="HBM copy ACK" style="rounded=0;strokeWidth=1.7;strokeColor=#243444;fillColor=#FFFFFF;fontFamily=Cantarell;fontSize=26;fontColor=#243444;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="470" y="0" width="235" height="48" />
+        </mxCell>
+        <mxCell id="fault" value="Source failure" style="rounded=0;strokeWidth=1.7;strokeColor=#B83C46;fillColor=#FFFFFF;fontFamily=Cantarell;fontSize=26;fontColor=#B83C46;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="780" y="0" width="235" height="48" />
+        </mxCell>
+        <mxCell id="ack-line" edge="1" parent="1" style="strokeColor=#0072B2;strokeWidth=2;endArrow=none;dashed=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="550" y="50" />
+            <mxPoint as="targetPoint" x="550" y="290" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fault-line" edge="1" parent="1" style="strokeColor=#B83C46;strokeWidth=2;endArrow=none;dashed=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="855" y="50" />
+            <mxPoint as="targetPoint" x="855" y="290" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="row0" value="Source" style="rounded=0;strokeWidth=1.7;strokeColor=#243444;fillColor=#FFFFFF;fontFamily=Cantarell;fontSize=26;fontColor=#243444;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacing=4;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="0" y="67" width="195" height="45" />
+        </mxCell>
+        <mxCell id="row1" value="Peer HBM" style="rounded=0;strokeWidth=1.7;strokeColor=#243444;fillColor=#FFFFFF;fontFamily=Cantarell;fontSize=26;fontColor=#243444;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacing=4;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="0" y="145" width="195" height="45" />
+        </mxCell>
+        <mxCell id="row2" value="Store DRAM" style="rounded=0;strokeWidth=1.7;strokeColor=#243444;fillColor=#FFFFFF;fontFamily=Cantarell;fontSize=26;fontColor=#243444;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacing=4;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="0" y="223" width="195" height="45" />
+        </mxCell>
+        <mxCell id="source" value="Sealed buffers readable" style="rounded=0;strokeWidth=1.7;strokeColor=#243444;fillColor=#E8EDF2;fontFamily=Cantarell;fontSize=26;fontColor=#243444;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="210" y="68" width="645" height="45" />
+        </mxCell>
+        <mxCell id="hbm-pending" value="Pending" style="rounded=0;strokeWidth=1.7;strokeColor=#0072B2;fillColor=#EDF5FA;fontFamily=Cantarell;fontSize=26;fontColor=#0072B2;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;dashed=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="265" y="145" width="285" height="48" />
+        </mxCell>
+        <mxCell id="hbm-committed" value="Committed" style="rounded=0;strokeWidth=1.7;strokeColor=#0072B2;fillColor=#DCECF6;fontFamily=Cantarell;fontSize=26;fontColor=#0072B2;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="550" y="145" width="625" height="48" />
+        </mxCell>
+        <mxCell id="dram-pending" value="Pending" style="rounded=0;strokeWidth=1.7;strokeColor=#B86B00;fillColor=#FFF5E5;fontFamily=Cantarell;fontSize=26;fontColor=#B86B00;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;dashed=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="265" y="223" width="590" height="48" />
+        </mxCell>
+        <mxCell id="dram-aborted" value="Aborted" style="rounded=0;strokeWidth=1.7;strokeColor=#B83C46;fillColor=#F8E7E8;fontFamily=Cantarell;fontSize=26;fontColor=#B83C46;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="855" y="223" width="320" height="48" />
+        </mxCell>
+        <mxCell id="axis" edge="1" parent="1" style="strokeColor=#59636F;strokeWidth=2;endArrow=block;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="210" y="307" />
+            <mxPoint as="targetPoint" x="1175" y="307" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="axis-label" value="Logical event order" style="rounded=0;strokeWidth=1.7;strokeColor=#243444;fillColor=#FFFFFF;fontFamily=Cantarell;fontSize=26;fontColor=#243444;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="400" y="317" width="570" height="45" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

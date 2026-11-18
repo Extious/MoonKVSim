@@ -1,0 +1,137 @@
+\section{System and Simulation Model}
+\label{sec:model}
+
+A workflow is a directed acyclic graph (DAG) of model calls and tool delays.
+Completion time runs from its first call's release until all required calls
+finish. Loss on a parallel branch can be absorbed by work elsewhere, whereas
+loss on a critical branch can delay completion. Protection value therefore
+depends on residual workflow completion.
+
+\paragraph{Execution scope.}
+The CPU simulator uses one global virtual clock for admission, scheduler
+steps, reservations, transfers, failure and repair. Eight DP workers each
+hold Qwen3-8B with TP=1 and PP=1. Per-GPU HBM ledgers account for committed
+cache, active primary KV, pending reservations, staging, weights and runtime
+reserve. Store-DRAM has separate capacity and transfer accounting. One
+colocated Store uses PCIe paths; SSD/NVMe and remote Store are excluded.
+
+\paragraph{Continuous batching and timing.}
+The scheduler-step bridge models residency, preemption and transport
+contention without executing CUDA kernels. It distributes each request's
+ideal duration over token work, with prefill weight 1 and decode weight 8.
+A shared step takes the maximum participant share. This ideal parallel
+model omits shape-dependent kernel efficiency and hardware interference.
+Admission order changes contention and routing, while graphs and token
+content remain fixed.
+For assumption sensitivity, we also use
+$d_{\beta}=\lceil(1-\beta)\max_i d_i+\beta\sum_i d_i\rceil$ with
+$\beta\in\{0,0.5,1\}$. Execution and routing's queue estimate use the same
+composition. These are alternative service assumptions, not physical latency
+bounds; the single-request service budget remains the same.
+
+\paragraph{Failure and repair.}
+A GPU failure fences the device and destroys its HBM. Recovery uses
+committed surviving prefixes, recomputes missing prompt tokens and silently
+replays prior output before resuming visible decoding. Generation and route
+checks fence stale work. Repair restores empty capacity; commit or abort
+releases reservations and source pins. Pending copies cannot recover state.
+
+\section{AegisKV Policy}
+\label{sec:policy}
+
+The source worker independently admits sealed chunks to Peer-HBM and
+Store-DRAM using residual slack and a feedback-controlled Peer envelope.
+Peer protection does not depend on a completed Store copy, and eviction
+does not destage between tiers. Reservations, transfers and commitments
+are independent.
+
+\paragraph{Algorithm 1: ideal residual slack.}
+At causal request and tool boundaries, the simulator computes an exact critical
+path on the residual DAG using the workload's ideal call durations. For call
+$i$, let $s_i(t_0)$ be published slack at time $t_0$. Between observations,
+\begin{equation}
+  s_i(t)=\max\{0,s_i(t_0)-(t-t_0)\}.
+\end{equation}
+This ideal-duration experiment uses no GBDT predictor or prediction error.
+Slack uses neither future failures nor observed absolute finish times;
+the findings therefore do not validate online prediction.
+
+\paragraph{Algorithm 2: tier-local protection value.}
+For request $i$ and pool $p$, let $T_{i,p}$ be modeled recovery time given
+eligible prefixes, including loading, missing prompt computation, and silent
+replay. Define
+\begin{equation}
+  J_{i,p}(t)=\max\{T_{i,p}(t)-s_i(t),0\}.
+\end{equation}
+Candidate gain is
+$A_c=[J_{i,p}^{\mathrm{before}}-J_{i,p}^{\mathrm{after}}]^+$.
+The evaluated policy normalizes recovery-harm reduction by the physical
+bytes allocated for the candidate.
+
+Specifically, pool $p$ maintains rent $L_p$. At commitment, chunk $c$ with
+current gain $A_c$ and physical size $b_c$ receives key
+$H_c=L_p+A_c/b_c$ and retains residual credit
+$b_c[H_c-L_p]^+$. Only the currently safe suffix tail of each request enters
+the pool's minimum-key heap. When its deletion loss changes from
+$D_c^{\mathrm{old}}$ to $D_c^{\mathrm{new}}$, its key becomes
+\begin{equation}
+ H_c\leftarrow\max\!\left\{L_p,
+ H_c+\frac{D_c^{\mathrm{new}}-D_c^{\mathrm{old}}}{b_c}\right\}.
+\end{equation}
+Hidden chunks preserve their previous keys and refresh when exposed as tails;
+exposure does not grant fresh credit at the current rent.
+
+When space is needed, the landlord previews a suffix-safe victim set $V$.
+Loss $D(V)$ is recomputed jointly, once per affected request, from tentative
+prefix state. Summing independent chunk credits could count lost prefix
+utility repeatedly. Admission requires every selected key to be below
+$\Theta_c=L_p+A_c/b_c$ and $A_c>D(V)$; a tie is rejected.
+After eviction, rent advances to the larger of its current value and the
+largest selected key. The new chunk reserves capacity in \texttt{PENDING}
+state and refreshes gain and rent when committing its key. A failed transfer
+releases its reservation without restoring the evicted copies. During this
+replacement window, recovery uses other committed prefixes or recomputation.
+Preview excludes dependencies needed to realize
+the candidate's gain and accounts for physical aliases. Peer-HBM and
+Store-DRAM retain separate rents, capacities, reservations, and victims.
+
+Candidate fractions describe overlapping prefixes starting at token zero.
+Default Peer and Store candidates cover 75\% and 90\%, respectively; these
+percentages are not additive coverage. Rejection, capacity, incomplete transfer,
+eviction, and failure can reduce committed coverage below this envelope.
+
+\paragraph{Routing and recovery-source choice.}
+The cache-aware router selects a serving GPU by estimated completion time,
+combining an eligible continuous prefix, current queue state, and estimated
+restore time. After a failure destination is chosen, the recovery selector
+compares Peer-first and Store-first ownership of overlapping copies. Both
+assignments use normal HBM first and preserve the same effective prefix and
+recompute suffix. Among feasible assignments, the lexicographic key is
+estimated completion, admission, materialization, transferred bytes, and
+Peer-first as the exact-tie winner. Candidate evaluation is side-effect free, using active flows, proposed
+transfers and current destination load, without predicting future arrivals
+or batches. Both estimates are retained, but only the selected assignment
+executes. No permanently Peer-first arm isolates this selector's benefit.
+Source substitution preserves recomputation when the effective prefix is
+unchanged.
+
+\paragraph{Algorithm 3: Peer-HBM quota feedback.}
+The initial envelope is $\alpha M$, where $M$ is KV-capable HBM after weights
+and fixed runtime reserve. At fixed control-window boundaries, foreground
+pressure causes $\alpha\leftarrow\max(\alpha_{\min},\gamma\alpha)$.
+After $K$ stable windows,
+$\alpha\leftarrow\min(\alpha_{\max},\alpha+\delta)$.
+Quota is $\lfloor\alpha M\rfloor$ bytes. Reduction can block admission while
+safe tails are reclaimed; it cannot free pinned or active state by changing
+an accounting number. Foreground allocation and recovery still require
+physical capacity transactions. The default window is the larger of one
+second and the median ideal workflow CPM makespan.
+An unavailable GPU's control window clears old pressure without changing
+quota; post-repair decisions use pressure observed in subsequent windows.
+
+\paragraph{Executable checks.}
+Runs retain scheduler steps, residency, physical ledgers, transfer events,
+policy previews, and quota transitions. Offline checks reconstruct completion,
+exact rational gain and loss, byte and rent conservation, pending-copy
+invisibility, and AIMD equations. These establish simulation consistency,
+not physical accuracy of the latency model.

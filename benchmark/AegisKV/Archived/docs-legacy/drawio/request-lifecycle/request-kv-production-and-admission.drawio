@@ -1,0 +1,172 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" version="31.1.5">
+  <diagram id="R" name="R 算法 2：从一次请求到每个 KV chunk 的备份决策">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageWidth="2400" pageHeight="1800" background="#FFFFFF">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="canvas" value="" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#FFFFFF;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#FFFFFF;fillColor=#FFFFFF;rounded=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="0" y="0" width="2400" height="1800" />
+        </mxCell>
+        <mxCell id="title" value="R  |  算法 2：从一次请求到每个 KV chunk 的备份决策" style="fontFamily=Noto Sans CJK SC;fontSize=38;fontColor=#24364B;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="45" y="25" width="2310" height="62" />
+        </mxCell>
+        <mxCell id="subtitle" value="主线按现有 revision 3 展开；Priority 是当前收益密度。右侧历史 Credit 是待选机制，未接入主线。" style="fontFamily=Noto Sans CJK SC;fontSize=23;fontColor=#647383;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="45" y="94" width="2310" height="42" />
+        </mxCell>
+        <mxCell id="lane0" value="" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#D5DEE8;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#D5DEE8;fillColor=#FBFCFE;rounded=1;arcSize=8;container=1;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="35" y="150" width="730" height="1475" />
+        </mxCell>
+        <mxCell id="lane-title0" value="① 请求执行与 KV 生产" style="fontFamily=Noto Sans CJK SC;fontSize=28;fontColor=#246BA2;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="55" y="159" width="690" height="48" />
+        </mxCell>
+        <mxCell id="lane1" value="" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#D5DEE8;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#D5DEE8;fillColor=#FBFCFE;rounded=1;arcSize=8;container=1;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="835" y="150" width="730" height="1475" />
+        </mxCell>
+        <mxCell id="lane-title1" value="② 每个 tier 的当前状态决策" style="fontFamily=Noto Sans CJK SC;fontSize=28;fontColor=#246BA2;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="855" y="159" width="690" height="48" />
+        </mxCell>
+        <mxCell id="lane2" value="" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#D5DEE8;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#D5DEE8;fillColor=#FBFCFE;rounded=1;arcSize=8;container=1;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1635" y="150" width="730" height="1475" />
+        </mxCell>
+        <mxCell id="lane-title2" value="③ Priority 与 Credit 的定义边界" style="fontFamily=Noto Sans CJK SC;fontSize=28;fontColor=#246BA2;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1655" y="159" width="690" height="48" />
+        </mxCell>
+        <mxCell id="arrive" value="请求到来，绑定唯一调用 ID&#10;确定模型身份、路由和保护目标" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#24364B;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#24364B;fillColor=#F5F7FA;rounded=1;arcSize=8;" vertex="1" parent="lane0">
+          <mxGeometry as="geometry" x="85" y="85" width="560" height="110" />
+        </mxCell>
+        <mxCell id="context" value="记录当前 Slack、恢复代价模型和有效期&#10;关联已存在的兼容共享前缀&#10;管理对象是 chunk；调用提供价值上下文" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#24364B;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#24364B;fillColor=#F5F7FA;rounded=1;arcSize=8;" vertex="1" parent="lane0">
+          <mxGeometry as="geometry" x="85" y="265" width="560" height="145" />
+        </mxCell>
+        <mxCell id="produce" value="执行 Prefill / Decode，逐步生成主 KV&#10;持续生产；每个完整 chunk 触发保护评估" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#24364B;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#24364B;fillColor=#F5F7FA;rounded=1;arcSize=8;" vertex="1" parent="lane0">
+          <mxGeometry as="geometry" x="85" y="490" width="560" height="125" />
+        </mxCell>
+        <mxCell id="sealed" value="本次有完整、不可变&#10;且源仍可读的新 chunk？" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#A16A17;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#A16A17;fillColor=#FFF7E8;rhombus;" vertex="1" parent="lane0">
+          <mxGeometry as="geometry" x="55" y="750" width="620" height="175" />
+        </mxCell>
+        <mxCell id="register" value="注册 chunk：内容身份 / 父链 / bytes&#10;追加到该调用已生成的 KV 路径&#10;刷新恢复代价；不复制尚未生成的 KV" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#24364B;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#24364B;fillColor=#F5F7FA;rounded=1;arcSize=8;" vertex="1" parent="lane0">
+          <mxGeometry as="geometry" x="85" y="1040" width="560" height="150" />
+        </mxCell>
+        <mxCell id="tiers" value="分别进入 Peer HBM / Store DRAM&#10;两层分别从 Source 复制" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#7351A5;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#7351A5;fillColor=#F5F0FA;rounded=1;arcSize=8;" vertex="1" parent="lane0">
+          <mxGeometry as="geometry" x="85" y="1265" width="560" height="90" />
+        </mxCell>
+        <mxCell id="end" value="请求结束：退出活跃收益；共享引用 / TTL / FreeACK 清理见 2C" style="fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#647383;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#647383;fillColor=#F5F7F9;rounded=1;arcSize=8;" vertex="1" parent="lane0">
+          <mxGeometry as="geometry" x="30" y="1390" width="660" height="70" />
+        </mxCell>
+        <mxCell id="edge-0" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#246BA2;strokeWidth=2.8;endArrow=block;endFill=1;endSize=10;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#246BA2;labelBackgroundColor=#FFFFFF;jettySize=20;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitPerimeter=1;entryPerimeter=1;" edge="1" parent="1" source="arrive" target="context">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge-1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#246BA2;strokeWidth=2.8;endArrow=block;endFill=1;endSize=10;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#246BA2;labelBackgroundColor=#FFFFFF;jettySize=20;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitPerimeter=1;entryPerimeter=1;" edge="1" parent="1" source="context" target="produce">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge-2" value="块就绪事件" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#246BA2;strokeWidth=2.8;endArrow=block;endFill=1;endSize=10;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#246BA2;labelBackgroundColor=#FFFFFF;jettySize=20;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitPerimeter=1;entryPerimeter=1;" edge="1" parent="1" source="produce" target="sealed">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge-3" value="是" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#246BA2;strokeWidth=2.8;endArrow=block;endFill=1;endSize=10;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#246BA2;labelBackgroundColor=#FFFFFF;jettySize=20;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitPerimeter=1;entryPerimeter=1;" edge="1" parent="1" source="sealed" target="register">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge-4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#246BA2;strokeWidth=2.8;endArrow=block;endFill=1;endSize=10;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#246BA2;labelBackgroundColor=#FFFFFF;jettySize=20;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitPerimeter=1;entryPerimeter=1;" edge="1" parent="1" source="register" target="tiers">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge-5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#246BA2;strokeWidth=2.8;endArrow=block;endFill=1;endSize=10;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#246BA2;labelBackgroundColor=#FFFFFF;jettySize=20;exitX=0;exitY=0.5;entryX=0;entryY=0.5;exitPerimeter=1;entryPerimeter=1;dashed=1;dashPattern=6 4;" edge="1" parent="1" source="sealed" target="produce">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="90" y="987" />
+              <mxPoint x="90" y="702" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-5-label" value="否：&#10;继续生成" style="fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#246BA2;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;fillColor=#FFFFFF;spacing=2;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="75" y="795" width="95" height="80" />
+        </mxCell>
+        <mxCell id="edge-6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#647383;strokeWidth=2.8;endArrow=block;endFill=1;endSize=10;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#647383;labelBackgroundColor=#FFFFFF;jettySize=20;exitX=0;exitY=0.7;entryX=0;entryY=0.5;exitPerimeter=1;entryPerimeter=1;" edge="1" parent="1" source="produce" target="end">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="20" y="727" />
+              <mxPoint x="20" y="1575" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-6-label" value="结束&#10;事件" style="fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#647383;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;fillColor=#FFFFFF;spacing=2;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="0" y="1360" width="70" height="75" />
+        </mxCell>
+        <mxCell id="frontier" value="读取本池 C，找当前连续前缀 f&#10;已有副本直接复用，不重复计 bytes&#10;从首缺口枚举已生成的连续候选组 X" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#24364B;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#24364B;fillColor=#F5F7FA;rounded=1;arcSize=8;" vertex="1" parent="lane1">
+          <mxGeometry as="geometry" x="85" y="85" width="560" height="150" />
+        </mxCell>
+        <mxCell id="eligible" value="许可 / pending / 回收门槛通过？&#10;源、时限、staging 和物理容量&#10;允许复制当前 X？" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#A16A17;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#A16A17;fillColor=#FFF7E8;rhombus;" vertex="1" parent="lane1">
+          <mxGeometry as="geometry" x="55" y="325" width="620" height="210" />
+        </mxCell>
+        <mxCell id="gain" value="计算当前保护收益&#10;A(X|C,t) = Φ(C,t) − Φ(C∪X,t)&#10;解释其单位字节价值：P = A / b(X)" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#7351A5;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#7351A5;fillColor=#F5F0FA;rounded=1;arcSize=8;" vertex="1" parent="lane1">
+          <mxGeometry as="geometry" x="85" y="640" width="560" height="145" />
+        </mxCell>
+        <mxCell id="victims" value="若需要空间：按当前损失 / bytes&#10;选择合法删除闭包 Y，逐轮重算&#10;禁止删候选祖先和正在读取的对象" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#24364B;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#24364B;fillColor=#F5F7FA;rounded=1;arcSize=8;" vertex="1" parent="lane1">
+          <mxGeometry as="geometry" x="85" y="875" width="560" height="145" />
+        </mxCell>
+        <mxCell id="improves" value="所有候选比较后，有计划满足&#10;Φ(C,t)−Φ((C\Y)∪X,t)&gt;η&#10;且 begin 再校验通过？" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#A16A17;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#A16A17;fillColor=#FFF7E8;rhombus;" vertex="1" parent="lane1">
+          <mxGeometry as="geometry" x="55" y="1090" width="620" height="200" />
+        </mxCell>
+        <mxCell id="pause" value="无可行组：PAUSED&#10;推理继续；新事件后重试&#10;不永久封死后续 chunk" style="fontFamily=Noto Sans CJK SC;fontSize=23;fontColor=#A16A17;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#A16A17;fillColor=#FFF7E8;rounded=1;arcSize=8;" vertex="1" parent="lane1">
+          <mxGeometry as="geometry" x="15" y="1345" width="325" height="115" />
+        </mxCell>
+        <mxCell id="commit" value="预留 / PENDING → 逐批复制&#10;ACK 齐全且再校验：提交&#10;失败保留旧 C；回收见 2C" style="fontFamily=Noto Sans CJK SC;fontSize=23;fontColor=#177F67;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#177F67;fillColor=#EBF7F1;rounded=1;arcSize=8;" vertex="1" parent="lane1">
+          <mxGeometry as="geometry" x="385" y="1345" width="325" height="115" />
+        </mxCell>
+        <mxCell id="edge-7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#246BA2;strokeWidth=2.8;endArrow=block;endFill=1;endSize=10;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#246BA2;labelBackgroundColor=#FFFFFF;jettySize=20;exitX=1;exitY=0.5;entryX=0;entryY=0.5;exitPerimeter=1;entryPerimeter=1;" edge="1" parent="1" source="tiers" target="frontier">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="790" y="1460" />
+              <mxPoint x="790" y="310" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#246BA2;strokeWidth=2.8;endArrow=block;endFill=1;endSize=10;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#246BA2;labelBackgroundColor=#FFFFFF;jettySize=20;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitPerimeter=1;entryPerimeter=1;" edge="1" parent="1" source="frontier" target="eligible">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge-9" value="是" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#246BA2;strokeWidth=2.8;endArrow=block;endFill=1;endSize=10;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#246BA2;labelBackgroundColor=#FFFFFF;jettySize=20;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitPerimeter=1;entryPerimeter=1;" edge="1" parent="1" source="eligible" target="gain">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge-10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#A16A17;strokeWidth=2.8;endArrow=block;endFill=1;endSize=10;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#A16A17;labelBackgroundColor=#FFFFFF;jettySize=20;exitX=0;exitY=0.5;entryX=0;entryY=0.5;exitPerimeter=1;entryPerimeter=1;" edge="1" parent="1" source="eligible" target="pause">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="835" y="580" />
+              <mxPoint x="835" y="1552" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-10-label" value="无可行&#10;候选" style="fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#A16A17;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;fillColor=#FFFFFF;spacing=2;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="800" y="1115" width="85" height="80" />
+        </mxCell>
+        <mxCell id="edge-11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#246BA2;strokeWidth=2.8;endArrow=block;endFill=1;endSize=10;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#246BA2;labelBackgroundColor=#FFFFFF;jettySize=20;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitPerimeter=1;entryPerimeter=1;" edge="1" parent="1" source="gain" target="victims">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge-12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#246BA2;strokeWidth=2.8;endArrow=block;endFill=1;endSize=10;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#246BA2;labelBackgroundColor=#FFFFFF;jettySize=20;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitPerimeter=1;entryPerimeter=1;" edge="1" parent="1" source="victims" target="improves">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge-13" value="否" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#A16A17;strokeWidth=2.8;endArrow=block;endFill=1;endSize=10;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#A16A17;labelBackgroundColor=#FFFFFF;jettySize=20;exitX=0.25;exitY=0.75;entryX=0.5;entryY=0;exitPerimeter=1;entryPerimeter=1;" edge="1" parent="1" source="improves" target="pause">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge-14" value="是" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#177F67;strokeWidth=2.8;endArrow=block;endFill=1;endSize=10;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#177F67;labelBackgroundColor=#FFFFFF;jettySize=20;exitX=0.75;exitY=0.75;entryX=0.5;entryY=0;exitPerimeter=1;entryPerimeter=1;" edge="1" parent="1" source="improves" target="commit">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="priority" value="建议的 Priority：每字节可减少多少&#10;超出 Slack 的恢复损失&#10;&#10;Φ(C,t) = Σ活跃调用 wi [Ti(fi(C),t)−si(t)]₊&#10;Padd(X|C,t) = [Φ(C,t)−Φ(C∪X,t)] / b(X)&#10;单 chunk 是 X={k} 的特例" style="fontFamily=Noto Sans CJK SC;fontSize=23;fontColor=#7351A5;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#7351A5;fillColor=#F5F0FA;rounded=1;arcSize=8;" vertex="1" parent="lane2">
+          <mxGeometry as="geometry" x="85" y="85" width="560" height="285" />
+        </mxCell>
+        <mxCell id="estimate" value="Ti 的来源：按当前生成进度估计&#10;读取 + 剩余重算 + 输出重放&#10;在可行前缀与完整重算中取最小代价&#10;&#10;需用实测 / 校准模型提供参数；&#10;参考模块不会自动测出这些数值。" style="fontFamily=Noto Sans CJK SC;fontSize=23;fontColor=#246BA2;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#246BA2;fillColor=#EDF5FB;rounded=1;arcSize=8;" vertex="1" parent="lane2">
+          <mxGeometry as="geometry" x="85" y="475" width="560" height="255" />
+        </mxCell>
+        <mxCell id="credit" value="若另行选择历史租金 Credit：&#10;插入时 Hk = Lins + Pk&#10;初始总 Credit = bk · Pk&#10;剩余 Credit = bk · max(Hk − L, 0)&#10;&#10;H 是阈值，L 是本池累计压力租金；&#10;Credit 与插入 Priority 不同。" style="fontFamily=Noto Sans CJK SC;fontSize=23;fontColor=#A16A17;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#A16A17;fillColor=#FFF7E8;rounded=1;arcSize=8;" vertex="1" parent="lane2">
+          <mxGeometry as="geometry" x="85" y="830" width="560" height="285" />
+        </mxCell>
+        <mxCell id="open" value="Credit 方案仍需明确的规则&#10;① 压力何时推进 L，失败如何处理&#10;② Slack / 共享引用变化如何重估或续额&#10;③ 前缀删除闭包的重叠价值如何处理&#10;&#10;Credit=0 只能成为候选；&#10;仍须验证完整替换的真实收益和安全性。" style="fontFamily=Noto Sans CJK SC;fontSize=23;fontColor=#647383;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#647383;fillColor=#F5F7F9;rounded=1;arcSize=8;" vertex="1" parent="lane2">
+          <mxGeometry as="geometry" x="85" y="1200" width="560" height="250" />
+        </mxCell>
+        <mxCell id="invariant" value="当前推荐：以当前边际收益和完整替换净收益决定备份；如保留历史 Credit，应先定义刷新与租金规则，再作为独立策略验证。" style="fontFamily=Noto Sans CJK SC;fontSize=25;fontColor=#7351A5;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=12;strokeWidth=2;strokeColor=#7351A5;fillColor=#F5F0FA;rounded=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="45" y="1650" width="2310" height="85" />
+        </mxCell>
+        <mxCell id="source-footer" value="依据：prefix_frontier.py / revision_runtime.py；旧版 rental_value.py；Credit 数学关系见同目录 README  |  Revision 3：参考协议；native 集成未完成" style="fontFamily=Noto Sans CJK SC;fontSize=20;fontColor=#647383;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacing=12;strokeWidth=2;text;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="45" y="1740" width="2310" height="45" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

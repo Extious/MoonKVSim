@@ -1,0 +1,30 @@
+\section{Introduction}
+Agent applications interleave LLM calls, tools, forks and joins. Their
+key--value (KV) state can be expensive to reconstruct, yet a recovery delay
+may be absorbed before a join or propagate through every downstream stage.
+Uniform protection can therefore consume memory and bandwidth without
+improving application completion time.
+
+KV-oriented serving systems already trade storage and transfer for computation.
+Mooncake coordinates distributed KV storage~\cite{qin2025mooncake};
+D\'ej\`aVu streams KV for disaggregation and recovery~\cite{strati2024dejavu};
+GhostServe reduces checkpointing costs using coded protection~\cite{jayakody2026ghostserve}.
+Workflow-aware systems exploit structure for placement, caching and scheduling
+\cite{lin2024parrot,pan2025kvflow,yu2026pythia}. These mechanisms motivate
+considering the application-level consequence of a KV loss, alongside the
+cost of preserving it.
+
+AegisKV values protection using residual workflow Slack. The Application
+predicts this signal from a causal DAG; the Controller uses it to admit
+chunks and prioritize recovery. HBM and DRAM have independent admission,
+capacity, rent and commitment, with both copies originating at the source.
+A quota controller adapts HBM protection to foreground pressure.
+
+We contribute a workflow-aware protection design with explicit replacement
+and recovery invariants; a Mooncake prototype and a source-bound simulation
+projection checked against native policy; and a reproducible evaluation of
+healthy cost, recovered state and whole-workflow outcomes. CPM, Landlord and
+AIMD are established building blocks~\cite{kelley1959cpm,young2002landlord,chiu1989aimd};
+our contribution integrates them with request ownership and asynchronous KV
+recovery. Metadata conformance does not establish physical performance.
+

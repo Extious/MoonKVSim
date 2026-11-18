@@ -1,0 +1,388 @@
+--- before/draft/README.md
++++ draft/README.md
+@@ -15,7 +15,7 @@
+ 当前图源是 `figures/system-overview-v10.drawio`；`main.tex` 已连接英文 Background/Motivation 与 System Design。
+ 较早日志中的“本轮不修改设计章”“终稿形态”描述历史轮次；当前仍保留端到端验证边界，不能视为投稿完备。
+ 
+-当前职责（2026-09-18 最新修订）：§3.4 Recovery Manager 在到达时绑定 retry/Peer 目标，§3.5 KV Master 选择备份时机、R/D/P 层级和热块候选，§3.6 Adapter 按窗口控制 Peer 总容量及实际驻留层数。旧日志中的 Planner、整足迹准入和旧节号属于历史版本。当前图源为 `system-overview-v11.drawio`，图号为 3–5，组件编号为 ① Tracker、② Recovery Manager、③ KV Master、④ Adapter。
++当前职责（2026-09-18 最新修订）：§3.4 Recovery Manager 在到达时绑定 retry/Peer 目标，§3.5 KV Master 选择备份时机、R/D/P 层级和热块候选，§3.6 Adapter 使用 5 秒窗口，所有 Agent 请求共用窗口内固定的 $L_t$，各目标 DP 控制 Peer 总容量；固定比例 $h$ 决定随密封历史增长的每层热块数。容量按前 $L_t$ 层的完整请求足迹准入。旧日志中的 Planner、逐请求层数和旧节号属于历史版本。当前图源为 `system-overview-v11.drawio`，图号为 3–5，组件编号为 ① Tracker、② Recovery Manager、③ KV Master、④ Adapter。
+ 
+ | 顺序 | 文件 | 内容 |
+ |---|---|---|
+--- before/draft/appendix_draft_status.md
++++ draft/appendix_draft_status.md
+@@ -20,7 +20,7 @@
+ 
+ ## 附录 B：Reviewer 视角的自审与本版修正（不进入投稿）
+ 
+-本轮明确放置与恢复解耦：请求可并行 retry，H2D 与计算可重叠。此前将整请求装载视为固定串行队列，故删除 EDD/SPT、cascade-aware、命题 1 与串行重算前缀和；当前算法由 KV Master 做 Slack 排序与层级/热块决策，Adapter 以预算内完整层前缀分配实现逐窗口容量和层数控制（2026-09-18 起取代整请求足迹全放或全不放），不声称任意并发调度下全局最优。下列条目保留已审查的其他边界。
++本轮明确放置与恢复解耦：请求可并行 retry，H2D 与计算可重叠。此前将整请求装载视为固定串行队列，故删除 EDD/SPT、cascade-aware、命题 1 与串行重算前缀和；当前算法由 KV Master 做 Slack 排序与层级/热块决策，Adapter 以 5 秒窗口更新统一 $L_t$ 和各目标 Peer 预算，窗口内不调整逐请求层数，按完整请求足迹准入（本日后续修订取代逐请求前缀分配），不声称任意并发调度下全局最优。下列条目保留已审查的其他边界。
+ 
+ | # | Reviewer 可能的质疑 | 上一版的不足 | 本版处理 |
+ |---|---|---|---|
+--- before/draft/conclusion.md
++++ draft/conclusion.md
+@@ -1,6 +1,6 @@
+ ## 7 Conclusion
+ 
+-AegisKV 面向多智能体长上下文服务，以 WCT 为保护目标：Slack 决定请求之间的保护优先级，Recovery Manager 在到达时绑定恢复目标与 Peer DP rank；KV Master 决定备份时机、层级和每层候选热块；Adapter 每窗口更新 Peer 总预算和实际驻留层前缀，按完整层分配、以已提交副本为准执行恢复。故障后，各请求沿用引擎的并行 retry 与计算/传输重叠能力，按自身 KV 就绪条件推进，缺失的必要块按需补取。测量与单请求解析图支持这一设计的动机；新版端到端收益、前台干扰及估计误差下的鲁棒性仍需 §5 的实验验证。
++AegisKV 面向多智能体长上下文服务，以 WCT 为保护目标：Slack 决定请求之间的保护优先级，Recovery Manager 在到达时绑定恢复目标与 Peer DP rank；KV Master 决定备份时机、层级和每层候选热块；Adapter 每 5 秒更新 Peer 总预算和所有请求共用的层数，窗口内层数固定；热块数按固定比例随密封历史长度变化，按完整请求足迹准入、以已提交副本为准执行恢复。故障后，各请求沿用引擎的并行 retry 与计算/传输重叠能力，按自身 KV 就绪条件推进，缺失的必要块按需补取。测量与单请求解析图支持这一设计的动机；新版端到端收益、前台干扰及估计误差下的鲁棒性仍需 §5 的实验验证。
+ 
+ ---
+ 
+--- before/draft/evaluation.md
++++ draft/evaluation.md
+@@ -38,7 +38,7 @@
+ 
+ ### 5.6 敏感性
+ 
+-另需验证窗口级容量/层数控制：记录预算收缩与扩张时的 $B_{p,t}$、目标 $L_r(t)$、已提交层数、物理占用及复制/回收延迟，检查 DRAM 回退和读取 pin；与整请求足迹全放或全不放的旧策略对照。扫描 Peer 预算 0–16 GiB、总 H2D 带宽 6.25–50 GB/s、同时 retry 的请求数 1/2/4/8，以及固定 retry 数下低 Slack 请求的比例。改变并发度时保留总带宽约束，并报告实际传输/计算重叠率，而不引入固定串行恢复顺序。另扫描 Slack 估计误差（乐观/悲观 ±30%）、密封尾部长度和热度窗口；跨模型分别校准 KV 大小、计算代价与选块轨迹，只有明确标为机制扫描时才单独替换 $\tilde u$。
++另需验证 5 秒窗口的容量/统一层数控制：记录预算收缩与扩张时的 $B_{p,t}$、所有请求共用的 $L_t$、各请求热块数 $K_r$、Peer 准入状态、已提交对象、物理占用及复制/回收延迟，检查窗口内层数不变、增长容量预留、DRAM 回退和读取 pin；与逐请求调整层数的细粒度策略对照，报告控制与迁移开销。扫描 Peer 预算 0–16 GiB、总 H2D 带宽 6.25–50 GB/s、同时 retry 的请求数 1/2/4/8，以及固定 retry 数下低 Slack 请求的比例。改变并发度时保留总带宽约束，并报告实际传输/计算重叠率，而不引入固定串行恢复顺序。另扫描 Slack 估计误差（乐观/悲观 ±30%）、密封尾部长度和热度窗口；跨模型分别校准 KV 大小、计算代价与选块轨迹，只有明确标为机制扫描时才单独替换 $\tilde u$。
+ 
+ ### 5.7 结论边界
+ 
+--- before/draft/implementation.md
++++ draft/implementation.md
+@@ -1,3 +1,3 @@
+ ## 4 Implementation
+ 
+-实验平台采用 MoonKVSim（以 Mooncake 为原型、以 KV 块为一等对象的离散事件模拟器），复用块级复制/提交、Peer 容量管理和故障注入接口。新版接入点是 §3.4 的到达时目标绑定与并发重路由、§3.5 的 KV 备份策略，以及 §3.6 的 Adapter 窗口容量/层数控制和逐请求异步就绪条件；不向调度器添加请求级串行屏障。GPU 原型需提供选块索引观测、异步块复制与逐层就绪事件。MiniCPM4-8B 和 NOSA-1B 的选块轨迹、完整 prefill 与尾部重放测量已完成；新版放置与并行恢复的端到端实现尚待验证，本节不把旧示意模型视为其实现证据。
++实验平台采用 MoonKVSim（以 Mooncake 为原型、以 KV 块为一等对象的离散事件模拟器），复用块级复制/提交、Peer 容量管理和故障注入接口。新版接入点是 §3.4 的到达时目标绑定与并发重路由、§3.5 的 KV 备份策略，以及 §3.6 的 Adapter 5 秒窗口容量/统一层数控制和逐请求异步就绪条件；不向调度器添加请求级串行屏障。GPU 原型需提供选块索引观测、异步块复制与逐层就绪事件。MiniCPM4-8B 和 NOSA-1B 的选块轨迹、完整 prefill 与尾部重放测量已完成；新版放置与并行恢复的端到端实现尚待验证，本节不把旧示意模型视为其实现证据。
+--- before/draft/introduction.md
++++ draft/introduction.md
+@@ -6,11 +6,11 @@
+ 
+ 我们的回答建立在两个观察上。第一，请求之间不平等。在 124 个真实多智能体工作流中，并行分支的执行时间差中位数为 141 s，91% 的 workflow 的时间差大于实测的 128K 前缀重算时间（§2.2）。持续时间差本身不等于 Slack；只有恢复代价不超过请求的 Slack 时，重算才不推迟汇合，而关键路径上的请求多等 1 s，WCT 就多 1 s。用调度理论中的 Slack 度量这种差别，可以把有限容量集中到真正会暴露给 WCT 的请求。第二，请求内部也不平等。原生稀疏注意力模型在每个 query 只读取少数历史 KV 块：在 NOSA-1B 和 MiniCPM4-8B 的真实选块轨迹上，最热的 20% `(layer, block)` 字节分别承担 90% 和 66% 的访问（§3.3）。这一集中性在 256/512 个后续 query 的窗口中都可检验，说明有限的 Peer HBM 不应均匀保护全部 KV。访问频次不直接等于恢复收益：§3.3 再区分历史热度、重算尾部所需的去重块并集和在线预取，以保证未预测到的必要块仍能到齐。
+ 
+-基于这两个观察，我们设计了 AegisKV。Recovery Manager 在请求到达时将其恢复目标与 Peer HBM 所在的 DP rank 绑定为同一目标（§3.4）；KV Master 在请求到达、KV 密封、Slack 变化及控制窗口决定采用 Recompute、DRAM-only 或 Peer + DRAM，并选择每层的候选热块（§3.5）。目标 Adapter 每个窗口根据前台压力和传输/计算画像调整 Peer 总预算及各请求的驻留前层数 $L_r(t)$；每层热集大小 $K_l$ 来自离线校准，块身份随实际选择索引滚动。预算内按 Slack 优先级准入完整层前缀，未获 Peer 配额时保留 DRAM 路径。故障后按层预取并在选择器揭示确切需求时补取缺失块（§3.6）。不同请求的 retry、H2D 与计算由引擎并发推进，不要求一个请求装载或重放完成后才开始另一个。热度来自稀疏 kernel 已有的块索引，AegisKV 不改变选择器，也不要求额外的专用恢复 GPU。
++基于这两个观察，我们设计了 AegisKV。Recovery Manager 在请求到达时将其恢复目标与 Peer HBM 所在的 DP rank 绑定为同一目标（§3.4）；KV Master 在请求到达、KV 密封、Slack 变化及控制窗口决定采用 Recompute、DRAM-only 或 Peer + DRAM，并选择每层的候选热块（§3.5）。Adapter 每 5 秒更新所有请求共用的驻留前层数 $L_t$，窗口内固定；各目标 DP 根据前台压力更新 Peer 总预算。固定预取比例 $h$ 由模型及稀疏注意力方式的画像确定，每层热块数 $K_r=\lceil h n_r\rceil$ 随请求的密封历史块数 $n_r$ 增长，块身份随实际选择索引滚动。预算内按 Slack 优先级准入前 $L_t$ 层的完整请求足迹，未获 Peer 配额时保留 DRAM 路径。故障后按层预取并在选择器揭示确切需求时补取缺失块（§3.6）。不同请求的 retry、H2D 与计算由引擎并发推进，不要求一个请求装载或重放完成后才开始另一个。热度来自稀疏 kernel 已有的块索引，AegisKV 不改变选择器，也不要求额外的专用恢复 GPU。
+ 
+ 本文的贡献：
+ 
+ 1. 用真实轨迹和实机测量指出多智能体长上下文服务中的三个事实：重算代价随上下文超线性增长；工作流结构使同样的恢复延迟对 WCT 的影响相差数量级，且这一结构在真实轨迹中普遍存在；在真实原生稀疏注意力轨迹的 256/512-query 窗口中，请求内部 KV 的访问并不均匀，少量字节承担大量选块事件（§2、§3.3）。
+-2. 设计基于 Slack 的请求间保护优先级、基于层序与稀疏热度的请求内优先级，以及由 KV Master 做层级决策、Adapter 按窗口分配 Peer 容量与层前缀的备份机制；通过"预取 + 按需补取"恢复装载器支持并行 retry，不改变模型的注意力选择（§3）。
++2. 设计基于 Slack 的请求间保护优先级、基于层序与稀疏热度的请求内优先级，以及由 KV Master 做层级决策、Adapter 按 5 秒窗口控制 Peer 容量与统一层数的备份机制；通过"预取 + 按需补取"恢复装载器支持并行 retry，不改变模型的注意力选择（§3）。
+ 3. 设计以 WCT 为中心的评估方法：配对无故障/故障运行、按逻辑进度对齐的注入、故障位置扫描、恢复来源与关键路径时间分解、两级优先级消融及带宽/并发度敏感性（§5）。端到端结果待并行恢复实现验证；旧串行队列模型输出不再用于本文结论。
+ 
+--- before/draft/system_design.md
++++ draft/system_design.md
+@@ -1,6 +1,6 @@
+ ## 3 AegisKV Design
+ 
+-AegisKV 结合工作流的延迟容忍度与单请求的 KV 恢复需求：Tracker 估计 Slack；Recovery Manager 在请求到达时绑定接管目标；KV Master 决定保护层级及候选热块；Adapter 按时间窗口控制 Peer 容量和驻留层数，并提交副本、执行恢复。下面先说明设计依据，再按模块给出决策与执行过程。
++AegisKV 结合工作流的延迟容忍度与单请求的 KV 恢复需求：Tracker 估计 Slack；Recovery Manager 在请求到达时绑定接管目标；KV Master 决定保护层级及候选热块；Adapter 按 5 秒窗口控制 Peer 容量和所有请求共用的驻留层数，并提交副本、执行恢复。下面先说明设计依据，再按模块给出决策与执行过程。
+ 
+ ### 3.1 Insights 与设计启示
+ 
+@@ -30,7 +30,7 @@
+ 
+ </figure>
+ 
+-Recovery Manager 在请求到达时记录 retry 目标及 Peer DP rank（§3.4）；KV Master 在请求/KV/Slack 事件及控制窗口更新备份策略（§3.5）；目标 Adapter 每窗口更新容量和驻留层前缀（§3.6）。目录与提交元数据保存在源故障域之外。
++Recovery Manager 在请求到达时记录 retry 目标及 Peer DP rank（§3.4）；KV Master 在请求/KV/Slack 事件及控制窗口更新备份策略（§3.5）；目标 Adapter 每 5 秒更新容量和所有请求共用的驻留层数（§3.6）。目录与提交元数据保存在源故障域之外。
+ 
+ ### 3.3 Workflow Tracker：GBDT 与 CPM ①
+ 
+@@ -75,7 +75,7 @@
+ 
+ KV Master 决定请求何时需要备份、采用 Recompute/DRAM/Peer 中哪种保护方式，以及哪些历史块是 Peer 候选。它使用 Recovery Manager 已绑定的目标；目标 Adapter 负责实际容量和驻留层数（§3.6）。
+ 
+-**何时决策。** 请求到达时先建立策略，此时尚无可复制的 KV。块密封、显著 Slack 或 DAG 变化、请求完成以及每个控制窗口（默认 1 s）都会触发受影响请求的策略复核。密封增加可复制对象；请求完成移除其保护需求，但保留其他请求仍需要的共享对象。策略未变则不重复传输。热块统计采用此前 512 个解码步，与按墙钟时间划分的控制窗口分别计量。
++**何时决策。** 请求到达时先建立策略，此时尚无可复制的 KV。块密封、显著 Slack 或 DAG 变化、请求完成以及每个控制窗口（5 s）都会触发受影响请求的策略复核。密封增加可复制对象；请求完成移除其保护需求，但保留其他请求仍需要的共享对象。策略未变则不重复传输。热块统计采用此前 512 个解码步，与按墙钟时间划分的控制窗口分别计量。
+ 
+ **选择保护层级。** 设 $T_{\mathrm{rc}}$ 为历史重算代价，$T_{\mathrm{rp}}$ 为已知尾部重放计算代价，$W_0$ 为无 Peer 时暴露的 DRAM 等待；$R_{\mathrm{floor}}$ 包含检测、重路由与准入。Master 使用
+ 
+@@ -85,7 +85,13 @@
+ 
+ **定义与选择保护对象。** 对象为包含全部 KV heads 的 `(layer, block)`；当前画像使用 64-token 块。写满密封后才可复制，但故障后的可用前缀以提交前沿为准；未提交的密封块和活跃尾部使用故障前已知的 token ID 重放，不重新采样。
+ 
+-第 $l$ 层长度 $n$ 重放需要的历史块并集为 $U_l(n)=\bigcup_{q=1}^{n}\bigcup_g S_{l,q,g}$，$S$ 为原生选择器输出，重复读取只计一块。以模型、层、上下文档和尾长为索引的缓慢更新画像估计 $h_l=|U_l|/B_l$，得到 $K_l=\lceil h_lB_l\rceil$；$B_l$ 为历史块数。Master 先将强制密封起始/窗口块计入 $K_l$，再按 Adapter 上报的实际选择频次填满剩余槽，同频时最近优先；可选旧块连续两个解码统计窗口跌出热集才允许替换，替换复用原槽。这些逐层集合是候选，实际驻留的前层数由 Adapter 每窗口确定。D/P 两类都在恢复元数据中保留热集作为预取提示，但只有 P 类竞争 Peer 容量。
++第 $l$ 层长度 $n$ 重放需要的历史块并集为 $U_l(n)=\bigcup_{q=1}^{n}\bigcup_g S_{l,q,g}$，$S$ 为原生选择器输出，重复读取只计一块。根据模型和稀疏注意力方式的重放画像配置固定预取比例 $h$；它不随请求长度调整，也不等于原生选择器每次的 Top-k 比例或保证命中率。时刻 $\tau$，请求 $r$ 每层有 $n_r(\tau)$ 个已密封历史块，则每层候选热块数量为
++
++$$K_r(\tau)=\lceil h n_r(\tau)\rceil.$$
++
++Master 先将强制密封起始/窗口块计入该名额，配置须能容纳这些强制块；再按 Adapter 上报的实际选择频次填满剩余槽，同频时最近优先。可选旧块连续两个解码统计窗口跌出热集才允许替换，替换复用原槽。
++
++Adapter 在每个 5 秒窗口内对所有请求使用相同的 $L_t$。同质层布局下，一个取得 Peer 准入的请求共有 $L_tK_r(\tau)$ 个逻辑 `(layer, block)` 保护对象，外加必需选择器状态。历史块密封且取整结果改变时才增加名额，无需重新求层数；热块身份也可在名额不变时替换。D/P 两类都保留逐层热集作为恢复预取提示，只有取得 Peer 准入的 P 类请求将前 $L_t$ 层热集驻留 Peer。
+ 
+ **算法 2：KV 备份策略**
+ 
+@@ -97,7 +103,7 @@
+ 3      τr ← Tier(r, RR, RD, σr)
+ 4      if τr = R: continue
+ 5      Ds ← Ds ∪ sealed(r) ∪ state(r)
+-6      Hr,l ← HotSet(r, l, Kl) for each layer l
++6      Hr,l ← HotSet(r, l, Kr) for each layer l
+ 7      if τr = D: continue
+ 8      append (r, {Hr,l}, profile(r)) to Qpr
+ 9  return Ds, H, {Qp}
+@@ -107,7 +113,7 @@
+ 
+ ### 3.6 Adapter：逐窗口容量与层数控制 ④
+ 
+-Adapter 将 KV Master 的策略转为实际副本和恢复执行。每个目标 DP 在控制窗口边界（默认 1 s）更新 Peer HBM 总预算 $B_{p,t}$ 和各请求的目标驻留前层数 $L_r(t)$，向控制面回报实际驻留及提交状态。复制完成前，已提交前缀可能短于 $L_r(t)$；恢复只使用实际已提交对象，不将目标层数当作已经可读的层数。
++Adapter 将 KV Master 的策略转为实际副本和恢复执行。控制窗口固定为 **5 秒**；同一部署模型中，所有 Agent 的请求共用一个目标驻留前层数 $L_t$，窗口内保持不变，新到请求也沿用当前值。每个目标 DP 控制自己的 Peer HBM 总预算 $B_{p,t}$，对取得 Peer 准入的请求应用同一个 $L_t$；DRAM-only 和重算层级无需占用 Peer。Adapter 向控制面回报实际驻留及提交状态。复制完成前，实际就绪对象可能少于目标集合；恢复只使用实际已提交对象。
+ 
+ **每窗口控制 Peer 容量。** 目标 DP $p$ 在窗口 $t$ 的预算为
+ 
+@@ -115,24 +121,24 @@
+ 
+ 上限设为 $B_{\mathrm{cap},p,t}=\tfrac12\mathrm{pool}_{p,t}$，即最多使用已扣除模型权重及固定运行时开销后的 KV 内存池的一半。前台水位与预留空间可进一步压低实际预算。KV pool 包含已被 Peer 副本占用的容量，因此 $B_{p,t}$ 是总目标而非新增空闲量；前台需求、准入余量及传输/计算估计每窗口刷新。
+ 
+-令 $A_r(k)$ 为 KV Master 指定的前 $k$ 层热块及这些层必需的选择器状态，$A_r(0)=\varnothing$。Adapter 根据下文推导的有用层数上限 $L_r^\star(t)$，按 KV Master 给出的 $Q_p$ 优先级分配。起始 $P_s=\varnothing$，依次选择
++令 $A_r(L_t)$ 为 KV Master 指定的前 $L_t$ 层当前热块及这些层必需的选择器状态。Adapter 按 $Q_p$ 中的 Master 优先级处理请求。起始 $P_s=\varnothing$，仅当
+ 
+-$$L_r(t)=\max\{k\in\{0,\ldots,L_r^\star(t)\}:\mathrm{bytes}(P_s\cup A_r(k))\le B_{p,t}\},$$
++$$\mathrm{bytes}(P_s\cup A_r(L_t))\le B_{p,t}$$
+ 
+-并令 $P_s\leftarrow P_s\cup A_r(L_r(t))$。共享物理对象只计一次；每次准入完整的单层热集，允许一个请求只获得少于 $L_r^\star(t)$ 的前层数。$L_r(t)=0$ 时保留 DRAM 路径，剩余容量可供后续请求使用。容量或画像变化可使下一窗口的 $L_r(t)$ 增大或减小。该贪心分配不声称全局最优；完成共享对象核算后，利用各层的增量字节数，每请求最多扫描 $N$ 个层前缀。
++时，准入整个请求足迹并令 $P_s\leftarrow P_s\cup A_r(L_t)$；否则保留该请求的 DRAM 路径，继续考虑下一个候选。共享物理对象只计一次。所有获得 Peer 准入的请求采用相同的 $L_t$，但热块数和字节占用可以不同。该贪心准入不声称全局最优，也不再为各请求搜索不同层数。
+ 
+-窗口内目标保持稳定，紧急前台压力可提前收缩：Adapter 从准入优先级最低的请求开始，先撤销后层。copying、committed、reclaiming 字节在实际释放前持续计入物理占用；调低 $B_{p,t}$ 或 $L_r(t)$ 不等于立即释放地址。新复制等待足够的物理余量，读者使用结束前保留 pin；扩容只复制新增对象，回收保留所需 DRAM 恢复路径。
++窗口内 $L_t$ 固定，但块密封可能增大热集。增长前先预留新增容量；若放不下，按 Master 优先级重新检查准入。紧急前台压力下，从最低优先级请求开始撤销其整个 Peer 足迹并保留 DRAM 路径，这些操作都不改变窗口内的 $L_t$。copying、committed、reclaiming 字节在实际释放前持续计入物理占用；新复制等待足够余量，读者使用结束前保留 pin，增长仅传输新增对象。目标改变不等于地址立即释放或新副本立即可读。
+ 
+-**推导有用层数上限。** Adapter 按层预取热块并跳过 Peer 驻留对象；选择器状态必须先到达，才可计算确切需求。新发现的缺失块优先于推测性预取，冷块后台补齐。令 $h$ 为预取比例，$\widetilde u$ 为预取与补取并集占历史字节的比例，两者由重放选择轨迹校准。采用 $N$ 个同质层，每层重放计算 $C$、完整历史装载 $D=M_rs/\beta$（$M_r$ 为历史 token 数，$s$ 为每 token 每层 KV 字节，$\beta$ 为有效带宽），则
++**用参考画像确定统一层数。** Adapter 按层预取热块并跳过 Peer 驻留对象；选择器状态必须先到达，才可计算确切需求。新发现的缺失块优先于推测性预取，冷块后台补齐。令 $h$ 为固定配置的预取比例，$\widetilde u$ 为预取与补取并集占历史字节的比例，后者由重放选择轨迹校准。采用 $N$ 个同质层，每层重放计算 $C$、完整历史装载 $D=M_rs/\beta$（$M_r$ 为历史 token 数，$s$ 为每 token 每层 KV 字节，$\beta$ 为有效带宽），则
+ 
+ $$W_{\mathrm{floor}}=N(\widetilde u-h)D,$$
+ $$W_0=hD+(N-1)[hD-C]^++W_{\mathrm{floor}},\qquad[x]^+=\max(0,x).$$
+ 
+-前两项为首层启动和计算无法掩盖的预取积压；最后一项是在固定热集、因果需求释放和理想可抢占复制流下的补取等待，不是任意保护或装载策略的下界。Adapter 使用当前窗口画像计算
++前两项为首层启动和计算无法掩盖的预取积压；最后一项是在固定热集、因果需求释放和理想可抢占复制流下的补取等待，不是任意保护或装载策略的下界。配置一个共享的代表性历史长度和重放尾长，结合窗口的传输/计算估计，得到参考画像的目标字节数
+ 
+-$$F^\star(r,t)=\beta_t\bigl(W_0(r,t)-W_{\mathrm{floor}}(r,t)\bigr),$$
++$$F^\star_{\mathrm{ref},t}=\beta_t\bigl(W_{0,\mathrm{ref},t}-W_{\mathrm{floor},\mathrm{ref},t}\bigr).$$
+ 
+-取满足 $\sum_{l=1}^{k}K_lb\ge F^\star(r,t)$ 的最小 $k$ 作为 $L_r^\star(t)$，$b$ 为每层块 KV 字节数；没有有用预取时上限为 0，最大为 $N$，选择器状态另外计入 $A_r(k)$。当 $hD\le C$ 时，同质模型只需首层热集。实际 $L_r(t)$ 同时受有用上限与容量约束；对异构层这是规划近似，不能保证运行时恰好达到同质层地板。
++在窗口边界，取满足 $\sum_{l=1}^{k}K_{\mathrm{ref},l}b\ge F^\star_{\mathrm{ref},t}$ 的最小 $k$ 作为统一 $L_t$，$b$ 为每层块 KV 字节数；没有有用预取时取 0，最大为 $N$。该参考画像是共享的校准选择，不是每个请求在线求出的最优解；选择器状态另外计入 $A_r(L_t)$。当 $hD\le C$ 时，同质参考模型只需首层热集。不同历史长度请求在统一 $L_t$ 下仍可能留下不同的等待，不能保证每个请求都达到自己的地板。容量通过整请求足迹准入约束，不在窗口内单独缩短某请求的目标层数。
+ 
+ <figure class="paper-figure">
+ 
+@@ -161,3 +167,6 @@
+ 编辑记录（不进入论文）：按用户确认，3.3 改为 GBDT 剩余时间预测与 CPM Slack 传播，并新增算法 1；原放置算法顺次成为算法 2。恢复代价与层级选择移入 3.4 Planner，角色 P90 不再作为当前 Tracker 的预测方法；图 3(a) 的 Median/P90 仍保留为原诊断基线。本轮补充的是论文算法规格，没有重新训练模型或验证端到端预测收益。
+ 
+ 编辑记录（不进入论文，2026-09-18 最新职责调整）：3.4 Recovery Manager 在到达时绑定 retry 目标与 Peer DP rank；3.5 KV Master 决定备份触发、层级和候选热块；3.6 Adapter 按窗口控制总预算与实际层前缀。算法 2 改为备份策略输出，原整请求足迹全放或全不放改为 Adapter 按完整层前缀分配；Figure 5 的原有数据保留，仅将解释移入 Adapter。编号同步为 ① Tracker、② Recovery Manager、③ KV Master、④ Adapter。上述为论文设计规格更新，未将旧模拟器结果视为新策略验证。
++
++
++编辑记录（不进入论文，2026-09-18 统一层数修订）：按用户确认，控制窗口设为 5 秒，所有 Agent 请求共用窗口内固定的 $L_t$；删除按请求求 $L_r(t)$ 并截短层前缀的分配。固定模型/稀疏方法预取比例 $h$，每层块数 $K_r(\tau)=\lceil h n_r(\tau)\rceil$ 随密封历史长度变化，块身份按热度替换。容量不足时按请求足迹准入或回退 DRAM。层数推导改为共享参考画像的窗口级选择，不保证各请求均达等待地板；本轮为论文规格更新，尚无对应端到端验证。
+--- before/sections/README.md
++++ sections/README.md
+@@ -22,7 +22,7 @@
+ | `parallel_recovery.tex` | §3.4：请求到达时绑定 retry 目标和 Peer DP rank，故障后并发重路由 | ② Recovery Manager |
+ | `kv_placement.tex` | §3.5：备份决策触发、R/D/P 层级、每层候选热块和算法 2 | ③ KV Master |
+ | `kv_runtime.tex` | §3.6：逐窗口容量和层数控制、装载模型、副本提交及恢复执行 | ④ Adapter |
+-| `capacity_allocation.tex` | §3.6 内的目标 DP 预算与完整层前缀分配，由 `kv_runtime.tex` 引入 | ④ Adapter |
++| `capacity_allocation.tex` | §3.6 内的目标 DP 预算与统一层数下的整请求足迹准入，由 `kv_runtime.tex` 引入 | ④ Adapter |
+ | `design_discussion.tex` | §3.6 末尾的简短适用边界段落 | — |
+ 
+ Connector 仅作为传输执行接口出现，不设独立小节或编号。
+@@ -69,8 +69,8 @@
+ ## 当前组件职责（2026-09-18）
+ 
+ 最新正文顺序为 §3.4 Recovery Manager、§3.5 KV Master、§3.6 Adapter；旧记录中的 Planner/节号只描述历史版本。
+-Recovery Manager 在请求到达时固定 retry 目标及 Peer DP rank；KV Master 在到达、密封、Slack/DAG 变化、完成及控制窗口做备份策略决策；目标 Adapter 每窗口决定总预算 $B_{p,t}$ 和各请求的层前缀 $L_r(t)$。
+-算法 2 输出 DRAM 集合及按目标分组的 Peer 候选，Adapter 用预算约束下的完整层前缀替代整请求足迹全放或全不放。Peer 没有配额时仍保留 DRAM 路径。
++Recovery Manager 在请求到达时固定 retry 目标及 Peer DP rank；KV Master 在到达、密封、Slack/DAG 变化、完成及控制窗口做备份策略决策；Adapter 采用 5 秒窗口，所有请求共用窗口内固定的 $L_t$，目标 DP 各自控制总预算 $B_{p,t}$。固定预取比例 $h$ 决定每请求的热块数量 $K_r=\lceil h n_r\rceil$；历史增长只触发块级增量更新，不为请求单独求层数。
++算法 2 输出 DRAM 集合及按目标分组的 Peer 候选，Adapter 在预算内准入前 $L_t$ 层的完整请求足迹；不足时保留 DRAM 路径。共享参考画像只在窗口边界提供一个统一层数，不保证所有请求都达到各自的等待地板。
+ 预算、层数公式和 Figure 5 的流水线解释移入 §3.6；图数据未改。Overview 保留原比例与双 DP 对称能力，同步名称、编号和接口标注。
+ 本次是论文规格更新，旧实现和历史结果不构成新策略的端到端验证。编译、差异和最终页面检查见 `output/pdf/aegiskv-component-roles-20260918/`。
+ 
+--- before/sections/capacity_allocation.tex
++++ sections/capacity_allocation.tex
+@@ -1,4 +1,4 @@
+-% Adapter-local capacity and layer-prefix allocation, part of section 3.6.
++% Target-local capacity with a common window-level depth, part of section 3.6.
+ \paragraph{Control Peer capacity each window.}
+ For a target DP $p$ in window $t$, its Adapter grants
+ \begin{equation}
+@@ -16,31 +16,28 @@
+ $B_{p,t}$ is a total target, not additional free space. Foreground demand,
+ admission headroom, and transfer/compute estimates are refreshed each window.
+ 
+-Let $A_r(k)$ contain the KV Master's hot sets in layers $1\ldots k$
+-and all selector state needed by those layers, with $A_r(0)=\varnothing$.
+-Given the useful prefix limit $L_r^\star(t)$ derived below, the Adapter
+-processes $Q_p$ in the Master's priority order. Starting with $P_s=\varnothing$,
+-it chooses
++Let $A_r(L_t)$ contain the KV Master's current hot sets in layers
++$1\ldots L_t$ and their required selector state. The Adapter processes
++$Q_p$ in the Master's priority order. Starting with $P_s=\varnothing$,
++it admits a request's complete footprint only if
+ \begin{equation}
+- \begin{aligned}
+- L_r(t)=\max\bigl\{&k\in\{0,\ldots,L_r^\star(t)\}:\\
+-                  &\mathrm{bytes}\bigl(P_s\cup A_r(k)\bigr)\le B_{p,t}\bigr\},
+- \end{aligned}
++ \mathrm{bytes}\bigl(P_s\cup A_r(L_t)\bigr)\le B_{p,t},
+  \label{eq:resident-prefix}
+ \end{equation}
+-then adds $A_r(L_r(t))$ to $P_s$. Shared physical objects count once.
+-Only complete per-layer hot sets are admitted, and $L_r(t)=0$ preserves
+-the DRAM path. A request can receive fewer than $L_r^\star(t)$ layers;
+-unused space can serve later requests. Capacity or profile changes can
+-increase or decrease $L_r(t)$ at the next window. This greedy allocation
+-has no global optimality claim. After shared-object accounting, it scans
+-at most $N$ layer prefixes per request using marginal byte counts.
++then adds $A_r(L_t)$ to $P_s$. Shared physical objects count once.
++If it does not fit, the request retains its DRAM path and the Adapter
++considers the next candidate. All admitted requests use the same $L_t$;
++their hot-block counts and byte footprints can differ. This greedy
++admission has no global optimality claim and does not search over
++request-specific depths.
+ 
+-Within a window, these are stable targets. Emergency foreground pressure
+-can shrink them early: the Adapter removes later layers first, starting
+-with requests of lowest admission priority. Copying, committed, and
+-reclaiming bytes remain physically charged until release completes;
+-lowering $B_{p,t}$ or $L_r(t)$ does not immediately free addresses.
+-New copies wait for sufficient physical headroom, and readers retain
+-their pins until use completes. Growth copies only newly required
+-objects; every removal preserves the required DRAM recovery path.
++Within a window, $L_t$ is fixed, while sealing can enlarge a request's
++hot sets. Growth reserves additional bytes before copying. If capacity
++is insufficient, admission is reconsidered in the Master's priority
++order; emergency foreground pressure withdraws whole Peer footprints
++from the lowest-priority requests, preserving DRAM recovery. Neither
++case changes $L_t$. Copying, committed, and reclaiming bytes remain
++physically charged until release completes. New copies wait for physical
++headroom, readers retain their pins, and growth transfers only newly
++required objects. Target changes do not instantly free addresses or
++make new replicas readable.
+--- before/sections/kv_placement.tex
++++ sections/kv_placement.tex
+@@ -12,7 +12,7 @@
+ The Master establishes a policy at request arrival, before any KV is
+ available to copy. It revisits affected requests on block sealing,
+ significant slack or DAG changes, request completion, and each control
+-window (default 1\,s). Sealing adds eligible objects; completion removes
++window (5\,s). Sealing adds eligible objects; completion removes
+ that request's demand while preserving objects needed by others.
+ Unchanged decisions produce no new transfer. Hot-block statistics use
+ the preceding 512 decoding steps, independently of the wall-clock window.
+@@ -50,17 +50,28 @@
+ 
+ The historical blocks needed by a length-$n$ replay form the union
+ $U_l(n)=\bigcup_{q=1}^{n}\bigcup_g S_{l,q,g}$, where $S_{l,q,g}$ is the
+-native selector output. Repeated reads count once. A slowly refreshed
+-table indexed by model, layer, context bin, and tail length estimates
+-$h_l=|U_l|/B_l$, giving $K_l=\lceil h_lB_l\rceil$ for $B_l$ historical
+-blocks. The Master first reserves mandatory sealed sink/window blocks
+-\emph{within} $K_l$, then fills remaining slots by the Adapter's actual
+-selection counts, breaking ties by recency. An optional block becomes
+-replaceable after two successive decoding windows outside the top set;
+-replacement reuses its slot. These per-layer sets are candidates: the
+-Adapter selects how many leading layers reside in Peer each window.
+-For both D and P, the sets are retained in recovery metadata as preload
+-hints; only P requests compete for Peer capacity.
++native selector output. Repeated reads count once. A fixed preload
++fraction $h$ is configured for the chosen model and sparse-attention
++method using replay profiles; it is not the selector's instantaneous
++Top-$k$ fraction or a guaranteed hit rate. At time $\tau$, let $n_r(\tau)$
++be request $r$'s sealed historical block count per layer. The Master uses
++\begin{equation}
++ K_r(\tau)=\lceil h n_r(\tau)\rceil
++ \label{eq:hot-block-count}
++\end{equation}
++slots in each layer, reserving mandatory sealed sink/window blocks
++\emph{within} that quota; the configured quota must accommodate them.
++Remaining slots follow actual selection counts, breaking ties by recency.
++An optional block becomes replaceable after two successive decoding
++windows outside the top set; replacement reuses its slot.
++
++The Adapter uses one $L_t$ for all requests in each 5\,s window. For
++uniform layer layouts, a request's logical Peer footprint therefore has
++$L_tK_r(\tau)$ layer-block objects, plus required selector state.
++Sealing changes the quota only when the rounded count changes; it does
++not trigger a new layer-depth decision. Hot-block identities can change
++without increasing the quota. D and P retain these sets as preload hints;
++only admitted P requests place the leading $L_t$ sets in Peer.
+ 
+ \begin{figure}[t]
+   \raggedright
+@@ -77,7 +88,7 @@
+     3 & \quad$\tau_r\gets\mathrm{Tier}(r,R_R,R_D,\sigma_r)$ \\
+     4 & \quad\textbf{if} $\tau_r=R$: \textbf{continue} \\
+     5 & \quad$D_s\gets D_s\cup\mathrm{sealed}(r)\cup\mathrm{state}(r)$ \\
+-    6 & \quad$H_{r,l}\gets\mathrm{HotSet}(r,l,K_l)$ for each layer $l$ \\
++    6 & \quad$H_{r,l}\gets\mathrm{HotSet}(r,l,K_r)$ for each layer $l$ \\
+     7 & \quad\textbf{if} $\tau_r=D$: \textbf{continue} \\
+     8 & \quad Append $(r,\{H_{r,l}\},\mathrm{profile}(r))$ to $Q_{p_r}$ \\
+     9 & \textbf{return} $D_s,H,\{Q_p\}$ \\
+--- before/sections/kv_runtime.tex
++++ sections/kv_runtime.tex
+@@ -3,20 +3,22 @@
+ \label{sec:capacity-allocation}
+ 
+ Adapter (4) turns the KV Master's policy into physical copies and
+-recovery execution. On each target DP, it controls the total Peer-HBM
+-budget $B_{p,t}$ and each request's target resident prefix $L_r(t)$ at
+-control-window boundaries (default 1\,s). It reports actual residency
+-and commit status to the controller. Until copying completes, the
+-committed prefix may be shorter than $L_r(t)$; recovery uses actual
+-committed objects rather than the target length.
++recovery execution. Control windows last 5\,s. All agents' requests for
++the same deployed model share one target resident depth $L_t$, unchanged
++throughout window $t$, including requests arriving during that window.
++Each target DP controls its own total Peer-HBM budget $B_{p,t}$ and
++applies this common depth to admitted Peer requests. DRAM-only and
++recomputation tiers do not require Peer residency. Adapters report actual
++residency and commit status; recovery uses committed objects, since
++copying may not yet have reached the target depth.
+ 
+ \input{sections/capacity_allocation}
+ 
+-\paragraph{Derive a useful layer-prefix limit.}
++\paragraph{Inform the common depth with a reference profile.}
+ The Adapter preloads hot blocks in layer order, skipping Peer-resident
+ objects. Selector state must arrive before exact demand can be computed;
+ newly revealed misses take priority over speculative preloads. Cold KV
+-is filled in the background. Let $h$ be the preload fraction and
++is filled in the background. Let $h$ be the configured preload fraction and
+ $\widetilde u$ the fraction of historical bytes in the union of preload
+ and demand-fetch sets, calibrated from replay traces. For $N$ homogeneous
+ layers, per-layer replay compute $C$ and full-layer transfer
+@@ -31,19 +33,25 @@
+ fixed hot set, causal demand release, and ideal preemptible copy stream;
+ it is not a lower bound on other hot sets or loading policies.
+ 
+-Using the current window's profile, the Adapter computes
++For a configured representative history and replay tail, the window's
++transfer/compute estimates give a reference preload-byte target
+ \begin{equation}
+- F^\star(r,t)=\beta_t\bigl(W_0(r,t)-W_{\mathrm{floor}}(r,t)\bigr)
++ F^\star_{\mathrm{ref},t}=\beta_t
++ \bigl(W_{0,\mathrm{ref},t}-W_{\mathrm{floor},\mathrm{ref},t}\bigr).
+  \label{eq:peer-byte-target}
+ \end{equation}
+-and finds the smallest $k$ with $\sum_{l=1}^{k}K_lb\ge F^\star(r,t)$.
+-This defines $L_r^\star(t)$; $b$ is KV bytes per layer-block.
+-The limit is zero when no preload is useful and capped at $N$;
+-selector-state bytes are additionally charged in $A_r(k)$.
+-When $hD\le C$, one layer's hot set suffices in this model.
+-Equation~\ref{eq:resident-prefix} caps the actual $L_r(t)$ by both this
+-useful limit and available capacity. For heterogeneous layers this is
+-a planning approximation, not a runtime guarantee of reaching the floor.
++The smallest $k$ whose reference hot sets satisfy
++$\sum_{l=1}^{k}K_{\mathrm{ref},l}b\ge F^\star_{\mathrm{ref},t}$
++provides the common $L_t$ at the window boundary; $b$ is KV bytes per
++layer-block. The depth is zero when no preload is useful and capped at
++$N$. The reference profile is a shared calibration choice, not a
++separate optimization for each request. Selector-state bytes are
++additionally charged in $A_r(L_t)$. When $hD\le C$, one layer's hot set
++suffices for this homogeneous reference. Different request histories
++can still have different residual waits: a common depth does not promise
++to reach every request's floor. Capacity controls request admission
++through Equation~\ref{eq:resident-prefix}, without shortening individual
++requests' target depths inside the window.
+ 
+ \begin{figure}[t]
+   \centering
+--- before/sections/system_overview.tex
++++ sections/system_overview.tex
+@@ -34,5 +34,5 @@
+ at arrival (\S\ref{sec:recovery-manager}). The KV Master refreshes
+ backup policy on request/KV/slack events and control windows
+ (\S\ref{sec:kv-master}); each target Adapter updates its budget and
+-layer prefixes every window (\S\ref{sec:kv-runtime}). The Controller
++the shared layer depth every 5\,s (\S\ref{sec:kv-runtime}). The Controller
+ retains directory and commit metadata outside the source's failure domain.

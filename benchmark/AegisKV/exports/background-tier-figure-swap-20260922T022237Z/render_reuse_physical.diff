@@ -1,0 +1,64 @@
+--- before/experiments/scripts/paper/render_reuse_physical.py
++++ experiments/scripts/paper/render_reuse_physical.py
+@@ -18,7 +18,7 @@
+     ap.add_argument('--output', type=Path, required=True)
+     ap.add_argument('--width', type=float, default=2.24)
+     ap.add_argument('--height', type=float, default=2.25)
+-    ap.add_argument('--layout', choices=('original', 'compact'), default='original')
++    ap.add_argument('--layout', choices=('original', 'compact', 'column'), default='original')
+     ap.add_argument('--paths', nargs='+', help='Explicit measured paths to show; raw input remains unchanged')
+     args = ap.parse_args()
+     data = json.loads(args.data.read_text())
+@@ -46,7 +46,8 @@
+     contexts = sorted(meta['contexts'])
+     assert len(rows) == len(contexts) * (len(meta['paths']) if sparse else 3)
+     sharedfs = meta.get('protocol') == 'sparse_prefill_kv_fill_one_token_v3_sharedfs'
+-    compact = args.layout == 'compact'
++    compact = args.layout in ('compact', 'column')
++    column = args.layout == 'column'
+     assert not compact or sharedfs, 'The compact layout is calibrated for the four-path shared-FS panel.'
+     font = FONT_PT if compact else (10.5 if sharedfs else 8)
+     plt.rcParams.update({'font.family':'DejaVu Sans', 'font.size':font,
+@@ -58,8 +59,13 @@
+                         bottom=.315 if sharedfs else .225, top=.755 if sharedfs else .78)
+     if compact:
+         # Physical bands keep 10.25 pt text readable at the final paper width.
+-        assert abs(args.height - HEIGHT_IN) < 1e-9
+-        ax.set_position(axes_rect(args.width, .51, .14))
++        if column:
++            ax.set_position([.65 / args.width, .38 / args.height,
++                             (args.width - .79) / args.width,
++                             (args.height - .81) / args.height])
++        else:
++            assert abs(args.height - HEIGHT_IN) < 1e-9
++            ax.set_position(axes_rect(args.width, .51, .14))
+     full_label = 'Full prefill' if one_token else 'Recompute'
+     styles = [('HBM', '#0072B2', '-', 'o', 'HBM reuse'),
+               ('DRAM', '#D55E00', '--', 's', 'DRAM reuse'),
+@@ -106,7 +112,7 @@
+     ax.xaxis.set_major_locator(FixedLocator(sorted(ticks)))
+     ax.xaxis.set_major_formatter(FuncFormatter(lambda x,pos: '1.01M' if x == 1010000 else f'{x/1024:g}K'))
+     ax.xaxis.set_minor_formatter(NullFormatter())
+-    if compact:
++    if compact and not column:
+         # Only tick density changes: all four measured context points remain.
+         ax.xaxis.set_major_locator(FixedLocator([8192, 65536, 1010000]))
+     ax.yaxis.set_major_locator(LogLocator(base=10, numticks=6))
+@@ -114,7 +120,7 @@
+     if sharedfs:
+         ax.yaxis.set_major_locator(FixedLocator([.1, 1, 10, 100, 1000]))
+         ax.yaxis.set_major_formatter(FuncFormatter(lambda y, pos: f'{y:g}'))
+-    if compact:
++    if compact and not column:
+         # Space labels two decades apart; retain each decade's grid line.
+         ax.yaxis.set_major_locator(FixedLocator([.1, 10, 1000]))
+         ax.yaxis.set_major_formatter(FuncFormatter(lambda y, pos: '1k' if y == 1000 else f'{y:g}'))
+@@ -128,7 +134,7 @@
+         ax.set_ylim(.06, 1000)
+         ax.tick_params(which='major', length=2.5, pad=2)
+         ax.minorticks_off()
+-        ax.yaxis.set_minor_locator(FixedLocator([1, 100]))
++        ax.yaxis.set_minor_locator(FixedLocator([] if column else [1, 100]))
+         ax.yaxis.set_minor_formatter(NullFormatter())
+         ax.tick_params(axis='y', which='minor', length=0)
+         ax.grid(axis='y', which='minor', alpha=.22, linewidth=.6)

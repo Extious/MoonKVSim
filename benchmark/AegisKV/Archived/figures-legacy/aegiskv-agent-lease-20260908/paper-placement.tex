@@ -1,0 +1,100 @@
+\documentclass[sigplan,10pt,anonymous,balance=false]{acmart}
+\setcopyright{none}\settopmatter{printacmref=false,printccs=false}
+\acmConference[Figure proof]{AegisKV figure placement proof}{}{}\acmYear{2026}\copyrightyear{2026}\acmDOI{}\acmISBN{}
+\renewcommand\footnotetextcopyrightpermission[1]{}\usepackage{graphicx}\raggedbottom
+\begin{document}\title{AegisKV: Agent Subleases and Guarded AIMD}\author{Anonymous}\affiliation{\institution{Anonymous}\country{Anonymous}}\maketitle\pagestyle{plain}
+Placement proof at the manuscript's actual column and text widths. Evidence classes are stated in captions. Quantitative results use frozen source-v3 experiments. Algorithm 2 is under revision; this proof reviews figure presentation only.
+\clearpage
+\begin{figure*}[t]
+\begin{minipage}[t]{0.47619\textwidth}\vspace{0pt}\centering
+\includegraphics[width=\linewidth]{/home/comp/zhanzhao/MoonKVSim/output/pdf/aegiskv-agent-lease-20260908/motivation-branch-gap.pdf}
+\caption{Maximum overlapping-branch duration gap per workflow in 124 CC/Weka workflows. The horizontal axis is logarithmic. Observed duration imbalance is not itself an estimate of usable slack.}\label{fig:lease-motivation-branch-gap}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.47619\textwidth}\vspace{0pt}\centering
+\includegraphics[width=\linewidth]{/home/comp/zhanzhao/MoonKVSim/output/pdf/aegiskv-agent-lease-20260908/motivation-recovery-exposure.pdf}
+\caption{Recovery cost versus workflow delay in five separate branch-fault counterfactuals of one trace fan-out at 349.5 s. Bars partition modeled recomputation into absorbed and exposed delay. Frozen AIConfigurator Qwen3-235B-A22B, A100-80GB, TP8/PP4/EP8; other branches are unchanged. This is neither a measured failure nor the later Qwen3-8B evaluation.}\label{fig:lease-motivation-recovery-exposure}
+\end{minipage}
+\end{figure*}
+
+\clearpage
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{/home/comp/zhanzhao/MoonKVSim/output/pdf/aegiskv-agent-lease-20260908/motivation-kv-capacity.pdf}
+\caption{Analytical Qwen3-8B BF16 KV footprint (Ki=1024). The reference subtracts model weights and 2 GiB runtime from 40 GiB, before dynamic foreground KV. It is not a lendable backup quota.}
+\label{fig:lease-motivation-kv-capacity}
+\end{figure}
+
+\clearpage
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{/home/comp/zhanzhao/MoonKVSim/output/pdf/aegiskv-agent-lease-20260908/system-overview.pdf}
+\caption{AegisKV overview. The source independently copies sealed C0/C1 to Peer HBM and DRAM; each tier publishes after its own copy acknowledgement. Workflow value and per-tier admission choose shared physical objects. An independent controller constrains Peer borrowing. Either committed tier can restore C0/C1 into a new primary before recomputing C2. P0/P1 belong to unrelated foreground work. Solid arrows carry KV; dashed arrows carry control.}
+\label{fig:lease-system-overview}
+\end{figure*}
+
+\clearpage
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{/home/comp/zhanzhao/MoonKVSim/output/pdf/aegiskv-agent-lease-20260908/f0-revisit-wct.pdf}
+\caption{No-failure WCT for 160 matched workflows, each with two complete DAG visits, under the default simulation configuration. All workflow views retain the same IDs ordered by Mooncake F0 WCT. Segments connect adjacent objects, not timestamps; markers aid identification without discarding points.}
+\label{fig:lease-f0-revisit-wct}
+\end{figure*}
+
+\clearpage
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{/home/comp/zhanzhao/MoonKVSim/output/pdf/aegiskv-agent-lease-20260908/f1-q50-workflow-penalty.pdf}
+\caption{Mid-execution fault increment: each system's F1 WCT minus its own matched F0 WCT, including positive, negative and zero values for all 160 workflows. The focal request is prespecified at 80/160 completed workflows in the Mooncake reference. Workflow ordering matches the no-failure view.}
+\label{fig:lease-f1-q50-workflow-penalty}
+\end{figure*}
+
+\clearpage
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{/home/comp/zhanzhao/MoonKVSim/output/pdf/aegiskv-agent-lease-20260908/f0-revisit-dram-hit.pdf}
+\caption{DRAM prompt-token hit rate per matched workflow in the default simulation. The denominator includes all cold and revisit prompt tokens; recovery tokens are excluded. Workflow IDs and order match the no-failure WCT view.}
+\label{fig:lease-f0-revisit-dram-hit}
+\end{figure*}
+
+\clearpage
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{/home/comp/zhanzhao/MoonKVSim/output/pdf/aegiskv-agent-lease-20260908/f0-revisit-hbm-wait.pdf}
+\caption{Mean foreground HBM-admission wait across requests within each matched workflow. GPU-ready scheduling delay is measured separately. All workflow IDs retain the no-failure WCT order; no observations are thinned.}
+\label{fig:lease-f0-revisit-hbm-wait}
+\end{figure*}
+
+\clearpage
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{/home/comp/zhanzhao/MoonKVSim/output/pdf/aegiskv-agent-lease-20260908/evaluation-resource-cost.pdf}
+\caption{Control and transfer costs, independently normalized to Mooncake within each row on a logarithmic axis. Reference Python CPU is measured; other rows use simulated service and traffic. Rows are not additive. Successful GET populations differ with cache admission, so fewer bytes or a lower slowdown percentile alone do not establish efficiency.}
+\label{fig:lease-evaluation-resource-cost}
+\end{figure*}
+
+\clearpage
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{/home/comp/zhanzhao/MoonKVSim/output/pdf/aegiskv-agent-lease-20260908/evaluation-native-interference.pdf}
+\caption{Measured Qwen3-8B BF16/SDPA forward interference with an extra 8 GiB allocation on one exclusive pair of L40S GPUs. Both batch groups share one axis. Peer direction is relative to the foreground GPU. Markers are medians of five within-block ratios; whiskers span observed minima and maxima, not confidence intervals. All 120 observations are retained.}
+\label{fig:lease-evaluation-native-interference}
+\end{figure*}
+
+\clearpage
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{/home/comp/zhanzhao/MoonKVSim/output/pdf/aegiskv-agent-lease-20260908/aimd-quota-and-occupancy.pdf}
+\caption{Backup memory ceiling, granted quota and physical occupancy summed over eight GPUs at 50 ms windows, with the modeled DMA forward coefficient set to 30\%. Revoked permission does not imply completed physical release. This coefficient is a sensitivity assumption, not native system calibration.}
+\label{fig:lease-aimd-quota-and-occupancy}
+\end{figure*}
+
+\clearpage
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{/home/comp/zhanzhao/MoonKVSim/output/pdf/aegiskv-agent-lease-20260908/evaluation-configuration-effects.pdf}
+\caption{Mean WCT relative to matched Mooncake in eight distinct simulation configurations. Each nondefault row changes one factor; negative values are faster. CPU/DMA coefficients are model sensitivity assumptions. Heterogeneous configurations are not replicates and are neither connected nor used to construct uncertainty intervals.}
+\label{fig:lease-evaluation-configuration-effects}
+\end{figure*}
+
+\end{document}

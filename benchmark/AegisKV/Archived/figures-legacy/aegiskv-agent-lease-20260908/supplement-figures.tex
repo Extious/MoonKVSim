@@ -1,0 +1,300 @@
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/design-joint-wct.pdf}
+\caption{Illustrative joint-WCT accounting for two branches sharing a chunk. Adding recovery improvements in a fixed Agent order changes workflow completion from 12 to 12 to 10 ms, assigning marginal shares of 0 and 2 ms. The shares telescope to one joint gain; branch-local recovery savings cannot simply be added as workflow savings.}
+\label{fig:lease-design-joint-wct}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/design-agent-subleases.pdf}
+\caption{Illustrative Agent subleases on shared physical chunks. A rent round changes X's A/B balances from 6/4 to 4.8/3.2 while exhausting competing tail Y. Only A's next request round refreshes its balance to 6; B remains at 3.2. Same-round hits do not refill spent credit, and internal prefix R is excluded from tail rent.}
+\label{fig:lease-design-agent-subleases}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/design-prefix-admission.pdf}
+\caption{Single-chunk admission on one shared prefix tree. Eligible tails form Q. Free-space admission permits nonnegative gain, whereas replacement requires gain strictly above joint deletion loss. Trial credits commit only after version validation, allocation follows fenced release, and recovery eligibility follows copy acknowledgement. A failed later copy does not resurrect released victims.}
+\label{fig:lease-design-prefix-admission}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/design-guarded-aimd.pdf}
+\caption{Independent Guarded AIMD over a 40 GiB illustrative memory layout. C is the memory ceiling and Q is granted borrowing permission, distinct from physical copies. The controller grows after four valid stable 50 ms windows with demand and completed adjustment, halves Q on a warning, and clips permission to C. Invalid telemetry revokes permission. Additive growth is 1 GiB. The right-hand case anticipates 4 GiB of additional foreground demand: existing copies remain at 4 GiB after permission is clipped and fall to 2 GiB only after the physical free ACK.}
+\label{fig:lease-design-guarded-aimd}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/commit-tier-timeline.pdf}
+\caption{Independent commits and recovery for the same chunks. C1 is committed on Peer HBM before source failure while its DRAM copy is pending and subsequently aborts. Recovery materializes the available prefix into a new primary and recomputes the missing suffix before decoding resumes. Spacing denotes logical order, not measured duration.}
+\label{fig:lease-commit-tier-timeline}
+\end{figure*}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/workload-prompt_tokens.pdf}
+\caption{Prompt-length distribution of 1304 original requests in the frozen FanOutQA-derived workload (Ki=1024). Controlled revisit copies are excluded. Maximum total context is 86214 tokens, so this input does not establish coverage of 128K contexts.}
+\label{fig:lease-workload-prompt_tokens}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/workload-workflow_call_counts.pdf}
+\caption{Distribution of original call counts over 160 workflows, with at most 27 calls per workflow. Counts precede the controlled duplication of each complete DAG into two rounds; a sample is one workflow, not an independent system execution.}
+\label{fig:lease-workload-workflow_call_counts}
+\end{figure}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/f0-revisit-wct-difference.pdf}
+\caption{Uncalibrated discrete-event simulation with 160 paired, two-round workflows (2608 requests), DP8, 8 x 40 GiB HBM, 1 TB DRAM, a 25 GB/s shared path, and 16 active workflows. Paired WCT differences from Mooncake. Positive values are slower and negative values faster; Mooncake is the zero reference. All workflow views use the same order by Mooncake's no-failure WCT; connecting segments identify adjacent objects, not elapsed time. Markers every ten objects aid series identification; lines retain all 160 workflows. }
+\label{fig:lease-f0-revisit-wct-difference}
+\end{figure*}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/f0-revisit-wct-cdf.pdf}
+\caption{Uncalibrated discrete-event simulation with 160 paired, two-round workflows (2608 requests), DP8, 8 x 40 GiB HBM, 1 TB DRAM, a 25 GB/s shared path, and 16 active workflows. Empirical WCT distributions for all 160 workflows in admission order 0, including full tails. These are within-execution objects, not independent execution replicates.}
+\label{fig:lease-f0-revisit-wct-cdf}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/f0-revisit-cache-sources.pdf}
+\caption{Uncalibrated discrete-event simulation with 160 paired, two-round workflows (2608 requests), DP8, 8 x 40 GiB HBM, 1 TB DRAM, a 25 GB/s shared path, and 16 active workflows. Mutually exclusive prompt-token sources: Local HBM, Store DRAM, Peer HBM and recomputation, summing to 100\%. Backup writes are not reuse hits. Stacked colors encode sources; system identity is on the horizontal axis.}
+\label{fig:lease-f0-revisit-cache-sources}
+\end{figure}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/f0-revisit-scheduler-queue.pdf}
+\caption{Uncalibrated discrete-event simulation with 160 paired, two-round workflows (2608 requests), DP8, 8 x 40 GiB HBM, 1 TB DRAM, a 25 GB/s shared path, and 16 active workflows. Mean GPU-ready-to-execution queue time over requests within each workflow, excluding separately recorded GET, controller and HBM-admission waits. All workflow views use the same order by Mooncake's no-failure WCT; connecting segments identify adjacent objects, not elapsed time. Markers every ten objects aid series identification; lines retain all 160 workflows. }
+\label{fig:lease-f0-revisit-scheduler-queue}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/f0-revisit-hbm-pressure.pdf}
+\caption{Uncalibrated discrete-event simulation with 160 paired, two-round workflows (2608 requests), DP8, 8 x 40 GiB HBM, 1 TB DRAM, a 25 GB/s shared path, and 16 active workflows. Time-weighted fraction of execution with less than 1 GiB FREE on each GPU, including reclaimable ordinary cache occupancy. GPU IDs and the threshold are shared across systems. Low headroom is not an out-of-memory event, hardware-bandwidth saturation or a service-level violation.}
+\label{fig:lease-f0-revisit-hbm-pressure}
+\end{figure*}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/f0-revisit-ttft-cdf.pdf}
+\caption{Uncalibrated discrete-event simulation with 160 paired, two-round workflows (2608 requests), DP8, 8 x 40 GiB HBM, 1 TB DRAM, a 25 GB/s shared path, and 16 active workflows. Empirical time-to-first-token distribution of all 2608 requests per system, measured from request release to first output token, including waits along the execution path.}
+\label{fig:lease-f0-revisit-ttft-cdf}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/f0-revisit-tpot-tail.pdf}
+\caption{Uncalibrated discrete-event simulation with 160 paired, two-round workflows (2608 requests), DP8, 8 x 40 GiB HBM, 1 TB DRAM, a 25 GB/s shared path, and 16 active workflows. Inclusive empirical survival of request-mean time per output token after the first token. Each system contributes 2432 requests with a defined denominator. This is not a token-level inter-token-latency distribution.}
+\label{fig:lease-f0-revisit-tpot-tail}
+\end{figure}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/f0-revisit-controller-service-difference.pdf}
+\caption{Uncalibrated discrete-event simulation with 160 paired, two-round workflows (2608 requests), DP8, 8 x 40 GiB HBM, 1 TB DRAM, a 25 GB/s shared path, and 16 active workflows. Per-workflow difference from Mooncake in modeled controller service demand for admission and foreground dispatch. Global controller operations are not attributed to individual workflows. CPU quotes are fixed independent calibration means, not native serving utilization. All workflow views use the same order by Mooncake's no-failure WCT; connecting segments identify adjacent objects, not elapsed time. Markers every ten objects aid series identification; lines retain all 160 workflows. }
+\label{fig:lease-f0-revisit-controller-service-difference}
+\end{figure*}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/f0-revisit-controller-breakdown.pdf}
+\caption{Uncalibrated discrete-event simulation with 160 paired, two-round workflows (2608 requests), DP8, 8 x 40 GiB HBM, 1 TB DRAM, a 25 GB/s shared path, and 16 active workflows. Total modeled controller service demand for foreground dispatch and admission, using fixed means from separate Python calibration executions and one service queue. Commit, reclaim and AIMD CPU work is measured separately and is not fully inserted as causal delay.}
+\label{fig:lease-f0-revisit-controller-breakdown}
+\end{figure}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/reference-cpu-breakdown.pdf}
+\caption{Uncalibrated discrete-event simulation with 160 paired, two-round workflows (2608 requests), DP8, 8 x 40 GiB HBM, 1 TB DRAM, a 25 GB/s shared path, and 16 active workflows. Exclusive measured thread CPU in the Python reference implementation, with nested measurements subtracted: foreground dispatch, admission and DAG value, commit, and reclaim plus AIMD. These are reference-component costs, not native serving utilization or all server CPU work.}
+\label{fig:lease-reference-cpu-breakdown}
+\end{figure*}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/f0-revisit-traffic-breakdown.pdf}
+\caption{Uncalibrated discrete-event simulation with 160 paired, two-round workflows (2608 requests), DP8, 8 x 40 GiB HBM, 1 TB DRAM, a 25 GB/s shared path, and 16 active workflows. Transferred bytes split into foreground GETs, DRAM writes and Peer copies (TiB). Each physical transfer is counted once. Traffic volume alone does not establish absence of contention; foreground GET slowdown is reported separately.}
+\label{fig:lease-f0-revisit-traffic-breakdown}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/f0-revisit-transfer-service_slowdown.pdf}
+\caption{Uncalibrated discrete-event simulation with 160 paired, two-round workflows (2608 requests), DP8, 8 x 40 GiB HBM, 1 TB DRAM, a 25 GB/s shared path, and 16 active workflows. Empirical distribution of successful foreground GET service duration divided by the same transfer's isolated-link duration. Different cache decisions change GET counts and sizes; these distributions are descriptive rather than object-matched causal effects.}
+\label{fig:lease-f0-revisit-transfer-service_slowdown}
+\end{figure}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/f0-revisit-background-copy.pdf}
+\caption{Uncalibrated discrete-event simulation with 160 paired, two-round workflows (2608 requests), DP8, 8 x 40 GiB HBM, 1 TB DRAM, a 25 GB/s shared path, and 16 active workflows. Background DRAM plus Peer transfer bytes attributed to each source workflow. All workflow views use the same order by Mooncake's no-failure WCT; connecting segments identify adjacent objects, not elapsed time. Markers every ten objects aid series identification; lines retain all 160 workflows. }
+\label{fig:lease-f0-revisit-background-copy}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/f0-revisit-peer-copy.pdf}
+\caption{Uncalibrated discrete-event simulation with 160 paired, two-round workflows (2608 requests), DP8, 8 x 40 GiB HBM, 1 TB DRAM, a 25 GB/s shared path, and 16 active workflows. Actually transferred Peer-copy bytes per source workflow. Mooncake and DRAM-only AegisKV coincide at zero; Peer traffic is measured directly, not inferred by subtracting system totals. All workflow views use the same order by Mooncake's no-failure WCT; connecting segments identify adjacent objects, not elapsed time. Markers every ten objects aid series identification; lines retain all 160 workflows. }
+\label{fig:lease-f0-revisit-peer-copy}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/f1-q25-workflow-penalty.pdf}
+\caption{Uncalibrated discrete-event simulation with 160 paired, two-round workflows (2608 requests), DP8, 8 x 40 GiB HBM, 1 TB DRAM, a 25 GB/s shared path, and 16 active workflows. Paired F1-minus-own-F0 WCT for a single 120 s GPU outage. The focal first-round long request is selected near 25\% completed-workflow progress in Mooncake F0; each system fails at 60\% of that request's prefill. All workflows and signed changes are retained. All workflow views use the same order by Mooncake's no-failure WCT; connecting segments identify adjacent objects, not elapsed time. Markers every ten objects aid series identification; lines retain all 160 workflows.  The three fault-position exports share the same vertical limits.}
+\label{fig:lease-f1-q25-workflow-penalty}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/f1-q75-workflow-penalty.pdf}
+\caption{Uncalibrated discrete-event simulation with 160 paired, two-round workflows (2608 requests), DP8, 8 x 40 GiB HBM, 1 TB DRAM, a 25 GB/s shared path, and 16 active workflows. Paired F1-minus-own-F0 WCT for a single 120 s GPU outage. The focal first-round long request is selected near 75\% completed-workflow progress in Mooncake F0; each system fails at 60\% of that request's prefill. All workflows and signed changes are retained. All workflow views use the same order by Mooncake's no-failure WCT; connecting segments identify adjacent objects, not elapsed time. Markers every ten objects aid series identification; lines retain all 160 workflows.  The three fault-position exports share the same vertical limits.}
+\label{fig:lease-f1-q75-workflow-penalty}
+\end{figure*}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/failure-progress-p95-penalty.pdf}
+\caption{Uncalibrated discrete-event simulation with 160 paired, two-round workflows (2608 requests), DP8, 8 x 40 GiB HBM, 1 TB DRAM, a 25 GB/s shared path, and 16 active workflows. P95 signed paired-workflow WCT penalty at three prespecified failure-selection positions. Each point summarizes 160 workflows in one execution per system. Positions are different interventions, not independent repeats, and do not imply a per-workflow bound.}
+\label{fig:lease-failure-progress-p95-penalty}
+\end{figure}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/failure-focal-recovery-phases.pdf}
+\caption{Uncalibrated discrete-event simulation with 160 paired, two-round workflows (2608 requests), DP8, 8 x 40 GiB HBM, 1 TB DRAM, a 25 GB/s shared path, and 16 active workflows. Focal-request recovery at the three prespecified positions. Stacks split failure-to-prefix-materialization from suffix computation and decode resumption, including recovery queues. The same focal identity is compared across systems; restored and recomputed token counts accompany the CSV. Within each position, bars follow legend order from left to right: Mooncake, DRAM-only AegisKV, AegisKV. Color denotes the system and hatching denotes the recovery phase.}
+\label{fig:lease-failure-focal-recovery-phases}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/benefit-cost-fault-mixture.pdf}
+\caption{Analytical expected mean WCT formed as (1-p) times the simulated F0 mean plus p times the mean of the three simulated F1 conditions. At most one fault per execution and equal position weights are assumptions. The horizontal axis is not an observed failure frequency or a repeated-failure model.}
+\label{fig:lease-benefit-cost-fault-mixture}
+\end{figure*}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/order-normal-wct.pdf}
+\caption{Uncalibrated discrete-event simulation with 160 paired, two-round workflows (2608 requests), DP8, 8 x 40 GiB HBM, 1 TB DRAM, a 25 GB/s shared path, and 16 active workflows. At each empirical rank, the line is the median and shading the min/max across three prespecified admission orders of the same workflows, not a confidence interval or 480 independent observations. The curves report no-failure WCT.}
+\label{fig:lease-order-normal-wct}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/order-failure-penalty.pdf}
+\caption{Uncalibrated discrete-event simulation with 160 paired, two-round workflows (2608 requests), DP8, 8 x 40 GiB HBM, 1 TB DRAM, a 25 GB/s shared path, and 16 active workflows. At each empirical rank, the line is the median and shading the min/max across three prespecified admission orders of the same workflows, not a confidence interval or 480 independent observations. Each order uses its own Mooncake-selected mid-execution focal fault and matched F0.}
+\label{fig:lease-order-failure-penalty}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/native-forward-b1.pdf}
+\caption{Qwen3-8B BF16/SDPA component measurements on one exclusive two-L40S allocation. Five randomized measurement blocks per condition; markers and ranges show the median and observed minimum/maximum, not confidence intervals. Batch 1, 8 GiB additional touched HBM allocation and three prompt lengths. Forward duration is paired with the no-copy condition in the same block. Concurrent Peer input, Peer output and DRAM PUT are distinct directions; values above one are slower.}
+\label{fig:lease-native-forward-b1}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/native-forward-b4.pdf}
+\caption{Qwen3-8B BF16/SDPA component measurements on one exclusive two-L40S allocation. Five randomized measurement blocks per condition; markers and ranges show the median and observed minimum/maximum, not confidence intervals. Batch 4, 8 GiB additional touched HBM allocation and three prompt lengths. Forward duration is paired with the no-copy condition in the same block. Concurrent Peer input, Peer output and DRAM PUT are distinct directions; values above one are slower.}
+\label{fig:lease-native-forward-b4}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/native-memory-occupancy.pdf}
+\caption{Qwen3-8B BF16/SDPA component measurements on one exclusive two-L40S allocation. Five randomized measurement blocks per condition; markers and ranges show the median and observed minimum/maximum, not confidence intervals. Batch 4, prompt length 4096 and additional touched HBM allocations of 0, 8 and 16 GiB. Forward duration is shown for no copy and three concurrent DMA directions. The vertical axis is zoomed; absence of OOM in these conditions is not a memory-safety guarantee.}
+\label{fig:lease-native-memory-occupancy}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/native-concurrent-copy.pdf}
+\caption{Qwen3-8B BF16/SDPA component measurements on one exclusive two-L40S allocation. Five randomized measurement blocks per condition; markers and ranges show the median and observed minimum/maximum, not confidence intervals. Concurrent completed-copy rate for batch 1 and 8 GiB additional allocation. Each block aggregates bytes over copy-completion time using 256 MiB buffers. Rates under foreground computation are not link-capacity specifications.}
+\label{fig:lease-native-concurrent-copy}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/native-release-ack.pdf}
+\caption{Native release microbenchmark on the same L40S allocation, 20 trials per 1/4/8 GiB object. Markers and ranges report median and min/max for the pending-write fence and allocator free plus empty-cache and device synchronization separately. This component sequence is not an end-to-end serving reclamation measurement.}
+\label{fig:lease-native-release-ack}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/native-copy-cpu.pdf}
+\caption{Qwen3-8B BF16/SDPA component measurements on one exclusive two-L40S allocation. Five randomized measurement blocks per condition; markers and ranges show the median and observed minimum/maximum, not confidence intervals. Batch 1 and 8 GiB additional allocation. Process CPU divided by elapsed forward time gives average core demand, including this benchmark's copy thread and CUDA synchronization behavior. It is not native AegisKV admission CPU or whole-server utilization.}
+\label{fig:lease-native-copy-cpu}
+\end{figure}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/ablation-normal-wct.pdf}
+\caption{Uncalibrated discrete-event simulation with 160 paired, two-round workflows (2608 requests), DP8, 8 x 40 GiB HBM, 1 TB DRAM, a 25 GB/s shared path, and 16 active workflows. One-factor AegisKV ablations: sum of recovery savings instead of joint DAG WCT, strict positive-gain free admission, and a static Peer cap. CPU quotes remain fixed. Lower F0 overhead alone does not establish a superior fault-protection policy.}
+\label{fig:lease-ablation-normal-wct}
+\end{figure*}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/ablation-lazy-refresh.pdf}
+\caption{Uncalibrated discrete-event simulation with 160 paired, two-round workflows (2608 requests), DP8, 8 x 40 GiB HBM, 1 TB DRAM, a 25 GB/s shared path, and 16 active workflows. Lazy versus eager value evaluation in DRAM-only AegisKV. All eligible tails are checked in both modes; only unchanged value evaluation is skipped. The complete admission-status and victim sequences are asserted identical. Counts include rejected trials, and fixed CPU quotes are unchanged.}
+\label{fig:lease-ablation-lazy-refresh}
+\end{figure}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/aimd-warning-windows.pdf}
+\caption{Uncalibrated discrete-event simulation with 160 paired, two-round workflows (2608 requests), DP8, 8 x 40 GiB HBM, 1 TB DRAM, a 25 GB/s shared path, and 16 active workflows. Guarded AIMD versus a static Peer cap under the same 30\% DMA coefficient. One-second bins aggregate eight targets' 50 ms warning observations. Warnings are normalized forward-delay controller signals, not request-SLO violations; each curve stops at its own execution completion. The 0–20\% vertical range includes all observations. Both control views share horizontal limits; each curve retains its own observed endpoint.}
+\label{fig:lease-aimd-warning-windows}
+\end{figure*}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/ablation-aimd-interference.pdf}
+\caption{Uncalibrated discrete-event simulation with 160 paired, two-round workflows (2608 requests), DP8, 8 x 40 GiB HBM, 1 TB DRAM, a 25 GB/s shared path, and 16 active workflows. Mean WCT under the same 30\% DMA sensitivity coefficient for DRAM-only AegisKV, Guarded AIMD and static Peer permission. Static Peer retains the memory ceiling but omits warning-driven feedback.}
+\label{fig:lease-ablation-aimd-interference}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/sensitivity-bandwidth.pdf}
+\caption{Uncalibrated discrete-event simulation with 160 paired, two-round workflows (2608 requests), DP8, 8 x 40 GiB HBM, 1 TB DRAM, a 25 GB/s shared path, and 16 active workflows. Sensitivity of mean WCT; only the displayed parameter is varied and only marked settings were executed, once per system. Segments connect tested settings. CPU and DMA coefficients are explicit model sensitivity parameters.}
+\label{fig:lease-sensitivity-bandwidth}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/sensitivity-dram-capacity.pdf}
+\caption{Uncalibrated discrete-event simulation with 160 paired, two-round workflows (2608 requests), DP8, 8 x 40 GiB HBM, 1 TB DRAM, a 25 GB/s shared path, and 16 active workflows. Sensitivity of token-weighted DRAM hit rate; only the displayed parameter is varied and only marked settings were executed, once per system. Segments connect tested settings. CPU and DMA coefficients are explicit model sensitivity parameters.}
+\label{fig:lease-sensitivity-dram-capacity}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/sensitivity-concurrency.pdf}
+\caption{Uncalibrated discrete-event simulation with 160 paired, two-round workflows (2608 requests), DP8, 8 x 40 GiB HBM, 1 TB DRAM, a 25 GB/s shared path, and 16 active workflows. Sensitivity of mean WCT; only the displayed parameter is varied and only marked settings were executed, once per system. Segments connect tested settings. CPU and DMA coefficients are explicit model sensitivity parameters.}
+\label{fig:lease-sensitivity-concurrency}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/sensitivity-cpu-quote.pdf}
+\caption{Uncalibrated discrete-event simulation with 160 paired, two-round workflows (2608 requests), DP8, 8 x 40 GiB HBM, 1 TB DRAM, a 25 GB/s shared path, and 16 active workflows. Sensitivity of mean WCT; only the displayed parameter is varied and only marked settings were executed, once per system. Segments connect tested settings. CPU and DMA coefficients are explicit model sensitivity parameters. The local vertical range shows actual seconds to resolve small differences.}
+\label{fig:lease-sensitivity-cpu-quote}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../../output/pdf/aegiskv-agent-lease-20260908/sensitivity-dma.pdf}
+\caption{Uncalibrated discrete-event simulation with 160 paired, two-round workflows (2608 requests), DP8, 8 x 40 GiB HBM, 1 TB DRAM, a 25 GB/s shared path, and 16 active workflows. Sensitivity of mean WCT; only the displayed parameter is varied and only marked settings were executed, once per system. Segments connect tested settings. CPU and DMA coefficients are explicit model sensitivity parameters. The local vertical range shows actual seconds to resolve small differences.}
+\label{fig:lease-sensitivity-dma}
+\end{figure}

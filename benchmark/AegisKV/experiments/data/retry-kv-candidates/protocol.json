@@ -1,0 +1,28 @@
+{
+  "scope": "Exploratory offline re-scoring of previously examined native PG19 traces",
+  "future_information": "No tail selection enters any candidate score",
+  "checkpoint": 32768,
+  "past_queries": 512,
+  "target_queries": 64,
+  "physical_object": "layer, 64-token block, all KV heads",
+  "historical_blocks_per_layer": 512,
+  "selected_blocks_per_layer": 205,
+  "budget_fraction_realized": 0.400390625,
+  "mandatory_policy": "Same sink and full local window as original figure",
+  "methods": {
+    "past_frequency": "Original 512-query selection frequency",
+    "recent_first": "Original descending historical token position",
+    "frequency_last64": "Selection frequency in the final 64 past queries",
+    "frequency_last128": "Selection frequency in the final 128 past queries",
+    "frequency_decay128": "Frequency in eight 64-query windows, half-life 128 queries",
+    "presence_decay128": "Per-window union presence, half-life 128 queries"
+  },
+  "tie_break": "Descending token position for every score",
+  "aggregation": "Sum hits and demand across layers per document, then mean over documents",
+  "oracle": "Report both original relaxed bound and mandatory-respecting bound",
+  "limitations": [
+    "Three previously examined documents per model, one checkpoint per document",
+    "No fresh generalization evaluation or hyperparameter selection",
+    "No measured recovery time, transfer traffic, selector overhead or WCT"
+  ]
+}

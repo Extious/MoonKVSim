@@ -1,0 +1,27 @@
+% Reference-aware execution of the window targets, part of section 3.6.
+\paragraph{Admit and reclaim without evicting live references.}
+The Master offers hot blocks from the first $L$ layers in slack order,
+using stable request IDs to break ties. Existing copies can be shared;
+new copies require both budget and physical space, reserved before
+transfer. Under pressure, only zero-reference objects with no in-flight
+reader or writer and valid DRAM backing enter the LRU eviction queue.
+If free space and safe victims are insufficient, the Peer increment is
+denied and the request retains its DRAM path. Normal inference does not
+wait for a Peer grant, and priority does not revoke a live reference.
+
+A successful grant holds a request reference until that LLM request
+ends, including a response that hands control to an external tool.
+Completion decrements shared references; zero references make a copy
+eligible for reclamation, not immediate deletion. Growing or changed
+hot sets require fresh admission. Previously granted objects remain
+protected, so the current candidate count is a target rather than a
+guarantee of complete Peer coverage or a bound on retained old copies.
+
+When the budget shrinks, new allocations stop above the target and
+safe zero-reference copies are reclaimed first. Referenced copies drain
+as requests finish; reducing $L$ likewise does not revoke their pins.
+Physical usage can therefore exceed a newly reduced target, and memory
+is returned to foreground inference only after release completes.
+Increasing $L$ queues additional candidates subject to the same checks.
+Copying, committed, and reclaiming bytes remain charged until physical
+release. Window targets never imply instant copies or instant free space.

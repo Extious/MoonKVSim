@@ -1,0 +1,17 @@
+\begin{figure*}[tp]
+\centering
+\includegraphics[width=\textwidth]{figures/recovery-mechanism.pdf}
+\caption{Direct recovery mechanism for the same primary F1 cases.
+(a) Disjoint selected prompt intervals from normal HBM, local Peer-HBM,
+Peer-HBM copied over D2D, and Store-DRAM, plus prompt recomputation.
+Every bar sums to the frozen focus prompt length. Available tier copies
+can overlap; the selected intervals shown here do not.
+(b) Recomputed prompt fraction versus recovery-ready latency.
+(c) Recovery-ready versus failure-to-request-completion latency.
+Lines connect the two policies within seed; numeric labels identify seeds.
+Each latency is measured from that execution's actual injection time.
+These intervals may overlap and are not additive latency components.}
+\Description{Selected recovery source fractions and two paired scatter plots
+connecting recomputation, recovery readiness, and request completion.}
+\label{fig:recovery-mechanism}
+\end{figure*}

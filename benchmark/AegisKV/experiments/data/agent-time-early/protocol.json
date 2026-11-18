@@ -1,0 +1,60 @@
+{
+  "landmark": "Second LLM request arrival, with first request completed; one sample per eligible episode",
+  "target": "Seconds from landmark to reported whole-agent completion, including observed intervening delays",
+  "counts": {
+    "input_agents": 1688,
+    "excluded_overlapping_first_two_requests": 242,
+    "excluded_single_request": 3,
+    "eligible_agents": 1443,
+    "input_workflows": 174,
+    "eligible_workflows": 170
+  },
+  "folds": 5,
+  "fold_salt": "aegiskv-design-insight-agent-20260918",
+  "numeric_features": [
+    "elapsed_s",
+    "current_prompt_tokens",
+    "first_prompt_tokens",
+    "first_output_tokens",
+    "first_api_s",
+    "since_first_completion_s"
+  ],
+  "categorical_features": [
+    "role",
+    "current_model"
+  ],
+  "config": {
+    "estimators": 80,
+    "learning_rate": 0.06,
+    "max_depth": 3,
+    "min_leaf": 32,
+    "max_bins": 32
+  },
+  "baseline": "Training-fold median remaining time at the same landmark, grouped by role and current model; role then global fallback",
+  "error": "100 * abs(predicted_remaining_s - actual_remaining_s) / actual_remaining_s",
+  "exclusions": "Clock-inconsistent episodes were excluded by the upstream extraction; then exclude single-request episodes and overlapping first two requests. No outcome/error threshold.",
+  "hyperparameter_selection": "Fixed previous diagnostic configuration; no tuning on these held-out predictions",
+  "source_episode_sha256": "72de6124e2d23b99967829935e487b915fb006aadd8f55c066b871fdd9338545",
+  "source_extraction": {
+    "source": "/home/comp/zhanzhao/sglsim/AegisKV/doc/Archived/2026-08-06-pre-kvcache-centric/presentations/presentation/experiments/sglsim_large/traces/cc-traces-weka-062126/traces.materialized.jsonl",
+    "source_sha256": "29b6a19e751ff5230771519aab755f80a0f43a4ba9cf96b72d3a6a437ec99276",
+    "counts": {
+      "source_workflows": 393,
+      "source_agents": 1697,
+      "excluded_inconsistent_episode_clock": 9,
+      "included_agents": 1688,
+      "included_workflows": 174
+    },
+    "roles": {
+      "Subagent": 1688
+    },
+    "extraction": "All completed subagent groups with positive durations, requests, and internally consistent clocks; no duration or error threshold."
+  },
+  "limitations": [
+    "No explicit tool-completion event or semantic task/role annotations; all roles are Subagent",
+    "Whole episodes are not fork/join-separated Tracker segments",
+    "The cohort requires a second request after first-request completion; coverage is reported",
+    "Five-fold cross-validation is not chronological deployment validation",
+    "Observed wall-clock time includes service and tool effects; no new hardware execution"
+  ]
+}

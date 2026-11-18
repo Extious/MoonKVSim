@@ -1,0 +1,45 @@
+--- before/main.tex
++++ after/main.tex
+@@ -57,27 +57,24 @@
+ freeing DRAM before its storage replacement commits invalidates protection.
+ 
+ AegisKV manages checkpoints across Peer HBM, shared DRAM and shared storage.
+-Its Tracker estimates remaining workflow time; the Master combines
+-request urgency with opportunity-normalized block demand. Distinct Agents
+-contribute credit to shared objects, while one Agent's actual reuse renews
+-its own share. Lower-tier rent ages byte occupancy, and lazy value updates
+-preserve paid rent. Peer uses fixed layer/block quotas for zero-slack
+-requests; its hot identities and admitted requests change online.
+-Objects have one managed owner after migration. A bounded event loop
+-connects retention, admission and cascading demotion. The Router binds a
+-compatible takeover DP at arrival; an AIMD Adapter bounds total Peer
+-capacity and Connector executes transfers.
+-Versioned manifests, reservations and reader leases preserve checkpoint
+-coverage as ownership moves between tiers.
+-
+-Our proposed contributions are a workflow-aware priority and renewable-credit
+-policy that separates Peer acceleration from lower-tier retention; a bounded
+-online controller and safe transition
++Its Tracker estimates remaining workflow time; the Master compares
++complete plans under normal reuse and common-domain failures. Causal
++sparse demand and layer overlap guide per-request Peer layer/block
++replication above complete DRAM or storage checkpoints, while direct
++revaluation compares current replacement plans under bounded decision
++work and a migration threshold. The Router binds a compatible takeover
++DP at arrival; its Adapter bounds Peer capacity and its Connector applies
++safe transfers. Versioned manifests, reservations and reader leases
++preserve recovery validity during whole-checkpoint demotion and Peer
++replica replacement.
++
++Our proposed contributions are a workflow objective that separates Peer
++acceleration, complete-checkpoint demotion and final-copy deletion; a bounded online controller and safe transition
+ protocol; and reproducible analytical scenarios with a matched physical
+ experiment plan. The model exposes gains, ties, prediction sensitivity,
+ and regret against a feasible oracle. Trace-driven recovery and independent
+-mechanism models expose queue-tail regressions and an adverse historical
+-rental screen, whose bounded repairs leave a residual gap. These results
++mechanism models expose queue-tail regressions and an adverse rental
++alternative. These results
+ motivate and constrain the proposed
+ system; they do not measure its implementation. The central empirical
+ hypothesis is that workflow-aware protection improves finite-resource

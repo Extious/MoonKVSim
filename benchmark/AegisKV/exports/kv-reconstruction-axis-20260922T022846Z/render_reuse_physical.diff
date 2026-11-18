@@ -1,0 +1,33 @@
+--- 
++++ 
+@@ -60,8 +60,8 @@
+     if compact:
+         # Physical bands keep 10.25 pt text readable at the final paper width.
+         if column:
+-            ax.set_position([.65 / args.width, .38 / args.height,
+-                             (args.width - .79) / args.width,
++            ax.set_position([.82 / args.width, .38 / args.height,
++                             (args.width - .96) / args.width,
+                              (args.height - .81) / args.height])
+         else:
+             assert abs(args.height - HEIGHT_IN) < 1e-9
+@@ -127,7 +127,10 @@
+     if sharedfs and not compact:
+         plt.setp(ax.get_xticklabels(), rotation=45, ha='right', rotation_mode='anchor')
+     ax.set_xlabel('Context (tokens)' if sharedfs else 'Total context (tokens)', labelpad=3)
+-    ax.set_ylabel('Prefill (s)' if compact else ('Prefill time (s)' if sharedfs else ('Prefill latency (s)' if one_token else 'Recovery latency (s)')), labelpad=2)
++    ylabel = ('KV reconstruction\ntime (s)' if column else
++              ('Prefill (s)' if compact else ('Prefill time (s)' if sharedfs else
++               ('Prefill latency (s)' if one_token else 'Recovery latency (s)'))))
++    ax.set_ylabel(ylabel, labelpad=2)
+     ax.grid(axis='y',which='major',alpha=.22,linewidth=.6)
+     ax.margins(x=.08,y=.14)
+     if compact:
+@@ -170,6 +173,7 @@
+                 'retained_raw_paths_not_plotted':sorted({r['path'] for r in rows}-{s[0] for s in styles}),
+                 'width_inches':args.width,'height_inches':args.height,
+                 'layout':args.layout,'font_pt':font,
++                'y_axis_label':ylabel,
+                 'axes_bounds_inches':[value * scale for value, scale in
+                                       zip(ax.get_position().bounds, [args.width, args.height, args.width, args.height])],
+                 'major_y_ticks':ax.get_yticks().tolist(),

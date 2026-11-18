@@ -1,0 +1,49 @@
+% One full-width figure with three subfigures; requires subcaption.
+% Each landscape panel is 2.24 x 2.40 in at the EuroSys insertion size.
+% Plot labels are 10.25 pt at this insertion size; do not shrink this row.
+\begin{figure*}[t]
+  \centering
+  \captionsetup[subfigure]{font=normalsize,labelfont=normalfont,
+    textfont=normalfont,justification=centering,singlelinecheck=false}
+  \begin{subfigure}[t]{0.32\textwidth}
+    \vspace{0pt}
+    \includegraphics[width=\linewidth]{figures/motivation-row/motivation-branch-gap.pdf}
+    \caption{Branch-duration gaps}
+    \label{fig:motivation-branch-gap}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.32\textwidth}
+    \vspace{0pt}
+    \includegraphics[width=\linewidth,height=2.40in,keepaspectratio]{figures/motivation-row/motivation-workflow.drawio.pdf}
+    \caption{Ten-branch workflow}
+    \label{fig:motivation-workflow}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.32\textwidth}
+    \vspace{0pt}
+    \includegraphics[width=\linewidth]{figures/motivation-row/motivation-recovery-exposure.pdf}
+    \caption{Recovery cost vs. WCT loss}
+    \label{fig:motivation-recovery-exposure}
+  \end{subfigure}
+  \caption{Motivation for workflow-aware KV protection.
+    (a) Each of 121 CC/Weka workflows contributes its largest
+    branch-duration gap across strictly overlapping groups with inferred
+    fan-in (median: 138\,s; P90: 1,173\,s). Inference uses a Main request
+    after all branches finish; Main activity during branches is allowed.
+    (b) Ten parallel branches with a 168\,s duration gap. Time zero is
+    the first branch launch; widths encode durations and the right-hand
+    column reports seconds. Dashed tails show slack to the 221.8\,s join,
+    determined by A10. Main boxes indicate inferred dependencies only.
+    (c) Ten independent branch-failure counterfactuals at 36.1\,s after
+    the fork. Hatched time is absorbed by slack; solid time delays WCT.
+    Costs use the Qwen3-14B static configuration in
+    Figure~\ref{fig:motivation-recompute}, including an assumed 64-token
+    tail. The case and fault instant illustrate greater fan-out and
+    recovery exposure, not population-average failure impact.}
+  \label{fig:motivation}
+  \Description{The panels show workflow-maximum duration gaps, a time-scaled
+    ten-branch workflow, and estimated rebuilding cost decomposed into
+    slack-absorbed time and WCT loss. The workflow gap is 168 seconds,
+    compared with a population median of 138 seconds. A10 determines the
+    assumed join and exposes 27.5 seconds of estimated rebuilding to WCT.
+    A5 costs 45.7 seconds to rebuild, but its 146.1-second slack absorbs
+    this delay. Other branches also absorb their entire costs.}
+\end{figure*}

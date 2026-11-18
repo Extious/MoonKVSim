@@ -1,0 +1,244 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" version="31.1.5">
+  <diagram id="mooncake-kv-management" name="01  Mooncake 如何管理与共享 KV">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageScale="1" pageWidth="1800" pageHeight="1760" background="#FFFFFF" math="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="01  Mooncake 如何管理与共享 KV" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=36;fontColor=#22334A;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="40" y="25" width="1720" height="58" />
+        </mxCell>
+        <mxCell id="subtitle" value="原生架构：引擎拥有主 KV，Master 管理对象目录，Transfer Engine 搬运 bytes" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#62748B;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="40" y="88" width="1720" height="35" />
+        </mxCell>
+        <mxCell id="legend0" value="蓝色：已有基础能力" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=20;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="300" y="323" width="390" height="38" />
+        </mxCell>
+        <mxCell id="legend1" value="原生对象缓存与共享 KV" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=20;fontColor=#62748B;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="700" y="323" width="390" height="38" />
+        </mxCell>
+        <mxCell id="legend2" value="实线：KV 写入" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=20;fontColor=#C36816;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1120" y="323" width="300" height="38" />
+        </mxCell>
+        <mxCell id="legend3" value="绿色：读取 / 恢复" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=20;fontColor=#14806B;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1450" y="323" width="300" height="38" />
+        </mxCell>
+        <mxCell id="application" value="" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#F7FAFE;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;container=1;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="40" y="140" width="1720" height="160" />
+        </mxCell>
+        <mxCell id="application-title" value="APPLICATION  ·  应用层" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=25;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=left;fontStyle=1;" vertex="1" parent="application">
+          <mxGeometry as="geometry" x="16" y="8" width="1688" height="45" />
+        </mxCell>
+        <mxCell id="app0" value="LLM 应用 / Workflow&#10;发送 prompt 与生成请求" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#FFFFFF;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="application">
+          <mxGeometry as="geometry" x="20" y="65" width="420" height="75" />
+        </mxCell>
+        <mxCell id="application-note" value="缓存 key 与布局由推理框架 / Connector 定义&#10;Store 与 Transfer Engine 不计算 workflow Slack" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=23;fontColor=#22334A;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=left;" vertex="1" parent="application">
+          <mxGeometry as="geometry" x="590" y="65" width="1090" height="75" />
+        </mxCell>
+        <mxCell id="router" value="" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#F7FAFE;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;container=1;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="40" y="390" width="440" height="350" />
+        </mxCell>
+        <mxCell id="router-title" value="ROUTER + CONDUCTOR" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=25;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=left;fontStyle=1;" vertex="1" parent="router">
+          <mxGeometry as="geometry" x="16" y="8" width="408" height="45" />
+        </mxCell>
+        <mxCell id="routing" value="Gateway / Request Router&#10;根据命中、负载与策略&#10;选择推理实例" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#FFFFFF;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="router">
+          <mxGeometry as="geometry" x="20" y="65" width="400" height="115" />
+        </mxCell>
+        <mxCell id="route-state" value="Conductor · 可选 KV 索引&#10;消费 Worker / Store KV events&#10;返回各实例连续 prefix 命中" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#FFFFFF;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="router">
+          <mxGeometry as="geometry" x="20" y="220" width="400" height="105" />
+        </mxCell>
+        <mxCell id="router-query" edge="1" parent="1" source="routing" target="route-state" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#2463A0;endArrow=block;endFill=1;endSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;dashed=1;dashPattern=6 5;startArrow=block;startFill=1;startSize=10;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="master" value="" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#F7FAFE;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;container=1;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="650" y="390" width="1110" height="350" />
+        </mxCell>
+        <mxCell id="master-title" value="MOONCAKE STORE MASTER  ·  元数据与资源控制，不承载 KV bytes" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=25;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=left;fontStyle=1;" vertex="1" parent="master">
+          <mxGeometry as="geometry" x="16" y="8" width="1078" height="45" />
+        </mxCell>
+        <mxCell id="placement" value="" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#F7FAFE;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;container=1;pointerEvents=0;" vertex="1" parent="master">
+          <mxGeometry as="geometry" x="20" y="70" width="330" height="245" />
+        </mxCell>
+        <mxCell id="placement-title" value="① 放置与分配" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=23;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=left;fontStyle=1;" vertex="1" parent="placement">
+          <mxGeometry as="geometry" x="16" y="8" width="298" height="45" />
+        </mxCell>
+        <mxCell id="placement-body" value="PutStart：key / size&#10;按容量 / 副本数 / 策略&#10;选择 segment 与 offset" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#22334A;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="placement">
+          <mxGeometry as="geometry" x="12" y="80" width="306" height="130" />
+        </mxCell>
+        <mxCell id="directory" value="" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#F7FAFE;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;container=1;pointerEvents=0;" vertex="1" parent="master">
+          <mxGeometry as="geometry" x="390" y="70" width="330" height="245" />
+        </mxCell>
+        <mxCell id="directory-title" value="② 对象元数据" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=23;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=left;fontStyle=1;" vertex="1" parent="directory">
+          <mxGeometry as="geometry" x="16" y="8" width="298" height="45" />
+        </mxCell>
+        <mxCell id="directory-body" value="key → replica descriptors&#10;segment / offset / length&#10;PROCESSING → COMPLETE" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#22334A;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="directory">
+          <mxGeometry as="geometry" x="12" y="80" width="306" height="130" />
+        </mxCell>
+        <mxCell id="lifecycle" value="" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#F7FAFE;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;container=1;pointerEvents=0;" vertex="1" parent="master">
+          <mxGeometry as="geometry" x="760" y="70" width="330" height="245" />
+        </mxCell>
+        <mxCell id="lifecycle-title" value="③ 生命周期" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=23;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=left;fontStyle=1;" vertex="1" parent="lifecycle">
+          <mxGeometry as="geometry" x="16" y="8" width="298" height="45" />
+        </mxCell>
+        <mxCell id="lifecycle-body" value="只读完整对象 / 读租约&#10;近似 LRU / soft &amp; hard pin&#10;压力淘汰 / 删除 / 节点状态" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#22334A;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="lifecycle">
+          <mxGeometry as="geometry" x="12" y="80" width="306" height="130" />
+        </mxCell>
+        <mxCell id="store-events" edge="1" parent="1" source="master" target="route-state" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#2463A0;endArrow=block;endFill=1;endSize=10;exitX=0;exitY=0.79;entryX=1;entryY=0.5;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;dashed=1;dashPattern=6 5;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="store-events-label" value="KV events&#10;可选发布" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=20;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="485" y="600" width="155" height="64" />
+        </mxCell>
+        <mxCell id="application-request" edge="1" parent="1" source="application" target="router" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#2463A0;endArrow=block;endFill=1;endSize=10;exitX=0.128;exitY=1;entryX=0.5;entryY=0;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;dashed=1;dashPattern=6 5;">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="260" y="345" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="data-heading" value="DATA PLANE  ·  KV 数据面" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=23;fontColor=#22334A;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="500" y="821" width="450" height="40" />
+        </mxCell>
+        <mxCell id="source" value="" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#F7FAFE;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;container=1;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="40" y="880" width="440" height="470" />
+        </mxCell>
+        <mxCell id="source-title" value="WORKER A  ·  vLLM 示例" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=25;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=left;fontStyle=1;" vertex="1" parent="source">
+          <mxGeometry as="geometry" x="16" y="8" width="408" height="45" />
+        </mxCell>
+        <mxCell id="source-kv" value="真实推理引擎&#10;Scheduler + 主 KV pages&#10;GPU HBM / K、V tensors" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#EAF2FC;fontFamily=Noto Sans CJK SC;fontSize=23;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="source">
+          <mxGeometry as="geometry" x="20" y="70" width="400" height="130" />
+        </mxCell>
+        <mxCell id="source-connector" value="MooncakeStoreConnector&#10;block hash / 保存与加载决定&#10;Store Client + TransferEngine" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#FFFFFF;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="source">
+          <mxGeometry as="geometry" x="20" y="270" width="400" height="130" />
+        </mxCell>
+        <mxCell id="source-caption" value="主 KV 所有权&#10;属于推理框架" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=19;fontColor=#62748B;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="source">
+          <mxGeometry as="geometry" x="20" y="407" width="230" height="60" />
+        </mxCell>
+        <mxCell id="source-publish" edge="1" parent="1" source="source-kv" target="source-connector" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=3;strokeColor=#C36816;endArrow=block;endFill=1;endSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="peer" value="" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#F7FAFE;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;container=1;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="650" y="880" width="440" height="470" />
+        </mxCell>
+        <mxCell id="peer-title" value="WORKER B  ·  共享缓存的使用者" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=23;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=left;fontStyle=1;" vertex="1" parent="peer">
+          <mxGeometry as="geometry" x="16" y="8" width="408" height="45" />
+        </mxCell>
+        <mxCell id="peer-kv" value="真实推理引擎&#10;Scheduler + 主 KV pages&#10;命中共享 prefix 可少做重算" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#EAF2FC;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="peer">
+          <mxGeometry as="geometry" x="20" y="70" width="400" height="130" />
+        </mxCell>
+        <mxCell id="peer-primary" value="MooncakeStoreConnector&#10;查询完整副本 + 持有读租约&#10;TE 加载到已分配 GPU buffers" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#FFFFFF;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="peer">
+          <mxGeometry as="geometry" x="20" y="270" width="400" height="130" />
+        </mxCell>
+        <mxCell id="peer-caption" value="此处展示共享 Store 的读取路径" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=19;fontColor=#62748B;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="peer">
+          <mxGeometry as="geometry" x="15" y="413" width="410" height="44" />
+        </mxCell>
+        <mxCell id="read-into-primary" edge="1" parent="1" source="peer-primary" target="peer-kv" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=4;strokeColor=#14806B;endArrow=block;endFill=1;endSize=10;exitX=0.5;exitY=0;entryX=0.5;entryY=1;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="store" value="" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#F7FAFE;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;container=1;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1260" y="880" width="500" height="470" />
+        </mxCell>
+        <mxCell id="store-title" value="MOONCAKE STORE  ·  共享 DRAM" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=25;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=left;fontStyle=1;" vertex="1" parent="store">
+          <mxGeometry as="geometry" x="16" y="8" width="468" height="45" />
+        </mxCell>
+        <mxCell id="store-te" value="Store-side Client + TransferEngine&#10;注册内存 / 收发实际 bytes" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#FFFFFF;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="store">
+          <mxGeometry as="geometry" x="20" y="70" width="460" height="90" />
+        </mxCell>
+        <mxCell id="segment0" value="Store Node A&#10;DRAM segment&#10;base + offset" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#EAF2FC;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;shape=cylinder3;" vertex="1" parent="store">
+          <mxGeometry as="geometry" x="20" y="205" width="220" height="140" />
+        </mxCell>
+        <mxCell id="segment1" value="Store Node B&#10;DRAM segment&#10;base + offset" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#EAF2FC;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;shape=cylinder3;" vertex="1" parent="store">
+          <mxGeometry as="geometry" x="260" y="205" width="220" height="140" />
+        </mxCell>
+        <mxCell id="store-caption" value="对象可跨请求、跨实例复用&#10;Master 保存目录；这些节点保存 bytes" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#62748B;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="store">
+          <mxGeometry as="geometry" x="20" y="370" width="460" height="80" />
+        </mxCell>
+        <mxCell id="store-segment0" edge="1" parent="1" source="store-te" target="segment0" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#2463A0;endArrow=block;endFill=1;endSize=10;exitX=0.24;exitY=1;entryX=0.5;entryY=0;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="store-segment1" edge="1" parent="1" source="store-te" target="segment1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#2463A0;endArrow=block;endFill=1;endSize=10;exitX=0.76;exitY=1;entryX=0.5;entryY=0;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="route-to-source" edge="1" parent="1" source="router" target="source" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#2463A0;endArrow=block;endFill=1;endSize=10;exitX=0.3;exitY=1;entryX=0.3;entryY=0;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;dashed=1;dashPattern=6 5;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="route-source-label" value="请求路由" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=20;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="55" y="752" width="170" height="44" />
+        </mxCell>
+        <mxCell id="worker-master-rpc" edge="1" parent="1" source="source" target="master" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#2463A0;endArrow=block;endFill=1;endSize=10;exitX=0.85;exitY=0;entryX=0.16;entryY=1;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;dashed=1;dashPattern=6 5;startArrow=block;startFill=1;startSize=10;">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="414" y="795" />
+              <mxPoint x="828" y="795" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="worker-master-label" value="PutStart / query / PutEnd" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=20;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="438" y="753" width="360" height="40" />
+        </mxCell>
+        <mxCell id="register-store" edge="1" parent="1" source="store" target="master" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#2463A0;endArrow=block;endFill=1;endSize=10;exitX=0.7;exitY=0;entryX=0.865;entryY=1;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;dashed=1;dashPattern=6 5;startArrow=block;startFill=1;startSize=10;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="register-store-label" value="MountSegment&#10;放置 / 目录" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=20;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1425" y="752" width="215" height="65" />
+        </mxCell>
+        <mxCell id="direct-dram-write" edge="1" parent="1" source="source-connector" target="store-te" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=4;strokeColor=#C36816;endArrow=block;endFill=1;endSize=10;exitX=0.75;exitY=1;entryX=1;entryY=0.5;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="360" y="1400" />
+              <mxPoint x="1790" y="1400" />
+              <mxPoint x="1790" y="995" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dram-write-label" value="实际 WRITE：Source GPU buffers → Master 分配的 Store segment / offset" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#C36816;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="410" y="1355" width="1130" height="43" />
+        </mxCell>
+        <mxCell id="store-read" edge="1" parent="1" source="store-te" target="peer-primary" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=4;strokeColor=#14806B;endArrow=block;endFill=1;endSize=10;exitX=0;exitY=0.7;entryX=1;entryY=0.5;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="1240" y="1013" />
+              <mxPoint x="1240" y="1215" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="store-read-label" value="GET / READ&#10;共享 prefix" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=20;fontColor=#14806B;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1100" y="1110" width="130" height="85" />
+        </mxCell>
+        <mxCell id="lifecycle-heading" value="一次 KV 写入，以及后续请求如何复用它" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=25;fontColor=#22334A;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="40" y="1460" width="1720" height="45" />
+        </mxCell>
+        <mxCell id="step0" value="引擎决定缓存&#10;block key + KV buffers" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#F0F6FD;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="40" y="1525" width="320" height="100" />
+        </mxCell>
+        <mxCell id="step1" value="PutStart 分配空间&#10;返回 replica descriptors" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#F0F6FD;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="390" y="1525" width="320" height="100" />
+        </mxCell>
+        <mxCell id="step2" value="TE 写入 bytes&#10;不经过 Store Master" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#F0F6FD;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="740" y="1525" width="320" height="100" />
+        </mxCell>
+        <mxCell id="step3" value="PutEnd 发布可读&#10;副本成为 COMPLETE" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#F0F6FD;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1090" y="1525" width="320" height="100" />
+        </mxCell>
+        <mxCell id="step4" value="后续 Get / exists&#10;租约保护下读取复用" style="rounded=1;arcSize=10;strokeWidth=2;strokeColor=#2463A0;fillColor=#F0F6FD;fontFamily=Noto Sans CJK SC;fontSize=21;fontColor=#2463A0;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1440" y="1525" width="320" height="100" />
+        </mxCell>
+        <mxCell id="step-edge0" edge="1" parent="1" source="step0" target="step1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#2463A0;endArrow=block;endFill=1;endSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="step-edge1" edge="1" parent="1" source="step1" target="step2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#2463A0;endArrow=block;endFill=1;endSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="step-edge2" edge="1" parent="1" source="step2" target="step3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#2463A0;endArrow=block;endFill=1;endSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="step-edge3" edge="1" parent="1" source="step3" target="step4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#2463A0;endArrow=block;endFill=1;endSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;exitPerimeter=1;entryPerimeter=1;html=0;jettySize=20;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="footnote" value="以标准 vLLM + Mooncake Store 路径为例。TE 也支持其他后端；图中未展开可选 SSD offload / HA。&#10;SGLang 的本地 HostCache 与远端 Store DRAM 是不同层；底层能力不自动包含 workflow-Slack 保护。" style="text;strokeColor=none;fillColor=none;fontFamily=Noto Sans CJK SC;fontSize=20;fontColor=#62748B;whiteSpace=wrap;html=0;spacing=8;verticalAlign=middle;align=center;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="40" y="1658" width="1720" height="70" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

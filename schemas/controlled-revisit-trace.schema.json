@@ -1,0 +1,397 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://moonkvsim.local/schemas/controlled-revisit-trace.schema.json",
+  "title": "Controlled exact-input revisit of a frozen workload",
+  "description": "Synthetic experimental revisits retain source tokens and DAGs, with explicit original span and round identifiers. This schema does not relax the nonsynthetic public trace schema.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "workflow_id",
+    "session_id",
+    "agent_id",
+    "agent_role",
+    "span_id",
+    "parent_span_ids",
+    "parent_edges",
+    "parent_edge_origin",
+    "parent_edge_confidence",
+    "observed_submit_ns",
+    "observed_finish_ns",
+    "recorded_api_time_ns",
+    "messages_or_token_ids",
+    "prompt_token_ids_hash",
+    "source_hash_ids",
+    "source_hash_ids_sha256",
+    "prompt_tokens",
+    "cached_prefix_tokens",
+    "output_tokens",
+    "total_model_tokens",
+    "tool_name",
+    "tool_delay_ns",
+    "dependency_release_rule",
+    "retry_of_span_id",
+    "model_id",
+    "model_revision",
+    "token_count_mode",
+    "tokenizer_fingerprint",
+    "source_block_size_tokens",
+    "source_hash_id_scope_raw",
+    "hash_id_scope",
+    "evidence_class",
+    "synthetic",
+    "truncated",
+    "model_length_guard_passed",
+    "source_position",
+    "mechanism_original_span_id",
+    "mechanism_revisit_round"
+  ],
+  "properties": {
+    "schema": {
+      "const": "moonkvsim.controlled_revisit_trace.v1"
+    },
+    "workflow_id": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "session_id": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "agent_id": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "agent_role": {
+      "enum": [
+        "main",
+        "subagent"
+      ]
+    },
+    "span_id": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "parent_span_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/nonEmptyString"
+      },
+      "uniqueItems": true
+    },
+    "parent_edges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/parentEdge"
+      }
+    },
+    "parent_edge_origin": {
+      "enum": [
+        "none",
+        "observed",
+        "inferred",
+        "mixed"
+      ]
+    },
+    "parent_edge_confidence": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "observed_submit_ns": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "observed_finish_ns": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "recorded_api_time_ns": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "messages_or_token_ids": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/contentEvidence"
+        }
+      ]
+    },
+    "prompt_token_ids_hash": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "source_hash_ids": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "source_hash_block_token_counts": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 64
+      }
+    },
+    "source_hash_block_scopes": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "global_system_template",
+          "within_workflow"
+        ]
+      }
+    },
+    "source_hash_ids_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "prompt_tokens": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "cached_prefix_tokens": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "output_tokens": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "total_model_tokens": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 131072
+    },
+    "tool_name": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "tool_delay_ns": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "dependency_release_rule": {
+      "enum": [
+        "observed_root_arrival",
+        "parent_completion_plus_recorded_delay"
+      ]
+    },
+    "retry_of_span_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
+    },
+    "model_id": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "model_revision": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "token_count_mode": {
+      "enum": [
+        "source_hash_blocks_64",
+        "qwen3_token_ids"
+      ]
+    },
+    "tokenizer_fingerprint": {
+      "oneOf": [
+        {
+          "const": "not_available_source_hash_blocks_64"
+        },
+        {
+          "$ref": "#/$defs/sha256"
+        }
+      ]
+    },
+    "source_block_size_tokens": {
+      "const": 64
+    },
+    "source_hash_id_scope_raw": {
+      "enum": [
+        "local",
+        "mixed"
+      ]
+    },
+    "hash_id_scope": {
+      "enum": [
+        "within_workflow_only",
+        "global_system_template_and_within_workflow"
+      ]
+    },
+    "evidence_class": {
+      "const": "controlled_exact_input_revisit"
+    },
+    "synthetic": {
+      "const": true
+    },
+    "truncated": {
+      "const": false
+    },
+    "model_length_guard_passed": {
+      "const": true
+    },
+    "source_position": {
+      "$ref": "#/$defs/sourcePosition"
+    },
+    "raw_request_type": {
+      "type": "string"
+    },
+    "subagent_group": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/subagentGroup"
+        }
+      ]
+    },
+    "mechanism_original_span_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mechanism_revisit_round": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "parentEdge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "parent_span_id",
+        "origin",
+        "confidence",
+        "inference_rule"
+      ],
+      "properties": {
+        "parent_span_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "origin": {
+          "enum": [
+            "observed",
+            "inferred"
+          ]
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "inference_rule": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "contentEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "sha256",
+        "value"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "messages",
+            "token_ids"
+          ]
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "value": {
+          "type": "array"
+        }
+      }
+    },
+    "sourcePosition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workflow_line",
+        "top_level_index",
+        "inner_index"
+      ],
+      "properties": {
+        "workflow_line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "top_level_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "inner_index": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        }
+      }
+    },
+    "subagentGroup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "group_id",
+        "subagent_type",
+        "status",
+        "duration_ns",
+        "tool_use_count"
+      ],
+      "properties": {
+        "group_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "subagent_type": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "duration_ns": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tool_use_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

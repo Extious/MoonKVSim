@@ -1,0 +1,69 @@
+\subsection{Single Failure: Recovery Improvements Do Not Ensure Task Gains}
+\label{sec:primary-results}
+\input{sections/figures/failure-effects}
+
+Figure~\ref{fig:workload}(d) records the five matched logical/physical
+interventions and their differing injection times and collateral victims.
+The descriptive union contains 3--6 impacted workflows per seed. All selected
+requests occupy the 64--96K bucket, which contains only 36 of 1,304 calls.
+These long-context cases are not representative random failures.
+
+In the failure runs, mean WCT averaged over seeds is 33.836\,s for
+Store-only and 33.788\,s for AegisKV. The paired difference is
+$-0.048$\,s, with a 95\% interval of $[-0.240,0.143]$\,s.
+The mean of the five within-seed P95 differences is $-0.095$\,s
+($[-4.831,4.641]$\,s); the corresponding maximum difference is
+$-1.734$\,s ($[-16.124,12.655]$\,s). None resolves a consistent
+population-wide improvement under the declared admission randomization.
+Figure~\ref{fig:failure-effects}(b) retains all 800 task-runs per policy:
+328 paired tasks finish sooner with AegisKV, 156 tie, and 316 finish later.
+The largest adverse difference is 46.340\,s for workflow
+\texttt{db12f9be559698b0} in seed 0; the largest improvement is 57.650\,s.
+
+The selected focus workflows have mean failure-run WCT of 30.502\,s
+with Store-only and 34.571\,s with AegisKV. After subtracting each
+policy's own failure-free control, the mean focus failure-penalty
+difference is $+8.130$\,s ($[-5.116,21.375]$\,s).
+Four seed differences are positive and one is negative.
+For the whole-workload mean, the same contrast is $+0.088$\,s
+($[-0.218,0.395]$\,s). Thus, the small negative absolute WCT difference
+does not establish a reduction in the added failure penalty.
+
+\paragraph{Complete-batch completion.}
+The complete batch includes admission-slot delay. AegisKV's F1 makespan is
+on average 1.022\,s longer ($[-0.871,2.915]$\,s), or a mean paired
+relative change of $+0.297$\% ($[-0.252,0.847]$\%).
+The makespan failure-penalty contrast is $+0.994$\,s, with interval
+$[-1.468,3.456]$\,s. These whole-batch observations likewise do not
+establish a consistent completion benefit.
+
+\subsection{Direct Mechanism: Equal Prefixes, Different Recovery Sources}
+\label{sec:direct-results}
+\input{sections/figures/recovery-mechanism}
+
+All five pairs recover the same effective prompt prefix under both policies:
+32,832 tokens in seeds 0, 1, and 4, and 41,024 in seeds 2 and 3.
+Consequently, the remaining prompt recomputation is identical within every
+pair, accounting for 42.2--51.9\% of the prompt.
+Figure~\ref{fig:recovery-mechanism}(a) shows source substitution rather
+than additional recovered coverage. Store-only selects Store-DRAM for the
+entire recovered prefix. AegisKV uses Peer D2D for seed 0, local Peer-HBM
+plus Store for seed 1, almost entirely Store for seeds 2 and 3, and local
+Peer-HBM for seed 4. The Peer portion in seeds 2 and 3 is only 64 tokens;
+it is retained in the accounting even though it is barely visible at this scale.
+
+Recovery readiness and request completion can move in opposite directions:
+seed 2 becomes ready sooner but completes 0.048\,s later after injection;
+seed 3 becomes ready later but completes 1.108\,s sooner.
+Nor does faster request recovery establish a faster workflow. In seed 1,
+the failed request completes 1.509\,s sooner after injection, while the
+focus workflow's failure-penalty difference is $+15.985$\,s.
+These endpoints have different origins and include different dependencies;
+shared scheduling and downstream work mediate their relationship.
+
+Seed 4 further shows why materialization alone is insufficient. Local Peer
+adoption materializes the prefix in 1\,ms, compared with 209\,ms for
+Store-only. Nevertheless, recovery readiness is later by 0.301\,s and
+the focus workflow's failure-penalty difference is $+21.163$\,s.
+These observations do not isolate the latency-aware selector's effect from
+placement, routing and batching changes.

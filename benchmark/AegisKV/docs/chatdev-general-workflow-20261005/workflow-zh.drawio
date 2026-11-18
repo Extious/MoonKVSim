@@ -1,0 +1,190 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="chatdev-general" name="ChatDev 通用问题解决工作流">
+    <mxGraphModel page="1" pageWidth="1008" pageHeight="604" background="#FFFFFF">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="canvas" value="" vertex="1" parent="1" style="fillColor=#FFFFFF;strokeColor=none;">
+          <mxGeometry x="0" y="0" width="1008" height="604" as="geometry" />
+        </mxCell>
+        <mxCell id="title" value="ChatDev 通用问题解决工作流" vertex="1" parent="1" style="html=0;whiteSpace=wrap;fontFamily=Noto Sans CJK SC;fontColor=#243746;fillColor=none;strokeColor=none;fontSize=29;fontStyle=1;align=left;">
+          <mxGeometry x="20" y="3" width="960" height="37" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="六个 Agent · 十条依赖 · 预设时长示例（WCT = 170 s）" vertex="1" parent="1" style="html=0;whiteSpace=wrap;fontFamily=Noto Sans CJK SC;fontColor=#243746;fillColor=none;strokeColor=none;fontSize=22;fontColor=#5E6D76;align=left;">
+          <mxGeometry x="20" y="41" width="960" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="frame" value="" vertex="1" parent="1" style="rounded=1;arcSize=4;fillColor=#FAFBFB;strokeColor=#D8DEE1;strokeWidth=1;">
+          <mxGeometry x="8" y="72" width="992" height="456" as="geometry" />
+        </mxCell>
+        <mxCell id="agent-A" value="" vertex="1" parent="1" style="rounded=1;arcSize=5;fillColor=#EDF0F2;strokeColor=#23688D;strokeWidth=1.5;" sourceNodeId="Demand Analyze">
+          <mxGeometry x="20" y="248" width="180" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="id-A" value="A" vertex="1" parent="agent-A" style="ellipse;html=0;fontFamily=Noto Sans CJK SC;fontSize=23;fontColor=#243746;fillColor=#FFFFFF;strokeColor=#667883;strokeWidth=1;align=center;">
+          <mxGeometry x="10" y="10" width="28" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="label-A" value="需求分析" vertex="1" parent="agent-A" style="html=0;whiteSpace=wrap;fontFamily=Noto Sans CJK SC;fontColor=#243746;fillColor=none;strokeColor=none;fontSize=26;align=center;spacing=0;">
+          <mxGeometry x="43" y="5" width="131" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="time-A" value="t=10s   S=0s" vertex="1" parent="agent-A" style="html=0;whiteSpace=wrap;fontFamily=Noto Sans CJK SC;fontColor=#243746;fillColor=none;strokeColor=none;fontSize=22;align=center;spacing=0;">
+          <mxGeometry x="8" y="43" width="164" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="pred-A" value="前驱：无" vertex="1" parent="agent-A" style="html=0;whiteSpace=wrap;fontFamily=Noto Sans CJK SC;fontColor=#243746;fillColor=none;strokeColor=none;fontSize=22;align=center;spacing=0;">
+          <mxGeometry x="8" y="71" width="164" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="agent-B" value="" vertex="1" parent="1" style="rounded=1;arcSize=5;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.5;" sourceNodeId="Information Searcher">
+          <mxGeometry x="280" y="84" width="180" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="id-B" value="B" vertex="1" parent="agent-B" style="ellipse;html=0;fontFamily=Noto Sans CJK SC;fontSize=23;fontColor=#243746;fillColor=#FFFFFF;strokeColor=#39756A;strokeWidth=1;align=center;">
+          <mxGeometry x="10" y="10" width="28" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="label-B" value="信息搜集" vertex="1" parent="agent-B" style="html=0;whiteSpace=wrap;fontFamily=Noto Sans CJK SC;fontColor=#243746;fillColor=none;strokeColor=none;fontSize=26;align=center;spacing=0;">
+          <mxGeometry x="43" y="5" width="131" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="time-B" value="t=60s   S=40s" vertex="1" parent="agent-B" style="html=0;whiteSpace=wrap;fontFamily=Noto Sans CJK SC;fontColor=#243746;fillColor=none;strokeColor=none;fontSize=22;align=center;spacing=0;">
+          <mxGeometry x="8" y="43" width="164" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="pred-B" value="前驱：A" vertex="1" parent="agent-B" style="html=0;whiteSpace=wrap;fontFamily=Noto Sans CJK SC;fontColor=#243746;fillColor=none;strokeColor=none;fontSize=22;align=center;spacing=0;">
+          <mxGeometry x="8" y="71" width="164" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="agent-C" value="" vertex="1" parent="1" style="rounded=1;arcSize=5;fillColor=#DDEBF3;strokeColor=#23688D;strokeWidth=1.5;" sourceNodeId="Technician">
+          <mxGeometry x="280" y="248" width="180" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="id-C" value="C" vertex="1" parent="agent-C" style="ellipse;html=0;fontFamily=Noto Sans CJK SC;fontSize=23;fontColor=#243746;fillColor=#FFFFFF;strokeColor=#23688D;strokeWidth=1;align=center;">
+          <mxGeometry x="10" y="10" width="28" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="label-C" value="技术实现" vertex="1" parent="agent-C" style="html=0;whiteSpace=wrap;fontFamily=Noto Sans CJK SC;fontColor=#243746;fillColor=none;strokeColor=none;fontSize=26;align=center;spacing=0;">
+          <mxGeometry x="43" y="5" width="131" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="time-C" value="t=100s   S=0s" vertex="1" parent="agent-C" style="html=0;whiteSpace=wrap;fontFamily=Noto Sans CJK SC;fontColor=#243746;fillColor=none;strokeColor=none;fontSize=22;align=center;spacing=0;">
+          <mxGeometry x="8" y="43" width="164" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="pred-C" value="前驱：A" vertex="1" parent="agent-C" style="html=0;whiteSpace=wrap;fontFamily=Noto Sans CJK SC;fontColor=#243746;fillColor=none;strokeColor=none;fontSize=22;align=center;spacing=0;">
+          <mxGeometry x="8" y="71" width="164" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="agent-D" value="" vertex="1" parent="1" style="rounded=1;arcSize=5;fillColor=#F3E5D1;strokeColor=#9B6428;strokeWidth=1.5;" sourceNodeId="Scheme Generater">
+          <mxGeometry x="280" y="412" width="180" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="id-D" value="D" vertex="1" parent="agent-D" style="ellipse;html=0;fontFamily=Noto Sans CJK SC;fontSize=23;fontColor=#243746;fillColor=#FFFFFF;strokeColor=#9B6428;strokeWidth=1;align=center;">
+          <mxGeometry x="10" y="10" width="28" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="label-D" value="方案生成" vertex="1" parent="agent-D" style="html=0;whiteSpace=wrap;fontFamily=Noto Sans CJK SC;fontColor=#243746;fillColor=none;strokeColor=none;fontSize=26;align=center;spacing=0;">
+          <mxGeometry x="43" y="5" width="131" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="time-D" value="t=80s   S=60s" vertex="1" parent="agent-D" style="html=0;whiteSpace=wrap;fontFamily=Noto Sans CJK SC;fontColor=#243746;fillColor=none;strokeColor=none;fontSize=22;align=center;spacing=0;">
+          <mxGeometry x="8" y="43" width="164" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="pred-D" value="前驱：A" vertex="1" parent="agent-D" style="html=0;whiteSpace=wrap;fontFamily=Noto Sans CJK SC;fontColor=#243746;fillColor=none;strokeColor=none;fontSize=22;align=center;spacing=0;">
+          <mxGeometry x="8" y="71" width="164" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="agent-E" value="" vertex="1" parent="1" style="rounded=1;arcSize=5;fillColor=#DDEBF3;strokeColor=#23688D;strokeWidth=1.5;" sourceNodeId="Reasoner">
+          <mxGeometry x="550" y="248" width="180" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="id-E" value="E" vertex="1" parent="agent-E" style="ellipse;html=0;fontFamily=Noto Sans CJK SC;fontSize=23;fontColor=#243746;fillColor=#FFFFFF;strokeColor=#23688D;strokeWidth=1;align=center;">
+          <mxGeometry x="10" y="10" width="28" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="label-E" value="逻辑推理" vertex="1" parent="agent-E" style="html=0;whiteSpace=wrap;fontFamily=Noto Sans CJK SC;fontColor=#243746;fillColor=none;strokeColor=none;fontSize=26;align=center;spacing=0;">
+          <mxGeometry x="43" y="5" width="131" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="time-E" value="t=40s   S=0s" vertex="1" parent="agent-E" style="html=0;whiteSpace=wrap;fontFamily=Noto Sans CJK SC;fontColor=#243746;fillColor=none;strokeColor=none;fontSize=22;align=center;spacing=0;">
+          <mxGeometry x="8" y="43" width="164" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="pred-E" value="前驱：A,B,C" vertex="1" parent="agent-E" style="html=0;whiteSpace=wrap;fontFamily=Noto Sans CJK SC;fontColor=#243746;fillColor=none;strokeColor=none;fontSize=22;align=center;spacing=0;">
+          <mxGeometry x="8" y="71" width="164" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="agent-F" value="" vertex="1" parent="1" style="rounded=1;arcSize=5;fillColor=#F3E5D1;strokeColor=#23688D;strokeWidth=1.5;" sourceNodeId="Summary Department">
+          <mxGeometry x="806" y="248" width="180" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="id-F" value="F" vertex="1" parent="agent-F" style="ellipse;html=0;fontFamily=Noto Sans CJK SC;fontSize=23;fontColor=#243746;fillColor=#FFFFFF;strokeColor=#9B6428;strokeWidth=1;align=center;">
+          <mxGeometry x="10" y="10" width="28" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="label-F" value="最终汇总" vertex="1" parent="agent-F" style="html=0;whiteSpace=wrap;fontFamily=Noto Sans CJK SC;fontColor=#243746;fillColor=none;strokeColor=none;fontSize=26;align=center;spacing=0;">
+          <mxGeometry x="43" y="5" width="131" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="time-F" value="t=20s   S=0s" vertex="1" parent="agent-F" style="html=0;whiteSpace=wrap;fontFamily=Noto Sans CJK SC;fontColor=#243746;fillColor=none;strokeColor=none;fontSize=22;align=center;spacing=0;">
+          <mxGeometry x="8" y="43" width="164" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="pred-F" value="前驱：B,C,D,E" vertex="1" parent="agent-F" style="html=0;whiteSpace=wrap;fontFamily=Noto Sans CJK SC;fontColor=#243746;fillColor=none;strokeColor=none;fontSize=22;align=center;spacing=0;">
+          <mxGeometry x="8" y="71" width="164" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-A-B" value="" edge="1" parent="1" source="agent-A" target="agent-B" style="edgeStyle=none;orthogonal=1;rounded=0;html=0;strokeColor=#70808A;strokeWidth=1.5;endArrow=block;endFill=1;endSize=8;exitX=1;exitY=0.05;entryX=0;entryY=0.5;exitPerimeter=0;entryPerimeter=0;">
+          <mxGeometry relative="1" y="0" as="geometry">
+            <Array as="points">
+              <mxPoint x="210" y="253" />
+              <mxPoint x="210" y="134" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-A-C" value="" edge="1" parent="1" source="agent-A" target="agent-C" style="edgeStyle=none;orthogonal=1;rounded=0;html=0;strokeColor=#23688D;strokeWidth=2.5;endArrow=block;endFill=1;endSize=8;exitX=1;exitY=0.5;entryX=0;entryY=0.5;exitPerimeter=0;entryPerimeter=0;">
+          <mxGeometry relative="1" y="0" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-A-D" value="" edge="1" parent="1" source="agent-A" target="agent-D" style="edgeStyle=none;orthogonal=1;rounded=0;html=0;strokeColor=#70808A;strokeWidth=1.5;endArrow=block;endFill=1;endSize=8;exitX=1;exitY=0.9;entryX=0;entryY=0.5;exitPerimeter=0;entryPerimeter=0;">
+          <mxGeometry relative="1" y="0" as="geometry">
+            <Array as="points">
+              <mxPoint x="240" y="338" />
+              <mxPoint x="240" y="462" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-A-E" value="A→E" edge="1" parent="1" source="agent-A" target="agent-E" style="edgeStyle=none;orthogonal=1;rounded=0;html=0;strokeColor=#70808A;strokeWidth=1.5;endArrow=block;endFill=1;endSize=8;exitX=1;exitY=0.2;entryX=0;entryY=0.15;exitPerimeter=0;entryPerimeter=0;dashed=1;dashPattern=5 3;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#243746;labelBackgroundColor=#FAFBFB;">
+          <mxGeometry relative="1" y="-12" as="geometry">
+            <Array as="points">
+              <mxPoint x="226" y="268" />
+              <mxPoint x="226" y="220" />
+              <mxPoint x="526" y="220" />
+              <mxPoint x="526" y="263" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-B-E" value="" edge="1" parent="1" source="agent-B" target="agent-E" style="edgeStyle=none;orthogonal=1;rounded=0;html=0;strokeColor=#70808A;strokeWidth=1.5;endArrow=block;endFill=1;endSize=8;exitX=1;exitY=0.7;entryX=0.47;entryY=0;exitPerimeter=0;entryPerimeter=0;">
+          <mxGeometry relative="1" y="0" as="geometry">
+            <Array as="points">
+              <mxPoint x="634.6" y="154" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-C-E" value="" edge="1" parent="1" source="agent-C" target="agent-E" style="edgeStyle=none;orthogonal=1;rounded=0;html=0;strokeColor=#23688D;strokeWidth=2.5;endArrow=block;endFill=1;endSize=8;exitX=1;exitY=0.5;entryX=0;entryY=0.5;exitPerimeter=0;entryPerimeter=0;">
+          <mxGeometry relative="1" y="0" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-B-F" value="B→F" edge="1" parent="1" source="agent-B" target="agent-F" style="edgeStyle=none;orthogonal=1;rounded=0;html=0;strokeColor=#70808A;strokeWidth=1.5;endArrow=block;endFill=1;endSize=8;exitX=1;exitY=0.25;entryX=0;entryY=0.15;exitPerimeter=0;entryPerimeter=0;dashed=1;dashPattern=5 3;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#243746;labelBackgroundColor=#FAFBFB;">
+          <mxGeometry relative="1" y="-12" as="geometry">
+            <Array as="points">
+              <mxPoint x="770" y="109" />
+              <mxPoint x="770" y="263" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-C-F" value="C→F" edge="1" parent="1" source="agent-C" target="agent-F" style="edgeStyle=none;orthogonal=1;rounded=0;html=0;strokeColor=#70808A;strokeWidth=1.5;endArrow=block;endFill=1;endSize=8;exitX=1;exitY=0.85;entryX=0;entryY=0.82;exitPerimeter=0;entryPerimeter=0;dashed=1;dashPattern=5 3;fontFamily=Noto Sans CJK SC;fontSize=22;fontColor=#243746;labelBackgroundColor=#FAFBFB;">
+          <mxGeometry relative="1" y="-12" as="geometry">
+            <Array as="points">
+              <mxPoint x="490" y="333" />
+              <mxPoint x="490" y="382" />
+              <mxPoint x="760" y="382" />
+              <mxPoint x="760" y="330" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-D-F" value="" edge="1" parent="1" source="agent-D" target="agent-F" style="edgeStyle=none;orthogonal=1;rounded=0;html=0;strokeColor=#70808A;strokeWidth=1.5;endArrow=block;endFill=1;endSize=8;exitX=1;exitY=0.5;entryX=0;entryY=0.95;exitPerimeter=0;entryPerimeter=0;">
+          <mxGeometry relative="1" y="0" as="geometry">
+            <Array as="points">
+              <mxPoint x="784" y="462" />
+              <mxPoint x="784" y="343" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-E-F" value="" edge="1" parent="1" source="agent-E" target="agent-F" style="edgeStyle=none;orthogonal=1;rounded=0;html=0;strokeColor=#23688D;strokeWidth=2.5;endArrow=block;endFill=1;endSize=8;exitX=1;exitY=0.5;entryX=0;entryY=0.5;exitPerimeter=0;entryPerimeter=0;">
+          <mxGeometry relative="1" y="0" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-critical" value="━━ 关键路径 A→C→E→F" vertex="1" parent="1" style="html=0;whiteSpace=wrap;fontFamily=Noto Sans CJK SC;fontColor=#243746;fillColor=none;strokeColor=none;fontSize=22;fontColor=#23688D;align=left;">
+          <mxGeometry x="20" y="540" width="490" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-other" value="━━ 其他依赖   ┄┄ 跨级直接连接" vertex="1" parent="1" style="html=0;whiteSpace=wrap;fontFamily=Noto Sans CJK SC;fontColor=#243746;fillColor=none;strokeColor=none;fontSize=22;align=left;">
+          <mxGeometry x="516" y="540" width="472" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="footer" value="全部箭头均为真实依赖；t = 预设执行时长，S = Slack；非实测。" vertex="1" parent="1" style="html=0;whiteSpace=wrap;fontFamily=Noto Sans CJK SC;fontColor=#243746;fillColor=none;strokeColor=none;fontSize=22;align=left;">
+          <mxGeometry x="20" y="574" width="960" height="25" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

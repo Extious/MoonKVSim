@@ -1,0 +1,307 @@
+<mxfile host="65bd71144e">
+    <diagram id="PA2" name="专利算法2：SlackLandlord修订流程">
+        <mxGraphModel dx="2148" dy="4492" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1320" pageHeight="3940" background="#FFFFFF" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="slr-canvas" value="" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=26;fontColor=#24364B;strokeColor=#FFFFFF;fillColor=#FFFFFF;rounded=1;arcSize=5;" parent="1" vertex="1">
+                    <mxGeometry width="1320" height="3940" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-title" value="&lt;b&gt;SlackLandlord：KV 备份决策流程&lt;/b&gt;" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=35;fontColor=#24364B;strokeColor=#246BA2;fillColor=#EDF5FB;strokeColor=none;fillColor=none;spacing=0;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="25" width="1220" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-source" value="基于算法 2" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=22;fontColor=#24364B;strokeColor=#246BA2;fillColor=#EDF5FB;strokeColor=none;fillColor=none;spacing=0;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="90" width="1220" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-event" value="&lt;div style=&quot;line-height:1.35&quot;&gt;&lt;b&gt;请求 i 到来：固定 Slack s&lt;sub&gt;i&lt;/sub&gt; 与兼容目标&lt;/b&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=26;fontColor=#24364B;strokeColor=#246BA2;fillColor=#EDF5FB;rounded=1;arcSize=50;" parent="1" vertex="1">
+                    <mxGeometry x="240" y="165" width="840" height="65" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-tiers" value="&lt;div style=&quot;line-height:1.35&quot;&gt;&lt;b&gt;HBM / DRAM 各自执行以下流程&lt;/b&gt;&lt;br&gt;各自的 Q、L、容量与提交状态；互不以对方接纳为前提&lt;/div&gt;" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=26;fontColor=#24364B;strokeColor=#246BA2;fillColor=#EDF5FB;rounded=1;arcSize=5;" parent="1" vertex="1">
+                    <mxGeometry x="180" y="285" width="960" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-metadata" value="&lt;div style=&quot;line-height:1.35&quot;&gt;&lt;b&gt;若复用已有 KV：登记新请求与复用时租金&lt;/b&gt;&lt;br&gt;续租目标：H ← max(H, L&lt;sub&gt;复用&lt;/sub&gt; + P&lt;sub&gt;新请求&lt;/sub&gt;)&lt;br&gt;同一请求只登记一次；到堆顶或暴露尾块时再兑现&lt;/div&gt;" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=25;fontColor=#24364B;strokeColor=#7351A5;fillColor=#F5F0FA;rounded=1;arcSize=5;" parent="1" vertex="1">
+                    <mxGeometry x="140" y="425" width="1040" height="135" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-sealed" value="&lt;div style=&quot;line-height:1.35&quot;&gt;&lt;b&gt;依序生成 / 选取首个未备份完整 chunk x&lt;/b&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=26;fontColor=#24364B;strokeColor=#246BA2;fillColor=#EDF5FB;rounded=1;arcSize=5;" parent="1" vertex="1">
+                    <mxGeometry x="140" y="595" width="1040" height="65" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-recovery" value="&lt;div style=&quot;line-height:1.35&quot;&gt;&lt;b&gt;估计本层恢复时间 T&lt;sub&gt;0&lt;/sub&gt;, …, T&lt;sub&gt;x&lt;/sub&gt;&lt;/b&gt;&lt;br&gt;加载 + 未保护后缀重算 + 静默重放&lt;br&gt;J&lt;sub&gt;k&lt;/sub&gt; = max(T&lt;sub&gt;k&lt;/sub&gt; − s&lt;sub&gt;i&lt;/sub&gt;, 0)&lt;/div&gt;" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=25;fontColor=#24364B;strokeColor=#246BA2;fillColor=#EDF5FB;rounded=1;arcSize=5;" parent="1" vertex="1">
+                    <mxGeometry x="140" y="705" width="1040" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-priority" value="&lt;div style=&quot;line-height:1.35&quot;&gt;&lt;b&gt;累计前缀恢复收益，再计算 Priority&lt;/b&gt;&lt;br&gt;W&lt;sub&gt;k&lt;/sub&gt; = max(J&lt;sub&gt;k−1&lt;/sub&gt; − J&lt;sub&gt;k&lt;/sub&gt;, 0)&lt;br&gt;G&lt;sub&gt;x&lt;/sub&gt; = ∑&lt;sub&gt;k=1&lt;/sub&gt;&lt;sup&gt;x&lt;/sup&gt; W&lt;sub&gt;k&lt;/sub&gt;　（恢复权重 λ&lt;sub&gt;w&lt;/sub&gt; = 1）&lt;br&gt;P&lt;sub&gt;x&lt;/sub&gt; = G&lt;sub&gt;x&lt;/sub&gt; / b&lt;sub&gt;x&lt;/sub&gt;　；　Θ&lt;sub&gt;x&lt;/sub&gt; ← L + P&lt;sub&gt;x&lt;/sub&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=25;fontColor=#24364B;strokeColor=#246BA2;fillColor=#EDF5FB;rounded=1;arcSize=5;" parent="1" vertex="1">
+                    <mxGeometry x="140" y="900" width="1040" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-preview" value="&lt;div style=&quot;line-height:1.35&quot;&gt;&lt;b&gt;Y ← ∅；Q ← 本池尾块堆的临时视图；f ← 空闲字节&lt;/b&gt;&lt;br&gt;只纳入合法尾块；跳过 x 所属请求及其共享前缀依赖&lt;/div&gt;" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=25;fontColor=#24364B;strokeColor=#246BA2;fillColor=#EDF5FB;rounded=1;arcSize=5;" parent="1" vertex="1">
+                    <mxGeometry x="180" y="1140" width="960" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-capacity" value="&lt;div style=&quot;line-height:1.35&quot;&gt;&lt;b&gt;f ≥ b&lt;sub&gt;x&lt;/sub&gt; ?&lt;/b&gt;&lt;br&gt;规划空间足够&lt;/div&gt;" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=29;fontColor=#24364B;strokeColor=#A16A17;fillColor=#FFF7E8;rhombus;" parent="1" vertex="1">
+                    <mxGeometry x="425" y="1305" width="470" height="125" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-pop" value="&lt;div style=&quot;line-height:1.35&quot;&gt;&lt;b&gt;Lazy Refresh：兑现 y 尚未处理的续租&lt;/b&gt;&lt;br&gt;从 Q 取最小旧键 y；按新请求的固定 Slack 计算 P&lt;br&gt;H&lt;sub&gt;y&lt;/sub&gt; ← max(H&lt;sub&gt;y&lt;/sub&gt;, L&lt;sub&gt;复用&lt;/sub&gt; + P&lt;sub&gt;新请求&lt;/sub&gt;)&lt;br&gt;credit&lt;sub&gt;y&lt;/sub&gt; = b&lt;sub&gt;y&lt;/sub&gt; max(H&lt;sub&gt;y&lt;/sub&gt; − L, 0)&lt;/div&gt;" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=25;fontColor=#24364B;strokeColor=#7351A5;fillColor=#F5F0FA;rounded=1;arcSize=5;" parent="1" vertex="1">
+                    <mxGeometry x="250" y="1485" width="820" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-minimum" value="&lt;div style=&quot;line-height:1.35&quot;&gt;&lt;b&gt;H&lt;sub&gt;y&lt;/sub&gt; ≤ min(Q 中其余旧键) ?&lt;/b&gt;&lt;br&gt;续租后仍为最小项&lt;/div&gt;" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=25;fontColor=#24364B;strokeColor=#7351A5;fillColor=#F5F0FA;rhombus;" parent="1" vertex="1">
+                    <mxGeometry x="335" y="1680" width="650" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-threshold" value="&lt;div style=&quot;line-height:1.35&quot;&gt;&lt;b&gt;H&lt;sub&gt;y&lt;/sub&gt; &amp;lt; Θ&lt;sub&gt;x&lt;/sub&gt; ?&lt;/b&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=29;fontColor=#24364B;strokeColor=#A16A17;fillColor=#FFF7E8;rhombus;" parent="1" vertex="1">
+                    <mxGeometry x="425" y="1865" width="470" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-victim" value="&lt;div style=&quot;line-height:1.35&quot;&gt;Y ← Y ∪ {y}　；　f ← f + b&lt;sub&gt;y&lt;/sub&gt;&lt;br&gt;暴露并刷新前一合法尾块，再加入 Q&lt;br&gt;共享块只释放一次；更新合法尾块索引&lt;/div&gt;" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=25;fontColor=#24364B;strokeColor=#7351A5;fillColor=#F5F0FA;rounded=1;arcSize=5;" parent="1" vertex="1">
+                    <mxGeometry x="180" y="2040" width="960" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-jointloss" value="&lt;div style=&quot;line-height:1.35&quot;&gt;&lt;b&gt;计算新增收益与整个 Y 的淘汰损失&lt;/b&gt;&lt;br&gt;ΔG&lt;sub&gt;x&lt;/sub&gt; = G&lt;sub&gt;x&lt;/sub&gt; − G&lt;sub&gt;前一块&lt;/sub&gt; = W&lt;sub&gt;x&lt;/sub&gt;&lt;br&gt;D&lt;sub&gt;Y&lt;/sub&gt; = WCT(加入 x、移除 Y) − WCT(仅加入 x)&lt;/div&gt;" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=24;fontColor=#24364B;strokeColor=#246BA2;fillColor=#EDF5FB;rounded=1;arcSize=5;" parent="1" vertex="1">
+                    <mxGeometry x="140" y="2230" width="1040" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-admit" value="&lt;div style=&quot;line-height:1.35&quot;&gt;&lt;b&gt;ΔG&lt;sub&gt;x&lt;/sub&gt; &amp;gt; D&lt;sub&gt;Y&lt;/sub&gt; ?&lt;/b&gt;&lt;br&gt;且前置检查通过&lt;/div&gt;" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=25;fontColor=#24364B;strokeColor=#A16A17;fillColor=#FFF7E8;rhombus;" parent="1" vertex="1">
+                    <mxGeometry x="315" y="2450" width="690" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-pending" value="&lt;div style=&quot;line-height:1.35&quot;&gt;&lt;b&gt;撤销并释放 Y；分配 x → PENDING&lt;/b&gt;&lt;br&gt;L ← max(L, max&lt;sub&gt;y∈Y&lt;/sub&gt; H&lt;sub&gt;y&lt;/sub&gt;)　（Y = ∅ 时 L 不变）&lt;/div&gt;" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=25;fontColor=#24364B;strokeColor=#246BA2;fillColor=#EDF5FB;rounded=1;arcSize=5;" parent="1" vertex="1">
+                    <mxGeometry x="150" y="2660" width="1020" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-transfer" value="&lt;div style=&quot;line-height:1.35&quot;&gt;&lt;b&gt;从源 Worker 直接复制&lt;/b&gt;&lt;br&gt;HBM：D2D / P2P　；　DRAM：D2H&lt;/div&gt;" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=26;fontColor=#24364B;strokeColor=#246BA2;fillColor=#EDF5FB;rounded=1;arcSize=5;" parent="1" vertex="1">
+                    <mxGeometry x="240" y="2830" width="840" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-ack" value="&lt;div style=&quot;line-height:1.35&quot;&gt;&lt;b&gt;分片完整且版本有效？&lt;/b&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=27;fontColor=#24364B;strokeColor=#A16A17;fillColor=#FFF7E8;rhombus;" parent="1" vertex="1">
+                    <mxGeometry x="315" y="2990" width="690" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-commit" value="&lt;div style=&quot;line-height:1.35&quot;&gt;&lt;b&gt;确认前缀完整，初始化新副本租值键&lt;/b&gt;&lt;br&gt;H&lt;sub&gt;x&lt;/sub&gt; ← L + G&lt;sub&gt;x&lt;/sub&gt; / b&lt;sub&gt;x&lt;/sub&gt; = L + P&lt;sub&gt;x&lt;/sub&gt;&lt;br&gt;COMMITTED；加入本层索引&lt;/div&gt;" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=25;fontColor=#24364B;strokeColor=#177F67;fillColor=#EBF7F1;rounded=1;arcSize=5;" parent="1" vertex="1">
+                    <mxGeometry x="250" y="3180" width="820" height="145" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-result" value="&lt;div style=&quot;line-height:1.35&quot;&gt;&lt;b&gt;两层均结束后组合结果；继续后续 chunk / 重试事件&lt;/b&gt;&lt;br&gt;HBM_ONLY　/　DRAM_ONLY　/　HBM_AND_DRAM　/　BYPASS&lt;/div&gt;" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=23;fontColor=#24364B;strokeColor=#647383;fillColor=#F5F7F9;rounded=1;arcSize=50;" parent="1" vertex="1">
+                    <mxGeometry x="90" y="3390" width="1140" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-bypass-pop" value="" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=26;fontColor=#24364B;strokeColor=#AB4346;fillColor=#FCF0F0;ellipse;fillColor=#AB4346;strokeColor=#AB4346;" parent="1" vertex="1">
+                    <mxGeometry x="1257" y="1552" width="6" height="6" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-bypass-threshold" value="" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=26;fontColor=#24364B;strokeColor=#AB4346;fillColor=#FCF0F0;ellipse;fillColor=#AB4346;strokeColor=#AB4346;" parent="1" vertex="1">
+                    <mxGeometry x="1257" y="1922" width="6" height="6" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-bypass-admit" value="" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=26;fontColor=#24364B;strokeColor=#AB4346;fillColor=#FCF0F0;ellipse;fillColor=#AB4346;strokeColor=#AB4346;" parent="1" vertex="1">
+                    <mxGeometry x="1257" y="2522" width="6" height="6" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-abort-transfer" value="" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=26;fontColor=#24364B;strokeColor=#AB4346;fillColor=#FCF0F0;ellipse;fillColor=#AB4346;strokeColor=#AB4346;" parent="1" vertex="1">
+                    <mxGeometry x="1257" y="2877" width="6" height="6" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-abort-ack" value="" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=26;fontColor=#24364B;strokeColor=#AB4346;fillColor=#FCF0F0;ellipse;fillColor=#AB4346;strokeColor=#AB4346;" parent="1" vertex="1">
+                    <mxGeometry x="1257" y="3052" width="6" height="6" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-0" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2.5;strokeColor=#647383;fontFamily=Noto Sans CJK SC;fontSize=23;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="slr-event" target="slr-tiers" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2.5;strokeColor=#647383;fontFamily=Noto Sans CJK SC;fontSize=23;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="slr-tiers" target="slr-metadata" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2.5;strokeColor=#647383;fontFamily=Noto Sans CJK SC;fontSize=23;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="slr-metadata" target="slr-sealed" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2.5;strokeColor=#647383;fontFamily=Noto Sans CJK SC;fontSize=23;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="slr-sealed" target="slr-recovery" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2.5;strokeColor=#647383;fontFamily=Noto Sans CJK SC;fontSize=23;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="slr-recovery" target="slr-priority" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2.5;strokeColor=#647383;fontFamily=Noto Sans CJK SC;fontSize=23;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="slr-priority" target="slr-preview" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2.5;strokeColor=#647383;fontFamily=Noto Sans CJK SC;fontSize=23;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="slr-preview" target="slr-capacity" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2.5;strokeColor=#647383;fontFamily=Noto Sans CJK SC;fontSize=23;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="slr-capacity" target="slr-pop" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-7-label" value="否" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=22;fontColor=#24364B;strokeColor=#647383;fillColor=#F5F7F9;strokeColor=none;fillColor=none;spacing=0;" parent="1" vertex="1">
+                    <mxGeometry x="670" y="1437" width="65" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2.5;strokeColor=#177F67;fontFamily=Noto Sans CJK SC;fontSize=23;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;exitX=0;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="slr-capacity" target="slr-jointloss" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="70" y="1367"/>
+                            <mxPoint x="70" y="2295"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="slr-edge-8-label" value="是" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=22;fontColor=#24364B;strokeColor=#177F67;fillColor=#EBF7F1;strokeColor=none;fillColor=none;spacing=0;" parent="1" vertex="1">
+                    <mxGeometry x="95" y="1390" width="65" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2.5;strokeColor=#647383;fontFamily=Noto Sans CJK SC;fontSize=23;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="slr-pop" target="slr-minimum" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2.5;strokeColor=#7351A5;fontFamily=Noto Sans CJK SC;fontSize=23;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="slr-minimum" target="slr-threshold" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-10-label" value="是" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=22;fontColor=#24364B;strokeColor=#7351A5;fillColor=#F5F0FA;strokeColor=none;fillColor=none;spacing=0;" parent="1" vertex="1">
+                    <mxGeometry x="670" y="1820" width="65" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2.5;strokeColor=#7351A5;fontFamily=Noto Sans CJK SC;fontSize=23;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;exitX=1;exitY=0.5;entryX=1;entryY=0.9;" parent="1" source="slr-minimum" target="slr-pop" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1120" y="1745"/>
+                            <mxPoint x="1120" y="1611"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="slr-edge-11-label" value="否&lt;br&gt;更新租值键&lt;br&gt;重新入堆 Q" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=22;fontColor=#24364B;strokeColor=#7351A5;fillColor=#F5F0FA;strokeColor=none;fillColor=none;spacing=0;" parent="1" vertex="1">
+                    <mxGeometry x="1130" y="1635" width="120" height="95" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2.5;strokeColor=#7351A5;fontFamily=Noto Sans CJK SC;fontSize=23;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="slr-threshold" target="slr-victim" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-12-label" value="是" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=22;fontColor=#24364B;strokeColor=#7351A5;fillColor=#F5F0FA;strokeColor=none;fillColor=none;spacing=0;" parent="1" vertex="1">
+                    <mxGeometry x="670" y="1995" width="65" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2.5;strokeColor=#7351A5;fontFamily=Noto Sans CJK SC;fontSize=23;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;exitX=0;exitY=0.5;entryX=0.5;entryY=0;" parent="1" source="slr-victim" target="slr-capacity" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="140" y="2110"/>
+                            <mxPoint x="140" y="1277"/>
+                            <mxPoint x="660" y="1277"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="slr-edge-13-label" value="继续选取" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=22;fontColor=#24364B;strokeColor=#7351A5;fillColor=#F5F0FA;strokeColor=none;fillColor=none;spacing=0;" parent="1" vertex="1">
+                    <mxGeometry x="145" y="1920" width="145" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2.5;strokeColor=#647383;fontFamily=Noto Sans CJK SC;fontSize=23;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="slr-jointloss" target="slr-admit" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-15" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2.5;strokeColor=#177F67;fontFamily=Noto Sans CJK SC;fontSize=23;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="slr-admit" target="slr-pending" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-15-label" value="是" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=22;fontColor=#24364B;strokeColor=#177F67;fillColor=#EBF7F1;strokeColor=none;fillColor=none;spacing=0;" parent="1" vertex="1">
+                    <mxGeometry x="670" y="2615" width="65" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2.5;strokeColor=#246BA2;fontFamily=Noto Sans CJK SC;fontSize=23;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="slr-pending" target="slr-transfer" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-17" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2.5;strokeColor=#246BA2;fontFamily=Noto Sans CJK SC;fontSize=23;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="slr-transfer" target="slr-ack" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-18" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2.5;strokeColor=#177F67;fontFamily=Noto Sans CJK SC;fontSize=23;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="slr-ack" target="slr-commit" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-18-label" value="是" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=22;fontColor=#24364B;strokeColor=#177F67;fillColor=#EBF7F1;strokeColor=none;fillColor=none;spacing=0;" parent="1" vertex="1">
+                    <mxGeometry x="670" y="3130" width="65" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-19" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2.5;strokeColor=#177F67;fontFamily=Noto Sans CJK SC;fontSize=23;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="slr-commit" target="slr-result" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-20" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;endFill=1;strokeWidth=2.5;strokeColor=#AB4346;fontFamily=Noto Sans CJK SC;fontSize=23;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;exitX=1;exitY=0.2;entryX=0.5;entryY=0;" parent="1" source="slr-pop" target="slr-bypass-pop" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1260" y="1513"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="slr-edge-20-label" value="Q = ∅" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=22;fontColor=#24364B;strokeColor=#AB4346;fillColor=#FCF0F0;strokeColor=none;fillColor=none;spacing=0;" parent="1" vertex="1">
+                    <mxGeometry x="1145" y="1465" width="110" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-21" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;endFill=1;strokeWidth=2.5;strokeColor=#AB4346;fontFamily=Noto Sans CJK SC;fontSize=23;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="slr-threshold" target="slr-bypass-threshold" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-21-label" value="否" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=22;fontColor=#24364B;strokeColor=#AB4346;fillColor=#FCF0F0;strokeColor=none;fillColor=none;spacing=0;" parent="1" vertex="1">
+                    <mxGeometry x="1050" y="1875" width="65" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-22" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;endFill=1;strokeWidth=2.5;strokeColor=#AB4346;fontFamily=Noto Sans CJK SC;fontSize=23;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="slr-admit" target="slr-bypass-admit" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-22-label" value="否" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=22;fontColor=#24364B;strokeColor=#AB4346;fillColor=#FCF0F0;strokeColor=none;fillColor=none;spacing=0;" parent="1" vertex="1">
+                    <mxGeometry x="1100" y="2475" width="65" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-23" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;endFill=1;strokeWidth=2.5;strokeColor=#AB4346;fontFamily=Noto Sans CJK SC;fontSize=23;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="slr-transfer" target="slr-abort-transfer" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-23-label" value="复制失败" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=22;fontColor=#24364B;strokeColor=#AB4346;fillColor=#FCF0F0;strokeColor=none;fillColor=none;spacing=0;" parent="1" vertex="1">
+                    <mxGeometry x="1100" y="2835" width="140" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-24" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;endFill=1;strokeWidth=2.5;strokeColor=#AB4346;fontFamily=Noto Sans CJK SC;fontSize=23;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="slr-ack" target="slr-abort-ack" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-24-label" value="否" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=22;fontColor=#24364B;strokeColor=#AB4346;fillColor=#FCF0F0;strokeColor=none;fillColor=none;spacing=0;" parent="1" vertex="1">
+                    <mxGeometry x="1100" y="3000" width="65" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-25" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;endFill=1;strokeWidth=2.5;strokeColor=#AB4346;fontFamily=Noto Sans CJK SC;fontSize=23;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="slr-bypass-pop" target="slr-bypass-threshold" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-26" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;endFill=1;strokeWidth=2.5;strokeColor=#AB4346;fontFamily=Noto Sans CJK SC;fontSize=23;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="slr-bypass-threshold" target="slr-bypass-admit" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-27" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;endFill=1;strokeWidth=2.5;strokeColor=#AB4346;fontFamily=Noto Sans CJK SC;fontSize=23;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="slr-bypass-admit" target="slr-abort-transfer" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-28" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;endFill=1;strokeWidth=2.5;strokeColor=#AB4346;fontFamily=Noto Sans CJK SC;fontSize=23;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="slr-abort-transfer" target="slr-abort-ack" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-edge-29" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2.5;strokeColor=#AB4346;fontFamily=Noto Sans CJK SC;fontSize=23;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1;entryX=1;entryY=0.5;" parent="1" source="slr-abort-ack" target="slr-result" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1260" y="3440"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="slr-edge-29-label" value="拒绝：BYPASS&lt;br&gt;失败：ABORTED&lt;br&gt;清理新空间&lt;br&gt;不回滚 Y" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=22;fontColor=#24364B;strokeColor=#AB4346;fillColor=#FCF0F0;strokeColor=none;fillColor=none;spacing=0;" parent="1" vertex="1">
+                    <mxGeometry x="1090" y="3180" width="165" height="145" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-credit" value="&lt;b&gt;符号速查（两层独立计算，省略重复池下标 r）&lt;/b&gt;" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=26;fontColor=#24364B;strokeColor=#246BA2;fillColor=#EDF5FB;strokeColor=none;fillColor=none;spacing=0;" parent="1" vertex="1">
+                    <mxGeometry x="90" y="3550" width="1140" height="45" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-legend" value="i：请求　·　s：固定 Slack　·　k：前缀中的第 k 块　·　T：恢复时间&lt;br&gt;J：Slack 可见恢复损失　·　W：逐块恢复收益　·　G：前缀累计收益&lt;br&gt;P：每字节优先级　·　b：块字节　·　f：规划空闲字节　·　Q：尾块堆　·　Y：淘汰集合&lt;br&gt;L：池租金　·　H：租值键　·　Θ：准入阈值　·　credit：扣租后预算&lt;br&gt;x / y：新候选 / 淘汰候选　·　ΔG：新增收益　·　D：联合淘汰损失" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=22;fontColor=#24364B;strokeColor=#246BA2;fillColor=#EDF5FB;strokeColor=none;fillColor=none;spacing=0;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="3605" width="1200" height="215" as="geometry"/>
+                </mxCell>
+                <mxCell id="slr-scope" value="G&lt;sub&gt;0&lt;/sub&gt; = 0；T&lt;sub&gt;0&lt;/sub&gt;：无该前缀的恢复时间；T&lt;sub&gt;k&lt;/sub&gt;：可恢复至第 k 块。&lt;br&gt;原文命中与 LRU 奖励已移除（λ&lt;sub&gt;h&lt;/sub&gt; = λ&lt;sub&gt;l&lt;/sub&gt; = 0）；仅使用 COMMITTED 连续前沿。" style="whiteSpace=wrap;html=1;fontFamily=Noto Sans CJK SC;align=center;verticalAlign=middle;spacing=8;strokeWidth=2;fontSize=21;fontColor=#24364B;strokeColor=#246BA2;fillColor=#EDF5FB;strokeColor=none;fillColor=none;spacing=0;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="3850" width="1200" height="75" as="geometry"/>
+                </mxCell>
+                <mxCell id="2" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="1030" y="570" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="3" value="KV chunk&lt;div&gt;Agent1: slack1&lt;/div&gt;&lt;div&gt;Agent2: slack2&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="1710" y="285" width="130" height="65" as="geometry"/>
+                </mxCell>
+                <mxCell id="4" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="1620" y="420" width="90" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="5" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="1730" y="420" width="90" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="6" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="1840" y="420" width="90" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="7" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="1950" y="420" width="40" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="8" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+                    <mxGeometry x="2010" y="420" width="40" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="9" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="1620" y="470" width="90" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="10" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="1730" y="470" width="90" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="11" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+                    <mxGeometry x="1840" y="470" width="40" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="12" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="1620" y="520" width="90" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="13" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="1730" y="520" width="90" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="14" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="1840" y="520" width="90" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="15" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+                    <mxGeometry x="1950" y="520" width="40" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="17" value="Agent1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="1540" y="420" width="60" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="18" value="Agent2" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="1540" y="470" width="60" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="19" value="Agent3" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="1540" y="520" width="60" height="30" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

@@ -1,0 +1,16 @@
+{
+  "name": "system-overview",
+  "evidence": "design",
+  "width_in": 7,
+  "height_in": 5.06,
+  "min_font_pt": 10.06,
+  "out_of_page_text": [],
+  "generator": "benchmark/AegisKV/experiments/scripts/paper/build_draft_overview.py",
+  "files": {
+    "pdf": "43f26e1d87f5805bc13d55eb9473d3d6a8b0dd6ac1ca7dec12a0fa82ca507fe1",
+    "svg": "604dda87ae7f11ce39c1e0e0cbc36cadecd5823637eaf3f550de7f27d4ea3bf1",
+    "png": "8ce42193c33ca52e6b5548def38013f15252943617f6fb88c6fbea819d91f675",
+    "drawio": "74dbe64fd1d3bad9a98fba79dc42eb5bfa2ce1cf1a4c01bbf925add83c4003ff"
+  },
+  "note": "Worked example with one request (A2) and 4 of 36 layers drawn; hot-block pattern is illustrative. Cell geometry is not a capacity measurement. Visual review of the native PNG/PDF is required after regeneration."
+}

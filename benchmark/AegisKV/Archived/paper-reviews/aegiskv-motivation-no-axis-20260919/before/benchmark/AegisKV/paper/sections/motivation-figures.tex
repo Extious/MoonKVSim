@@ -1,0 +1,49 @@
+% One full-width figure with three subfigures; requires subcaption.
+% Each landscape panel is 2.24 x 1.85 in at the EuroSys insertion size.
+% Plot labels are 10.25 pt at this insertion size; do not shrink this row.
+\begin{figure*}[t]
+  \centering
+  \captionsetup[subfigure]{font=normalsize,labelfont=normalfont,
+    textfont=normalfont,justification=centering,singlelinecheck=false}
+  \begin{subfigure}[t]{0.32\textwidth}
+    \vspace{0pt}
+    \includegraphics[width=\linewidth]{figures/motivation-row/motivation-branch-gap.pdf}
+    \caption{Workflow-maximum gaps}
+    \label{fig:motivation-branch-gap}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.32\textwidth}
+    \vspace{0pt}
+    \includegraphics[width=\linewidth,height=1.85in,keepaspectratio]{figures/motivation-row/motivation-workflow.drawio.pdf}
+    \caption{Four-branch workflow}
+    \label{fig:motivation-workflow}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.32\textwidth}
+    \vspace{0pt}
+    \includegraphics[width=\linewidth]{figures/motivation-row/motivation-recovery-exposure.pdf}
+    \caption{Estimated recovery exposure}
+    \label{fig:motivation-recovery-exposure}
+  \end{subfigure}
+  \caption{Workflow timing and illustrative recovery exposure.
+    (a) ECDF of maximum branch-duration gaps per workflow
+    (121 workflows; temporally inferred fan-in), not a slack distribution.
+    (b) Selected four-branch trace example, with a 91.2\,s gap;
+    it is not a maximum-gap sample from (a). A0/A5 denote Main before/after
+    the branches. Bar positions and lengths
+    encode observed timing from the first branch launch; dashed tails
+    assume all branches are required at A2's 151.6\,s finish.
+    (c) Independent branch-failure counterfactuals at 29.5\,s:
+    hatching denotes absorbed delay, solid fill WCT loss.
+    Rebuild costs use block-count input proxies and Qwen3-14B/A100 BF16
+    static estimates with an assumed 64-token tail (batch/TP one).}
+  \label{fig:motivation}
+  \Description{The panels show workflow-maximum duration gaps, a time-scaled
+    four-branch fan-in example with a 91.2-second gap, and estimated
+    rebuilding cost decomposed into slack-absorbed time and WCT loss.
+    The workflow runs left to right from A0 through four branches
+    and their assumed join to A5. A0 and A5 denote the Main stages,
+    drawn schematically and highlighted red along with A2.
+    Branch bars use the common time axis, with IDs and durations inside.
+    A2 determines the assumed join and exposes its full 32.2-second
+    rebuilding cost. A1 absorbs its entire cost; A3 and A4 absorb part
+    of theirs, leaving WCT penalties of 17.6 and 17.0 seconds.}
+\end{figure*}

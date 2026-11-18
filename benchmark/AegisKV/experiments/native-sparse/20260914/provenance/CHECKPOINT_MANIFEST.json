@@ -1,0 +1,71 @@
+{
+  "repository": "openbmb/NOSA-1B",
+  "revision": "7bdc33fbc1bc80b76b29689ba35ff6a7991b7dee",
+  "files": {
+    "README.md": {
+      "bytes": 2870,
+      "sha256": "e9a61208dd56bba8524838efe42c71e5d020d00def5ef02a08ff8ba1b98d083a",
+      "upstream_lfs_sha256": null
+    },
+    "added_tokens.json": {
+      "bytes": 216,
+      "sha256": "4760fcbf90bc193f33827ffe02f2e7ba1af1ec43644cc02ac22fdd611f6cca15",
+      "upstream_lfs_sha256": null
+    },
+    "cis_pooling.py": {
+      "bytes": 3879,
+      "sha256": "9fe3927056187d04085c7550225809e1765c4b6f03fbf688301ee6b085cfd0cc",
+      "upstream_lfs_sha256": null
+    },
+    "config.json": {
+      "bytes": 3439,
+      "sha256": "83dc9919771a0687ed7579a1de1adee9d82d6a0cadc52aff11ea97a9a06196c4",
+      "upstream_lfs_sha256": null
+    },
+    "configuration_minicpm.py": {
+      "bytes": 9658,
+      "sha256": "f9014f14f71a175a53d48e862ebabb6007a09a2b7dd61eb6a00ddb0cee0ef9a5",
+      "upstream_lfs_sha256": null
+    },
+    "generation_config.json": {
+      "bytes": 182,
+      "sha256": "83595cf3b045d7ed16593ae399b0e3c13fe45640a4bec3a1cd371b057a6a98b7",
+      "upstream_lfs_sha256": null
+    },
+    "modeling_llama_long_infllmv2.py": {
+      "bytes": 99520,
+      "sha256": "3124349338c9bcfaf0419480e6b77ca8b8743c250dfa875ccde943d49209244b",
+      "upstream_lfs_sha256": null
+    },
+    "modeling_minicpm.py": {
+      "bytes": 102567,
+      "sha256": "d13e6ff3384a5250eccd369336462288ad1966a71d426cd8496b6dd490961e94",
+      "upstream_lfs_sha256": null
+    },
+    "special_tokens_map.json": {
+      "bytes": 630,
+      "sha256": "9ec9d6f07cb0e436598bf29b4d97c6355434c08fdbe9c264e6926907f3751c7e",
+      "upstream_lfs_sha256": null
+    },
+    "tokenizer.json": {
+      "bytes": 6701371,
+      "sha256": "adf7208af154a5ca065d2eda4e5419e02aac58c2c00627874748b75ec6769094",
+      "upstream_lfs_sha256": null
+    },
+    "tokenizer.model": {
+      "bytes": 1181204,
+      "sha256": "bb74d51116831c3bf65db812c553f94ab0c88dcf97a5bbb37e3504f6d359c530",
+      "upstream_lfs_sha256": "bb74d51116831c3bf65db812c553f94ab0c88dcf97a5bbb37e3504f6d359c530"
+    },
+    "tokenizer_config.json": {
+      "bytes": 2939,
+      "sha256": "754ae39e7407a1f34c4fd76b37d8f46dae72ba14e52f01899ff9cac4254bf94e",
+      "upstream_lfs_sha256": null
+    },
+    "pytorch_model.bin": {
+      "bytes": 3244459942,
+      "sha256": "831236605310bdfded1fc5959dfecd033b48a0aa3ebdd2aa28f19d0ecf5ce4aa",
+      "upstream_lfs_sha256": "831236605310bdfded1fc5959dfecd033b48a0aa3ebdd2aa28f19d0ecf5ce4aa"
+    }
+  }
+}

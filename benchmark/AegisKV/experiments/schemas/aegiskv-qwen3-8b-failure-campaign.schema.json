@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://moonkvsim.local/schemas/aegiskv-qwen3-8b-failure-campaign.schema.json",
+  "title": "Qwen3-8B five-seed paper failure campaign v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "status",
+    "protocol",
+    "binding",
+    "focus_span_ids_by_seed",
+    "seed_count",
+    "seeds",
+    "inference",
+    "direct_class_counts",
+    "acceptance",
+    "modeled_uncalibrated",
+    "physical_execution",
+    "paper_ready",
+    "classifier_generator",
+    "fingerprint"
+  ],
+  "properties": {
+    "schema": {
+      "const": "moonkvsim.aegiskv.qwen3_8b.failure_campaign.v1"
+    },
+    "status": {"const": "PASS"},
+    "protocol": {"type": "object"},
+    "binding": {"type": "object"},
+    "focus_span_ids_by_seed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["0", "1", "2", "3", "4"],
+      "properties": {
+        "0": {"type": "string", "minLength": 1},
+        "1": {"type": "string", "minLength": 1},
+        "2": {"type": "string", "minLength": 1},
+        "3": {"type": "string", "minLength": 1},
+        "4": {"type": "string", "minLength": 1}
+      }
+    },
+    "seed_count": {"const": 5},
+    "seeds": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "prefixItems": [
+        {"allOf": [{"$ref": "#/$defs/seed"}, {"properties": {"seed": {"const": 0}}}]},
+        {"allOf": [{"$ref": "#/$defs/seed"}, {"properties": {"seed": {"const": 1}}}]},
+        {"allOf": [{"$ref": "#/$defs/seed"}, {"properties": {"seed": {"const": 2}}}]},
+        {"allOf": [{"$ref": "#/$defs/seed"}, {"properties": {"seed": {"const": 3}}}]},
+        {"allOf": [{"$ref": "#/$defs/seed"}, {"properties": {"seed": {"const": 4}}}]}
+      ],
+      "items": false
+    },
+    "inference": {"type": "object"},
+    "direct_class_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ADVERSE_DIRECT_MECHANISM",
+        "DIRECT_RECOVERY_BENEFIT_CONCORDANT",
+        "DIRECT_RECOVERY_MIXED",
+        "SOURCE_SUBSTITUTION_OR_NULL_DIRECT_MECHANISM"
+      ],
+      "properties": {
+        "ADVERSE_DIRECT_MECHANISM": {"type": "integer", "minimum": 0},
+        "DIRECT_RECOVERY_BENEFIT_CONCORDANT": {"type": "integer", "minimum": 0},
+        "DIRECT_RECOVERY_MIXED": {"type": "integer", "minimum": 0},
+        "SOURCE_SUBSTITUTION_OR_NULL_DIRECT_MECHANISM": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "fail_closed", "allowed_panel_ids", "omitted_panel_ids"],
+      "properties": {
+        "status": {"const": "PASS"},
+        "fail_closed": {"const": true},
+        "allowed_panel_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "FIGURE_3_A",
+              "FIGURE_3_B",
+              "FIGURE_3_C",
+              "FIGURE_3_D",
+              "FIGURE_4_B",
+              "FIGURE_4_C",
+              "FIGURE_4_D"
+            ]
+          }
+        },
+        "omitted_panel_ids": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["FIGURE_4_A"],
+          "properties": {
+            "FIGURE_4_A": {
+              "const": "FULL_EXCLUSIVE_FAILURE_TO_COMPLETION_PHASE_DECOMPOSITION_NOT_PROVEN"
+            }
+          }
+        }
+      }
+    },
+    "modeled_uncalibrated": {"const": true},
+    "physical_execution": {"const": false},
+    "paper_ready": {"const": false},
+    "classifier_generator": {"$ref": "#/$defs/source"},
+    "fingerprint": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "source": {
+      "type": "object",
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "required": ["path", "sha256", "fingerprint"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "fingerprint": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "seed": {
+      "type": "object",
+      "required": [
+        "seed",
+        "artifact",
+        "classifier",
+        "admission_order_sha256",
+        "workflow_count",
+        "workflow_wct_ns",
+        "workflow_deltas_aegiskv_minus_mooncake_ns",
+        "workflow_level_descriptive_distribution",
+        "seed_level_estimands_ns",
+        "percentile_identities",
+        "winner_tie_loser",
+        "worst_collateral",
+        "causal_contract",
+        "failure_schedule",
+        "direct_class",
+        "direct_evidence",
+        "recovery_selector_evidence"
+      ],
+      "properties": {
+        "seed": {"type": "integer", "minimum": 0, "maximum": 4},
+        "artifact": {"$ref": "#/$defs/artifact"},
+        "classifier": {"$ref": "#/$defs/artifact"},
+        "admission_order_sha256": {"$ref": "#/$defs/sha256"},
+        "workflow_count": {"const": 160},
+        "workflow_wct_ns": {"type": "object"},
+        "workflow_deltas_aegiskv_minus_mooncake_ns": {"type": "object"},
+        "workflow_level_descriptive_distribution": {"type": "object"},
+        "seed_level_estimands_ns": {"type": "object"},
+        "percentile_identities": {"type": "object"},
+        "winner_tie_loser": {"type": "object"},
+        "worst_collateral": {"type": ["object", "null"]},
+        "causal_contract": {"type": "object"},
+        "failure_schedule": {"type": "object"},
+        "direct_class": {
+          "enum": [
+            "DIRECT_RECOVERY_BENEFIT_CONCORDANT",
+            "DIRECT_RECOVERY_MIXED",
+            "SOURCE_SUBSTITUTION_OR_NULL_DIRECT_MECHANISM",
+            "ADVERSE_DIRECT_MECHANISM"
+          ]
+        },
+        "direct_evidence": {"type": "object"},
+        "recovery_selector_evidence": {"type": "object"}
+      }
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "requested_question": "Top-K from the preceding Z=512 queries covers what historical KV demand in the following Z=512 queries?",
+  "evidence": "Offline analysis of existing native model PG19 selector traces; no new forward or fault injection",
+  "checkpoint_history_tokens": 32768,
+  "past_queries_one_based": [
+    32257,
+    32768
+  ],
+  "primary_target_queries_one_based": [
+    32769,
+    33280
+  ],
+  "sensitivity_target_lengths": [
+    64,
+    128,
+    256,
+    512
+  ],
+  "physical_object": "(layer, 64-token block), all physical KV heads",
+  "historical_blocks_per_layer": 512,
+  "per_layer_budget_fractions": [
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5,
+    0.6,
+    0.8,
+    1.0
+  ],
+  "rounding": "ceil(fraction * historical_blocks_per_layer)",
+  "policy": "Reserve the same mandatory sink/local blocks; fill remaining quota by past selection frequency; break ties by descending position",
+  "counting": "Sum native selection occurrences across query positions and selector groups; a Seer 64-query block mask is counted for its 64 queries",
+  "placement_updates_during_target_window": false,
+  "baseline": "Same mandatory blocks, then most recent historical token positions",
+  "primary_metric": "Covered distinct historical layer/block objects divided by needed distinct historical layer/block objects",
+  "new_tail_kv": "Excluded from the historical-demand denominator because it does not exist at the checkpoint and must be regenerated during replay",
+  "aggregation": "Sum counts over layers for each document, then average the three document coverages",
+  "variability": "Document min/max; not confidence intervals",
+  "sample": "3 previously used PG19 documents per model, one checkpoint per document, one existing native forward capture per model/document",
+  "oracle": "Both mandatory-respecting and relaxed per-layer-capacity upper bounds; never used for ranking",
+  "failure_phase": "512 is a fixed full-window target; not an expectation over random failure positions N<=Z",
+  "reference": "Windowed adaptation of temporal locality; not a reproduction of SolidAttention's previous-decode-step policy"
+}

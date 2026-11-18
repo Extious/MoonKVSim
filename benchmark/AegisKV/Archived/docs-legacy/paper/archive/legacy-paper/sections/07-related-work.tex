@@ -1,0 +1,38 @@
+\section{Related Work}
+\label{sec:related-work}
+
+\paragraph{KV storage and agent-aware serving.}
+PagedAttention and SGLang manage pages and prefixes
+~\cite{kwon2023vllm,zheng2024sglang}; Mooncake, HiCache, SYMPHONY, Strata, and
+Bidaw add hierarchical placement and loading
+~\cite{qin2025mooncake,xie2025hicache,agarwal2026symphony,xie2026strata,
+hu2026bidaw}.  Parrot, KVFlow, Pythia, and Agentix expose application structure
+~\cite{lin2024parrot,pan2025kvflow,yu2026pythia,luo2026agentix}, while
+TokenCake, Continuum, PBKV, and TokenDance use criticality, waiting, reuse, or
+synchronization for healthy-time KV management
+~\cite{bian2026tokencake,li2026continuum,zheng2026pbkv,bian2026tokendance}.
+\system{} neither replaces their data paths nor claims agent awareness itself:
+it values failure-recoverable state with causal residual-workflow Slack.
+
+\paragraph{Fault-tolerant inference.}
+DejaVu, GhostServe, RaidServe, and KevlarFlow stream, protect, reconstruct,
+or route serving state
+~\cite{strati2024dejavu,jayakody2026ghostserve,xu2026raidserve,
+qian2026kevlarflow}.  LUMEN, Concordia, AnchorTP, Tarragon, and ReviveMoE
+address complementary execution recovery or reconfiguration
+~\cite{cao2026lumen,gan2026concordia,xu2026anchortp,zhang2026tarragon,
+li2026revivemoe}; CacheFlow accelerates restore/load/recompute
+~\cite{nian2026cacheflow}.  These systems primarily supply protection and
+recovery mechanisms.  \system{} instead couples \emph{which} complete KV
+chunks deserve independent HBM/DRAM capacity before failure with \emph{which}
+ready request recovers first afterward.
+
+\paragraph{Classical mechanisms and distinction.}
+Landlord assigns size-normalized credit~\cite{young2002online}, and real-time
+systems use Slack for checkpoint placement and recovery
+~\cite{melhem2004interplay,acharya2008dynamic}.  Our novelty is not any one
+building block.  It is the joint KV contract: causally recomputed request Slack
+drives tier-local fail-now harm, a two-level continuous-prefix victim index,
+and recovery due times, while pressure-only AIMD bounds Peer HBM without
+requiring DRAM backing.  This differs from agent-aware reuse, classic
+checkpoint Slack, and failure mechanisms that lack workflow-visible KV value.

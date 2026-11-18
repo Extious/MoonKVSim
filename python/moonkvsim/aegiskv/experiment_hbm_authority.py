@@ -15,7 +15,7 @@ transaction therefore leaves both physical and logical state unchanged.
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from moonkvsim.simulation.journal import EventJournal
 from moonkvsim.simulation.ledger import (
@@ -37,6 +37,7 @@ class _SourceAllocation:
     source_chunk_index: int
     block_ids: set[int] = field(default_factory=set)
     cache_hashes: set[str] = field(default_factory=set)
+    shared_alias: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,6 +46,7 @@ class _ResidentIntervalBinding:
     source_chunk_count: int
     account: str
     activate: Callable[[int], int]
+    shared_alias: bool = False
 
     def contains(self, source_chunk_index: int) -> bool:
         return self.start_source_chunk <= source_chunk_index < (
@@ -91,6 +93,8 @@ class ExperimentHBMAuthority:
         inactive_account: str,
         recovery_reserved_account: str,
         reclaim_free_bytes: Callable[[int], bool] | None = None,
+        preview_reclaim_free_bytes: Callable[[int, int], bool] | None = None,
+        reclaimable_inactive_bytes: Callable[[], int] | None = None,
         on_commit: Callable[[str], None] | None = None,
     ) -> None:
         if not authority_id:
@@ -116,11 +120,14 @@ class ExperimentHBMAuthority:
         self.recovery_reserved_account = recovery_reserved_account
         self._pages_per_source_chunk = source_chunk_tokens // logical_block_tokens
         self._reclaim_free_bytes = reclaim_free_bytes
+        self._preview_reclaim_free_bytes = preview_reclaim_free_bytes
+        self._reclaimable_inactive_bytes = reclaimable_inactive_bytes
         self._on_commit = on_commit
         self._blocks: dict[int, _SourceAllocation] = {}
         self._request_blocks: dict[str, list[int]] = {}
         self._source_allocations: dict[tuple[str, int], _SourceAllocation] = {}
         self._resident_intervals: dict[str, list[_ResidentIntervalBinding]] = {}
+        self._shared_backing_releases: dict[str, list[Callable[[], None]]] = {}
         self._recovery: dict[str, _RecoveryReservation] = {}
         self._external_recovery_reservations: dict[
             str, _ExternalRecoveryReservation
@@ -134,15 +141,31 @@ class ExperimentHBMAuthority:
 
         if self._failed:
             return 0
+        inactive_bytes = self.ledger.bytes_in(self.inactive_account)
+        if self._reclaimable_inactive_bytes is not None:
+            # The pool owns source pins, including those held by recovery and
+            # route attempts that have no scheduler resident binding yet.
+            # Its callback excludes every private/pinned chunk already.
+            reclaimable_bytes = self._reclaimable_inactive_bytes()
+            if (
+                type(reclaimable_bytes) is not int
+                or not 0 <= reclaimable_bytes <= inactive_bytes
+            ):
+                raise ExperimentHBMAuthorityError(
+                    "reclaimable inactive bytes exceed the physical account"
+                )
+            return (
+                (self.ledger.bytes_in(FREE_ACCOUNT) + reclaimable_bytes)
+                // self.source_chunk_bytes * self._pages_per_source_chunk
+            )
         physically_reclaimable_source_chunks = (
-            self.ledger.bytes_in(FREE_ACCOUNT)
-            + self.ledger.bytes_in(self.inactive_account)
+            self.ledger.bytes_in(FREE_ACCOUNT) + inactive_bytes
         ) // self.source_chunk_bytes
         bound_inactive_chunks = sum(
             binding.source_chunk_count
             for bindings in self._resident_intervals.values()
             for binding in bindings
-            if binding.account == self.inactive_account
+            if binding.account == self.inactive_account and not binding.shared_alias
         )
         # A foreground pool eviction can invalidate a previously bound
         # inactive interval before its request reaches admission. Never reserve
@@ -241,6 +264,40 @@ class ExperimentHBMAuthority:
             available_blocks = updated_blocks
         return True
 
+    def preview_fresh_request_admission(
+        self,
+        required_bytes: int,
+        *,
+        shared_resident_bytes: int = 0,
+    ) -> bool:
+        """Preview physical admission without changing ledger or policy state.
+
+        ``shared_resident_bytes`` represents route-bound immutable backing that
+        will be installed as a shared resident binding before scheduler
+        admission and therefore does not require a new physical allocation.
+        """
+
+        self._require_available()
+        for name, value in (
+            ("required_bytes", required_bytes),
+            ("shared_resident_bytes", shared_resident_bytes),
+        ):
+            if type(value) is not int or value < 0:
+                raise ValueError(f"{name} must be a non-negative integer")
+            if value % self.source_chunk_bytes:
+                raise ValueError(f"{name} must use complete source chunks")
+        if shared_resident_bytes > required_bytes:
+            raise ValueError("shared resident bytes exceed fresh request bytes")
+        required_free_bytes = required_bytes - shared_resident_bytes
+        if required_free_bytes <= self.ledger.bytes_in(FREE_ACCOUNT):
+            return True
+        if self._preview_reclaim_free_bytes is None:
+            return False
+        return self._preview_reclaim_free_bytes(
+            required_free_bytes,
+            shared_resident_bytes,
+        )
+
     @property
     def active_block_ids(self) -> tuple[int, ...]:
         return tuple(sorted(self._blocks))
@@ -257,16 +314,47 @@ class ExperimentHBMAuthority:
 
     @property
     def active_physical_bytes(self) -> int:
-        return len(self._source_allocations) * self.source_chunk_bytes
+        return (
+            sum(
+                not allocation.shared_alias
+                for allocation in self._source_allocations.values()
+            )
+            * self.source_chunk_bytes
+        )
 
     def physical_bytes_for_request(self, request_id: str) -> int:
         """Return rounded physical ACTIVE bytes owned by one logical request."""
 
         return sum(
             self.source_chunk_bytes
-            for (owner_id, _source_index) in self._source_allocations
-            if owner_id == request_id
+            for (owner_id, _source_index), allocation in self._source_allocations.items()
+            if owner_id == request_id and not allocation.shared_alias
         )
+
+    def committed_source_chunks_for_request(self, request_id: str) -> int:
+        """Return physical or resident chunks already backing one live request."""
+
+        self._require_available()
+        if not request_id:
+            raise ValueError("request_id must be non-empty")
+        active_indices = {
+            source_index
+            for (owner_id, source_index), allocation in self._source_allocations.items()
+            if owner_id == request_id and allocation.block_ids
+        }
+        resident_indices = {
+            source_index
+            for binding in self._resident_intervals.get(request_id, ())
+            for source_index in range(
+                binding.start_source_chunk,
+                binding.start_source_chunk + binding.source_chunk_count,
+            )
+        }
+        recovery = self._external_recovery_reservations.get(request_id)
+        recovery_indices = (
+            set() if recovery is None else set(recovery.bound_source_chunk_indices)
+        )
+        return len(active_indices | resident_indices | recovery_indices)
 
     @property
     def failed(self) -> bool:
@@ -303,6 +391,29 @@ class ExperimentHBMAuthority:
             activate=activate,
         )
 
+    def bind_shared_inactive_prefix(
+        self,
+        *,
+        request_id: str,
+        restored_tokens: int,
+        activate: Callable[[int], int],
+        start_token: int = 0,
+        on_release: Callable[[], None] | None = None,
+    ) -> None:
+        """Bind a refcounted logical alias to immutable inactive HBM backing."""
+
+        self._require_available()
+        self.bind_resident_interval(
+            request_id=request_id,
+            start_token=start_token,
+            token_count=restored_tokens,
+            account=self.inactive_account,
+            activate=activate,
+            shared_alias=True,
+        )
+        if on_release is not None:
+            self._shared_backing_releases.setdefault(request_id, []).append(on_release)
+
     def bind_resident_interval(
         self,
         *,
@@ -311,6 +422,7 @@ class ExperimentHBMAuthority:
         token_count: int,
         account: str,
         activate: Callable[[int], int],
+        shared_alias: bool = False,
     ) -> None:
         """Bind source-resident chunks for atomic role reclassification."""
 
@@ -328,6 +440,7 @@ class ExperimentHBMAuthority:
             source_chunk_count=source_chunk_count,
             account=account,
             activate=activate,
+            shared_alias=shared_alias,
         )
         bindings = self._resident_intervals.get(request_id, [])
         new_indices = set(
@@ -350,7 +463,7 @@ class ExperimentHBMAuthority:
         ):
             raise ValueError("resident source interval is already ACTIVE")
         required_bytes = source_chunk_count * self.source_chunk_bytes
-        if self.ledger.bytes_in(account) < required_bytes:
+        if not shared_alias and self.ledger.bytes_in(account) < required_bytes:
             raise ValueError("resident HBM account cannot cover the bound interval")
         external_recovery: _ExternalRecoveryReservation | None = None
         if account == self.recovery_reserved_account:
@@ -390,6 +503,10 @@ class ExperimentHBMAuthority:
             for owner_id, source_index in self._source_allocations
             if owner_id == request_id
         }
+        if active_indices:
+            raise ExperimentHBMAuthorityError(
+                "cannot unbind a resident interval after ACTIVE adoption"
+            )
         bound_indices = {
             source_index
             for binding in bindings
@@ -421,6 +538,7 @@ class ExperimentHBMAuthority:
                 )
             external.bound_source_chunk_indices.difference_update(recovery_indices)
         del self._resident_intervals[request_id]
+        self._release_shared_backing(request_id)
         self.audit()
         return len(bound_indices) * self.source_chunk_bytes
 
@@ -537,6 +655,14 @@ class ExperimentHBMAuthority:
 
         request_blocks = self._request_blocks.get(request_id, [])
         start_ordinal = len(request_blocks)
+        bindings = self._resident_intervals.get(request_id, [])
+
+        def bound_interval(source_index: int) -> _ResidentIntervalBinding | None:
+            matching = [binding for binding in bindings if binding.contains(source_index)]
+            if len(matching) > 1:
+                raise ExperimentHBMAuthorityError("resident source bindings overlap")
+            return None if not matching else matching[0]
+
         new_allocations: dict[int, _SourceAllocation] = {}
         assignments: list[tuple[int, _SourceAllocation]] = []
         for offset, block_id in enumerate(normalized):
@@ -553,17 +679,14 @@ class ExperimentHBMAuthority:
                         ),
                         request_id=request_id,
                         source_chunk_index=source_index,
+                        shared_alias=(
+                            binding.shared_alias
+                            if (binding := bound_interval(source_index)) is not None
+                            else False
+                        ),
                     ),
                 )
             assignments.append((block_id, allocation))
-
-        bindings = self._resident_intervals.get(request_id, [])
-
-        def bound_interval(source_index: int) -> _ResidentIntervalBinding | None:
-            matching = [binding for binding in bindings if binding.contains(source_index)]
-            if len(matching) > 1:
-                raise ExperimentHBMAuthorityError("resident source bindings overlap")
-            return None if not matching else matching[0]
 
         bound_new: dict[int, tuple[_ResidentIntervalBinding, int]] = {}
         for source_index in new_allocations:
@@ -588,6 +711,8 @@ class ExperimentHBMAuthority:
             raise ExperimentHBMAuthorityError("reclaim callback did not establish FREE bytes")
 
         for binding, count in bound_new.values():
+            if binding.shared_alias:
+                continue
             if count * self.source_chunk_bytes > self.ledger.bytes_in(binding.account):
                 raise ValueError("resident zero-copy interval lost physical residency")
         adopted_recovery_indices = {
@@ -615,6 +740,8 @@ class ExperimentHBMAuthority:
         deltas = []
         for source_index, allocation in sorted(new_allocations.items()):
             resident_binding = bound_interval(source_index)
+            if resident_binding is not None and resident_binding.shared_alias:
+                continue
             from_account = (
                 FREE_ACCOUNT if resident_binding is None else resident_binding.account
             )
@@ -630,12 +757,13 @@ class ExperimentHBMAuthority:
             # pool callback.  Within one DES handler there is no interleaving
             # mutation between this preview and commit.
             self._preflight(deltas)
-            for resident_binding, count in bound_new.values():
-                adopted = resident_binding.activate(count)
-                if adopted != count * self.source_chunk_bytes:
-                    raise ExperimentHBMAuthorityError(
-                        "resident pool activation returned the wrong physical byte count"
-                    )
+        for resident_binding, count in bound_new.values():
+            adopted = resident_binding.activate(count)
+            if adopted != count * self.source_chunk_bytes:
+                raise ExperimentHBMAuthorityError(
+                    "resident pool activation returned the wrong physical byte count"
+                )
+        if deltas:
             self._commit(deltas, cause=cause)
             if external_recovery is not None:
                 external_recovery.reserved_source_chunk_indices.difference_update(
@@ -653,18 +781,33 @@ class ExperimentHBMAuthority:
         request_blocks.extend(normalized)
         self._request_blocks[request_id] = request_blocks
         if bindings:
-            retained = [
-                binding
-                for binding in bindings
-                if not all(
-                    (request_id, source_index) in self._source_allocations
-                    or source_index in new_allocations
+            retained = []
+            for binding in bindings:
+                remaining = [
+                    source_index
                     for source_index in range(
                         binding.start_source_chunk,
                         binding.start_source_chunk + binding.source_chunk_count,
                     )
-                )
-            ]
+                    if not (
+                        (request_id, source_index) in self._source_allocations
+                        or source_index in new_allocations
+                    )
+                ]
+                if remaining:
+                    # Logical pages grow from the request's prefix, so every
+                    # partially adopted interval leaves one contiguous suffix.
+                    if remaining[-1] - remaining[0] + 1 != len(remaining):
+                        raise ExperimentHBMAuthorityError(
+                            "resident adoption did not leave a contiguous suffix"
+                        )
+                    retained.append(
+                        replace(
+                            binding,
+                            start_source_chunk=remaining[0],
+                            source_chunk_count=len(remaining),
+                        )
+                    )
             if retained:
                 self._resident_intervals[request_id] = retained
             else:
@@ -729,7 +872,12 @@ class ExperimentHBMAuthority:
                 - set(normalized)
             )
         ]
-        if released_allocations:
+        released_owned_allocations = [
+            allocation
+            for allocation in released_allocations
+            if not allocation.shared_alias
+        ]
+        if released_owned_allocations:
             self._commit(
                 [
                     self._delta(
@@ -737,7 +885,7 @@ class ExperimentHBMAuthority:
                         account_from=self.active_account,
                         account_to=FREE_ACCOUNT,
                     )
-                    for allocation in released_allocations
+                    for allocation in released_owned_allocations
                 ],
                 cause=cause,
             )
@@ -755,7 +903,12 @@ class ExperimentHBMAuthority:
         else:
             del self._request_blocks[request_id]
             self._resident_intervals.pop(request_id, None)
+            self._release_shared_backing(request_id)
         self.audit()
+
+    def _release_shared_backing(self, request_id: str) -> None:
+        for release in self._shared_backing_releases.pop(request_id, ()):
+            release()
 
     def reserve_recovery_blocks(
         self,
@@ -871,6 +1024,8 @@ class ExperimentHBMAuthority:
         self._request_blocks.clear()
         self._source_allocations.clear()
         self._resident_intervals.clear()
+        for request_id in tuple(self._shared_backing_releases):
+            self._release_shared_backing(request_id)
         self._recovery.clear()
         self._external_recovery_reservations.clear()
 

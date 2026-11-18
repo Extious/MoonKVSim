@@ -1,0 +1,81 @@
+--- benchmark/AegisKV/experiments/evaluation-20260924/sensitivity-campaign-v2-corrected/figures/render_sensitivity_style.py
++++ benchmark/AegisKV/experiments/scripts/current_design/plot_sensitivity_campaign.py
+@@ -133,7 +133,7 @@
+         )
+ 
+ 
+-def draw(specifications, name, plan, targets, figure_data):
++def draw(specifications, name, plan, targets, figure_data, *, connect_capacity=True):
+     rows = 1 if len(specifications) == 3 else 2
+     y_upper = 3 if rows == 1 else 30
+     fig, axes = plt.subplots(
+@@ -204,7 +204,11 @@
+                 y,
+                 color=style["color"],
+                 marker=style["marker"],
+-                ls=style["ls"],
++                ls=(
++                    style["ls"]
++                    if connect_capacity or factor != "dram_GiB_per_host"
++                    else "none"
++                ),
+                 markersize=style["ms"],
+                 linewidth=1.1,
+                 markeredgewidth=0.9,
+@@ -236,13 +240,20 @@
+     return save(fig, name)
+ 
+ 
+-def main():
++def main(*, connect_capacity=True):
+     OUT.mkdir(parents=True, exist_ok=True)
+     font, family = setup()
+     plan, targets, paired = verify_inputs()
+     data = []
+     exports = [
+-        draw(RESOURCES, "sensitivity-resources", plan, targets, data),
++        draw(
++            RESOURCES,
++            "sensitivity-resources",
++            plan,
++            targets,
++            data,
++            connect_capacity=connect_capacity,
++        ),
+         draw(CONTROLS, "sensitivity-controls", plan, targets, data),
+     ]
+     assert len(data) == 84
+@@ -255,6 +266,7 @@
+         font_path=font,
+         font_family=family,
+         requested_font_pt=FONT,
++        connect_capacity=connect_capacity,
+         source_hashes={
+             name: sha(SOURCE / name)
+             for name in (
+--- benchmark/AegisKV/experiments/evaluation-20260924/sensitivity-campaign-v2-corrected/figures/plot_corrected_sensitivity.py
++++ benchmark/AegisKV/experiments/scripts/current_design/plot_corrected_sensitivity.py
+@@ -19,6 +19,11 @@
+     parser = argparse.ArgumentParser(description=__doc__)
+     parser.add_argument("--source", required=True, type=Path)
+     parser.add_argument("--out", type=Path)
++    parser.add_argument(
++        "--no-capacity-lines",
++        action="store_true",
++        help="Show only tested Peer DRAM capacity markers, without connecting lines.",
++    )
+     args = parser.parse_args()
+     source = args.source.resolve()
+     out = args.out.resolve() if args.out else source / "figures"
+@@ -40,7 +45,10 @@
+     engine = importlib.util.module_from_spec(spec)
+     spec.loader.exec_module(engine)
+     engine.SOURCE, engine.OUT = source, out
+-    engine.main()
++    if args.no_capacity_lines:
++        engine.main(connect_capacity=False)
++    else:
++        engine.main()
+     metadata = json.loads((out / "EXPORT_METADATA.json").read_text())
+     metadata.update(
+         input_campaign=str(source),

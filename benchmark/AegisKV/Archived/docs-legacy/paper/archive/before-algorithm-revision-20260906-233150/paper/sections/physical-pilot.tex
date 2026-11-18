@@ -1,0 +1,43 @@
+\begin{table*}[t]
+\centering
+\caption{Physical functional pilot: one fault trial per arm, not repeated
+performance evidence. Full recovery uses 177.75 MiB HBM and 0 MiB DRAM.}
+\label{tab:physical}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Arm & Batch completion (s) & Healthy WCT median (s) & Fault WCT (s) & HBM restored (MiB) \\
+\midrule
+Unprotected & 56.310 & 9.029 & 10.741 & 0 \\
+AegisKV DRAM-only & 56.307 & 9.028 & 10.745 & 0 \\
+Full AegisKV & 56.570 & 9.071 & 10.762 & 177.75 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\section{Physical Prototype Validation}
+\label{sec:physical}
+The prototype runs Qwen3-8B FP16 on two RTX4090 GPUs (DP2, TP=PP=1).
+Absent CUDA peer access, transfers use host-staged TCP with D2H/H2D.
+Each arm executes six synthetic two-branch workflows (12 requests), with
+one worker process-group termination 1.5 s after activation, independent
+of backup commitment.
+
+All requests complete. Full records six HBM-only admissions and seven
+bypasses, protects 598.5 MiB, and restores 1,264/1,278 prompt tokens before
+completing 512 output tokens. DRAM naturally admits nothing. Directed
+tests separately exercise both tiers (58.5 MiB each), excluded from
+Table~\ref{tab:physical}. Full batch completion is 0.46\% slower than
+unprotected. One trial per arm supports functional recovery and cleanup;
+non-streaming completion does not validate live output fencing.
+
+Same-allocation calibration yields HBM/DRAM write rates of 0.587/0.336 GB/s,
+load rates of 2.300/1.233 GB/s and recomputation cost 0.1007 ms/token.
+These include software overhead and do not calibrate A100, P2P or RDMA.
+The predictor uses 80 synthetic workflows (40/20/20 train/calibration/test),
+with held-out duration error 2.68\% and Slack coverage 95\%; long-context
+and dynamic-agent generalization remain unvalidated.
+
+The pilot registers 2 GiB HBM, initial $\alpha=0.5$ and a 5 s AIMD interval;
+simulation uses 40 GiB, 0.2 and 1 s. Equal quota formulas do not imply equal
+operating points. Stable windows, additive updates, quota publication and
+cleanup have physical evidence; pressure-driven tail reclamation does not.

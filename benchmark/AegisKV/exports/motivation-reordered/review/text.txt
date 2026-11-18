@@ -1,0 +1,1182 @@
+PAGE 1
+AegisKV: Background, Motivation, and System Design
+Anonymous Author(s)
+Abstract
+Multi-agent applications coordinate interdependent LLM
+requests and accumulate long contexts across interactions.
+Recovering lost or unavailable key–value (KV) state can
+be costly, but its impact on workflow completion depends
+on each request’s delay tolerance. We present AegisKV, a
+workflow-aware KV fault-tolerance framework built on mul-
+tilevel storage. AegisKV derives request slack from work-
+flow dependencies and estimated remaining execution time,
+then combines slack with recovery costs to choose protec-
+tion levels and allocate limited backup resources. Within
+each request, sparse-attention access patterns and layer ex-
+ecution order guide KV block placement and recovery. By
+coordinating request-level protection with block-level place-
+ment, AegisKV focuses limited backup resources on reduc-
+ing recovery delays that affect workflow completion. The
+design separates fault-safe KV availability from limited Peer-
+HBM residency, allowing request-local hot-set replacement
+and capacity-driven demotion without changing the model’s
+sparse selections. Native selection traces and a pipeline model
+using measured forward latency and assumed transfer band-
+width motivate these mechanisms; end-to-end workflow ben-
+efits and normal-service overhead remain to be evaluated.
+2
+Background and Motivation
+2.1
+Background
+Multi-agent workflows. Multi-agent workflows are be-
+coming an important form of LLM application, including
+coding assistants and research systems [1, 17]. An agent may
+have a predefined role, such as a planner or reviewer, or be
+instantiated as a subagent to complete a particular subtask.
+Each agent may issue several LLM requests, invoke tools, and
+incorporate their results before producing its output. These
+interactions form a workflow with sequential dependencies,
+parallel branches, and joins. Multiple requests using the same
+role may share a compatible prompt prefix, while successive
+tool interactions extend an individual agent’s history. Thus,
+a request, an agent, and the complete user workflow describe
+different units of execution and completion.
+Failures at serving scale. LLM services distribute re-
+quests across many GPU workers, with each model replica
+potentially spanning several devices. As deployments grow,
+failures become an operational concern even when individ-
+ual devices are reliable: an unavailable device can interrupt
+an entire replica and shift its work to the surviving fleet [2].
+The interruption loses both serving capacity and access to the
+failed worker’s GPU-resident KV cache. Recovery therefore
+requires more than rerouting a request; it must also supply
+the state needed to resume computation. KV replication and
+checkpointing systems already address this state-recovery
+problem [2, 6, 16]. We focus on fail-stop GPU/worker failures
+with a compatible surviving replica, retained token history
+and control state, and surviving backup storage. Under this
+scope, the application-level consequences of the interruption
+depend on both its workflow position and its recovery cost.
+2.2
+Motivation
+Workflow completion requires different protection pri-
+orities. The user waits for the complete task, so we use work-
+flow completion time (WCT), from task release to completion
+of all required results, as the primary objective. Minimizing
+an individual request’s or agent’s completion time alone
+does not capture the effect of its dependencies. Figure 1(a)
+illustrates this distinction with a four-branch coding work-
+flow. A2 completes last, 151.6 s after the fork, whereas A1
+completes at 60.4 s. If the following Main stage needs all four
+outputs, accelerating A1 alone does not advance the join,
+while delaying A2 postpones downstream work. The same
+distinction matters for fault protection: branches differ in
+how much additional delay they can absorb. We call this
+tolerance slack.
+To characterize this heterogeneity beyond one example,
+we analyze the public SemiAnalysis CC/Weka dataset col-
+lected from Claude Code coding workflows [14]. Its filtered
+release contains 393 sessions. We retain overlapping sub-
+agent groups whose branches complete and are followed by
+a Main request after the last branch finishes; Main may also
+execute while the branches run. This yields 286 groups in 121
+workflows. For each group, we compute the longest minus
+the shortest branch duration; each workflow contributes its
+maximum such difference. Figure 1(b) shows a median of
+138 s and a 90th percentile of 1,173 s. These statistics show
+branch-duration heterogeneity among workflow maxima.
+The trace lacks explicit result-consumption edges, so fan-in
+is inferred from timing and the gaps are not a distribution
+of slack at failure time. The example and distribution to-
+gether motivate assigning protection priorities according
+to workflow impact, rather than treating all agent requests
+equally.
+Growing contexts make KV reconstruction increas-
+ingly costly. An agent’s later requests often include earlier
+reasoning, code, tool outputs, and other agents’ results. With-
+out context reduction, this history grows across interactions.
+KV caching avoids repeatedly processing that history during
+normal execution. If a failure makes the active KV unavail-
+able and no usable copy survives, recovery must rebuild
+the missing state before continuing; longer histories can
+1
+
+
+PAGE 2
+A0
+A5
+A1 60.4s
+A2 151.6s
+A3 132.4s
+A4 129.4s
+(a) Four-branch workflow
+1
+100
+10k
+Max. duration gap (s)
+0
+50
+100
+Workflows (%)
+Median
+138 s
+P90
+1,173 s
+(b) Workflow-maximum gaps
+8K
+128K
+1M
+Context (tokens)
+10
+1k
+100k
+Recovery time (ms)
+HBM
+DRAM
+Recomp.
+Q14B
+L70B
+Q235B
+DS-V3.2
+(c) Context and recovery cost
+Figure 1. Motivating workflow-aware KV protection. (a) Selected Claude Code trace example with four parallel branches;
+A0/A5 denote Main before/after them. Bars preserve observed timing; dashed tails assume that all branch outputs are required
+at the join. (b) ECDF of the maximum branch-duration gap in each of 121 workflows with temporally inferred fan-in; it is not a
+slack distribution. (c) Static recovery estimates within each model configuration: Q14B, L70B, Q235B, and DS-V3.2 denote
+Qwen3-14B, Llama-3.1-70B, Qwen3-235B-A22B-Instruct-2507, and DeepSeek-V3.2, using 1/4/16/32 H100 GPUs. All paths
+include the same 64-token tail; HBM holds full history, DRAM restores it at an assumed 64 GB/s per GPU, and Recompute uses
+8K chunks. Hollow markers indicate extrapolation; filled markers are also estimates. K = 1,024; M = 106.
+therefore turn a brief interruption into substantial additional
+computation.
+Figure 1(c) compares three starting states: complete his-
+torical KV in the takeover GPU group’s HBM, the same state
+in host-local DRAM, and no saved KV. Every path ends after
+processing the same known 64-token tail, with the required
+state ready for decoding and weights already loaded. We
+reuse AIConfigurator 0.9.0 HYBRID static estimates [10] for
+four model configurations on H100-SXM GPUs, with BF16,
+batch one, and vLLM 0.19.0. At 128K total context, estimated
+recovery is 22–56 ms with full HBM reuse, 155–357 ms with
+DRAM reuse, and 14.5–21.0 s with chunked reconstruction.
+Thus, retaining recoverable KV can avoid a growing recon-
+struction cost. DRAM already saves much of this work; the
+additional value of HBM lies in reducing exposed transfer
+waiting.
+The configurations use different GPU allocations, so com-
+parisons are within each model. Recompute processes se-
+quential 8K chunks; DRAM loads the full saved state before
+tail computation, without transfer–compute overlap or a
+shared-host bottleneck. Context limits are 128K for Q14B
+and L70B, 1,010,000 for Q235B, and 160K for DS-V3.2. Beyond
+256K, Q235B uses a full-attention cost projection without
+Dual Chunk Attention acceleration; DSA tables are extrapo-
+lated beyond 32K. These are modeled path costs, not mea-
+sured failure latency. Full-history HBM and serialized DRAM
+are explanatory reference states, rather than a finite-HBM
+policy or an optimized DRAM recovery baseline.
+Failure position determines the workflow benefit of
+protection. The two motivations must be considered to-
+gether: expensive reconstruction does not imply an equally
+large WCT penalty. Figure 2 places an independent hypothet-
+ical failure on each active branch of Figure 1(a) at the same
+29.5 s point. Under the stated join assumption, the observed
+completion times provide offline slack, and static estimates
+provide the additional reconstruction delay. A1’s 35.2 s cost
+fits within its 91.2 s slack, so it adds no WCT in this coun-
+terfactual. A2 costs only 32.2 s to rebuild but has zero slack,
+exposing the entire delay. A3 and A4 expose 17.6 and 17.0 s,
+respectively. Hence, the branch with the cheapest reconstruc-
+tion can be the most important to protect. This controlled
+example illustrates dependency effects; concurrent failures
+and shared recovery resources can also delay other requests
+and must be evaluated separately.
+2
+
+
+PAGE 3
+0
+20
+40
+60
+Recompute time (s)
+A1
+A2
+A3
+A4
+Agent branch
+35.2
+32.2
+36.7
+38.9
+91.2
+0.0
+19.1
+21.9
+Slack
+(s)
+Slack absorbs
+WCT loss
+Figure 2. Workflow position changes the impact of recovery.
+Four independent single-branch failure counterfactuals for
+Figure 1(a), at 29.5 s after the fork. Hatching is delay absorbed
+by join slack; solid fill is WCT loss. Reconstruction uses the
+active request’s 64-token hash-block input proxy and an
+assumed 64-token tail, with Qwen3-14B/A100 BF16 static
+estimates (batch and TP one). Other execution and queueing
+are held fixed; this is not a simultaneous four-branch fault
+experiment.
+These observations lead to AegisKV: a workflow-aware
+KV protection system that allocates limited recovery state
+according to its effect on WCT. The design connects request-
+level delay tolerance to the recovery value of that request’s
+KV, while accounting for the HBM, DRAM, and bandwidth
+consumed by protection. Existing valid cache copies remain
+usable for recovery; additional protection must justify its
+cost to normal serving. The next section develops the corre-
+sponding protection, placement, and recovery mechanisms.
+3
+AegisKV Design
+AegisKV combines workflow delay tolerance with each re-
+quest’s KV recovery demand. The Tracker estimates slack;
+the Recovery Manager binds takeover destinations at arrival;
+the KV Master chooses backup tiers, per-request layer depths,
+and hot blocks at backup-policy events. The checkpoint in-
+terval is configured, while Adapters update target-local Peer
+budgets at window boundaries. The following design sepa-
+rates these decisions from the evidence that motivates them.
+3.1
+Insights and Design Implications
+Three premises motivate the design (Figure 3). The first
+draws on published agent-prediction results; the other two
+characterize selected sparse-attention releases and recovery
+demand.
+Insight 1: execution context predicts remaining agent
+work. Existing predictors exploit task semantics and exe-
+cution progress. Heddle [21] reports trajectory-length cor-
+relations of approximately 0.72, 0.88, and 0.94 for coding,
+search, and math agents after two steps, improving over
+one-step predictions (Figure 3(a)). AgentDecarbonizer [18]
+additionally estimates task durations and updates remain-
+ing time from observed progress. AegisKV builds on these
+capabilities: the Tracker converts remaining-time estimates
+into workflow slack for KV protection. Trajectory corre-
+lation supports predictability; runtime calibration remains
+deployment-specific.
+Insight 2: sparse attention changes the recovery ob-
+jects. Long-context models use sparse mechanisms includ-
+ing InfLLMv2, DSA, or compressed/hybrid attention [3–5,
+8, 9, 11–13, 19, 20]. Figure 3(b) establishes release examples,
+not deployment share. The KV Master therefore consumes
+actual layer/block selections and model-specific recovery
+state instead of valuing all KV bytes equally.
+Insight 3: past selections predict part of retry demand.
+With 40% of each model’s historical KV bytes, historical fre-
+quency covers 77.8%, 53.6%, and 43.0% of distinct needed
+KV for NOSA-3B, MiniCPM4-8B, and SeerAttention-Qwen3-
+8B, versus 59.7%, 50.9%, and 42.0% for recency (Figure 3(c)).
+Seer’s demand spans 92.5% of historical blocks after the head
+union, limiting even oracle placement to 43.3% coverage.
+Thus gains depend on the model and placement granularity.
+These held-out book-text suffixes motivate advance place-
+ment with exact demand fetches for misses; they do not
+establish performance on agentic failure retries.
+3.2
+System Overview
+Figure 4 separates applications, control, and inference en-
+gines. Applications report request/workflow IDs and DAG
+updates. The Router dispatches by load and locality; the
+AegisKV Controller owns slack, recovery assignments, and
+backup policy. KV Master sets each request’s depth and hot
+blocks at checkpoints or policy changes. Each Adapter man-
+ages its local Peer budget and invokes a Connector to copy
+KV directly between engines and storage. Badges index the
+mechanisms below, not execution order.
+The Recovery Manager binds retry and Peer targets at
+arrival (§3.4). KV Master uses a fixed checkpoint interval
+and reviews each request’s depth at policy events (§3.5).
+Adapters update budgets at window boundaries (§3.6). The
+Controller retains directory and commit metadata outside
+the source’s failure domain.
+3.3
+Workflow Tracker: GBDT and CPM
+Tracker (1) predicts remaining execution time with GBDT,
+then computes slack by CPM [7] (Algorithm 1). GBDT is a
+replaceable predictor instantiation; the literature evidence
+in Figure 3a concerns Heddle’s predictor. At time 𝑡, the resid-
+ual DAG 𝐺𝑡= (𝑉𝑡, 𝐸𝑡) contains unfinished agent execution
+segments. A segment groups sequential requests between de-
+pendency barriers; parent agents split at fork/join boundaries
+so child execution is not counted again as parent waiting.
+3
+
+
+PAGE 4
+1
+2
+Observed agent steps
+0
+0.5
+1
+Pearson correlation
+Coding
+Search
+Math
+(a) Agent trajectory prediction
+06/25
+01/26
+08/26
+Release date
+32K
+128K
+1M
+Native context
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+Block
+Token
+Compressed
+(b) Selected sparse releases
+NOSA
+3B
+MiniCPM
+4-8B
+Seer
+Qwen3-8B
+0
+50
+100
+KV coverage (%)
+Past frequency
+Recent first
+(c) Retry KV prediction
+Figure 3. Design evidence. (a) Adapted from Heddle [21], Figure 13: Pearson correlation of predicted and actual remaining
+trajectory length after one and two agent steps, with Qwen3-14B. Values are extracted from the published vector figure; these
+are literature results, not AegisKV runtime-error measurements. (b) Selected releases and native context: 1 MiniCPM4, 2
+MiniCPM4.1, 3 DeepSeek-V3.2-Exp, 4 DeepSeek-V3.2, 5 GLM-5, 6 MiniCPM-SALA, 7 DeepSeek-V4 preview, 8 MiniMax-M3, 9
+GLM-5.2, 10 LongCat-Flash-Lite-Sparse. Dates follow announcements/model cards. Gray steps trace the sample maximum;
+markers denote top-𝑘units in sparse branches. (c) Three native PG19 captures/model: 32K history; queries 32,257–32,768
+predict distinct historical KV for 32,769–32,832. Objects are layer/64-token blocks containing all KV heads; both policies
+include mandatory blocks in the 40% budget. Seer uses an experimental Qwen3-8B Prefill gate [15] (threshold 10−3; final-block
+dense override disabled). Bars/whiskers are document means/ranges, not fault-recovery runs.
+Applications
+LLM request
+Workflow ID
+Node ID
+Agent runtime · workflow DAG
+A0
+A1
+A2
+A3
+A4
+Control plane
+Router
+Load + KV
+locality
+DP0
+DP1
+AegisKV Controller
+KV directory
+Workflow
+Tracker
+A1
+A2
+KV Master
+R
+D
+P
+Depth / hot blocks
+Recovery
+Manager
+Target DP
+r1
+r2
+Slack
+DP0
+LLM engine
+Adapter
+Peer budget
+Local KV
+L1
+L2
+…
+LN
+Peer KV
+from DP1
+HBM
+Connector
+Sealed KV
+DP1
+LLM engine
+Adapter
+Peer budget
+Local KV
+L1
+L2
+…
+LN
+Peer KV
+from DP0
+HBM
+Connector
+Sealed KV
+Shared DRAM
+Peer selection
+Active tail
+Control
+Retry
+DAG + progress
+Inference engines
+Policy
+Ranks / copies
+Retry
+Peer copy
+Copy / restore
+1
+3
+2
+4
+Figure 4. AegisKV overview. Badges identify Tracker (1),
+Recovery Manager (2), KV Master (3), and Adapter (4). Re-
+covery targets are assigned at arrival; backup policy flows
+to Adapters, which control Peer budgets; KV Master selects
+each request’s layer depth. Peer and DRAM paths commit
+independently. Equivalent DPs hold local KV and smaller
+Peer regions; memory proportions are schematic.
+Completed segments are removed, and each live request 𝑟
+maps to its segment 𝑎(𝑟).
+Predict remaining time. The GBDT 𝑓𝜃uses role/model,
+elapsed time, known prompt lengths, and completed-request
+counts, output lengths, and latencies. Historical running
+snapshots have target 𝑡finish
+𝑎
+−𝑡; entry snapshots use segment
+duration, masking metadata unavailable before launch. Thus
+unstarted segments predict execution after their dependen-
+cies become ready. Future requests, outputs, and completion
+times are never input features. GBDT predicts the remaining
+duration directly; elapsed time is not subtracted again.
+Propagate and refresh slack. The forward pass com-
+putes earliest finishes relative to now; the backward pass
+computes latest finishes without extending horizon 𝑇. Their
+difference is the segment slack inherited by its live requests.
+This shared margin is not an independent allowance for ev-
+ery request. Request arrivals/completions, DAG updates, and
+placement windows trigger refreshes; CPM costs 𝑂(|𝑉𝑡| +
+|𝐸𝑡|). Unknown dependency structure or missing predictions
+force zero slack for that workflow. These are planning esti-
+mates, not delay guarantees; system evaluation must account
+for the selected predictor’s runtime errors and overhead.
+The orchestrator must declare the remaining fork/join
+structure complete and map every live request to a segment.
+An unexpanded branch, unresolved dependency, or missing
+mapping makes it incomplete; discovering new work inval-
+idates the prior declaration and triggers refresh. Queueing
+features may inform durations, but CPM does not model
+future resource contention. Train/test splits must separate
+4
+
+
+PAGE 5
+Algorithm 1: GBDT–CPM slack estimation
+Input: 𝐺𝑡, visible features 𝑥(𝑡), GBDT 𝑓𝜃, live requests R𝑡,
+and segment map 𝑎(𝑟). Output: request slack 𝜎.
+1
+𝜎𝑟←0 for all 𝑟∈R𝑡
+2
+if DAG structure incomplete: return 𝜎
+3
+𝑧𝑎←𝑓𝜃(𝑥𝑎(𝑡)) for all 𝑎∈𝑉𝑡
+4
+if any prediction unavailable or invalid: return 𝜎
+5
+ˆ︁𝑑𝑎←max(𝜀,𝑧𝑎) ∀𝑎; 𝜋←Topo(𝐺𝑡)
+6
+for 𝑎in 𝜋:
+7
+EF𝑎←ˆ︁𝑑𝑎+ max𝑏∈𝑃(𝑎) EF𝑏
+8
+𝑇←max({0} ∪{EF𝑎: 𝑎∈𝑉𝑡})
+9
+for 𝑎in reverse 𝜋:
+10
+LF𝑎←min𝑏∈𝑆(𝑎) (LF𝑏−ˆ︁𝑑𝑏)
+11
+for 𝑟∈R𝑡:
+12
+𝜎𝑟←max(0, LF𝑎(𝑟) −EF𝑎(𝑟))
+13
+return 𝜎
+𝑃(𝑎)/𝑆(𝑎): predecessors/successors. Empty predecessor max
+is 0; empty successor min is 𝑇; 𝜀> 0 is a minimum
+remaining-time floor.
+workflows and time periods, not snapshots of one trajec-
+tory. Required diagnostics include seconds-scale error, false-
+positive slack, critical-path ranking, zero-slack fallback fre-
+quency, and decision regret against zero-slack, historical,
+and oracle baselines. Published correlation alone validates
+none of these runtime properties.
+3.4
+Recovery Manager: Preassigned Takeover
+Recovery Manager (2) decides where each request will re-
+sume before failure occurs. When request 𝑟arrives and the
+Router selects source DP rank 𝑔𝑟, the Manager records a tar-
+get assignment 𝑝𝑟≠𝑔𝑟in control state outside the source’s
+failure domain. The same 𝑝𝑟is both the retry destination and
+the DP rank that will hold any Peer-HBM backup of 𝑟. A sim-
+ple mapping for𝑛≥2 DPs is 𝑝𝑟= (𝑔𝑟+1) mod 𝑛; per-request
+assignments may distribute load across several targets. The
+assignment does not reserve HBM: the KV Master chooses
+whether to request Peer protection, and the target Adapter
+controls its capacity. A TP group restores compatible shards
+as one DP.
+Activate the recorded route after failure. The Man-
+ager combines membership, device errors, and GPU progress
+reported by Adapters; a process heartbeat alone does not
+prove GPU progress. After confirming and isolating a failed
+source, it obtains request token prefixes, commit frontiers,
+model/layout IDs, and replica locations from surviving con-
+trol state, then submits retries to their recorded targets. Avail-
+able Peer replicas are therefore local to takeover. DRAM or
+recomputation supplies the remaining state. Control-state
+survival, fencing, failure-domain separation, and retry dedu-
+plication are runtime contracts. A failed target requires a
+new valid assignment; copies on the old target cannot be
+treated as local to the new target.
+Recover a dependency-closed frontier. A surviving au-
+thority assigns a monotonically increasing source epoch;
+copies, directory commits, and output acknowledgements
+reject stale epochs. Before acknowledging a generated to-
+ken, persist its request ID, position, token ID, and epoch in
+a surviving ordered log. Prompt and accepted tool inputs
+are likewise recoverable. KV may lag this log; recovery re-
+constructs the acknowledged suffix and suppresses duplicate
+delivery. External tool side effects require the orchestrator’s
+own idempotency contract.
+Publish a checkpoint manifest only after its full depen-
+dency closure is committed: compatible model, weights and
+layout, all required layers and TP shards, sealed token in-
+tervals, selector state, and the matching token-log prefix. A
+frontier is the latest valid common manifest, not the maxi-
+mum of independently updated object locations. Peer and
+DRAM may commit in either order; each manifest entry
+must resolve to a matching surviving replica. An incomplete
+new manifest leaves the older one authoritative; without one,
+replay from recoverable inputs. Recovery validates versions
+and closure again after fencing. These checks define the min-
+imum contract; their concurrent implementation remains to
+be validated.
+Share resources without serializing retries. Retries en-
+ter independently and advance on their own layer-readiness
+events. Slack determines protection, not a request-level com-
+pletion barrier. The engine reserves a positive dispatch share
+for feasible recovery work while continuing foreground
+batching. Within that share, ready admitted retries receive
+round-robin service in bounded prefill chunks or decode
+steps; eligible waiting retries use oldest-first admission sub-
+ject to physical space. Blocked layers yield rather than hold-
+ing a request-level barrier. These are required scheduler in-
+terfaces, not a claim of support in an unmodified engine.
+Each retry moves through waiting-for-space, waiting-for-
+data, ready, and running states. Reserve its bounded activa-
+tion/KV workspace and transfer buffers before admitting an
+execution chunk. The batch coordinator admits compatible
+ready work and gives every TP rank the same batch, layer,
+and collective order. A newly discovered miss parks that
+work only at a legal kernel boundary, retaining and charging
+its activation buffer; it can split from a batch only if the back-
+end supports that split. Otherwise the whole batch waits
+and the profile charges the resulting interference. Readiness
+does not authorize arbitrary layer reordering or unmatched
+collectives. Memory reservations precede I/O leases; release
+queue/directory locks before waiting on a copy or collective,
+and reserve demand-transfer progress space. Preassignment
+reserves neither compute nor retry workspace. Profiles in-
+clude target foreground batches, available KV/workspace,
+readmission queues, shared links and failure domains. If the
+5
+
+
+PAGE 6
+target has no feasible working set, queue the retry or remap
+through the Manager with a new placement check; never
+assume that local backup alone permits execution.
+Transfers contend at every shared link and at target HBM.
+Normal-state backup traffic has a configured aggregate cap
+(default 20% of link capacity). During recovery or contrac-
+tion, configure positive service shares for demand fetch and
+required writeback while retaining a foreground share; ac-
+tive shares sum to at most one per bottleneck and unused
+service can be borrowed. Actual demand precedes specula-
+tive preloads within recovery. The 20% traffic cap is not a
+20% bound on foreground latency or overhead. Byte-based
+deficit round robin across eligible requests and a bounded
+outstanding-transfer count prevent one long context from
+monopolizing the recovery share. Migration writeback re-
+ceives its own progress share, so shrinking does not depend
+on all decode requests ending. Service switches at supported
+DMA/kernel boundaries, not at an assumed arbitrary instant.
+The same sharing policy and foreground/retry load must
+enter the cost profiles. With positive available service, fi-
+nite contenders, and bounded transfer quanta, eligible work
+progresses; this is not a latency guarantee under overload.
+No retry must complete before another can begin merely
+because its placement priority was higher.
+3.5
+KV Master: Request-Specific Backup Decisions
+KV Master (3) selects recovery tiers, each request’s Peer
+depth 𝐿𝑟, and layer-local hot sets. Recovery Manager fixes
+the retry/Peer target; Adapter publishes its window-level
+capacity 𝐵𝑝. Requests may use different depths within the
+same capacity window.
+Decision events. The Master establishes policy at arrival,
+offers sealed state after prefill, and reviews a request every
+additional 𝑍generated tokens. 𝑍is a block-aligned system
+configuration, not an Adapter output. Significant slack, bud-
+get, context, or copy-state changes can trigger an earlier
+review. A decision does not imply a completed checkpoint:
+the replay tail extends beyond the latest committed frontier
+and can exceed 𝑍when copying lags. Copy queues have
+configured byte and operation limits. Coalesce superseded
+unstarted plans, retain dependencies of in-flight or commit-
+ted versions, and skip a new backup attempt if it cannot
+be reserved. Report the resulting commit lag; the trigger
+interval supplies no durability bound. Sealing only updates
+eligibility. Hot-block statistics use the preceding 512 decode
+steps, independently of checkpoint and capacity windows.
+Choose protection tiers. Let 𝑇rc denote prefix recomputa-
+tion, 𝑇rp known-tail replay, 𝑊0 exposed DRAM-loading wait,
+and 𝑅floor detection, rerouting, and readmission time. Joint
+context/tail/load profiles give
+𝑅base = 𝑅floor +𝑇rp,
+𝑅𝑅= 𝑅base +𝑇rc,
+𝑅𝐷= 𝑅base +𝑊0.
+(1)
+𝑅𝑅and 𝑅𝐷use the weighted conditional means of the same
+future-state samples defined below; the tier test is a planning
+heuristic, not a deadline guarantee. Tier R needs no backup
+if 𝜎𝑟≥𝑅𝑅. Otherwise choose D when 𝑅𝐷< 𝑅𝑅and 𝜎𝑟≥𝑅𝐷;
+remaining requests compete for Peer as tier P. There is no
+assumption that loading is faster than recomputation. The
+non-Peer fallback chooses the cheaper feasible route, prefer-
+ring R on equal costs; a denied Peer increment does not force
+a slower DRAM restore. DRAM protection requires its own
+admission and commit (§3.6). Missing profiles request con-
+servative DRAM protection when feasible, without claiming
+it is faster; failed admission uses an older valid checkpoint
+or R. Slack orders protection, not retry execution. At recov-
+ery, refresh costs and availability; overlapping cost intervals
+retain the feasible current route unless dominance is clear.
+K counts resident blocks, not selector outputs. A pro-
+tection object is an immutable sealed (layer, block) including
+all KV heads; the trace study uses 64-token blocks. Let 𝐻𝑟,𝑙
+be request 𝑟’s published, committed Peer set at layer 𝑙. We
+define
+𝐾𝑟,𝑙= |𝐻𝑟,𝑙|.
+(2)
+Thus 𝐾counts Peer-resident blocks of one request and layer.
+It is not the model’s per-query top-𝑘, a hit-rate guaran-
+tee, or a count of copies still in flight. Physical allocation
+also charges retiring buffers, reservations, and selector state;
+shared copies are counted once per pool.
+A separately configured quota determines the desired hot-
+set size. The configuration declares either a fixed block limit
+or ⌈ℎ𝑙𝑛𝑟⌉blocks for 𝑛𝑟sealed historical blocks. Mandatory
+sealed sink/window blocks are included in that limit: if they
+alone exceed it, request a larger explicitly charged quota or
+decline that layer’s Peer admission, never silently drop na-
+tive requirements. The rule is fixed in each comparison; this
+paper does not claim an optimal quota. Remaining slots rank
+native selection counts, then recency and stable block ID. Op-
+tional blocks leave after two consecutive statistics windows
+outside the target set. Required auxiliary state is budgeted
+separately. Before 512 steps are available, use the observed
+prefix; with no observations, rank mandatory blocks first
+and then recency and stable ID. This cold-start rule has no
+demonstrated prediction accuracy. For a replay of 𝑁tokens,
+demand is the deduplicated union of native selections across
+queries and KV groups, not 𝑁copies of a single top-𝑘.
+Preview replacement as well as admission. A candidate
+depth 𝑑offers target hot sets in layers 1:𝑑; this prefix family
+restricts the search, rather than proving that arbitrary layer
+placements cannot do better. Its plan retains intersections, de-
+motes owned blocks leaving the set, and admits new blocks.
+It cannot evict another request’s protected copy. A shared
+object loses only the departing owner’s reference. Dirty de-
+motions, new transfers, and temporary space all enter the
+preview; slots become reusable only after actual release (§3.6).
+6
+
+
+PAGE 7
+Shrinking 𝐿𝑟can therefore retire the owner’s deeper copies.
+An unchanged depth can still replace block identities. Uni-
+form, fully admitted layers contain 𝐿𝑟𝐾layer-block objects;
+partial admission is reported through the actual sets 𝐻𝑟,𝑙.
+A reproducible depth objective. All candidates start from
+the same target snapshot 𝑆and use the same planning hori-
+zon 𝐻, future-state samples 𝑗, and normalized weights 𝑤𝑗,
+conditional on a source failure within 𝐻. Current slack is
+held fixed within this local comparison and refreshed at the
+next policy event. A sample specifies committed history 𝑀𝑗,
+replay tail 𝑁𝑗, available copy time, and foreground/retry load.
+Samples come from a declared, versioned profile, including
+commit lag; they do not assume 𝑁𝑗= 𝑍or a uniform check-
+point phase. Co-located requests share the same source-event
+samples and contended target resources. For a configured
+Poisson model, 𝜋𝑟= 1 −exp(−𝜆𝑟𝐻). Other risk models must
+provide the corresponding probability over the same 𝐻; a
+failure rate is not itself a probability.
+Let 𝐺𝑑be the admitted-and-retired plan from the pre-
+view. 𝐴𝑟(𝑑) is the predicted aggregate change in foreground
+request-delay seconds, relative to keeping the current place-
+ment at 𝑆. The cohort contains active requests and arrivals
+within 𝐻, followed to completion under matched arrivals
+and a held policy, including completions after 𝐻. It includes
+replication, writeback, transient occupancy, and reduced
+or increased admission pressure, and may be negative. Let
+𝑅𝑟(𝑑, 𝑗) be failure-to-ready latency for sample 𝑗, crediting
+only replicas predicted to commit before its failure. The Mas-
+ter minimizes
+𝐽𝑟(𝑑) = 𝐴𝑟(𝑑) + 𝜋𝑟
+∑︁
+𝑗
+𝑤𝑗max{0, 𝑅𝑟(𝑑, 𝑗) −𝜎𝑟}.
+(3)
+Both terms have units of delay seconds. This is a local pro-
+tection heuristic in slack order; it neither sums to workflow
+makespan nor optimizes all later requests’ allocations. For
+example, two equally critical branches on one failed source
+each need 10 s to recover. Protecting only one reduces their
+summed local penalties from 20 to 10 s but leaves workflow
+delay at 10 s. Source-event DAG replay and a feasible small-
+DAG oracle are required to assess this gap.
+Profile interface and validity. A profile query takes the
+model/selector and weight revisions, KV layout, block size,
+hardware/link topology, 𝑆, 𝐺𝑑, the shared state samples, and
+the configured copy scheduler. It returns 𝐴𝑟(𝑑) and 𝑅𝑟(𝑑, 𝑗)
+with uncertainty intervals, a generation ID, support ranges,
+and expiry.𝐴is obtained from matched normal-service traces
+with identical arrivals; 𝑅uses matched recovery traces or a
+declared, calibrated event model. Transfer and compute over-
+lap are evaluated on one timeline; adding their full durations
+would double-count hidden transfer. Rows state whether
+they are measured or modeled. Missing measurements are
+not filled with the Figure 5 example.
+Algorithm 2: Per-request backup policy
+Input: requests, slack, fixed 𝑍, profiles, targets, budgets.
+Output: admitted tiers, Peer plans, and committed 𝐻𝑟,𝑙.
+1
+Snapshot copies, leases, budgets, and reservations as 𝑆
+2
+for affected 𝑟in (𝜎𝑟, ID𝑟) order:
+3
+Choose R/D/P and the feasible non-Peer fallback
+4
+For D/P, request DRAM; report coverage/failure
+5
+Rank layer-local candidates under the quota rule
+6
+Form keep and depth plans; R/D target depth is zero
+7
+Preview each plan independently from the same 𝑆
+8
+Query valid profiles; score by (3)
+9
+Choose a stable improvement, or feasible fallback
+10
+Queue its retains, demotions, and new admissions
+11
+Update 𝑆with only this chosen plan
+12
+Atomically recheck reservations before physical execu-
+tion
+13
+Publish only committed residency and actual released
+bytes
+The finite depth grid includes zero and the current depth,
+and an explicit keep plan preserves current block identities.
+The lowest score wins; ties prefer smaller depth, then sta-
+ble plan ID. Propagating the profile’s intervals through (3)
+gives lower and upper score bounds. A change is accepted
+only if its upper bound plus a configured margin is below
+the keep plan’s lower bound. Unsupported candidates are
+excluded. An invalid generation or missing, expired, or drift-
+flagged keep profile freezes discretionary expansion and re-
+placement; new requests attempt DRAM admission, with the
+stated fallback if it fails. Existing protection is retained only
+while feasible: Adapter contraction and correctness-driven
+retirement still take precedence. A generation is invalidated
+after a configured number of consecutive relative-error viola-
+tions on comparable observed operations; unmatched obser-
+vations do not count as validation. Thresholds, grid, horizon,
+risk model, quota rule, sample weights, and calibration ver-
+sion are recorded configuration, not inferred experimental
+constants. At zero failure probability, only 𝐴affects the score;
+costly expansion has no recovery justification, while a zero-
+cost keep plan need not move. Uncertain route crossings do
+not justify an unprofiled migration.
+The preview is not a reservation. Actual grants may be
+smaller. The directory reports committed 𝐾𝑟,𝑙and frontiers;
+a mismatch triggers another review. Sorting 𝑛requests takes
+𝑂(𝑛log𝑛) time. Candidate work scales with the grid, sample
+count, and affected blocks. Profile calibration and accuracy
+remain evaluation work.
+Keep selection and placement separate. Recovery re-
+stores model-specific selector state before invoking the un-
+changed native selector. The selector may name any causally
+eligible historical or recomputed KV, including DRAM-only
+objects. The Connector resolves logical IDs to committed
+7
+
+
+PAGE 8
+Compute
+H2D
+Compute
+H2D
+Compute
+H2D
+0
+100
+200
+300
+Time after takeover (ms)
+Compute
+H2D
+Total/wait (ms)
+(a) Token-block order
+264 / 172
+(b) Layer-major, full KV
+175 / 83
+(c) Preload + demand
+136 / 44
+(d) Peer: first 7 layers
+112 / 20
+Preload
+Demand
+Cold KV
+Compute
+KV wait
+Figure 5. Modeled recovery pipelines: MiniCPM4-8B, 32 lay-
+ers, 32K history, 64-token known tail; 𝐶= 2.87 ms/layer
+(A100-derived average) and 𝐷= 5.37 ms at an assumed
+6.25 GB/s. In (d), 147 MiB of Peer residency removes preload
+wait. Totals end at tail-KV reconstruction. The homogeneous,
+preemptible-copy model excludes detection, queuing, and
+interference.
+replicas, fetches actual misses, and returns readiness events;
+attention waits for every required input. Forecast mistakes
+add traffic or waiting, not a new attention approximation.
+Tier R and missing committed prefixes use dependency-
+correct recomputation of logged tokens. A batched replay
+is eligible only if its native selector and state evolution are
+equivalent to the original token-wise path under the de-
+clared numerical contract; otherwise replay token by token.
+A native prefill gate or an unresolved numerical diagnostic
+does not establish this equivalence. Compatible weights, lay-
+out, and operators are required; future stochastic samples
+need not be bitwise identical across floating-point execution
+schedules.
+Figure 5 illustrates one fixed-tail example: layer pipelin-
+ing, hot preloads, and seven resident hot sets reduce exposed
+wait from 172 to 83, 44, and 20 ms. It does not calibrate (3),
+establish multi-request WCT gains, or make seven layers ap-
+propriate for every checkpoint state. Here 𝐶is a five-repeat
+median of a batch-one, 64-token native-path forward over
+resident history on an A100 80GB PCIe, divided by 32 layers;
+individual layer timings were not measured. The assumed
+bandwidth is a 25 GB/s pool link equally shared by four re-
+coveries, not measured H2D. With 1 KiB/token/layer, the
+Peer payload is 7×0.65845×32 MiB ≃147.49 MiB, excluding
+auxiliary state and temporary buffers. Fractions are trace-
+derived means, not an integer per-layer grant. The model
+Algorithm 3: Windowed Peer budget update
+Input: pool, foreground demand, headroom, replica/lease
+state. Output: budget 𝐵𝑝, retirement work, and actual
+capacity reports.
+1
+for each target DP 𝑝at the window boundary:
+2
+Snapshot occupancy, owners, leases, and reservations
+3
+Estimate foreground KV demand and headroom
+4
+𝐵𝑝←pool −demand −headroom
+5
+Clamp 𝐵𝑝to [0, pool/2]
+6
+Publish 𝐵𝑝; block reservations exceeding it
+7
+Reclaim safe zero-reference copies first
+8
+If needed, select protected copies for demotion
+9
+Commit DRAM; redirect; retire the old generation
+10
+Drain old users before releasing each buffer
+11
+Publish actual coverage and released/pending bytes
+leaves 38.69 ms of cold-copy work after tail readiness; subse-
+quent token latency requires separate evaluation.
+3.6
+Adapter: Windowed Peer Capacity Control
+Adapter (4) sets the total Peer budget 𝐵𝑝on its target DP
+at each control-window boundary. The target remains fixed
+within the window; every allocation also checks physical
+space. The Master owns fixed-𝑍backup decisions and per-
+request 𝐿𝑟and hot sets. Adapter controls capacity, not a
+common depth or an adaptive checkpoint interval.
+Reserve memory for foreground inference. Subtract pre-
+dicted foreground KV demand and admission headroom from
+the managed KV pool, clamping the result to zero through
+half the pool. The pool excludes weights and fixed runtime
+state but includes existing Peer copies; 𝐵𝑝is total permitted
+occupancy, not newly available space. KV watermarks and
+memory-related admission stalls inform demand. Increased
+pressure shrinks the budget; sustained relief allows expan-
+sion. Report physical occupancy, ownership references, I/O
+leases, pending copies, and safely reclaimable bytes sepa-
+rately.
+The migration steps are asynchronous and continue af-
+ter the control tick; a later budget update reconciles their
+outstanding reservations. Algorithm 3 does not wait for all
+migrations before allowing unrelated ready requests to run.
+Admit DRAM protection explicitly. Each backing pool
+has a finite byte ledger charging committed objects, pend-
+ing reservations, retiring buffers, and required metadata.
+Shared objects are charged once. Reserve the missing depen-
+dency closure before accepting a checkpoint; publish only
+completed coverage. Live checkpoint and reader references
+protect DRAM objects; zero-reference objects enter LRU
+reclamation, with physical release delayed until I/O leases
+drain. Newer valid manifests, request completion, or an ex-
+plicit transition to recomputation release obsolete ownership.
+An old manifest remains retained until its replacement is
+8
+
+
+PAGE 9
+committed or its recovery claim is withdrawn. If reservation
+or commit fails, keep the earlier valid frontier and replay
+its missing suffix, or use R from logged inputs. A Peer de-
+nial does not imply DRAM admission, and partial copies
+do not establish full D protection. DRAM exhaustion is an
+operational limit, not hidden unlimited backing.
+Protect ownership, not a permanent HBM address. A
+request reference prevents other requests from taking its Peer
+capacity, even when they have smaller slack. Normal ad-
+mission uses free space or safely reclaimable zero-reference
+copies; otherwise the new Peer increment is denied. An in-
+ference request need not wait to obtain Peer protection. The
+owner can replace its own hot set or reduce its depth. Com-
+pletion, including a handoff to a tool, drops that request’s
+references, while other owners of shared blocks retain theirs.
+These ownership references differ from short-lived I/O
+leases. A lease pins the physical buffer while a kernel, read,
+or copy uses it. An owner update removes only its own
+reference and cannot free a shared copy still protected by
+another owner. Adapter contraction has explicit system-level
+authority to demote even protected copies; it never overrides
+an outstanding I/O lease or deletes the logical KV state.
+Demote through a committed DRAM copy. The Con-
+nector and directory expose four operations: reserve space,
+commit a versioned replica, acquire/release an I/O lease, and
+retire a location. A block ID includes model/weights/layout,
+request-prefix identity, layer, shard, and sealed token in-
+terval; a location generation prevents reuse of a stale ad-
+dress. A pending copy is never readable. A checkpoint fron-
+tier advances only when its required shards, layers, selector
+state, and token log are recoverable in the declared failure
+model. Independent Peer and DRAM transfers do not imply
+an atomic joint commit.
+Retiring a Peer location follows the same order for an
+owner update and an Adapter contraction:
+1. Reserve DRAM if needed, copy the immutable block,
+and commit a complete matching replica outside the
+failed source’s domain. A valid existing DRAM replica
+avoids another writeback.
+2. Atomically redirect the directory to DRAM and mark
+the old Peer generation retiring. This transition closes
+new lease acquisition on that address; a lookup racing
+the transition must retry.
+3. Wait for all old-generation readers, writers, and DMA
+operations to release their leases. Existing holders may
+finish; no fresh holder can enter through a cached stale
+address.
+4. Free the Peer buffer and then return its bytes to the
+allocator.
+Before the directory transition, an unsuccessful writeback
+leaves the surviving Peer location authoritative; afterward
+new readers resolve DRAM. If DRAM allocation, transfer,
+or commit fails, retain the Peer copy and report the unful-
+filled shrink. Fault detection fences stale writers and retries;
+directory generations and metadata survive the source fail-
+ure. These are required runtime interfaces, not claims of a
+verified implementation.
+Bound replacement and contraction. For old and new
+hot sets, retain their intersection, retire departing owned
+blocks, and fetch only new arrivals. With no spare space, safe
+retirement precedes admission; overlapping copies require
+explicit temporary reservations. Thus changing {𝐴, 𝐵,𝐶, 𝐷}
+to {𝐶, 𝐷, 𝐸, 𝐹} can retain four blocks after migration, without
+pinning every historical hot set until request completion.
+Shared replicas and incomplete transfers remain separately
+charged until physically releasable.
+When occupancy exceeds a new 𝐵𝑝, stop new Peer reser-
+vations and reclaim zero-reference copies first. If insufficient,
+Adapter requests protected demotions in the Master’s order:
+larger slack first, then deeper layer, lower recent selection
+count, and stable object ID. A shared object’s priority uses
+the smallest slack of its remaining owners. This ordering
+chooses victims; it does not serialize independent migra-
+tions or retries. Publish the reduced coverage to the Master,
+and do not re-admit it beyond the new budget. The Master
+subsequently reassesses request-specific 𝐿𝑟.
+Contraction waits for bounded transfers and leases, not
+for the LLM request to finish. Actual usage may temporarily
+exceed the target; foreground admission can still wait for
+physical space if headroom is exhausted. The scheduler re-
+serves progress for required writeback, and the controller
+reports pending bytes rather than claiming an instantaneous
+shrink. Insufficient backing capacity remains an explicit op-
+erational limit.
+Scope and validation. Sparse integration needs native
+selection indices, recoverable selector state and all attention
+branches, physical-block mapping, and the directory/ lease
+interface above. Poor predictions can use exact demand fetch
+or full-layer loading; dense attention uses the full historical
+set. Standalone requests use zero slack. Prefill failures require
+profiles for the lost chunk, not a universal 64-token tail.
+The present evidence consists of native selection traces,
+attributed prediction results, and a single-request pipeline
+model using measured forward latency and assumed trans-
+fer bandwidth. It does not validate the depth-score profiles,
+failure-risk calibration, checkpoint sensitivity, active hot-set
+migration, concurrent retry fairness, or foreground inter-
+ference. End-to-end tests must include recovery during de-
+motion, stale-location races, DRAM exhaustion, copy back-
+logs, and shared bandwidth pressure. The specified inter-
+faces and fallbacks make those claims testable; they do not
+establish performance or a completed implementation. Val-
+idation must also replay common source failures through
+the dependency DAG, compare the local policy with fea-
+sible small-DAG allocations, and report regret, including
+9
+
+
+PAGE 10
+zero or negative Peer benefit. Native selector traces and the
+measured batched forward do not by themselves validate
+recovery equivalence to token-wise decoding.
+References
+[1] Anthropic. 2025.
+How We Built Our Multi-
+Agent
+Research
+System.
+Engineering
+blog.
+https://www.anthropic.com/engineering/multi-
+agent-research-system
+[2] Zhang Cao, Shujie Han, Juncheng Zhang, Yuanming
+Ren, Yongkun Li, and Patrick P. C. Lee. 2026.
+LU-
+MEN: Coordinated Failure Recovery for Distributed
+LLM Serving. arXiv:2606.17787 https://arxiv.org/abs/
+2606.17787
+[3] DeepSeek-AI. 2025.
+DeepSeek-V3.2-Exp Model
+Card. https://huggingface.co/deepseek-ai/DeepSeek-
+V3.2-Exp
+[4] DeepSeek-AI. 2025. DeepSeek-V3.2 Model Card. Hug-
+ging Face.
+Accessed September 18, 2026; techni-
+cal report arXiv:2512.02556. https://huggingface.co/
+deepseek-ai/DeepSeek-V3.2
+[5] DeepSeek-AI. 2026.
+DeepSeek-V4-Pro Model Card.
+Hugging Face.
+Preview model card, accessed Sep-
+tember 18, 2026.
+https://huggingface.co/deepseek-
+ai/DeepSeek-V4-Pro
+[6] Shakya Jayakody, Youpeng Zhao, Chinmay Dhanraj Ne-
+hate, and Jun Wang. 2026. GhostServe: A Lightweight
+Checkpointing System in the Shadow for Fault-Tolerant
+LLM Serving. In Proceedings of Machine Learning
+and Systems, Aakanksha Chowdhery and Zhihao Jia
+(Eds.), Vol. 8. MLSys, Bellevue, WA, USA, 15 pages.
+https://proceedings.mlsys.org/paper_files/paper/
+2026/hash/d99e8e80a6c41e148db686918dd7eab3-
+Abstract-Conference.html
+[7] James E. Kelley, Jr. and Morgan R. Walker. 1959. Critical-
+Path Planning and Scheduling. In Papers Presented at
+the December 1–3, 1959, Eastern Joint IRE-AIEE-ACM
+Computer Conference. Association for Computing Ma-
+chinery, New York, NY, USA, 160–173. doi:10.1145/
+1460299.1460318
+[8] Meituan LongCat. 2026. LongCat-Flash-Lite-Sparse
+Model Card. https://huggingface.co/meituan-longcat/
+LongCat-Flash-Lite-Sparse
+[9] MiniMax. 2026. MiniMax M3: Frontier Coding, 1M
+Context, Native Multimodality. https://www.minimax.
+io/blog/minimax-m3
+[10] NVIDIA. 2026. AIConfigurator. https://github.com/ai-
+dynamo/aiconfigurator
+[11] OpenBMB. 2025. MiniCPM4-8B Model Card. Hugging
+Face. https://huggingface.co/openbmb/MiniCPM4-8B
+[12] OpenBMB. 2025.
+MiniCPM4.1-8B Model Card and
+Release History.
+https://huggingface.co/openbmb/
+MiniCPM4.1-8B
+[13] OpenBMB. 2026. MiniCPM-SALA Model Card. https:
+//huggingface.co/openbmb/MiniCPM-SALA
+[14] SemiAnalysis. 2026.
+CC Traces—Weka, With
+Subagents, v7 only (Jun 21 2026).
+Hugging
+Face dataset.
+https://huggingface.co/datasets/
+semianalysisai/cc-traces-weka-062126
+[15] Jiwon Song. 2026. SeerAttention-Qwen3-8B-AttnGates:
+Experimental Prefill Adapter. https://huggingface.co/
+jiwonsong/SeerAttention-Qwen3-8B-AttnGates
+[16] Foteini Strati, Sara McAllister, Amar Phanishayee,
+Jakub Tarnawski, and Ana Klimovic. 2024. DéjàVu:
+KV-cache Streaming for Fast, Fault-tolerant Generative
+LLM Serving. In Proceedings of the 41st International
+Conference on Machine Learning, Vol. 235. PMLR, Vi-
+enna, Austria, 46745–46771. https://proceedings.mlr.
+press/v235/strati24a.html
+[17] Qingyun Wu, Gagan Bansal, Jieyu Zhang, Yiran Wu,
+Beibin Li, Erkang Zhu, Li Jiang, Xiaoyun Zhang,
+Shaokun Zhang, Jiale Liu, Ahmed Hassan Awadallah,
+Ryen W. White, Doug Burger, and Chi Wang. 2023.
+AutoGen: Enabling Next-Gen LLM Applications via
+Multi-Agent Conversation. arXiv:2308.08155 https:
+//arxiv.org/abs/2308.08155
+[18] Leyi Yan, Shuangning Li, and Sihang Liu. 2026. Agent-
+Decarbonizer: Carbon-Aware Execution for AI Agents.
+arXiv:2608.20566 [cs.LG]
+https://arxiv.org/abs/2608.
+20566v1
+[19] Z.ai. 2026. GLM-5 Model Card. Hugging Face. Accessed
+September 18, 2026; technical report arXiv:2602.15763.
+https://huggingface.co/zai-org/GLM-5
+[20] Z.ai. 2026. GLM-5.2 Model Card. https://huggingface.
+co/zai-org/GLM-5.2
+[21] Zili Zhang, Yinmin Zhong, Chengxu Yang, Chao Jin,
+Bingyang Wu, Xinming Wei, Yuliang Liu, and Xin Jin.
+2026. Heddle: A Distributed Orchestration System for
+Agentic RL Rollout. arXiv:2603.28101 [cs.LG] https:
+//arxiv.org/abs/2603.28101v1
+10

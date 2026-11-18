@@ -1,0 +1,304 @@
+\section{Motivation and Challenges}
+\label{sec:motivation}
+
+The resulting management problem is to decide which KV to retain and
+in which tier. For a multi-agent service, the benefit of these decisions
+depends on how retained state supports both normal execution and workflow
+completion after a failure. Existing fault-tolerant serving and
+workflow-aware KV management provide useful mechanisms, but their
+objectives leave this joint decision unresolved.
+
+\subsection{Limitations of Existing Approaches}
+\label{sec:motivation-limitations}
+
+\begin{figure*}[t]
+  \centering
+  \captionsetup[subfigure]{font=normalsize,labelfont=normalfont,
+    textfont=normalfont,justification=centering,singlelinecheck=false}
+  \begin{subfigure}[t]{2.48in}
+    \vspace{0pt}
+    \begin{minipage}[c][1.65in][c]{\linewidth}
+      \centering
+      \includegraphics[width=\linewidth]{figures/workflow.pdf}
+    \end{minipage}
+    \caption{Four-branch workflow}
+    \label{fig:motivation-workflow}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{1.86in}
+    \vspace{0pt}
+    \begin{minipage}[c][1.65in][c]{\linewidth}
+      \centering
+      \includegraphics[width=\linewidth]{figures/workflow-gaps.pdf}
+    \end{minipage}
+    \caption{Workflow-maximum gaps}
+    \label{fig:motivation-branch-gap}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{2.52in}
+    \vspace{0pt}
+    \begin{minipage}[c][1.65in][c]{\linewidth}
+      \centering
+      \includegraphics[width=\linewidth]{figures/recovery-exposure.pdf}
+    \end{minipage}
+    \caption{Recovery cost and WCT}
+    \label{fig:motivation-recovery-exposure}
+  \end{subfigure}
+  \caption{Workflow timing and conditional recovery impact.
+    (a) Four trace-derived parallel agents A1-A4 with schematic Main agents A0/A5.
+    Bars preserve timing; dashed tails assume an all-branch join.
+    (b) Empirical CDF of workflow-level gaps over 121 workflows. For each parallel group with temporally inferred fan-in, we subtract the shortest agent execution time from the longest, then retain the largest gap per workflow. 
+   (c) Each horizontal bar represents one agent (A1--A4) and shows its
+extra delay to reconstruct KV after a failure, measured by full
+prefill with Qwen2.5-7B-Instruct-1M. The hatched portion is absorbed
+by slack; the solid portion is the calculated WCT increase.}
+
+  \label{fig:motivation}
+\end{figure*}
+
+\paragraph{Limitation 1: Fault tolerance without workflow-aware priorities.}
+Fault-tolerant serving systems preserve state and coordinate recovery
+for interrupted requests. D\'ej\`aVu streams KV checkpoints, and GhostServe
+uses host-memory parity to reduce reconstruction
+work~\cite{strati2024dejavu,jayakody2026ghostserve}.
+LUMEN further coordinates checkpoint placement, recovery routing and
+capacity restoration according to worker load~\cite{cao2026lumen}.
+These mechanisms address state loss and recovery contention, but do not
+use multi-agent dependencies to determine which requests' faster
+recovery would advance workflow completion. Request recovery cost and
+worker load alone cannot express this benefit.
+
+\label{sec:motivation-workflow}
+Figure~\ref{fig:motivation}(\subref{fig:motivation-workflow}) illustrates
+why workflow position matters. A2 finishes last, 151.6\,s after the fork,
+whereas A1 finishes at 60.4\,s. If the following Main stage requires all
+four outputs, A1 can absorb 91.2\,s of additional delay before postponing
+the join, whereas any delay on A2 postpones it. This is an example from the Claude code traces~\cite{semianalysis2026cctraces}, which contains the workflows that are very similar to the architecture shown in part a of \ref{fig:agent-workflow-examples}. We call the additional
+delay a branch can absorb without postponing the required output its
+\emph{slack}. 
+
+This situation where agents with parallel execution have different completion times is very common in multi-agent applications, and the time differences can be significant. We analyze the Claude code trace~\cite{semianalysis2026cctraces} related information and visualize this time difference in Figure~\ref{fig:motivation}(\subref{fig:motivation-branch-gap}).
+This figure reports each workflow's maximum longest-minus-shortest branch-duration gap,
+with a median of 138\,s and a 90th percentile of 1,173\,s. When the Main agent waits for all required branches, differences in branch completion times can leave shorter branches with slack. Additional delays within this slack do not postpone the join or
+increase WCT.
+
+These differences in slack affect how KV reconstruction delays workflow
+completion after a failure.
+Figure~\ref{fig:motivation}(\subref{fig:motivation-recovery-exposure})
+shows reconstruction times measured by full prefill with
+Qwen2.5-7B-Instruct-1M using sparse
+attention~\cite{qwen2025qwen25oneM,jiang2024minference},
+and their calculated impact on WCT.
+We consider each agent's interruption separately, with other execution
+unchanged and the Main agent waiting for all four branches.
+A1's 33.2\,s reconstruction delay is fully absorbed by its 91.2\,s slack,
+leaving WCT unchanged. In contrast, A2 has no slack, so its 32.6\,s
+reconstruction delay increases WCT by the same amount.
+Thus, similar reconstruction costs can have very different effects
+on workflow completion. Recovery priorities should therefore account
+for a request's position in the workflow, in addition to its
+reconstruction cost.
+
+\paragraph{Limitation 2: Workflow-aware KV management ignores failures.}
+Workflow-aware serving systems already exploit the dependencies
+highlighted above, but to accelerate normal execution. One line of work
+hands workflow structure to the scheduler: Parrot exposes inter-request
+dependencies for application-level scheduling~\cite{lin2024parrot}, Ayo
+orchestrates applications as primitive-level dataflow
+graphs~\cite{tan2025ayo}, Autellix and SAGA schedule whole agent programs
+rather than individual calls~\cite{luo2025autellix,guo2026saga}, and
+Cortex and Murakkab pool and configure resources from the same
+structure~\cite{pagonas2025cortex,chaudhry2026murakkab}. Another line
+manages KV with it directly: InferCept and Continuum decide whether KV is
+kept, swapped or discarded during a tool call, and for how
+long~\cite{abhyankar2024infercept,li2025continuum}; TokenCake offloads KV
+during tool stalls, prefetches it before the next call, and reserves GPU
+memory for critical-path agents~\cite{bian2025tokencake}; KVFlow,
+CacheScout and PBKV order eviction and prefetching by predicted upcoming
+agent invocations~\cite{pan2025kvflow,zhang2026cachescout,zheng2026pbkv};
+Pythia predicts future steps and prompt contents to stage KV ahead of
+use~\cite{yu2026pythia}; and TOPAS jointly selects resident prefixes and
+admitted requests from remaining-path progress, reuse, and movement or
+preemption costs~\cite{ni2026topas}. These policies value retained KV by
+the requests expected to read it next, and assume that the worker holding
+it keeps running.
+
+Yet failures are not rare, as Figure~\ref{fig:gpu-server-availability}
+shows: 584 unavailability events hit 231 of 400 servers in about 349
+days. When a server fails, the agent requests running on it are
+interrupted together with their GPU-resident KV and any copies swapped
+to that host's
+memory~\cite{abhyankar2024infercept,pan2025kvflow,bian2025tokencake}.
+What remains on other workers or in shared storage are the fixed prompts
+and shared prefixes selected by their next expected
+read~\cite{pan2025kvflow,yu2026pythia,zhang2026cachescout}; the
+interrupted request's history up to the failure is not among them. The
+CC/Weka trace shows how little these surviving prefixes help: same-agent
+history accounts for 97.90\% of potential token coverage, while other
+agents add only 0.37\% (Figure~\ref{fig:agent-prefix-reuse}). The
+interrupted request therefore re-prefills its entire history from the
+prompt, at the reconstruction cost of
+Figures~\ref{fig:motivation-recompute}
+and~\ref{fig:motivation-recovery-exposure}, and which agent it lands on
+decides whether that time is absorbed by slack or added to WCT. The
+root cause is that failure is absent from these systems' model: whether
+a KV object is worth keeping, where, and for how long is decided on the
+premise that its worker does not fail. Swapping to host memory frees GPU
+capacity rather than escaping a failure, shared storage holds completed
+contexts for later reuse rather than a running request's history, and a
+copy that would be read only after a failure is worth nothing in their
+retention scores. So although these systems already hold the information
+needed to tell which agent cannot afford this reconstruction---the
+dependency graphs, next-call predictions and remaining paths they extract
+are exactly what slack is derived from, and TokenCake even uses them to
+reserve GPU memory for critical-path agents~\cite{bian2025tokencake}---that
+information is never used to decide, before a failure, for which agent,
+at which tier, and for how long a resumable copy should be kept.
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/agent-prefix-reuse.pdf}
+ \caption{Potential prefix reuse over 98,827 requests, 2,090 agents and
+ 393 CC/Weka workflows. Coverage uses earlier completed requests with
+ the same recorded model and workflow. Same/other-agent coverage
+ overlaps; only additional cross-agent coverage extends same-agent
+ reuse. These are token-prefix opportunities, not runtime cache hits.}
+ \label{fig:agent-prefix-reuse}
+ \Description{Same-agent prefixes dominate aggregate reuse; cross-agent
+ history can also help first subagent calls.}
+\end{figure}
+
+\label{sec:motivation-long-context}
+The two limitations are mirror images. Fault-tolerant serving decides
+\emph{how} to preserve and restore state, but ranks interrupted requests
+by recovery cost and worker load. Workflow-aware caching decides
+\emph{which} state a workflow will read next, but assumes the worker
+holding it survives. Neither answers the question a multi-agent service
+faces when a worker fails: which agents' histories must be recoverable
+quickly for their workflows to complete on time, and how much of the
+finite HBM, DRAM and storage that protection may take from normal reuse.
+Combining the two is not a matter of adding slack to a recovery router
+or a checkpoint path to a cache. Both objectives draw on the same tiers,
+the state each values differs, and both change while agents run.
+AegisKV takes this joint decision as its problem. It assumes checkpoint
+transport and tiered stores as in the systems above, and contributes the
+placement policy---which KV objects each tier holds, on whose behalf,
+and when they move---together with the bounded controller and safe
+transitions that keep that policy correct online. Realizing it raises
+three challenges.
+
+\subsection{Design Challenges}
+\label{sec:motivation-challenges}
+
+\paragraph{Challenge 1: Recovery urgency is unknown online and does not add up.}
+The examples in Section~\ref{sec:motivation-limitations} obtain slack
+from completed traces. Online, the remaining model and tool durations of
+every branch are unknown, tool durations are outside the serving
+system's control, and the branch that gates the join changes as others
+finish. Slack also varies widely: workflow-maximum gaps range from
+seconds to over a thousand seconds (median 138\,s, 90th percentile
+1,173\,s in Figure~\ref{fig:motivation}(\subref{fig:motivation-branch-gap})),
+so no fixed rule separates urgent from tolerant branches, and recency or
+reconstruction cost cannot either: A1 and A2 reconstruct in similar time
+yet only A2 delays the join. Urgency is not additive. One worker failure
+interrupts several co-located agents whose recoveries share readers,
+links and target GPUs, and accelerating one of two late branches leaves
+their join unchanged. Priorities must therefore be derived from partial
+execution, remain useful under prediction error, fall back safely when
+estimates are invalid, and rank state without treating request-level
+savings as summed WCT reductions.
+
+\paragraph{Challenge 2: Urgency does not say how much of which history belongs in which tier.}
+Retaining a history in any tier removes reconstruction: at 1M tokens,
+571.21\,s becomes 10.156\,s from shared storage
+(Figure~\ref{fig:motivation-recompute}). A faster tier only shortens
+retrieval, to 2.663\,s in DRAM and 1.305\,s in HBM, at a very different
+price: that history occupies 57.92\,GB, over 70\% of the two A100s'
+combined HBM, and every HBM byte spent on checkpoints is taken from
+serving. Because interrupted agents' histories are largely unique
+(Figure~\ref{fig:agent-prefix-reuse}), sharing does not shrink this
+cost, and co-located agents recovering together contend for lower-tier
+bandwidth. Whole histories therefore cannot live in the fast tier, but a
+history need not move as a unit. Long-context models increasingly select
+blocks, tokens or compressed entries per query
+(Figure~\ref{fig:sparse-releases}), and their accesses concentrate: in
+NOSA-8B, NSA-8B and MiniCPM4.1-8B, about 20\% of historical blocks
+receive 87.64\%, 74.76\% and 56.54\% of accesses
+(Figure~\ref{fig:design-insights}). A small hot subset in a fast tier
+could serve most reads while the complete history stays in cheaper
+tiers---but retrospective concentration is not future-query accuracy,
+and a missed block must still be retrievable. Placement must therefore
+value state per byte and per block, separate retention that avoids
+reconstruction from acceleration that shortens retrieval, choose the hot
+subset from causal history alone, and credit normal reuse independently
+of urgency: high slack must not delete history that later normal calls
+would recompute.
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/sparse-models.pdf}
+ \caption{Selected sparse/hybrid model releases and reported context
+ lengths. IDs: 1 MiniCPM4~\cite{minicpm4model};
+ 2 MiniCPM4.1~\cite{openbmb2025minicpm41};
+ 3 DeepSeek-V3.2-Exp~\cite{deepseek2025v32exp};
+ 4 DeepSeek-V3.2~\cite{deepseek2025v32model};
+ 5 GLM-5~\cite{zai2026glm5model};
+ 6 MiniCPM-SALA~\cite{openbmb2026sala};
+ 7 DeepSeek-V4 preview~\cite{deepseek2026v4model};
+ 8 MiniMax-M3~\cite{minimax2026m3};
+ 9 GLM-5.2~\cite{zai2026glm52};
+ 10 LongCat-Flash-Lite-Sparse~\cite{longcat2026sparse}.
+ Dates are announcements, or first official repository dates for
+ IDs 5, 9 and 10. Markers identify the sparse branch's selection unit,
+ including SALA's block branch and V4's compressed sparse branch;
+ they do not imply uniform attention across layers. This is a selected
+ survey, not an adoption-share or sparsity-rate estimate.}
+ \label{fig:sparse-releases}
+ \Description{Ten selected sparse or hybrid attention releases between
+ June 2025 and July 2026, with reported contexts from 32K to 1M.
+ Circles, squares and diamonds distinguish block, token and compressed
+ entry selection. This is a literature survey, not a sparsity-rate curve.}
+\end{figure}
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/kv-access-concentration.pdf}
+ \caption{Native KV access concentration for NOSA-8B~\cite{huang2026nosav2},
+ NSA-8B (MiniCPM-4-8B-NSA)~\cite{fasa2026minicpm4nsa}, and
+ MiniCPM4.1-8B~\cite{openbmb2025minicpm41}. We use the final 512 queries
+ of matched 32,704-token prefixes from three PG19 texts. Each query
+ counts a historical 64-token block once across heads. Rank the 503
+ blocks within each layer/window; average access shares over all
+ 32 layers, then texts. Bands show text min--max; the diagonal denotes
+ uniform access. Compressed/selector state is excluded. This is
+ retrospective concentration, not prediction accuracy or recovery speedup.}
+ \label{fig:design-insights}
+ \Description{Cumulative historical block access curves for NOSA-8B,
+ NSA-8B and MiniCPM4.1-8B, averaged over every layer and three texts.
+ About 20 percent of blocks account for 87.64, 74.76 and 56.54 percent
+ of accesses, respectively; all three curves exceed the uniform baseline.}
+\end{figure}
+
+\paragraph{Challenge 3: Placement must follow execution cheaply and move state safely.}
+Every generated token extends the unsaved tail, every tool return and
+new request changes slack, and every batch changes the HBM that
+inference needs. Re-scoring all resident objects on each of these events
+is prohibitive at block granularity, yet stale scores keep the wrong
+state in the fast tiers. Migration itself consumes the DRAM and storage
+bandwidth that recovery and normal reuse depend on, and checkpoint space
+in HBM must yield whenever inference needs it. Finally, transfers are
+asynchronous and the failure they guard against can strike midway:
+releasing a DRAM copy before its storage replacement commits, or
+counting an object as local after its owner failed, silently leaves a
+checkpoint without a recoverable copy. The controller therefore needs
+bounded work per event, a capacity envelope that yields to inference,
+and transitions that keep every committed checkpoint with a reachable
+owner.
+
+\label{sec:motivation-goals}
+These challenges organize the design. Workflow Tracker and the
+slack-aware request priority address Challenge~1
+(Sections~\ref{sec:workflow-protection} and~\ref{sec:placement-value});
+block-level demand, renewable per-agent credit and fixed Peer quotas
+address Challenge~2
+(Sections~\ref{sec:placement-value}--\ref{sec:sparse-placement}); and the
+lazy event loop, AIMD Adapter and versioned transfers address
+Challenge~3 (Sections~\ref{sec:placement-plan} and~\ref{sec:adapter}).

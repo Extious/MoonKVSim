@@ -1,0 +1,37 @@
+{
+  "schema": "moonkvsim.aegiskv.engine.v2",
+  "model": {
+    "id": "Qwen/Qwen3-8B",
+    "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+    "kv_layout_path": "configs/resolved/qwen3-8b/proposed-yarn-128k-tp1-pp1/kv-layout.json"
+  },
+  "parallelism": {
+    "data_parallel_size": 8,
+    "tensor_parallel_size": 1,
+    "pipeline_parallel_size": 1
+  },
+  "hardware": {
+    "gpu_sku": "NVIDIA-A100-40GB",
+    "gpu_count": 8,
+    "node_count": 1,
+    "physical_hbm_bytes_per_gpu": 42949672960
+  },
+  "memory": {
+    "peer_hbm_alpha": 0.2
+  },
+  "store": {
+    "kind": "mooncake_dram",
+    "capacity_bytes": 1000000000000,
+    "colocated_with_inference": true
+  },
+  "network": {
+    "transport": "PCIE",
+    "effective_bandwidth_bytes_per_second": 25000000000,
+    "transfer_setup_ns": 250000
+  },
+  "control": {
+    "reroute_ns": 1000000,
+    "policy_chunk_tokens": 4096,
+    "runtime_semantics": "mooncake_prompt_v1"
+  }
+}

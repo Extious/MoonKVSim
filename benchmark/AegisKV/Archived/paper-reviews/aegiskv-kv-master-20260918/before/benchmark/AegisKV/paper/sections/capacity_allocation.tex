@@ -1,0 +1,41 @@
+% Adapter-local capacity and layer-prefix allocation, part of section 3.6.
+\paragraph{Control Peer capacity each window.}
+For a target DP $p$ in window $t$, its Adapter grants
+\begin{equation}
+ B_{p,t}=[\min(B_{\mathrm{cap}},\mathrm{pool}_{p,t}
+              -\mathrm{watermark}_{p,t}-\mathrm{headroom}_{p,t})]^+,
+ \label{eq:peer-budget}
+\end{equation}
+where $B_{\mathrm{cap}}$ defaults to 4\,GiB. The pool includes bytes
+already occupied by Peer replicas; $B_{p,t}$ is a total target, not
+additional free space. Foreground demand, admission headroom, and
+transfer/compute estimates are refreshed each window.
+
+Let $A_r(k)$ contain the KV Manager's hot sets in layers $1\ldots k$
+and all selector state needed by those layers, with $A_r(0)=\varnothing$.
+Given the useful prefix limit $L_r^\star(t)$ derived below, the Adapter
+processes $Q_p$ in the Manager's priority order. Starting with $P_s=\varnothing$,
+it chooses
+\begin{equation}
+ \begin{aligned}
+ L_r(t)=\max\bigl\{&k\in\{0,\ldots,L_r^\star(t)\}:\\
+                  &\mathrm{bytes}\bigl(P_s\cup A_r(k)\bigr)\le B_{p,t}\bigr\},
+ \end{aligned}
+ \label{eq:resident-prefix}
+\end{equation}
+then adds $A_r(L_r(t))$ to $P_s$. Shared physical objects count once.
+Only complete per-layer hot sets are admitted, and $L_r(t)=0$ preserves
+the DRAM path. A request can receive fewer than $L_r^\star(t)$ layers;
+unused space can serve later requests. Capacity or profile changes can
+increase or decrease $L_r(t)$ at the next window. This greedy allocation
+has no global optimality claim. After shared-object accounting, it scans
+at most $N$ layer prefixes per request using marginal byte counts.
+
+Within a window, these are stable targets. Emergency foreground pressure
+can shrink them early: the Adapter removes later layers first, starting
+with requests of lowest admission priority. Copying, committed, and
+reclaiming bytes remain physically charged until release completes;
+lowering $B_{p,t}$ or $L_r(t)$ does not immediately free addresses.
+New copies wait for sufficient physical headroom, and readers retain
+their pins until use completes. Growth copies only newly required
+objects; every removal preserves the required DRAM recovery path.

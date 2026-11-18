@@ -1,0 +1,240 @@
+--- before/background_and_motivation.tex
++++ after/background_and_motivation.tex
+@@ -5,35 +5,38 @@
+ \subsection{Background}
+ \label{sec:motivation-background}
+ 
+-\paragraph{From LLM requests to agent workflows.}
+-An LLM request supplies an input sequence and receives generated tokens.
+-An agent repeatedly makes such requests to carry out a task: it sends
+-its current conversation to the model, interprets the response, executes
+-any requested tools, and incorporates their results into a subsequent
+-request~\cite{wu2023autogen}. For example, a coding agent may inspect a
+-repository, generate a patch, run tests, and submit the test output to
+-the model before revising the patch. Its lifetime spans multiple model
+-calls and periods of tool execution. Between calls, the conversation
+-persists even though the agent has no request executing on a GPU.
+-
+-A multi-agent application connects several such agents.
+-Figure~\ref{fig:agent-workflow-examples} illustrates two examples.
+-For code generation, a main agent partitions a CSV-export feature into
+-API, user-interface, test-authoring and documentation tasks. Four
+-subagents work in parallel from a shared specification, then return
+-their changes to the main agent for integration and testing.
+-For deep research, a lead agent delegates performance, cost, safety
+-and supply investigations to parallel researchers, then synthesizes
+-their evidence into a cited report. This illustrates the lead--subagent
+-pattern used by research systems~\cite{anthropic2025multiagent}.
+-
+-These examples contain sequential dependencies, parallel branches and
+-joins. Each subagent maintains its own conversation across model calls
+-and tool invocations, so completing one request need not complete its
+-assigned subtask. The orchestration layer determines which outputs are
+-required for subsequent work, whereas the serving engine executes the
+-individual requests. An interruption at the serving layer can therefore
+-postpone the result needed by another agent.
++\paragraph{Multi-agent workflows and completion time.}
++A multi-agent application completes a user task through several agents
++whose results depend on one another. Each agent maintains a conversation
++and alternates LLM requests with tool execution: a model response may
++invoke a tool, and the returned result becomes input to a later
++request~\cite{wu2023autogen}. A request is one model invocation; an
++agent's task can span several requests; a workflow connects these tasks
++through sequential dependencies, parallel branches and joins.
++The orchestration layer determines these dependencies, while the serving
++engine executes the individual requests.
++
++Figure~\ref{fig:agent-workflow-examples} illustrates two workflows.
++In code generation, a main agent delegates a CSV-export feature to API,
++UI, test-authoring and documentation agents. They work from a shared
++specification and return changes for integration and testing.
++In deep research, a lead agent assigns technical, cost, safety and supply
++investigations, then combines their evidence into a report. This follows
++the lead--subagent pattern used by research
++systems~\cite{anthropic2025multiagent}. Each branch can require a different
++number of model and tool calls. Completing one request therefore need
++not complete an agent's task, and completing one branch need not produce
++the final application result.
++
++We evaluate the application by its \emph{workflow completion time}
++(WCT). For workflow $w$, released at $a_w$ with all required outputs
++ready at $c_w$, $\mathrm{WCT}_w=c_w-a_w$. This elapsed time includes
++model execution, tool calls, queueing and dependency waits.
++In the coding example, integration waits for the required branch outputs:
++a delay on the last unfinished branch postpones integration, whereas
++another branch may absorb the same delay before the join. Thus the
++workflow impact of a serving interruption depends on where it occurs,
++as well as how long it lasts.
+ 
+ \begin{figure}[t]
+   \centering
+@@ -55,73 +58,89 @@
+     staggered; all edges move forward, without loops or round barriers.}
+ \end{figure}
+ 
+-\paragraph{How KV state supports repeated execution.}
+-An autoregressive Transformer first performs \emph{prefill} over input
+-tokens, producing the state used to predict an output token. It then
+-\emph{decodes} subsequent tokens incrementally. At each attention layer,
+-the engine retains keys and values for processed tokens so later queries
+-can use their representations without recomputing them. For conventional
+-per-token KV layouts, every additional token adds state across layers
+-and KV heads, so cache size grows with retained context length.
+-KV contains intermediate model state; it is much larger than the token
+-IDs from which that state can be reconstructed.
+-
+-This state can also be reused across requests. When a later call extends
+-an earlier conversation under compatible model and position semantics,
+-the engine can retain the matching prefix's KV and prefill only the new
+-suffix~\cite{gao2024cachedattention,zheng2024sglang}. In Figure~\ref{fig:agent-workflow-examples}(a), the API agent's later
+-requests incorporate file contents and edit results while reusing the
+-unchanged conversation prefix. Reuse ends where the token prefix changes, for
+-example after rewriting or summarizing history. Consequently, a completed
+-request's KV can remain useful during a tool call or between agent turns;
+-evicting it saves memory but may make the next call repeat prefix work.
+-
+-\paragraph{Retained state and the memory hierarchy.}
+-GPU attention kernels consume KV in high-bandwidth memory (HBM), where
+-it competes with model weights, other requests and execution workspace.
+-Hierarchical caches retain additional histories in host DRAM or storage
+-and bring needed state back for execution~\cite{qin2025mooncake,gao2024cachedattention}.
+-DRAM reuse adds host-to-device transfer; a filesystem-backed path also
+-reads the stored state, potentially across a network. Layer prefetching
+-can overlap these transfers with computation, so the delay exposed to
+-the request depends on when the data is needed and whether sufficient
+-independent computation remains. Keeping KV available therefore consumes
+-both storage capacity and transfer bandwidth.
+-
+-Attention determines which retained state a computation accesses. Dense
+-causal attention reads preceding tokens' KV, while sparse attention
+-restricts queries to selected positions or blocks~\cite{jiang2024minference}.
+-Selections may differ across layers and queries. A block skipped by one
+-query can be needed later: reducing an attention operation's reads does
+-not, by itself, make the skipped history disposable. This separates the
+-state retained for future execution from the subset needed immediately.
+-
+-\paragraph{What a serving failure must recover.}
+-A serving cluster runs multiple model replicas to distribute requests.
+-One replica may span several GPUs through tensor parallelism; losing a
+-participating GPU can make that replica unavailable. Such a failure
+-interrupts its in-flight requests, removes access to their GPU-resident
+-KV, and reduces the capacity available to serve them~\cite{cao2026lumen}.
+-A surviving replica already has model weights, but still needs the
+-interrupted requests' sequence-specific state. We consider fail-stop
+-worker failures with accepted token histories and workflow state retained
+-outside the failed worker, and a compatible surviving replica available.
+-
+-Without surviving KV, the destination must replay the retained tokens
+-through the model to reconstruct state before continuing generation.
+-A KV checkpoint instead preserves already computed state for a prefix.
+-The destination retrieves that prefix and replays any later tokens whose
+-KV was not saved; asynchronous copying can leave such a tail even when
+-checkpointing is enabled. Checkpointing thus trades background copying
+-and retained capacity for less reconstruction~\cite{strati2024dejavu,jayakody2026ghostserve}.
+-The checkpoint must survive the protected failure: same-host memory can
+-survive a GPU-process failure but cannot protect against loss of that host.
+-Recovery scheduling must also accommodate the interrupted requests on
+-the remaining serving capacity~\cite{cao2026lumen}. For an agent workflow,
+-these retrieval, replay and queueing delays postpone a branch's result
+-and can propagate through its dependencies. The following section
+-examines when that delay reaches workflow completion and what it costs
+-to keep the required KV readily available.
++\paragraph{KV state across requests and failures.}
++Successive requests often extend an agent's conversation with generated
++tokens, file contents or tool results. During \emph{prefill}, the model
++processes input tokens and produces per-layer keys and values (KV);
++\emph{decoding} extends this state as output tokens are generated.
++A later request with a matching token prefix can reuse its KV under
++compatible model and position semantics, computing only the new
++suffix~\cite{gao2024cachedattention,zheng2024sglang}.
++For example, the API agent's next request can reuse its previous context
++while processing the result of a file operation. Prefix changes limit
++reuse to the portion that still matches.
++
++The conversation remains useful between requests, including while an
++agent is using tools or waiting for dependencies. Retaining its KV avoids
++repeating prefix computation when execution resumes. KV is derived model
++state, distinct from the token history and workflow progress maintained
++by the application. For conventional per-token layouts, it grows with
++context length across layers and KV heads; retaining a long history can
++therefore require much more memory than saving its token IDs.
++Sparse attention restricts an operation to selected KV~\cite{jiang2024minference},
++but omission from one operation does not establish that the state is
++unnecessary for later execution.
++
++A serving-worker failure can make this GPU-resident state unavailable,
++interrupt its requests and remove serving capacity~\cite{cao2026lumen}.
++A worker may span several GPUs; a compatible surviving replica has model
++weights but still needs the interrupted sequence's state. We consider
++fail-stop worker failures for which accepted token histories and workflow
++progress survive outside the failed worker and a compatible replica is
++available. Without surviving KV, that replica replays the retained tokens
++to reconstruct state. A KV checkpoint preserves an already computed
++prefix; recovery retrieves it and replays only the subsequent tokens
++whose KV was not saved. Asynchronous copying can leave this unsaved tail
++when a failure occurs~\cite{strati2024dejavu,jayakody2026ghostserve}.
++The checkpoint must outlive the protected failure: same-host DRAM may
++survive a GPU-worker failure but cannot protect against loss of the host.
++
++\paragraph{The resource cost of protection.}
++Keeping state recoverable consumes capacity throughout its retention
++interval and bandwidth when it is copied or moved. Hierarchical caches
++extend GPU HBM with host DRAM and storage, allowing more histories to be
++retained~\cite{qin2025mooncake,gao2024cachedattention}. Their location
++also affects when a request can execute. KV already in the recovery
++executor's HBM is immediately accessible to its kernels; DRAM reuse
++requires host-to-device transfer, and storage adds a read that may cross
++a network. Prefetching can hide some transfer behind computation, so
++exposed waiting depends on both the access path and when the state is
++needed.
++
++These choices have costs on both sides. Discarding the last reusable KV
++copy frees space but leaves its state to be recomputed when needed again. Keeping
++it in a slower tier avoids that reconstruction while adding retrieval
++work. Reserving more fast memory for one history leaves less space for
++other histories or foreground execution; background copying can also
++contend with serving transfers. Consequently, protecting a request more
++aggressively can impose costs on concurrent work. Two decisions must be
++considered together: which histories retain a KV checkpoint, and which
++checkpoints merit fast access. Their value depends on future normal reuse and on how a
++recovery delay would affect the workflow's required results.
++
++\paragraph{Existing mechanisms and protection priorities.}
++Existing systems provide complementary capabilities. Hierarchical
++caching reduces repeated prefix work across
++turns~\cite{gao2024cachedattention,qin2025mooncake}, while KV streaming
++and checkpointing reduce reconstruction after
++failures~\cite{strati2024dejavu,jayakody2026ghostserve}.
++Application-aware execution exposes request dependencies, and
++workflow-aware caching uses upcoming agent steps to guide eviction and
++prefetching~\cite{lin2024parrot,pan2025kvflow}.
++Recovery coordination also considers worker load when placing checkpoints
++and redirecting interrupted requests~\cite{cao2026lumen}.
++
++Recency, next-use proximity and reconstruction cost each describe part
++of this decision. None of these quantities alone determines the effect
++of restoring a request sooner on workflow completion: a recent or
++expensive history may belong to a branch that can wait, while another
++branch gates a required result. Normal reuse also matters even when a
++branch can tolerate recovery delay. The question is therefore how to
++allocate finite fast-tier capacity and checkpoint storage according to
++their workflow benefit, while accounting for reuse and protection costs.
++We next quantify branch-duration differences and KV readiness costs,
++then illustrate how workflow position changes the completion delay
++caused by recovery.
+ 
+ \begin{figure*}[t]
+   \centering
+@@ -182,10 +201,8 @@
+ 
+ \paragraph{Workflow completion requires different protection priorities.}
+ \label{sec:motivation-workflow}
+-We use workflow completion time (WCT), from task release to completion of
+-all required results, as the application-level objective.
+-Figure~\ref{fig:motivation}(\subref{fig:motivation-workflow}) illustrates
+-why request latency alone is insufficient. A2 finishes last, 151.6\,s
++Figure~\ref{fig:motivation}(\subref{fig:motivation-workflow}) makes the
++workflow-level consequence concrete. A2 finishes last, 151.6\,s
+ after the fork, whereas A1 finishes at 60.4\,s. If the following Main stage
+ requires all four outputs, accelerating A1 alone does not advance the
+ join, while delaying A2 postpones downstream work. A branch can absorb

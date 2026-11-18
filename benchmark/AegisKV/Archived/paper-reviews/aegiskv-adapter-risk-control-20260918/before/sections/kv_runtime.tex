@@ -1,0 +1,96 @@
+\subsection{Adapter: Windowed Capacity and Layer Control}
+\label{sec:kv-runtime}
+\label{sec:capacity-allocation}
+
+Adapter (4) turns the KV Master's policy into physical copies and
+recovery execution. Control windows last 5\,s. All agents' requests for
+the same deployed model share one target resident depth $L_t$, unchanged
+throughout window $t$, including requests arriving during that window.
+Each target DP controls its own total Peer-HBM budget $B_{p,t}$ and
+applies this common depth to admitted Peer requests. DRAM-only and
+recomputation tiers do not require Peer residency. Adapters report actual
+residency and commit status; recovery uses committed objects, since
+copying may not yet have reached the target depth.
+
+\input{sections/capacity_allocation}
+
+\paragraph{Inform the common depth with a reference profile.}
+The Adapter preloads hot blocks in layer order, skipping Peer-resident
+objects. Selector state must arrive before exact demand can be computed;
+newly revealed misses take priority over speculative preloads. Cold KV
+is filled in the background. Let $h$ be the configured preload fraction and
+$\widetilde u$ the fraction of historical bytes in the union of preload
+and demand-fetch sets, calibrated from replay traces. For $N$ homogeneous
+layers, per-layer replay compute $C$ and full-layer transfer
+$D=M_rs/\beta$ ($M_r$ historical tokens, $s$ KV bytes/token/layer, and
+$\beta$ effective bandwidth),
+\begin{align}
+ W_{\mathrm{floor}}&=N(\widetilde u-h)D,\label{eq:demand-floor}\\
+ W_0&=hD+(N-1)[hD-C]^++W_{\mathrm{floor}}.\label{eq:exposed-wait}
+\end{align}
+Here $[x]^+=\max(0,x)$. The first two terms are startup preload and
+backlog that computation cannot hide. The last is demand wait under a
+fixed hot set, causal demand release, and ideal preemptible copy stream;
+it is not a lower bound on other hot sets or loading policies.
+
+For a configured representative history and replay tail, the window's
+transfer/compute estimates give a reference preload-byte target
+\begin{equation}
+ F^\star_{\mathrm{ref},t}=\beta_t
+ \bigl(W_{0,\mathrm{ref},t}-W_{\mathrm{floor},\mathrm{ref},t}\bigr).
+ \label{eq:peer-byte-target}
+\end{equation}
+The smallest $k$ whose reference hot sets satisfy
+$\sum_{l=1}^{k}K_{\mathrm{ref},l}b\ge F^\star_{\mathrm{ref},t}$
+provides the common $L_t$ at the window boundary; $b$ is KV bytes per
+layer-block. The depth is zero when no preload is useful and capped at
+$N$. The reference profile is a shared calibration choice, not a
+separate optimization for each request. Selector-state bytes are
+additionally charged in $A_r(L_t)$. When $hD\le C$, one layer's hot set
+suffices for this homogeneous reference. Different request histories
+can still have different residual waits: a common depth does not promise
+to reach every request's floor. Capacity controls request admission
+through Equation~\ref{eq:resident-prefix}, without shortening individual
+requests' target depths inside the window.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/design-single/design-layer-pipeline.pdf}
+  \caption{Modeled recovery pipelines: MiniCPM4-8B, 32 layers, 32K
+    history, 64-token known tail; $C=2.87$\,ms/layer (measured) and
+    $D=5.37$\,ms at an assumed 6.25\,GB/s. In (d), 147\,MiB of Peer
+    residency removes preload wait. Totals end at tail-KV reconstruction.
+    The homogeneous, preemptible-copy model excludes detection,
+    queuing, and interference.}
+  \label{fig:design-pipeline}
+  \Description{Four timelines compare token-block transfer, full-layer
+    pipelining, hot preloads with demand fetch, and Peer-resident hot sets.}
+\end{figure}
+
+Figure~\ref{fig:design-pipeline}(a,b) reduces exposed wait from 172 to
+83\,ms through layer pipelining; hot preloads in (c) reduce it to 44\,ms;
+seven resident hot sets in (d) leave 20\,ms of demand wait. This is one
+calibrated profile illustrating the useful prefix, not a fixed layer
+count across windows or measured fault recovery.
+
+\paragraph{Publish only complete replicas.}
+Adapters invoke Connectors to allocate, transfer, and acknowledge
+objects using the assigned targets and the current $D_s,P_s$.
+Peer and fault-independent DRAM paths commit separately. Publication
+follows transfer completion and model/layout/shard validation.
+Selector state must be ready before selection. A Peer object that is
+the only surviving copy cannot be discarded before its DRAM copy
+commits. Low-priority copy streams are rate-limited (default 20\% of
+link capacity), also accounting for the target's HBM bandwidth.
+
+\paragraph{Preserve attention inputs during recovery.}
+For each retry, preloads overlap earlier-layer computation; newly
+revealed misses outrank queued preloads. The runtime's DMA granularity
+may limit ideal preemption. A layer executes only when \emph{all} its
+required attention inputs are ready; later cold blocks can arrive in
+the background or be fetched by subsequent decode. Tier R rebuilds
+the history. AegisKV changes placement and loading order, not selector
+outputs or known replay tokens. With compatible weights, layout, and
+operators it reconstructs the same logical KV state without an added
+attention approximation, but does not guarantee identical future
+stochastic samples across different floating-point schedules.

@@ -1,0 +1,33 @@
+{
+  "evidence_type": "analytical model; no hardware measurements",
+  "model_example": "Qwen3-8B",
+  "layers": 36,
+  "model_config_source": "https://huggingface.co/Qwen/Qwen3-8B/blob/main/config.json",
+  "source_checked_on": "2026-09-13",
+  "mechanism_reference": "https://www.usenix.org/system/files/atc24-gao-bin-cost.pdf#page=6",
+  "C_over_D_series": [0.25, 0.5, 0.75, 1.0, 2.0],
+  "D_normalization": 1.0,
+  "resident_layers": "the consecutive first k layers, with the same M-token historical prefix",
+  "compute_scope": "complete forward of the N suffix tokens, conditioned on M cached history tokens, in one layer",
+  "copy_scope": "H2D of M historical tokens' K and V for one layer",
+  "policies": {
+    "next_layer": "copy layer i may start when compute layer i-1 starts; copy layer 1 may start at time zero",
+    "early_prefetch": "at time zero start copying layer k+1, then copy all nonresident layers in order as soon as the copy engine is free"
+  },
+  "assumptions": [
+    "one compute stream and one ordered H2D stream; constant C and D per layer",
+    "C >= 0 and D > 0; C=0 is only an algebraic boundary case",
+    "all uncached historical KV exists in host memory and all cached historical KV is valid",
+    "sufficient destination HBM and prefetch space; k is initial residence, not a cap on runtime HBM capacity",
+    "no overlap interference, request contention, launch/event overhead, or weights transfer",
+    "each complete layer starts after its historical KV is ready; sublayer projection overlap is excluded",
+    "all N suffix tokens still execute all L layers; historical KV placement does not remove this computation",
+    "only this restoration plus forward interval is modeled, not detection, queueing, full TTFT, or workflow completion",
+    "independent C/D scenarios are not calibrated timings of Qwen3-8B"
+  ],
+  "figure_size_mm": [168, 132],
+  "example_only_C_ms": 1,
+  "example_only_D_ms": 2,
+  "physical_experiments": 0,
+  "statistical_replicates": null
+}

@@ -1,0 +1,9 @@
+
+
+Authorized users only. All activities may be monitored and reported.
+Warning: your password will expire in 43693 days.
+Access denied by pam_slurm_adopt: you have no active jobs on this node
+Connection closed by 172.16.5.154 port 22
+
+exit 255
+gcc-12.2.0 loaded successful

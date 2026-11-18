@@ -1,0 +1,48 @@
+% Native independent-tier policy; implementation details are discussed in text.
+\begin{algorithm*}[tp]
+\caption{\textsc{SlackLandlord}: independent admission and asynchronous tier commitment}
+\label{alg:slack-landlord}
+\textit{Symbols:} $x=(c,r)$: sealed chunk $c$ in pool $r$; $i=\operatorname{req}(c)$; $b_c$: bytes;
+$L_r$: rent; $Q_r$: heap exposing one safe suffix tail per request; $Y$: tentative victims.
+\par\medskip
+\noindent\begin{minipage}[t]{.48\textwidth}
+\vspace{0pt}
+\begin{tabular}[t]{@{}r@{\hspace{0.5em}}>{\raggedright\arraybackslash}p{\dimexpr\linewidth-2.5em\relax}@{}}
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{\columnwidth}@{}}{\textbf{SlackLandlord}$(c,t)$}\\
+1 & $x_H\gets\operatorname{BuildHbm}(c)$; $x_D\gets\operatorname{BuildDirectDram}(c)$.\\
+2 & $h\gets\operatorname{TryAdmit}(x_H,t)$.\\
+3 & $d\gets\operatorname{TryAdmit}(x_D,t)$.\\
+4 & $\operatorname{StartAcceptedSourceCopies}(h,d)$.\\
+5 & $\operatorname{return}\ \operatorname{ResidencyOutcome}(h,d)$.\\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{\columnwidth}@{}}{\textbf{MinTail}$(Q,Y,i,t)$}\\
+6 & \textbf{while} $Q\ne\varnothing$ \textbf{do}\\
+7 & $\quad(y,H_y)\gets Q.\operatorname{min}()$.\\
+8 & $\quad$\textbf{if} $\operatorname{Stale}(y,Y,t)$ \textbf{then} $Q.\operatorname{update}(y,\operatorname{RefreshKey}(y,Y,t))$; \textbf{continue}.\\
+9 & $\quad Q.\operatorname{pop}()$; $\operatorname{req}(y)\ne i\Rightarrow\operatorname{return}\ (y,H_y)$.\\
+10 & \textbf{end while}; $\operatorname{return}\ (\bot,\infty)$.\\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{\columnwidth}@{}}{\textbf{OnCopyDone}$(x=(c,r),t')$}\\
+11 & \textbf{if} $\operatorname{AllAck}(x)\land\operatorname{Valid}(x)$ \textbf{then}\\
+12 & $\quad H_c\gets L_r+\operatorname{Gain}(x,t')/b_c$; $\operatorname{state}(x)\gets\textsc{Committed}$; $Q_r.\operatorname{insert}(c,H_c)$; \textbf{return}.\\
+13 & $\operatorname{state}(x)\gets\textsc{Aborted}$; $\operatorname{Free}(c,r)$.\\
+\end{tabular}
+\end{minipage}\hfill
+\begin{minipage}[t]{.48\textwidth}
+\vspace{0pt}
+\begin{tabular}[t]{@{}r@{\hspace{0.5em}}>{\raggedright\arraybackslash}p{\dimexpr\linewidth-2.5em\relax}@{}}
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{\columnwidth}@{}}{\textbf{TryAdmit}$(x=(c,r),t)$}\\
+14 & $A\gets\operatorname{Gain}(x,t)$; $\Theta\gets L_r+A/b_c$; $Y\gets\varnothing$; $Q\gets\operatorname{View}(Q_r)$.\\
+15 & $f\gets\operatorname{Free}(r)$.\\
+16 & \textbf{while} $f<b_c$ \textbf{do}\\
+17 & $\quad(y,H_y)\gets\operatorname{MinTail}(Q,Y,i,t)$.\\
+18 & $\quad$\textbf{if} $(y=\bot)\lor(H_y\ge\Theta)$ \textbf{then} \textbf{return} \textsc{Bypass}.\\
+19 & $\quad Y\gets Y\cup\{y\}$; $f\gets f+b_y$.\\
+20 & $\quad z\gets\operatorname{PrevTail}(y,Y)$; $z\ne\bot\Rightarrow Q.\operatorname{insert}(z,\operatorname{RefreshKey}(z,Y,t))$.\\
+21 & \textbf{end while}\\
+22 & $D\gets\operatorname{Loss}(Y,t)$; $A\le D\Rightarrow\operatorname{return}\ \textsc{Bypass}$.\\
+23 & $\operatorname{Evict}(Y)$; $Y\ne\varnothing\Rightarrow L_r\gets\max\{L_r,\max_{y\in Y}H_y\}$.\\
+24 & $\operatorname{Allocate}(c,r,b_c)$; $\operatorname{state}(x)\gets\textsc{Pending}$.\\
+25 & $\operatorname{owner}(x)\gets\operatorname{SourceWorker}(c)$.\\
+26 & $\operatorname{return}\ \operatorname{TierDecision}(r)$.\\
+\end{tabular}
+\end{minipage}
+\end{algorithm*}

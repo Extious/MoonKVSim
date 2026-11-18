@@ -1,0 +1,73 @@
+\section{Implementation and Model Alignment}
+\label{sec:implementation}
+\subsection{Mooncake prototype}
+The prototype adds a native C++ AegisController to Mooncake Store,
+Application/Router services, and a vLLM connector gate. Request-specific
+cache salts remain stable across retries but prevent unrelated requests
+from sharing physical KV. The gate seals completed forward buffers,
+commits successful tier copies, and drains pending work before cleanup.
+Recovery loads local HBM into vLLM slots before fetching remaining Store
+keys. Section~\ref{sec:physical} reports physical validation.
+
+\subsection{MoonKVSim projection}
+MoonKVSim uses one global nanosecond clock, per-worker schedulers,
+HBM/DRAM ledgers and shared fluid-rate resources. KV becomes readable at
+forward-step completion. Transfers reserve destinations and track source
+lifetime, service, completion and commitment. Failed GPU memory becomes
+unavailable and returns empty after repair.
+
+The \texttt{mooncake\_prompt\_v1} projection models all-chunk candidates,
+4,096-token prompt sealing, request salt, rendezvous routing, the shared
+ordinal barrier, independent tier decisions, recovery copying and cleanup.
+Its AIMD interval is 1 s versus 5 s in the physical pilot. Recovery reserves
+separate primary memory and waits on the bound target when capacity is
+insufficient. Prior-model executions are excluded from every revised result.
+
+\subsection{What is and is not reproduced}
+Table~\ref{tab:alignment} defines the evidence boundary. The frozen workload
+contains exact prompt token IDs and prescribed output counts, not generated
+continuations or KV tensors. We therefore model prompt protection and replay
+unprotected output positions. The real connector's 256-token decode protection
+is described as implementation behavior and receives no simulated recovery
+credit. The simulator's 64-token physical allocation unit can overallocate a
+partial tail relative to the prototype's 16-token vLLM pages; it does not pad
+the workload's token sequence.
+
+\begin{table*}[t]
+\centering
+\caption{Alignment with the Mooncake reference and remaining model boundaries.
+Conformance of metadata does not calibrate device timing.}
+\label{tab:alignment}
+\begin{tabular}{@{}p{.21\textwidth}p{.37\textwidth}p{.37\textwidth}@{}}
+\toprule
+Aspect & Mooncake prototype & Evaluated projection \\
+\midrule
+Tier ownership & Source-owned independent HBM/DRAM & Same admission, commit and lifetime contract \\
+Chunk visibility & Completed forward buffers; shared ordinal & Same atomic visibility and ordinal barrier \\
+Recovery & Local copy locking; visibility lease & Explicit copy; source pinned until load completes \\
+AIMD interval & 5 s in the accepted physical pilot & 1 s in the frozen simulation \\
+Application signal & Causal GBDT plus calibrated residual CPM & Prescribed ideal durations; zero-Slack ablation \\
+Protected state & Prompt and sealed decode KV tensors & Exact prompt token intervals; decode replay only \\
+Allocation granularity & 16-token vLLM pages & 64-token source allocation units \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+The native HBM free path hides recovery keys and frees slots; the Controller
+does not consult Worker leases when selecting pressure victims. The local
+copy is locked, but eviction between activation and load may require fallback.
+The simulator excludes pinned victims throughout materialization, a stronger
+retention assumption. The differential checks do not validate this race.
+AegisController metadata is in-memory; integration with Store HA durability
+is outside the demonstrated prototype.
+
+\subsection{Verification}
+A harness compiles the exact native Controller and compares 260 policy
+cases: tier-local gain, independence, pending invisibility, Slack expiry
+and AIMD updates. Six further sequences exercise the reference ordinal
+finalizer, including all-bypass retries. These checks establish metadata
+conformance, not concurrent data-plane equivalence.
+
+Overlapping regression suites pass 127 and 184 tests. Each execution audits
+resources, policy, faults and cleanup; independent event reconstruction checks
+workflow times. Hashes bind execution source, workload and analysis.

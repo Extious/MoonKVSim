@@ -1,0 +1,196 @@
+\section{Motivation and Challenges}
+\label{sec:motivation}
+
+The resulting management problem is to decide which KV to retain and
+in which tier. For a multi-agent service, the benefit of these decisions
+depends on how retained state supports both normal execution and workflow
+completion after a failure. Existing fault-tolerant serving and
+workflow-aware KV management provide useful mechanisms, but their
+objectives leave this joint decision unresolved.
+
+\subsection{Limitations of Existing Approaches}
+\label{sec:motivation-limitations}
+
+\begin{figure*}[t]
+  \centering
+  \captionsetup[subfigure]{font=normalsize,labelfont=normalfont,
+    textfont=normalfont,justification=centering,singlelinecheck=false}
+  \begin{subfigure}[t]{2.48in}
+    \vspace{0pt}
+    \begin{minipage}[c][1.65in][c]{\linewidth}
+      \centering
+      \includegraphics[width=\linewidth]{figures/workflow.pdf}
+    \end{minipage}
+    \caption{Four-branch workflow}
+    \label{fig:motivation-workflow}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{1.86in}
+    \vspace{0pt}
+    \begin{minipage}[c][1.65in][c]{\linewidth}
+      \centering
+      \includegraphics[width=\linewidth]{figures/workflow-gaps.pdf}
+    \end{minipage}
+    \caption{Workflow-maximum gaps}
+    \label{fig:motivation-branch-gap}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{2.52in}
+    \vspace{0pt}
+    \begin{minipage}[c][1.65in][c]{\linewidth}
+      \centering
+      \includegraphics[width=\linewidth]{figures/recovery-exposure.pdf}
+    \end{minipage}
+    \caption{Recovery cost and WCT}
+    \label{fig:motivation-recovery-exposure}
+  \end{subfigure}
+  \caption{Workflow timing and conditional recovery impact.
+    (a) Four trace-derived parallel agents A1-A4 with schematic Main agents A0/A5.
+    Bars preserve timing; dashed tails assume an all-branch join.
+    (b) Empirical CDF of workflow-level gaps over 121 workflows. For each parallel group with temporally inferred fan-in, we subtract the shortest agent execution time from the longest, then retain the largest gap per workflow. 
+   (c) Each horizontal bar represents one agent (A1--A4) and shows its
+extra delay to reconstruct KV after a failure, measured by full
+prefill with Qwen2.5-7B-Instruct-1M. The hatched portion is absorbed
+by slack; the solid portion is the calculated WCT increase.}
+
+  \label{fig:motivation}
+\end{figure*}
+
+\paragraph{Limitation 1: Fault tolerance without workflow-aware priorities.}
+Fault-tolerant serving systems preserve state and coordinate recovery
+for interrupted requests. D\'ej\`aVu streams KV checkpoints, and GhostServe
+uses host-memory parity to reduce reconstruction
+work~\cite{strati2024dejavu,jayakody2026ghostserve}.
+LUMEN further coordinates checkpoint placement, recovery routing and
+capacity restoration according to worker load~\cite{cao2026lumen}.
+These mechanisms address state loss and recovery contention, but do not
+use multi-agent dependencies to determine which requests' faster
+recovery would advance workflow completion. Request recovery cost and
+worker load alone cannot express this benefit.
+
+\label{sec:motivation-workflow}
+Figure~\ref{fig:motivation}(\subref{fig:motivation-workflow}) illustrates
+why workflow position matters. A2 finishes last, 151.6\,s after the fork,
+whereas A1 finishes at 60.4\,s. If the following Main stage requires all
+four outputs, A1 can absorb 91.2\,s of additional delay before postponing
+the join, whereas any delay on A2 postpones it. This is an example from the Claude code traces~\cite{semianalysis2026cctraces}, which contains the workflows that are very similar to the architecture shown in part a of \ref{fig:agent-workflow-examples}. We call the additional
+delay a branch can absorb without postponing the required output its
+\emph{slack}. 
+
+This situation where agents with parallel execution have different completion times is very common in multi-agent applications, and the time differences can be significant. We analyze the Claude code trace~\cite{semianalysis2026cctraces} related information and visualize this time difference in Figure~\ref{fig:motivation}(\subref{fig:motivation-branch-gap}).
+This figure reports each workflow's maximum longest-minus-shortest branch-duration gap,
+with a median of 138\,s and a 90th percentile of 1,173\,s. When the Main agent waits for all required branches, differences in branch completion times can leave shorter branches with slack. Additional delays within this slack do not postpone the join or
+increase WCT.
+
+These differences in slack affect how KV reconstruction delays workflow
+completion after a failure.
+Figure~\ref{fig:motivation}(\subref{fig:motivation-recovery-exposure})
+shows reconstruction times measured by full prefill with
+Qwen2.5-7B-Instruct-1M using sparse
+attention~\cite{qwen2025qwen25oneM,jiang2024minference},
+and their calculated impact on WCT.
+We consider each agent's interruption separately, with other execution
+unchanged and the Main agent waiting for all four branches.
+A1's 33.2\,s reconstruction delay is fully absorbed by its 91.2\,s slack,
+leaving WCT unchanged. In contrast, A2 has no slack, so its 32.6\,s
+reconstruction delay increases WCT by the same amount.
+Thus, similar reconstruction costs can have very different effects
+on workflow completion. Recovery priorities should therefore account
+for a request's position in the workflow, in addition to its
+reconstruction cost.
+
+\paragraph{Limitation 2: Workflow-aware caching without fault tolerance.}
+Workflow-aware systems already exploit the dependencies highlighted
+above to improve application execution. Parrot exposes inter-request
+dependencies for application-level
+scheduling~\cite{lin2024parrot}. KVFlow guides prefix retention and
+prefetching by upcoming agent invocations~\cite{pan2025kvflow}, while Pythia
+predicts future workflow steps and prompt contents to manage and stage
+KV~\cite{yu2026pythia}. TOPAS jointly selects resident prefixes and admitted
+requests by balancing remaining-path progress, reuse, and movement or
+preemption costs~\cite{ni2026topas}. These workflow-aware caching and
+scheduling policies do not address serving-worker failures and the
+resulting loss of in-progress KV.
+
+Worker failures must be accounted for in large-scale deployment.
+As discussed in Section~\ref{sec:motivation-background}, worker failures
+can make KV unavailable and interrupt several co-located
+agents~\cite{strati2024dejavu,jayakody2026ghostserve,cao2026lumen}.
+For an agent that has accumulated context over many requests, resuming
+execution can require rebuilding a long history.
+Figure~\ref{fig:motivation-recompute} shows that this reconstruction can
+take far longer than reusing retained KV. The preceding workflow example
+shows how the resulting delay can postpone required outputs.
+Failure handling is therefore necessary for workflow execution,
+even when normal-operation caching is effective.
+
+Offloading KV provides useful building blocks for this protection.
+CachedAttention and Mooncake extend retention beyond GPU
+memory~\cite{gao2024cachedattention,qin2025mooncake}; Pythia writes
+future-relevant contexts to shared storage accessible by other
+workers~\cite{yu2026pythia}. A surviving copy can support recovery, but
+retaining contexts for future invocations does not ensure that an
+interrupted agent's state has been protected. For example, KVFlow
+protects fixed prompts while assigning varying suffixes the highest
+eviction priority~\cite{pan2025kvflow}. Those suffixes can still be needed
+to resume the interrupted request, even if later requests would not
+reuse them. Shared prefixes may therefore survive while the agent's
+task-specific history still needs reconstruction.
+
+\label{sec:motivation-long-context}
+The two limitations thus expose complementary gaps: existing
+fault-tolerant serving does not incorporate multi-agent dependencies
+into recovery priorities, while the workflow-aware caching policies
+above do not incorporate worker failures.
+A multi-agent service needs KV management that supports both normal
+workflow execution and recovery from state loss. This requires
+combining workflow information with fault-tolerant state protection
+under finite storage and bandwidth budgets.
+
+\subsection{Design Challenges}
+\label{sec:motivation-challenges}
+
+Together, these limitations call for a policy that connects workflow
+progress, failure recovery and KV storage management. Closing the gap
+requires estimating the value of retained state, translating that value
+into placement decisions, and maintaining those decisions as execution
+changes. These are coupled challenges: the usefulness of fast recovery
+depends on workflow progress, while protection itself consumes resources
+needed by the workflow.
+
+\paragraph{Challenge 1: Estimating the value of KV protection online.}
+A protection decision must relate saved reconstruction or retrieval time
+to the workflow's required outputs. The example above obtains slack from
+completed traces; an online system must act before the remaining model
+and tool durations are known. The branch that gates completion can
+change, and one worker failure can interrupt several agents whose
+recoveries share resources. Normal reuse also contributes value even
+when recovery is not urgent. The challenge is to derive useful priorities
+from partial execution and reuse history without treating request-level
+savings as independent, additive WCT reductions.
+
+\paragraph{Challenge 2: Translating protection value into tiered placement.}
+A request's urgency alone does not specify how much of its KV should
+occupy each tier. A policy must distinguish retaining enough state to
+avoid reconstruction from using faster capacity to reduce retrieval
+latency. It must compare these benefits with the bytes retained, the
+capacity cost of each tier and the work needed to move state.
+The same KV may support several agents, while different portions of a
+long history may have different access demands. Allocating capacity
+therefore requires connecting workflow-level priorities to the state
+that recovery and reuse actually need, subject to finite tier budgets.
+
+\paragraph{Challenge 3: Adapting protection without disrupting inference.}
+Agent progress, tool returns and new requests change both protection
+value and foreground memory demand. Repeatedly reassessing every stored
+KV object can make fine-grained management expensive; frequent placement
+changes can also consume bandwidth needed by active requests.
+A useful policy must update protection with bounded decision and
+migration work, react to capacity pressure, and retain valid recovery
+paths while state moves between tiers. The challenge is to keep
+protection responsive without allowing its management and data movement
+to erase the workflow benefit it seeks.
+
+\label{sec:motivation-goals}
+These challenges motivate AegisKV, a workflow-aware KV protection system
+that coordinates recovery priorities, tiered placement and online state
+management. The next section develops the observations and mechanisms
+behind this design.

@@ -1,0 +1,497 @@
+{
+  "authorized_action": "User explicitly requested deleting BLSC-A100 Qwen3-32B and then resuming measurement",
+  "target": "/home/bingxing2/home/scx8q31/models/Qwen3-32B",
+  "time": "2026-09-19T23:19:05.200310+08:00",
+  "files": [
+    {
+      "path": ".cache",
+      "inode": 9223372049047626405,
+      "device": 47,
+      "size": 4096,
+      "blocks": 8,
+      "nlink": 3,
+      "mtime_ns": 1785311589214412355,
+      "mode": 16893
+    },
+    {
+      "path": ".gitattributes",
+      "inode": 5373697953,
+      "device": 47,
+      "size": 1570,
+      "blocks": 8,
+      "nlink": 1,
+      "mtime_ns": 1785321929297027000,
+      "mode": 33152
+    },
+    {
+      "path": "_MODEL_INFO.json",
+      "inode": 5373697955,
+      "device": 47,
+      "size": 13958,
+      "blocks": 32,
+      "nlink": 1,
+      "mtime_ns": 1785321932680201000,
+      "mode": 33152
+    },
+    {
+      "path": "generation_config.json",
+      "inode": 5373697956,
+      "device": 47,
+      "size": 239,
+      "blocks": 8,
+      "nlink": 1,
+      "mtime_ns": 1785321933313029000,
+      "mode": 33152
+    },
+    {
+      "path": "model-00003-of-00017.safetensors",
+      "inode": 5374095530,
+      "device": 47,
+      "size": 3900791760,
+      "blocks": 7618736,
+      "nlink": 1,
+      "mtime_ns": 1785324152654655000,
+      "mode": 33152
+    },
+    {
+      "path": "model-00006-of-00017.safetensors",
+      "inode": 5380608383,
+      "device": 47,
+      "size": 3900791800,
+      "blocks": 7618736,
+      "nlink": 1,
+      "mtime_ns": 1785439217284323000,
+      "mode": 33188
+    },
+    {
+      "path": "model-00012-of-00017.safetensors",
+      "inode": 5380307893,
+      "device": 47,
+      "size": 3900791800,
+      "blocks": 7618736,
+      "nlink": 1,
+      "mtime_ns": 1785439887483629000,
+      "mode": 33188
+    },
+    {
+      "path": "model-00017-of-00017.safetensors",
+      "inode": 5381172825,
+      "device": 47,
+      "size": 3055341992,
+      "blocks": 5967472,
+      "nlink": 1,
+      "mtime_ns": 1785440257173076000,
+      "mode": 33188
+    },
+    {
+      "path": "_DOWNLOAD_MANIFEST.tsv",
+      "inode": 5373381887,
+      "device": 47,
+      "size": 2144,
+      "blocks": 8,
+      "nlink": 1,
+      "mtime_ns": 1785321931817533000,
+      "mode": 33152
+    },
+    {
+      "path": "model-00004-of-00017.safetensors.invalid-oversize-20260730T2022",
+      "inode": 5373717423,
+      "device": 47,
+      "size": 4367792112,
+      "blocks": 8530848,
+      "nlink": 1,
+      "mtime_ns": 1785400588511699000,
+      "mode": 33152
+    },
+    {
+      "path": "model-00009-of-00017.safetensors",
+      "inode": 5381119994,
+      "device": 47,
+      "size": 3900791800,
+      "blocks": 7618736,
+      "nlink": 1,
+      "mtime_ns": 1785439569492756000,
+      "mode": 33188
+    },
+    {
+      "path": "vocab.json",
+      "inode": 5381255204,
+      "device": 47,
+      "size": 2776833,
+      "blocks": 5424,
+      "nlink": 1,
+      "mtime_ns": 1785440195646220000,
+      "mode": 33188
+    },
+    {
+      "path": "README.md",
+      "inode": 5373341261,
+      "device": 47,
+      "size": 16636,
+      "blocks": 40,
+      "nlink": 1,
+      "mtime_ns": 1785321931176804000,
+      "mode": 33204
+    },
+    {
+      "path": "LICENSE",
+      "inode": 5373770545,
+      "device": 47,
+      "size": 11343,
+      "blocks": 24,
+      "nlink": 1,
+      "mtime_ns": 1785321929940195000,
+      "mode": 33204
+    },
+    {
+      "path": "model-00001-of-00017.safetensors",
+      "inode": 5373716907,
+      "device": 47,
+      "size": 3957109648,
+      "blocks": 7728736,
+      "nlink": 1,
+      "mtime_ns": 1785322622276026000,
+      "mode": 33152
+    },
+    {
+      "path": "model-00004-of-00017.safetensors",
+      "inode": 5379089748,
+      "device": 47,
+      "size": 3900791800,
+      "blocks": 7618736,
+      "nlink": 1,
+      "mtime_ns": 1785417312907870000,
+      "mode": 33204
+    },
+    {
+      "path": "model-00010-of-00017.safetensors",
+      "inode": 5380554364,
+      "device": 47,
+      "size": 3900791800,
+      "blocks": 7618736,
+      "nlink": 1,
+      "mtime_ns": 1785439612655829000,
+      "mode": 33188
+    },
+    {
+      "path": "model-00015-of-00017.safetensors",
+      "inode": 5381622508,
+      "device": 47,
+      "size": 3900791800,
+      "blocks": 7618736,
+      "nlink": 1,
+      "mtime_ns": 1785440162083095000,
+      "mode": 33188
+    },
+    {
+      "path": "tokenizer_config.json",
+      "inode": 5381622523,
+      "device": 47,
+      "size": 9732,
+      "blocks": 24,
+      "nlink": 1,
+      "mtime_ns": 1785440177863864000,
+      "mode": 33188
+    },
+    {
+      "path": "model-00002-of-00017.safetensors",
+      "inode": 5374357550,
+      "device": 47,
+      "size": 3900791760,
+      "blocks": 7618736,
+      "nlink": 1,
+      "mtime_ns": 1785323326504855000,
+      "mode": 33152
+    },
+    {
+      "path": "model-00007-of-00017.safetensors",
+      "inode": 5380433388,
+      "device": 47,
+      "size": 3900791800,
+      "blocks": 7618736,
+      "nlink": 1,
+      "mtime_ns": 1785439262968237000,
+      "mode": 33188
+    },
+    {
+      "path": "model-00013-of-00017.safetensors",
+      "inode": 5381622500,
+      "device": 47,
+      "size": 3900791800,
+      "blocks": 7618736,
+      "nlink": 1,
+      "mtime_ns": 1785439880959271000,
+      "mode": 33188
+    },
+    {
+      "path": "model-00016-of-00017.safetensors",
+      "inode": 5380554445,
+      "device": 47,
+      "size": 3900791800,
+      "blocks": 7618736,
+      "nlink": 1,
+      "mtime_ns": 1785440163538803000,
+      "mode": 33188
+    },
+    {
+      "path": "merges.txt",
+      "inode": 5373692082,
+      "device": 47,
+      "size": 1671853,
+      "blocks": 3272,
+      "nlink": 1,
+      "mtime_ns": 1785321940138862000,
+      "mode": 33152
+    },
+    {
+      "path": "model-00011-of-00017.safetensors",
+      "inode": 5381172775,
+      "device": 47,
+      "size": 3900791800,
+      "blocks": 7618736,
+      "nlink": 1,
+      "mtime_ns": 1785439775574727000,
+      "mode": 33188
+    },
+    {
+      "path": "model-00005-of-00017.safetensors",
+      "inode": 5379888925,
+      "device": 47,
+      "size": 3900791800,
+      "blocks": 7618736,
+      "nlink": 1,
+      "mtime_ns": 1785439209094658000,
+      "mode": 33204
+    },
+    {
+      "path": "model-00014-of-00017.safetensors",
+      "inode": 5380307905,
+      "device": 47,
+      "size": 3900791800,
+      "blocks": 7618736,
+      "nlink": 1,
+      "mtime_ns": 1785440036906651000,
+      "mode": 33188
+    },
+    {
+      "path": "model.safetensors.index.json",
+      "inode": 5379780357,
+      "device": 47,
+      "size": 58330,
+      "blocks": 120,
+      "nlink": 1,
+      "mtime_ns": 1785440175998712000,
+      "mode": 33188
+    },
+    {
+      "path": "tokenizer.json",
+      "inode": 5380554499,
+      "device": 47,
+      "size": 11422654,
+      "blocks": 22312,
+      "nlink": 1,
+      "mtime_ns": 1785440178057400000,
+      "mode": 33188
+    },
+    {
+      "path": "config.json",
+      "inode": 5373486612,
+      "device": 47,
+      "size": 728,
+      "blocks": 8,
+      "nlink": 1,
+      "mtime_ns": 1785321932994353000,
+      "mode": 33204
+    },
+    {
+      "path": "model-00008-of-00017.safetensors",
+      "inode": 5379780319,
+      "device": 47,
+      "size": 3900791800,
+      "blocks": 7618736,
+      "nlink": 1,
+      "mtime_ns": 1785439516993453000,
+      "mode": 33188
+    },
+    {
+      "path": ".cache/huggingface",
+      "inode": 9223372049047598532,
+      "device": 47,
+      "size": 4096,
+      "blocks": 8,
+      "nlink": 3,
+      "mtime_ns": 1785311589345782120,
+      "mode": 16893
+    },
+    {
+      "path": ".cache/huggingface/download",
+      "inode": 9223372049047647536,
+      "device": 47,
+      "size": 4096,
+      "blocks": 8,
+      "nlink": 2,
+      "mtime_ns": 1785311618185033829,
+      "mode": 16893
+    },
+    {
+      "path": ".cache/huggingface/.gitignore",
+      "inode": 5373937589,
+      "device": 47,
+      "size": 1,
+      "blocks": 8,
+      "nlink": 1,
+      "mtime_ns": 1785311589341929000,
+      "mode": 33204
+    },
+    {
+      "path": ".cache/huggingface/download/.gitattributes.lock",
+      "inode": 5373341260,
+      "device": 47,
+      "size": 0,
+      "blocks": 0,
+      "nlink": 1,
+      "mtime_ns": 1785311589295900979,
+      "mode": 33204
+    },
+    {
+      "path": ".cache/huggingface/download/merges.txt.lock",
+      "inode": 5373341262,
+      "device": 47,
+      "size": 0,
+      "blocks": 0,
+      "nlink": 1,
+      "mtime_ns": 1785311590202446503,
+      "mode": 33204
+    },
+    {
+      "path": ".cache/huggingface/download/model-00001-of-00017.safetensors.lock",
+      "inode": 5373341263,
+      "device": 47,
+      "size": 0,
+      "blocks": 0,
+      "nlink": 1,
+      "mtime_ns": 1785311590529842487,
+      "mode": 33204
+    },
+    {
+      "path": ".cache/huggingface/download/config.json.metadata",
+      "inode": 5373426069,
+      "device": 47,
+      "size": 101,
+      "blocks": 8,
+      "nlink": 1,
+      "mtime_ns": 1785311590035873000,
+      "mode": 33204
+    },
+    {
+      "path": ".cache/huggingface/download/README.md.metadata",
+      "inode": 5373426070,
+      "device": 47,
+      "size": 101,
+      "blocks": 8,
+      "nlink": 1,
+      "mtime_ns": 1785311590193602000,
+      "mode": 33204
+    },
+    {
+      "path": ".cache/huggingface/download/model-00003-of-00017.safetensors.lock",
+      "inode": 5373426071,
+      "device": 47,
+      "size": 0,
+      "blocks": 0,
+      "nlink": 1,
+      "mtime_ns": 1785311618187045646,
+      "mode": 33204
+    },
+    {
+      "path": ".cache/huggingface/download/README.md.lock",
+      "inode": 5373770542,
+      "device": 47,
+      "size": 0,
+      "blocks": 0,
+      "nlink": 1,
+      "mtime_ns": 1785311590190339413,
+      "mode": 33204
+    },
+    {
+      "path": ".cache/huggingface/download/config.json.lock",
+      "inode": 5373770543,
+      "device": 47,
+      "size": 0,
+      "blocks": 0,
+      "nlink": 1,
+      "mtime_ns": 1785311590030323569,
+      "mode": 33204
+    },
+    {
+      "path": ".cache/huggingface/download/generation_config.json.lock",
+      "inode": 5373770544,
+      "device": 47,
+      "size": 0,
+      "blocks": 0,
+      "nlink": 1,
+      "mtime_ns": 1785311591462294963,
+      "mode": 33204
+    },
+    {
+      "path": ".cache/huggingface/download/LICENSE.lock",
+      "inode": 5373714532,
+      "device": 47,
+      "size": 0,
+      "blocks": 0,
+      "nlink": 1,
+      "mtime_ns": 1785311590203576766,
+      "mode": 33204
+    },
+    {
+      "path": ".cache/huggingface/download/WV7-NSQLD0lMxmjaaszF0xpNx4Y=.52562b2ff97b61764260273e71bf5b4cf8a66f569399398f26dec0300fcf1316.incomplete",
+      "inode": 5373714533,
+      "device": 47,
+      "size": 0,
+      "blocks": 0,
+      "nlink": 1,
+      "mtime_ns": 1785311590953617940,
+      "mode": 33204
+    },
+    {
+      "path": ".cache/huggingface/download/model-00002-of-00017.safetensors.lock",
+      "inode": 5373714534,
+      "device": 47,
+      "size": 0,
+      "blocks": 0,
+      "nlink": 1,
+      "mtime_ns": 1785311615985639972,
+      "mode": 33204
+    },
+    {
+      "path": ".cache/huggingface/download/LICENSE.metadata",
+      "inode": 5373486613,
+      "device": 47,
+      "size": 101,
+      "blocks": 8,
+      "nlink": 1,
+      "mtime_ns": 1785311590207034000,
+      "mode": 33204
+    },
+    {
+      "path": ".cache/huggingface/download/3EVKVggOldJcKSsGjSdoUCN1AyQ=.20a8a9156fc8c3f25295ca067f61fdf120d517c5.incomplete",
+      "inode": 5373486614,
+      "device": 47,
+      "size": 0,
+      "blocks": 0,
+      "nlink": 1,
+      "mtime_ns": 1785311591464790587,
+      "mode": 33204
+    }
+  ],
+  "queue_before": "1408661|reft-certlow-r5-audit-v3|PENDING|(Dependency)\n1408337|reft-risk-ab-audit-v4|PENDING|(Dependency)\n1408638|reft-risk-cert-r5|PENDING|(JobHeldUser)\n1408259|reft-risk-ab-shadow-v3|PENDING|(JobHeldAdmin)\n1408258|reft-risk-ab-base-v3|PENDING|(JobHeldAdmin)\n",
+  "open_references": [],
+  "df_before": "Filesystem                     Size  Used Avail Use% Mounted on\n100.125.40.2:/paraai_n32_h_01  300G  294G  6.9G  98% /home/bingxing2\n",
+  "retained_config_sha256": {
+    "/home/bingxing2/home/scx8q31/models/Qwen2.5-3B-Instruct/config.json": "eed00b17e22553979d090fa492e587e92885e328914c8e0b0b78f0a0d3576b3b",
+    "/home/bingxing2/home/scx8q31/models/Llama-3.2-1B/config.json": "8f028e2cd88148fad38c7dece460947681adf6178e46e11ece9742aa49b378dd",
+    "/home/bingxing2/home/scx8q31/models/InternViT-300M-448px/config.json": "5d42d1342d4d95ffb4c1bc0cd217c8ccd4240c4e1b8b21dac4ece5368aa35462",
+    "/home/bingxing2/home/scx8q31/models/InternViT-6B-448px-V1-5/config.json": "c448c1e97f60706d447730f45d6f807af3b0dfff80ac43029304292ae65f42c4",
+    "/home/bingxing2/home/scx8q31/models/Qwen2.5-7B-Instruct/config.json": "7463bb0ea78315365e6c6b74de4e73bbcc8359dfb0c5a737584e077d42c0b03c"
+  }
+}

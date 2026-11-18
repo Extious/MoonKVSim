@@ -1,0 +1,53 @@
+--- before/background_and_motivation.tex
++++ background_and_motivation.tex
+@@ -123,31 +123,25 @@
+     400-server cohort. The dashed line marks all 400 servers.}
+ \end{figure}
+ 
+-\paragraph{KV retention across storage tiers.}
+-To reduce this reconstruction work, a \emph{KV checkpoint} preserves an
+-already computed prefix at a location that survives the failure.
+-Recovery can then retrieve the saved prefix and recompute only the
+-unsaved tail~\cite{strati2024dejavu,jayakody2026ghostserve}.
+-Retaining these histories consumes memory: KV consists of per-layer
+-tensors whose size grows with context length, so long conversations can
+-require substantially more space as KV than as token IDs.
+-Hierarchical caches therefore extend GPU HBM with host DRAM and local
+-or shared storage to retain more histories~\cite{gao2024cachedattention,qin2025mooncake}.
+-Shared storage, such as a shared filesystem, makes retained KV accessible
+-to compatible workers after reassignment or failover, provided the data
+-and storage service remain available.
+-
+-The choice of tier determines how much work is needed to retrieve this
+-state. KV already in the executor's HBM is directly available to kernels;
+-local DRAM requires host-to-device transfer, and remote DRAM also requires
+-network transfer. With host staging, shared storage adds storage and
+-network reads before the host-to-device transfer. Computation and
+-prefetching can overlap some of this work, but retention still occupies
+-capacity and transfers compete for bandwidth with foreground requests.
+-Discarding the last reusable copy releases space at the cost of
+-reconstruction on a later request or recovery. The serving system must
+-therefore decide which histories to preserve and where, accounting for
+-both future reuse and the effect of recovery on workflow completion.
++\paragraph{KV backup across storage tiers.}
++To reduce reconstruction work, a \emph{KV checkpoint} retains an already
++computed prefix. If it survives the failure, recovery retrieves this
++prefix and replays only the unsaved
++tail~\cite{strati2024dejavu,jayakody2026ghostserve}.
++KV can be retained in GPU HBM, host DRAM, or shared
++storage~\cite{gao2024cachedattention,qin2025mooncake}.
++These tiers differ in both storage cost and recovery latency.
++HBM offers fast access but has high capacity cost and competes with
++foreground inference for GPU memory. DRAM and storage-backed shared
++services can provide cheaper capacity, with additional retrieval latency.
++
++The benefit of paying for a faster tier depends on how much it advances
++workflow completion. A cheaper tier can still avoid full reconstruction,
++and its extra retrieval delay may be absorbed before a workflow join.
++KV backup should therefore seek the greatest reduction in recovery-induced
++WCT for a given storage budget: retain state in lower-cost tiers when
++they provide sufficient recovery benefit, and reserve expensive capacity
++for state whose faster recovery yields a larger workflow benefit.
+ 
+ \paragraph{Existing mechanisms.}
+ Existing systems address different parts of this problem.

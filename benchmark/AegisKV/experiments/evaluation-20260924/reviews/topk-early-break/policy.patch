@@ -1,0 +1,11 @@
+--- a/python/moonkvsim/aegiskv/current/policy.py
++++ b/python/moonkvsim/aegiskv/current/policy.py
+@@ -61,6 +61,8 @@
+             if counts.get((layer, b), 0) > (1 + hysteresis) * counts.get((layer, weakest), 0):
+                 chosen.remove(weakest)
+                 chosen.add(b)
++            else:
++                break
+     return tuple(sorted(chosen, key=rank))
+ 
+ 

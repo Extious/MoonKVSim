@@ -1,0 +1,262 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" version="31.1.5">
+  <diagram id="system-overview" name="system-overview">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageWidth="1200" pageHeight="785" background="#FFFFFF" math="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="canvas" value="" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#FFFFFF;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#FFFFFF;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="0" y="0" width="1200" height="785" />
+        </mxCell>
+        <mxCell id="workflow-title" value="Workflow context" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="18" y="5" width="294" height="38" />
+        </mxCell>
+        <mxCell id="dag-A" value="A" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#B86B00;fillColor=#FFF0DB;fontFamily=DejaVu Sans;fontSize=26;fontColor=#B86B00;align=center;verticalAlign=middle;spacing=3;shape=ellipse;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="26" y="61" width="54" height="44" />
+        </mxCell>
+        <mxCell id="dag-edge-A" edge="1" parent="1" style="edgeStyle=none;rounded=0;strokeColor=#69737E;strokeWidth=1.7;endArrow=block;endSize=7;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="80" y="83" />
+            <mxPoint as="targetPoint" x="172" y="117" />
+            <Array as="points">
+              <mxPoint x="124" y="83" />
+              <mxPoint x="124" y="117" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dag-B" value="B" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#0072B2;fillColor=#E4F1F8;fontFamily=DejaVu Sans;fontSize=26;fontColor=#0072B2;align=center;verticalAlign=middle;spacing=3;shape=ellipse;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="26" y="129" width="54" height="44" />
+        </mxCell>
+        <mxCell id="dag-edge-B" edge="1" parent="1" style="edgeStyle=none;rounded=0;strokeColor=#69737E;strokeWidth=1.7;endArrow=block;endSize=7;endFill=1;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="80" y="151" />
+            <mxPoint as="targetPoint" x="172" y="117" />
+            <Array as="points">
+              <mxPoint x="124" y="151" />
+              <mxPoint x="124" y="117" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dag-join" value="Join" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#EEF0F3;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="172" y="95" width="85" height="44" />
+        </mxCell>
+        <mxCell id="state-to-priority" edge="1" parent="1" style="edgeStyle=none;rounded=0;strokeColor=#303943;strokeWidth=2.3;endArrow=block;endSize=7;endFill=1;dashed=1;dashPattern=5 4;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="257" y="117" />
+            <mxPoint as="targetPoint" x="335" y="73" />
+            <Array as="points">
+              <mxPoint x="296" y="117" />
+              <mxPoint x="296" y="73" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="priority-title" value="Agent priorities" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="335" y="5" width="310" height="38" />
+        </mxCell>
+        <mxCell id="priority-detail" value="Slack + recovery cost" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=24;fontColor=#303943;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="335" y="53" width="328" height="40" />
+        </mxCell>
+        <mxCell id="priority-admission" edge="1" parent="1" style="edgeStyle=none;rounded=0;strokeColor=#303943;strokeWidth=2.3;endArrow=block;endSize=7;endFill=1;dashed=1;dashPattern=5 4;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="480" y="97" />
+            <mxPoint as="targetPoint" x="480" y="123" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="admission-title" value="Per-tier admission" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="335" y="121" width="320" height="38" />
+        </mxCell>
+        <mxCell id="admission-detail" value="Independent pool decisions" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=24;fontColor=#303943;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="335" y="165" width="355" height="42" />
+        </mxCell>
+        <mxCell id="admission-source" edge="1" parent="1" style="edgeStyle=none;rounded=0;strokeColor=#303943;strokeWidth=2.3;endArrow=block;endSize=7;endFill=1;dashed=1;dashPattern=5 4;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="480" y="210" />
+            <mxPoint as="targetPoint" x="176" y="280" />
+            <Array as="points">
+              <mxPoint x="480" y="230" />
+              <mxPoint x="176" y="230" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="controller-title" value="Peer HBM control" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="708" y="5" width="473" height="38" />
+        </mxCell>
+        <mxCell id="controller-detail" value="Headroom + forward latency" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=24;fontColor=#303943;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="708" y="57" width="473" height="44" />
+        </mxCell>
+        <mxCell id="controller-invariant" value="Foreground memory first" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#69737E;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=24;fontColor=#69737E;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="708" y="104" width="473" height="38" />
+        </mxCell>
+        <mxCell id="quota-control" edge="1" parent="1" style="edgeStyle=none;rounded=0;strokeColor=#303943;strokeWidth=2.3;endArrow=block;endSize=7;endFill=1;dashed=1;dashPattern=5 4;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="730" y="148" />
+            <mxPoint as="targetPoint" x="730" y="260" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="foreground-feedback" edge="1" parent="1" style="edgeStyle=none;rounded=0;strokeColor=#303943;strokeWidth=2.3;endArrow=block;endSize=7;endFill=1;dashed=1;dashPattern=5 4;">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="800" y="260" />
+            <mxPoint as="targetPoint" x="800" y="148" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="quota-label" value="Grant /&#10;revoke" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#69737E;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=24;fontColor=#69737E;align=right;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="606" y="207" width="113" height="50" />
+        </mxCell>
+        <mxCell id="feedback-label" value="Observe" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#69737E;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=24;fontColor=#69737E;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="817" y="187" width="157" height="43" />
+        </mxCell>
+        <mxCell id="source-boundary" value="" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#69737E;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#69737E;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="18" y="280" width="312" height="268" />
+        </mxCell>
+        <mxCell id="source-heading" value="Source worker" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#69737E;fillColor=#EEF0F3;fontFamily=DejaVu Sans;fontSize=26;fontColor=#69737E;align=center;verticalAlign=middle;spacing=3;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="18" y="280" width="312" height="42" />
+        </mxCell>
+        <mxCell id="peer-boundary" value="" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#69737E;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#69737E;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="470" y="260" width="370" height="270" />
+        </mxCell>
+        <mxCell id="peer-heading" value="Peer worker" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#69737E;fillColor=#EEF0F3;fontFamily=DejaVu Sans;fontSize=26;fontColor=#69737E;align=center;verticalAlign=middle;spacing=3;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="470" y="260" width="370" height="42" />
+        </mxCell>
+        <mxCell id="dram-boundary" value="" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#69737E;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#69737E;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="470" y="585" width="370" height="155" />
+        </mxCell>
+        <mxCell id="dram-heading" value="DRAM store" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#69737E;fillColor=#EEF0F3;fontFamily=DejaVu Sans;fontSize=26;fontColor=#69737E;align=center;verticalAlign=middle;spacing=3;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="470" y="585" width="370" height="42" />
+        </mxCell>
+        <mxCell id="recovery-boundary" value="" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#69737E;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#69737E;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="935" y="400" width="247" height="293" />
+        </mxCell>
+        <mxCell id="recovery-heading" value="Recovery worker" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#69737E;fillColor=#EEF0F3;fontFamily=DejaVu Sans;fontSize=24;fontColor=#69737E;align=center;verticalAlign=middle;spacing=3;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="935" y="400" width="247" height="42" />
+        </mxCell>
+        <mxCell id="source-hbm" value="Primary HBM" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=24;fontColor=#303943;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="34" y="331" width="280" height="36" />
+        </mxCell>
+        <mxCell id="source-prefix-0" value="C0" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#EEF0F3;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="36" y="375" width="83" height="42" />
+        </mxCell>
+        <mxCell id="source-prefix-1" value="C1" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#EEF0F3;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="124" y="375" width="83" height="42" />
+        </mxCell>
+        <mxCell id="source-active-0" value="C2" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#EEF0F3;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="220" y="375" width="83" height="42" />
+        </mxCell>
+        <mxCell id="source-sealed" value="Sealed prefix" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=24;fontColor=#303943;align=center;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="30" y="428" width="187" height="40" />
+        </mxCell>
+        <mxCell id="source-active-label" value="Active" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=24;fontColor=#303943;align=center;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="213" y="428" width="97" height="40" />
+        </mxCell>
+        <mxCell id="source-shared" value="A and B share C0" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=24;fontColor=#303943;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="34" y="486" width="279" height="40" />
+        </mxCell>
+        <mxCell id="peer-foreground" value="Foreground HBM" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=24;fontColor=#303943;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="485" y="307" width="338" height="36" />
+        </mxCell>
+        <mxCell id="peer-foreground-chunks-0" value="P0" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#EEF0F3;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="486" y="350" width="77" height="39" />
+        </mxCell>
+        <mxCell id="peer-foreground-chunks-1" value="P1" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#EEF0F3;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="568" y="350" width="77" height="39" />
+        </mxCell>
+        <mxCell id="foreground-reserve" value="Reserve" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#007D60;fillColor=#E9F5EF;fontFamily=DejaVu Sans;fontSize=24;fontColor=#007D60;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="658" y="350" width="166" height="39" />
+        </mxCell>
+        <mxCell id="peer-backup" value="Revocable backup HBM" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#0072B2;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=24;fontColor=#0072B2;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="485" y="398" width="341" height="37" />
+        </mxCell>
+        <mxCell id="peer-prefix-0" value="C0" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#0072B2;fillColor=#E4F1F8;fontFamily=DejaVu Sans;fontSize=26;fontColor=#0072B2;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="486" y="441" width="96" height="40" />
+        </mxCell>
+        <mxCell id="peer-prefix-1" value="C1" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#0072B2;fillColor=#E4F1F8;fontFamily=DejaVu Sans;fontSize=26;fontColor=#0072B2;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="587" y="441" width="96" height="40" />
+        </mxCell>
+        <mxCell id="peer-committed" value="Readable after copy ACK" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#0072B2;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=24;fontColor=#0072B2;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="485" y="488" width="341" height="34" />
+        </mxCell>
+        <mxCell id="dram-prefix-0" value="C0" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#B86B00;fillColor=#FFF0DB;fontFamily=DejaVu Sans;fontSize=26;fontColor=#B86B00;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="486" y="635" width="96" height="40" />
+        </mxCell>
+        <mxCell id="dram-prefix-1" value="C1" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#B86B00;fillColor=#FFF0DB;fontFamily=DejaVu Sans;fontSize=26;fontColor=#B86B00;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="587" y="635" width="96" height="40" />
+        </mxCell>
+        <mxCell id="dram-committed" value="Readable after copy ACK" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#B86B00;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=24;fontColor=#B86B00;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="485" y="690" width="341" height="34" />
+        </mxCell>
+        <mxCell id="source-to-peer" edge="1" parent="1" style="edgeStyle=none;rounded=0;strokeColor=#0072B2;strokeWidth=2.3;endArrow=block;endSize=7;endFill=1;exitX=1;exitY=0.43283582089552236;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" source="source-boundary" target="peer-prefix-0">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="330" y="396" />
+            <mxPoint as="targetPoint" x="486" y="461" />
+            <Array as="points">
+              <mxPoint x="420" y="396" />
+              <mxPoint x="420" y="461" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="peer-copy-label" value="Peer&#10;copy" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#0072B2;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=24;fontColor=#0072B2;align=center;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="341" y="310" width="116" height="66" />
+        </mxCell>
+        <mxCell id="source-to-dram" edge="1" parent="1" style="edgeStyle=none;rounded=0;strokeColor=#B86B00;strokeWidth=2.3;endArrow=block;endSize=7;endFill=1;exitX=1;exitY=0.7835820895522388;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" source="source-boundary" target="dram-prefix-0">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="330" y="490" />
+            <mxPoint as="targetPoint" x="486" y="655" />
+            <Array as="points">
+              <mxPoint x="414" y="490" />
+              <mxPoint x="414" y="655" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dram-copy-label" value="DRAM&#10;copy" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#B86B00;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=24;fontColor=#B86B00;align=center;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="283" y="578" width="123" height="68" />
+        </mxCell>
+        <mxCell id="failure-condition" value="On source failure" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#B83C46;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=24;fontColor=#B83C46;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="935" y="335" width="247" height="45" />
+        </mxCell>
+        <mxCell id="recovery-hbm" value="New primary HBM" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=24;fontColor=#303943;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="946" y="451" width="223" height="37" />
+        </mxCell>
+        <mxCell id="restored-prefix-0" value="C0" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#007D60;fillColor=#E9F5EF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#007D60;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="950" y="501" width="103" height="43" />
+        </mxCell>
+        <mxCell id="restored-prefix-1" value="C1" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#007D60;fillColor=#E9F5EF;fontFamily=DejaVu Sans;fontSize=26;fontColor=#007D60;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1058" y="501" width="103" height="43" />
+        </mxCell>
+        <mxCell id="restored-label" value="Loaded prefix" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#007D60;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=24;fontColor=#007D60;align=center;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="950" y="553" width="215" height="39" />
+        </mxCell>
+        <mxCell id="recomputed-suffix-0" value="C2" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#EEF0F3;fontFamily=DejaVu Sans;fontSize=26;fontColor=#303943;align=center;verticalAlign=middle;spacing=3;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="950" y="613" width="65" height="43" />
+        </mxCell>
+        <mxCell id="recomputed-label" value="Recompute" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=24;fontColor=#303943;align=left;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1025" y="615" width="146" height="38" />
+        </mxCell>
+        <mxCell id="peer-to-recovery" edge="1" parent="1" style="edgeStyle=none;rounded=0;strokeColor=#007D60;strokeWidth=2.3;endArrow=block;endSize=7;endFill=1;exitX=1;exitY=0.7444444444444445;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.3924914675767918;entryDx=0;entryDy=0;entryPerimeter=0;" source="peer-boundary" target="recovery-boundary">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="840" y="461" />
+            <mxPoint as="targetPoint" x="935" y="515" />
+            <Array as="points">
+              <mxPoint x="887" y="461" />
+              <mxPoint x="887" y="515" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dram-to-recovery" edge="1" parent="1" style="edgeStyle=none;rounded=0;strokeColor=#007D60;strokeWidth=2.3;endArrow=block;endSize=7;endFill=1;exitX=1;exitY=0.45161290322580644;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.46075085324232085;entryDx=0;entryDy=0;entryPerimeter=0;" source="dram-boundary" target="recovery-boundary">
+          <mxGeometry as="geometry" relative="1">
+            <mxPoint as="sourcePoint" x="840" y="655" />
+            <mxPoint as="targetPoint" x="935" y="535" />
+            <Array as="points">
+              <mxPoint x="887" y="655" />
+              <mxPoint x="887" y="535" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="restore-label" value="Restore" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#007D60;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=24;fontColor=#007D60;align=center;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="841" y="390" width="91" height="42" />
+        </mxCell>
+        <mxCell id="legend" value="Colored arrows: KV transfer     |     Dashed arrows: control" style="rounded=0;whiteSpace=wrap;html=0;strokeWidth=1.6;strokeColor=#303943;fillColor=#FFFFFF;fontFamily=DejaVu Sans;fontSize=24;fontColor=#303943;align=center;verticalAlign=middle;spacing=3;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="18" y="750" width="1164" height="34" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,35 @@
+{
+  "type": "GPU_FAILURE",
+  "failure_count": 1,
+  "selection_scope": "input_selected_logical_focus_paired_across_systems",
+  "events": [
+    {
+      "failure_id": "mechanism-fault-0",
+      "event_index": 0,
+      "type": "GPU_FAILURE",
+      "bucket": "64k",
+      "seed": 0,
+      "focus_span_id": "fanoutqa:00065f204bddb94d:19ca424405179b56:revisit-0",
+      "target_gpu_id": "gpu-7",
+      "target_gpu_id_semantics": "REFERENCE_ROUTE_PROVENANCE_NOT_RUNTIME_FAILURE_TARGET",
+      "impact_contract": null,
+      "profile_impact_contracts": null,
+      "workload_position": {
+        "kind": "COMPLETED_WORKFLOW_FRACTION_NEAREST_COMMON_ROUTE_SPAN",
+        "target_progress_per_mille": 1,
+        "reference_completed_workflow_count": 0,
+        "reference_workflow_count": 2
+      },
+      "trigger": {
+        "kind": "FOCUS_SPAN_COMPUTE_PROGRESS",
+        "progress_per_mille": 600
+      },
+      "reference_at_ns": 2066148664,
+      "reference_at_ns_semantics": "recompute_only_oracle_provenance_not_cell_time",
+      "detection_delay_ns": 0,
+      "selection_scope": "longest_input_prompt_then_causal_descendant_predeclared_rule",
+      "repair_after_ns": 120000000000,
+      "parameter_source": "deterministic_focus_span_progress_global_des"
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "schema": "aegiskv.evaluation_protocol.v1",
+  "status": "DRAFT_NOT_EXECUTED",
+  "new_experiments": 0,
+  "algorithm2_implementation": "DEFERRED_BY_USER",
+  "systems": [
+    "mooncake",
+    "dram",
+    "aegis"
+  ],
+  "service_noninferiority": {
+    "margin_pct": 2,
+    "status": "PROPOSED_BEFORE_NEW_COLLECTION_NOT_CONFIRMED",
+    "metrics": [
+      "mean_wct_s",
+      "p95_wct_s"
+    ],
+    "confidence": "one_sided_95_percent",
+    "replicate_unit": "complete_paired_measurement_block",
+    "blocks_proposed": 10
+  },
+  "controlled_single_failure": {
+    "cases_proposed": 12,
+    "case_manifest": null,
+    "trigger": {
+      "stage": "decode",
+      "completed_output_tokens": 8,
+      "kernel_boundary": true
+    },
+    "victim_primary_count": 1,
+    "victim_placement": "same_reserved_source_replica_all_systems",
+    "unavailable_s": 120,
+    "wait_for_backup_ack": false,
+    "fixed_recovery_target": null,
+    "systems_per_block": 3,
+    "conditions_per_system": [
+      "F0",
+      "F1"
+    ],
+    "proposed_case_executions": 720,
+    "maximum_active_workflows_including_focal": 16,
+    "maximum_background_workflows": 15
+  },
+  "rate": {
+    "measure_s": 3600,
+    "warmup_s": 300,
+    "fault_counts": [
+      0,
+      1,
+      2,
+      4,
+      8
+    ],
+    "unit": "injected_faults_per_cluster_hour",
+    "trajectory_repeats": 10,
+    "clock": "external_fixed",
+    "overlap": false
+  },
+  "concurrency": {
+    "values": [
+      4,
+      8,
+      16,
+      32,
+      64
+    ],
+    "unit": "maximum_active_workflows",
+    "faults_per_execution": 1
+  },
+  "slo": null,
+  "native_hardware": null,
+  "formal_code_commit": null,
+  "source_evidence": "legacy source-v3 is diagnostic only",
+  "reserved": [
+    "DP_Model_TP",
+    "Related_work_baselines",
+    "Algorithm2_Algorithm3_ablations"
+  ]
+}

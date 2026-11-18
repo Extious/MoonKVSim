@@ -1,0 +1,255 @@
+{
+  "campaign_lineage": "4a99c306e8f9",
+  "estimand_b_result": false,
+  "evidence_boundary": "Current-design SGLSim mechanism telemetry only: alpha, pressure, occupancy, reuse, intended residency, copy amplification, and conditioned restored-token coverage. Not WCT, physical serving, or an Estimand B performance claim.",
+  "metrics": {
+    "central": {
+      "copy_amplification_pooled": 1.443488855874454,
+      "dram_occupancy_mean_fraction": 0.002528058448661,
+      "effective_alpha_mean": 0.280329726382453,
+      "effective_alpha_zero_window_fraction": 0.0,
+      "hbm_occupancy_mean_fraction": 0.008561111069331,
+      "pressure_fraction_mean": 0.172825315381309,
+      "restored_token_fraction": 0.870916926314966
+    },
+    "cluster_gpu_count": {
+      "128": {
+        "copy_amplification_pooled": 1.566010182410956,
+        "dram_occupancy_mean_fraction": 0.001256791762493,
+        "effective_alpha_mean": 0.491730719911066,
+        "effective_alpha_zero_window_fraction": 0.0,
+        "hbm_occupancy_mean_fraction": 0.008151567820116,
+        "pressure_fraction_mean": 0.076739226484957,
+        "restored_token_fraction": 0.890960816927339
+      },
+      "16": {
+        "copy_amplification_pooled": 1.177938747027455,
+        "dram_occupancy_mean_fraction": 0.008940910057989,
+        "effective_alpha_mean": 0.011905765291046,
+        "effective_alpha_zero_window_fraction": 0.273025615177318,
+        "hbm_occupancy_mean_fraction": 0.001152606883656,
+        "pressure_fraction_mean": 0.860413891611647,
+        "restored_token_fraction": 0.888157828459494
+      },
+      "32": {
+        "copy_amplification_pooled": 1.294399188669913,
+        "dram_occupancy_mean_fraction": 0.005078182891946,
+        "effective_alpha_mean": 0.088555772367301,
+        "effective_alpha_zero_window_fraction": 0.0,
+        "hbm_occupancy_mean_fraction": 0.004271277321286,
+        "pressure_fraction_mean": 0.411347871014812,
+        "restored_token_fraction": 0.840183477296149
+      },
+      "64": {
+        "copy_amplification_pooled": 1.443488855874454,
+        "dram_occupancy_mean_fraction": 0.002528058448661,
+        "effective_alpha_mean": 0.280329726382453,
+        "effective_alpha_zero_window_fraction": 0.0,
+        "hbm_occupancy_mean_fraction": 0.008561111069331,
+        "pressure_fraction_mean": 0.172825315381309,
+        "restored_token_fraction": 0.870916926314966
+      }
+    },
+    "concurrency": {
+      "128": {
+        "copy_amplification_pooled": 1.443488855874454,
+        "dram_occupancy_mean_fraction": 0.002528058448661,
+        "effective_alpha_mean": 0.280329726382453,
+        "effective_alpha_zero_window_fraction": 0.0,
+        "hbm_occupancy_mean_fraction": 0.008561111069331,
+        "pressure_fraction_mean": 0.172825315381309,
+        "restored_token_fraction": 0.870916926314966
+      },
+      "224": {
+        "copy_amplification_pooled": 1.383644488140936,
+        "dram_occupancy_mean_fraction": 0.005420729108155,
+        "effective_alpha_mean": 0.128901529947917,
+        "effective_alpha_zero_window_fraction": 0.0,
+        "hbm_occupancy_mean_fraction": 0.021018453240395,
+        "pressure_fraction_mean": 0.589895833333334,
+        "restored_token_fraction": 0.863055594523159
+      },
+      "32": {
+        "copy_amplification_pooled": 1.63232807593361,
+        "dram_occupancy_mean_fraction": 0.000368131615876,
+        "effective_alpha_mean": 0.868182717191388,
+        "effective_alpha_zero_window_fraction": 0.0,
+        "hbm_occupancy_mean_fraction": 0.003380023339903,
+        "pressure_fraction_mean": 0.017977238478308,
+        "restored_token_fraction": 0.87993341495421
+      },
+      "64": {
+        "copy_amplification_pooled": 1.549936815019357,
+        "dram_occupancy_mean_fraction": 0.00092227648439,
+        "effective_alpha_mean": 0.665382927168738,
+        "effective_alpha_zero_window_fraction": 0.0,
+        "hbm_occupancy_mean_fraction": 0.006658828979242,
+        "pressure_fraction_mean": 0.048645146983379,
+        "restored_token_fraction": 0.870710196939008
+      }
+    },
+    "dram_evictions_across_scenarios": 0,
+    "full_policy_scenario_count": 33,
+    "global_reuse": {
+      "input_reuse_fraction": 0.983087895071455,
+      "input_reuse_tokens": 21269481536,
+      "request_fraction_with_reuse": 0.926265089499833,
+      "scope": "workflow-local 64-token hash-id prefix blocks"
+    },
+    "hbm_only_admissions_across_scenarios": 0,
+    "network_gb_s": {
+      "1": {
+        "copy_amplification_pooled": 0.00023422282095,
+        "dram_occupancy_mean_fraction": 1.27524785e-07,
+        "effective_alpha_mean": 0.283574143410234,
+        "effective_alpha_zero_window_fraction": 0.0,
+        "hbm_occupancy_mean_fraction": 1.698802451e-06,
+        "pressure_fraction_mean": 0.169975129824927,
+        "restored_token_fraction": 0.0
+      },
+      "10": {
+        "copy_amplification_pooled": 1.443488855874454,
+        "dram_occupancy_mean_fraction": 0.002528058448661,
+        "effective_alpha_mean": 0.280329726382453,
+        "effective_alpha_zero_window_fraction": 0.0,
+        "hbm_occupancy_mean_fraction": 0.008561111069331,
+        "pressure_fraction_mean": 0.172825315381309,
+        "restored_token_fraction": 0.870916926314966
+      },
+      "20": {
+        "copy_amplification_pooled": 1.452247388698063,
+        "dram_occupancy_mean_fraction": 0.002401644785045,
+        "effective_alpha_mean": 0.280367245106019,
+        "effective_alpha_zero_window_fraction": 0.0,
+        "hbm_occupancy_mean_fraction": 0.008481187299447,
+        "pressure_fraction_mean": 0.172828839817399,
+        "restored_token_fraction": 0.909200736219796
+      },
+      "40": {
+        "copy_amplification_pooled": 1.454309940055495,
+        "dram_occupancy_mean_fraction": 0.00238697486179,
+        "effective_alpha_mean": 0.280377810786446,
+        "effective_alpha_zero_window_fraction": 0.0,
+        "hbm_occupancy_mean_fraction": 0.008433084094652,
+        "pressure_fraction_mean": 0.17278661008767,
+        "restored_token_fraction": 0.932758519471992
+      }
+    },
+    "rate_zero_reuse_bins": {
+      "high": {
+        "prompt_token_fraction": 0.1936413888550701,
+        "request_fraction": 0.3516346747346373,
+        "residency_fraction": {
+          "bypass": 0.002483916723246637,
+          "dram_only": 0.4222134084446446,
+          "hbm_and_dram": 0.5753026748321087,
+          "hbm_only": 0.0
+        },
+        "restored_token_fraction": 0.9016812807375203
+      },
+      "near_complete": {
+        "prompt_token_fraction": 0.7845981437624432,
+        "request_fraction": 0.5229542533922916,
+        "residency_fraction": {
+          "bypass": 0.0026011744167592447,
+          "dram_only": 0.5940648309792097,
+          "hbm_and_dram": 0.40333399460403113,
+          "hbm_only": 0.0
+        },
+        "restored_token_fraction": 0.8577504462612882
+      },
+      "none": {
+        "prompt_token_fraction": 0.003918257548357675,
+        "request_fraction": 0.07373491050016696,
+        "residency_fraction": {
+          "bypass": 0.0008127353390746747,
+          "dram_only": 0.25692875517279945,
+          "hbm_and_dram": 0.7422585094881259,
+          "hbm_only": 0.0
+        },
+        "restored_token_fraction": 0.875600563286945
+      },
+      "partial": {
+        "prompt_token_fraction": 0.01784220983412908,
+        "request_fraction": 0.051676161372904164,
+        "residency_fraction": {
+          "bypass": 0.00468709760494463,
+          "dram_only": 0.3569302086015967,
+          "hbm_and_dram": 0.6383826937934587,
+          "hbm_only": 0.0
+        },
+        "restored_token_fraction": 0.9492825960635904
+      }
+    },
+    "zero_alpha_stress": {
+      "qwen3_32b_pp4_g64": {
+        "copy_amplification_pooled": 1.239602747759645,
+        "dram_occupancy_mean_fraction": 0.003760455544852,
+        "effective_alpha_mean": 0.019340817650116,
+        "effective_alpha_zero_window_fraction": 0.276229963774249,
+        "hbm_occupancy_mean_fraction": 0.000903193484764,
+        "pressure_fraction_mean": 0.862675773396501,
+        "restored_token_fraction": 0.949052244139465
+      },
+      "qwen3_8b_g16": {
+        "copy_amplification_pooled": 1.177938747027455,
+        "dram_occupancy_mean_fraction": 0.008940910057989,
+        "effective_alpha_mean": 0.011905765291046,
+        "effective_alpha_zero_window_fraction": 0.273025615177318,
+        "hbm_occupancy_mean_fraction": 0.001152606883656,
+        "pressure_fraction_mean": 0.860413891611647,
+        "restored_token_fraction": 0.888157828459494
+      }
+    }
+  },
+  "new_experiment": false,
+  "observed_run_count": 3110,
+  "operation": "paper_only_binding_of_frozen_current_design_telemetry",
+  "outputs": [
+    {
+      "path": "/home/comp/zhanzhao/Mooncake/aegiskv/paper/figures/sim-fig06_reuse_and_recovery.pdf",
+      "sha256": "e2673f8b4078c57671463d0c99229747eced39701f71d2ecf5c81447c48076c8",
+      "size_bytes": 14396
+    },
+    {
+      "path": "/home/comp/zhanzhao/Mooncake/aegiskv/paper/figures/sim-fig06_reuse_and_recovery.png",
+      "sha256": "5cb8034e657aa6bd6bb72a76646a2e79d5134a6aaa879c4dea012f19c1482f4d",
+      "size_bytes": 140680
+    }
+  ],
+  "physical_result": false,
+  "schema": "aegiskv_current_mechanism_supplement_v1",
+  "sources": [
+    {
+      "path": "/home/comp/zhanzhao/sglsim/AegisKV/experiments/sglsim_large_scale_v2/results/campaign_v2/4a99c306e8f9/analysis-full/figures-polished/figure_manifest.json",
+      "sha256": "019c48da44ab888d055bf19ac4e988a1b66e4ce7ee9da3079cb2e9bd2cc00fa7",
+      "size_bytes": 3495
+    },
+    {
+      "path": "/home/comp/zhanzhao/sglsim/AegisKV/experiments/sglsim_large_scale_v2/results/campaign_v2/4a99c306e8f9/analysis-full/figures-polished/fig06_reuse_and_recovery.pdf",
+      "sha256": "e2673f8b4078c57671463d0c99229747eced39701f71d2ecf5c81447c48076c8",
+      "size_bytes": 14396
+    },
+    {
+      "path": "/home/comp/zhanzhao/sglsim/AegisKV/experiments/sglsim_large_scale_v2/results/campaign_v2/4a99c306e8f9/analysis-full/figures-polished/fig06_reuse_and_recovery.png",
+      "sha256": "5cb8034e657aa6bd6bb72a76646a2e79d5134a6aaa879c4dea012f19c1482f4d",
+      "size_bytes": 140680
+    },
+    {
+      "path": "/home/comp/zhanzhao/sglsim/AegisKV/experiments/sglsim_large_scale_v2/results/campaign_v2/4a99c306e8f9/analysis-full/trace_workload_diagnostics.json",
+      "sha256": "a2e11d7f44a574ac8b3bd306f5e3457318075a22268d21916e07cc13b1112f44",
+      "size_bytes": 2497
+    },
+    {
+      "path": "/home/comp/zhanzhao/sglsim/AegisKV/experiments/sglsim_large_scale_v2/results/campaign_v2/4a99c306e8f9/analysis-full/scenario_diagnostics.json",
+      "sha256": "a4d62d665658fc1dfc0b1b3c108d1f2b4d5daa56062d4a50aa802a2ea8165b26",
+      "size_bytes": 118904
+    },
+    {
+      "path": "/home/comp/zhanzhao/sglsim/AegisKV/experiments/sglsim_large_scale_v2/results/campaign_v2/4a99c306e8f9/analysis-full/active_source_probe_reuse_bins.csv",
+      "sha256": "0a3ca10af8e25d898f4652d2e511f013e20aa06b297abdb0e56f18054431314e",
+      "size_bytes": 3879108
+    }
+  ],
+  "workflow_completion_time_result": false
+}

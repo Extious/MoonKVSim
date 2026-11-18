@@ -1,0 +1,20 @@
+% English design draft, aligned with draft/system_design.md (2026-09-18).
+\section{AegisKV Design}
+\label{sec:design}
+
+AegisKV allocates scarce Peer HBM and copy bandwidth to reduce the
+effect of failures on workflow completion time (WCT).
+We first derive the design from workflow slack, sparse KV access, and
+transfer--compute overlap. These observations separate three decisions:
+which requests merit protection, which of their KV objects merit Peer
+residency, and how requests resume after failure. Protection priority
+does not impose a serial order on recovery execution.
+
+\input{sections/design_insights}
+\input{sections/system_overview}
+\input{sections/workflow_protection}
+\input{sections/kv_placement}
+\input{sections/capacity_allocation}
+\input{sections/parallel_recovery}
+\input{sections/kv_runtime}
+\input{sections/design_discussion}

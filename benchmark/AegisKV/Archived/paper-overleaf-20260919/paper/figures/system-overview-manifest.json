@@ -1,0 +1,16 @@
+{
+  "name": "system-overview",
+  "evidence": "design",
+  "width_in": 7,
+  "height_in": 4.672,
+  "min_font_pt": 10.06,
+  "out_of_page_text": [],
+  "generator": "benchmark/AegisKV/experiments/scripts/paper/build_draft_overview.py",
+  "files": {
+    "pdf": "0de24c178d7c8818ade961564323dc4dbbdd7db20099e30cb5c2f044c5d48e3c",
+    "svg": "49e1823c51a018717cc22b7dbdfcb2d54c3055f1c4c334a96c9661e83c654ed4",
+    "png": "45cb5ae892fd0a858cdeb1de365b2d12f84b529d227a8fa0e7eadcf92d1d4580",
+    "drawio": "7f247674f28a9d1dc3ec20c7f899a1fb2fc3ec4b3a7181ca1248619cd68a6d4d"
+  },
+  "note": "Three-layer architecture with module names only; the nine numbered flows, the colours and the failure mark on the source GPU are explained in the Figure 5 caption. Normal path 1-7: submit/dispatch, Slack snapshot, per-window block ranking, per-window Peer budget B from the watermark, placement plan (tier, L(Lr), block identities), Peer copy, DRAM copy. Failure path 8-9: detector -> recovery manager, parallel retries on p(g) reading the Peer Region zero-copy and the DRAM pool via preload + demand fetch. Offline tables (block size, K_l, C) feed the planner. Design semantics only; no algorithm is executed. Visual review of the native PNG/PDF is required after regeneration."
+}

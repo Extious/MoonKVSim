@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" version="31.1.5">
+  <diagram id="commit-materialize-recompute" name="commit-materialize-recompute">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageWidth="1200" pageHeight="174" background="#FFFFFF" math="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="canvas" value="" style="rounded=0;strokeWidth=1.7;strokeColor=#FFFFFF;fillColor=#FFFFFF;fontFamily=Cantarell;fontSize=26;fontColor=#FFFFFF;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="0" y="0" width="1200" height="174" />
+        </mxCell>
+        <mxCell id="backup" value="Committed backup&#10;Chunks 0–1" style="rounded=0;strokeWidth=1.7;strokeColor=#0072B2;fillColor=#EDF5FA;fontFamily=Cantarell;fontSize=26;fontColor=#0072B2;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="0" y="76" width="310" height="98" />
+        </mxCell>
+        <mxCell id="primary" value="New primary buffers&#10;Chunks 0–1" style="rounded=0;strokeWidth=1.7;strokeColor=#007D60;fillColor=#F2F8F5;fontFamily=Cantarell;fontSize=26;fontColor=#007D60;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="440" y="76" width="320" height="98" />
+        </mxCell>
+        <mxCell id="suffix" value="Recompute suffix 2&#10;Then resume decode" style="rounded=0;strokeWidth=1.7;strokeColor=#B83C46;fillColor=#FCF1F2;fontFamily=Cantarell;fontSize=26;fontColor=#B83C46;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="890" y="76" width="310" height="98" />
+        </mxCell>
+        <mxCell id="load" edge="1" parent="1" source="backup" target="primary" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeWidth=2.6;strokeColor=#007D60;endArrow=block;endFill=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;exitPerimeter=1;entryPerimeter=1;jettySize=10;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="recompute" edge="1" parent="1" source="primary" target="suffix" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeWidth=2.6;strokeColor=#B83C46;endArrow=block;endFill=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;exitPerimeter=1;entryPerimeter=1;jettySize=10;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="copy-label" value="Copy" style="rounded=0;strokeWidth=1.7;strokeColor=#007D60;fillColor=#FFFFFF;fontFamily=Cantarell;fontSize=26;fontColor=#007D60;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="315" y="69" width="120" height="43" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

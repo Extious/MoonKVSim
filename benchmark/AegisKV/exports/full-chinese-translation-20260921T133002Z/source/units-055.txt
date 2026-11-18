@@ -1,0 +1,293 @@
+U055 prose 
+At 1,010,000 tokens, full prefill takes 571.21\,s despite sparse attention.
+HBM, DRAM and shared-storage reuse take 1.305, 2.663 and 10.156\,s,
+respectively. Retaining the history avoids most reconstruction work;
+its location determines the additional retrieval delay. Shared storage
+adds 7.49\,s over DRAM in this run, while the history occupies 57.92\,GB
+across the two ranks. This separates the value of retaining reusable
+state from the additional value of making it quickly accessible.
+HBM/DRAM points report three timings, whereas full-prefill and
+shared-storage points each report one. They characterize this fixed
+input and serialized implementation; storage caches and I/O overlap can
+change the differences. They do not measure the net serving benefit
+of a protection policy.
+
+U056 heading 
+Challenge 2: Balancing fast recovery, reuse and resource use.
+
+U057 prose 
+Finite capacity prevents every long history from remaining near
+execution. Protection must decide both which histories retain reusable
+state and which state merits faster access. These decisions
+need to combine the workflow impact of recovery with future normal reuse,
+capacity occupancy and data movement. In particular, low recovery
+urgency does not imply low reuse value, and a faster restore path is
+useful only to the extent that it advances required work. The challenge
+is to allocate protection resources as these demands change without
+allowing protection itself to undermine foreground service.
+
+U059 prose 
+AegisKV targets these two challenges: using workflow progress to guide
+recovery priorities, and managing limited KV capacity across storage
+tiers while preserving normal reuse. The next section develops the
+observations and mechanisms that support these decisions.
+
+U060 heading 3
+AegisKV Design
+
+U062 prose 
+AegisKV allocates finite KV storage to reduce workflow completion time
+(WCT) while preserving normal cache reuse. Two observations connect
+workflow-level priorities to the state needed for recovery.
+
+U063 heading 3.1
+Observations
+
+U065 heading 
+1. Workflow dependencies determine recovery urgency.
+
+U066 prose 
+Figure~\ref{fig:motivation-recovery-exposure} shows similar reconstruction
+costs with different effects on WCT: slack absorbs some branches' delays,
+while a critical branch exposes its full pause. Thus request recovery
+time alone is insufficient to rank protection priorities; the request's
+position in the remaining workflow also matters.
+
+U067 heading 
+2. Historical KV accesses concentrate on a subset of blocks.
+
+U068 prose 
+Figure~\ref{fig:sparse-releases} surveys long-context releases with block,
+token or compressed-entry selection. Figure~\ref{fig:design-insights}
+then examines native access traces: approximately 20\% of historical
+blocks account for 87.64\%, 74.76\% and 56.54\% of accesses across the
+three models. These results distinguish the complete historical state
+from the subset frequently used by computation. The survey does not
+establish a monotonic increase in sparsity, and retrospective concentration
+does not establish future-query prediction accuracy.
+
+U069 caption 
+Selected sparse/hybrid model releases and reported context
+ lengths. IDs: 1 MiniCPM4~\cite{minicpm4model};
+ 2 MiniCPM4.1~\cite{openbmb2025minicpm41};
+ 3 DeepSeek-V3.2-Exp~\cite{deepseek2025v32exp};
+ 4 DeepSeek-V3.2~\cite{deepseek2025v32model};
+ 5 GLM-5~\cite{zai2026glm5model};
+ 6 MiniCPM-SALA~\cite{openbmb2026sala};
+ 7 DeepSeek-V4 preview~\cite{deepseek2026v4model};
+ 8 MiniMax-M3~\cite{minimax2026m3};
+ 9 GLM-5.2~\cite{zai2026glm52};
+ 10 LongCat-Flash-Lite-Sparse~\cite{longcat2026sparse}.
+ Dates are announcements, or first official repository dates for
+ IDs 5, 9 and 10. Markers identify the sparse branch's selection unit,
+ including SALA's block branch and V4's compressed sparse branch;
+ they do not imply uniform attention across layers.
+
+U071 caption 
+Native KV access concentration for NOSA-8B~\cite{huang2026nosav2},
+ NSA-8B (MiniCPM-4-8B-NSA)~\cite{fasa2026minicpm4nsa}, and
+ MiniCPM4.1-8B~\cite{openbmb2025minicpm41}. We use the final 512 queries
+ of matched 32,704-token prefixes from three PG19 texts. Each query
+ counts a historical 64-token block once across heads. Rank the 503
+ blocks within each layer/window; average access shares over all
+ 32 layers, then texts. Bands show text min--max; the diagonal denotes
+ uniform access. Compressed/selector state is excluded. This is
+ retrospective concentration, not prediction accuracy or recovery speedup.
+
+U073 prose 
+Together, these observations guide which states to protect and which
+parts to keep immediately accessible.
+
+U074 heading 3.2
+System Overview
+
+U076 prose 
+AegisKV combines workflow priorities with a three-tier KV hierarchy
+(Figure~\ref{fig:system-overview}). Peer HBM keeps selected
+layers and hot blocks on another data-parallel (DP) replica for fast
+recovery; shared DRAM and storage retain the remaining state for reuse
+and recovery. Together, the three tiers cover each committed checkpoint,
+with one managed owner per object after transfers finish. This division lets
+the system retain long histories while spending scarce HBM on the state
+of zero-slack requests with bounded per-request quotas.
+
+U077 prose 
+The Application supplies requests and workflow progress to the Controller.
+\textbf{(1)} Workflow Tracker estimates how much delay each Agent can
+absorb, while \textbf{(2)} Recovery-aware Router selects its execution and
+takeover DPs. Using this urgency and location information, \textbf{(3)} KV
+Master decides where to retain each KV object and which hot blocks merit
+Peer space. Within the Engine, \textbf{(4)} Adapter adjusts the available
+Peer capacity as serving demand changes. Connector executes Master's
+transfer plans and reports their outcomes. If a worker fails, Router redirects its requests to the
+takeover DP, where Connector combines Peer hits with lower-tier reads to
+resume execution.
+
+U078 caption 
+AegisKV architecture. Callouts (1)--(4) match the text;
+ DP1 mirrors DP0's Adapter/Connector; the Master--Connector exchange is
+ shown on DP1: plans flow down and transfer status returns up.
+ DP0 executes; DP1 hosts selected Peer objects and takes over. Blue solid links
+ carry KV, dark dashed links carry control, and red dashes denote retry;
+ orange blocks are unsealed tails. The remaining checkpoint objects
+ reside in shared DRAM/storage outside both DP failure boundaries.
+
+U080 heading 3.3
+Workflow Tracker: Remaining Time and Slack
+
+U082 prose 
+To make workflow priorities available online, Tracker estimates remaining
+execution before deriving slack. It maintains a residual DAG whose nodes
+are Agent segments between exposed fork/join boundaries or completion.
+A segment can span several LLM calls and tool waits. Child execution
+appears on child paths, not again in the parent; unknown future forks
+are excluded.
+
+U083 prose 
+A GBDT predicts segment seconds remaining, $d$, from causal features: role/model,
+current input length, elapsed time, completed-call count and previous
+calls' lengths, timings and context growth. Missing history is masked;
+training, calibration and evaluation split whole workflows. Labels end
+at the segment boundary, and future call outcomes are never features.
+
+U084 prose 
+Algorithm~\ref{alg:workflow-tracker} takes residual DAG $G$ and features
+$X$. Forward/backward critical-path passes~\cite{kelley1959cpm} compute
+earliest finishes $EF$ and latest finishes $LF$ relative to the predicted
+workflow finish. Their difference is nominal slack. The guard $g$ is an
+upper empirical quantile of positive slack overestimation on calibration
+workflows; subtracting it gives advisory slack $s$, not a per-request
+guarantee. Requests in one segment share its margin.
+
+U085 algorithm 
+\par\medskip\noindent\begin{minipage}{\columnwidth}
+\raggedright
+ \refstepcounter{designalgorithm}\label{alg:workflow-tracker}
+ \textbf{Algorithm \thedesignalgorithm: Remaining time and slack}
+ \par\smallskip
+ \begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
+ \toprule
+ 1 & $(G,X)\gets\textsc{SnapshotProgress}()$ \\
+ 2 & $\nu\gets\textsc{NextVersion}()$ \\
+ 3 & \textbf{if not} \textsc{Supported}$(G,X)$ \textbf{then} \\
+ 4 & \quad \textsc{PublishInvalid}$(\nu)$; \textbf{return} \\
+ 5 & $d\gets\max(0,\textsc{GBDT}(X));\quad g\gets\textsc{Guard}()$ \\
+ 6 & $EF\gets\textsc{Forward}(G,d)$ \\
+ 7 & $LF\gets\textsc{Backward}(G,d,\max_v EF_v)$ \\
+ 8 & \textbf{for} $v\in V(G)$ \textbf{do} \\
+ 9 & \quad $s_v\gets\max(0,LF_v-EF_v-g_v)$ \\
+ 10 & \textsc{Publish}$(\nu,G,d,g,s)$ \\
+ \bottomrule
+ \end{tabularx}
+\end{minipage}\par\medskip
+
+U086 prose 
+\textsc{Supported} checks inputs, dependencies, calibration and freshness;
+invalid estimates grant no positive slack credit. Progress events and
+periodic refresh publish versioned durations $d$, guards and slack to
+Master, invalidating older priority estimates. The DAG passes cost
+$O(|V|+|E|)$; prediction quality is evaluated in
+Section~\ref{sec:eval-prediction}.
+
+U087 heading 3.4
+Recovery-aware Router
+
+U089 prose 
+Router establishes where normal and resumed execution run. Normal
+dispatch balances load and compatible prefix locality.
+Figure~\ref{fig:agent-prefix-reuse} reports 97.90\% potential same-agent
+token coverage and 0.37\% additional cross-agent coverage. Agent affinity
+is a preference: shared prefixes can still help another Agent's first call.
+
+U090 caption 
+Potential prefix reuse over 98,827 requests, 2,090 agents and
+ 393 CC/Weka workflows. Coverage uses earlier completed requests with
+ the same recorded model and workflow. Same/other-agent coverage
+ overlaps; only additional cross-agent coverage extends same-agent
+ reuse. These are token-prefix opportunities, not runtime cache hits.
+
+U092 prose 
+At arrival, Router records a versioned takeover binding to a DP with a
+compatible layout outside the source failure domain. Its corresponding
+tensor-parallel (TP) shards can own selected Peer objects. On confirmed
+failure, Router fences the old epoch and activates that target subject
+to workspace and admission constraints. A new target cannot count the
+old target's Peer objects as local: rebinding retrieves reachable objects
+or uses an older checkpoint/replay fallback if their sole owner was lost.
+This binding gives Master concrete access paths and target load for
+recovery profiling and Peer placement.
+
+U093 heading 3.5
+KV Master: Workflow-aware Tiered Placement
+
+U095 prose 
+Master first combines request urgency with within-request KV demand,
+then carries this priority across repeated and shared uses. Renewable
+credit manages lower-tier retention; a fixed-size, request-level policy
+allocates Peer acceleration. An event loop connects both policies to
+actual transfers and available capacity.
+
+U096 heading 3.5.1
+Slack- and Access-aware KV Priority
+
+U099 prose 
+Two factors determine a request's interest in a KV block:
+how strongly recovery affects its workflow, and how likely execution is
+to need that block. Let $R_r$ be the profiled recovery delay under the
+request's current placement, including lower-tier reads, replay and
+queues, and $s_r$ its guarded slack. We use the exposed fraction
+
+U100 equation 
+\begin{equation}
+ u_r=\frac{[R_r-s_r]^+}{\max(R_r,\varepsilon)},
+ \qquad P_{r,l,b}=u_r\,\widehat p_{r,l,b},
+ \label{eq:value}
+\end{equation}
+
+U101 prose 
+where $\varepsilon>0$ avoids division by zero. Thus zero slack gives full
+urgency when recovery takes time; slack covering recovery removes this
+urgency, not ordinary reuse value. Invalid Tracker estimates use zero
+slack. $P$ is a ranking signal, not an additive estimate of WCT saved.
+
+U102 prose 
+Within one dense-attention layer, every causally visible historical block
+is needed by subsequent queries, so its access factor is one. Earlier
+creation alone does not imply greater future value. Sparse attention
+instead uses a recent window of completed queries:
+
+U103 equation 
+\begin{equation}
+ \widehat p_{r,l,b}=
+ \frac{\text{queries selecting block }b}
+      {\text{queries for which block }b\text{ was visible}}.
+ \label{eq:selection-probability}
+\end{equation}
+
+U104 prose 
+Each query counts a physical block once across heads. Visibility is
+defined before sparse selection, not after candidate pruning. A block
+selected 40 times in 200 opportunities has lower estimated demand than
+one selected 15 times in 30; raw counts reverse that ranking. A calibrated
+layer prior smooths small denominators. This causal estimate predicts
+demand without modifying the native selector; mandatory auxiliary state
+remains a dependency regardless of its measured frequency.
+
+U105 prose 
+Priority and retention cost are distinct. For equal-size, equal-cost
+blocks in the same dense layer, the access contribution is equal; object
+sizes, transfer paths and reconstruction costs can still differ.
+Figure~\ref{fig:retention-value} illustrates why cost per byte also matters.
+This motivates cost-aware lower-tier credit, while the Peer policy below
+deliberately uses a simpler urgency rule.
+
+U106 caption 
+Slack alone does not rank retention value. In this isolated-fault
+ example, A uses two capacity units to reduce recovery from 4 to 2\,s;
+ B uses one to reduce 18 to 8\,s. A at slack 0 saves 1\,s/unit, whereas
+ B at slack 6 saves 10\,s/unit. Normal-use value is zero. This constructed
+ example motivates cost-aware lower-tier retention and exposes a limit
+ of urgency-only Peer admission; it is not a policy-speedup result.
+
+U108 heading 3.5.2
+Renewable Credit with Lazy Updates

@@ -1,0 +1,112 @@
+\subsection{KV Placement Planner}
+\label{sec:kv-placement}
+\label{sec:capacity-allocation}
+
+Planner (2) protects the hottest $K_l$ sealed blocks in each of the
+first $L$ layers, then admits complete footprints within the Peer budget.
+\paragraph{Choose protection tiers.}
+Let $T_{\mathrm{rc}}$ be historical-prefix recomputation cost,
+$T_{\mathrm{rp}}$ known-tail replay cost, and $W_0$ exposed DRAM-loading
+wait without Peer residency.
+Detection, rerouting, and readmission contribute $R_{\mathrm{floor}}$.
+The Planner uses
+\begin{equation}
+\begin{aligned}
+ R_{\mathrm{base}}&=R_{\mathrm{floor}}+T_{\mathrm{rp}},\\
+ R_R&=R_{\mathrm{base}}+T_{\mathrm{rc}},\quad
+ R_D=R_{\mathrm{base}}+W_0.
+\end{aligned}
+\label{eq:recovery-base}
+\end{equation}
+Costs are calibrated by model, context, tail length, hardware, and
+representative concurrency, rather than exclusive peak bandwidth.
+
+The three placement tiers are:
+\emph{R}, no required backup when $\sigma_r\ge R_R$;
+\emph{D}, DRAM only when $R_D\le\sigma_r<R_R$;
+and \emph{P}, DRAM coverage plus competition for Peer HBM otherwise.
+Tier changes use 20\% hysteresis. Tier-P requests compete by increasing slack; a skipped request retains
+its DRAM path. Slack orders admission but does not scale a request's
+footprint. Admitting whole footprints makes accounting and updates
+predictable under noisy estimates, at the cost of possible unused
+capacity or missed gains from partial protection. It is a policy choice,
+not an optimality claim or a serial recovery order.
+
+\paragraph{Define protection objects.}
+A protection object is a \emph{(layer, block)} containing
+all KV heads; the profiled selectors use 64-token blocks.
+Sealing makes a full block eligible for copying, whereas the commit
+frontier determines what survives failure. Replay forwards the known
+uncommitted token IDs to rebuild their KV, including sealed but
+uncommitted blocks; it does not resample tokens.
+
+\paragraph{Size offline, rank online.}
+The historical blocks needed by a length-$n$ replay form the union
+$U_l(n)=\bigcup_{q=1}^{n}\bigcup_g S_{l,q,g}$, where $S_{l,q,g}$ is the
+native selector output for query $q$ and group $g$. Repeated reads count
+once. A table indexed by model, layer, context bin, and tail length
+estimates $h_l=|U_l|/B_l$, giving $K_l=\lceil h_l B_l\rceil$ for $B_l$
+historical blocks. Mandatory sink/window blocks must fit \emph{within}
+$K_l$; the table is refreshed slowly across requests.
+
+The Adapter counts actual selected indices per layer/block over the
+previous 512 decoding steps. The Planner reserves mandatory sealed
+blocks, then fills the remaining slots by decreasing count, breaking
+ties by recency. An optional block becomes replaceable after two
+successive windows outside the top set; replacement reuses its slot
+and cannot enlarge $K_l$. Thus calibration sizes the set, while causal
+rankings identify its members. Changed members trigger incremental
+copies and retain DRAM coverage when removed from Peer.
+
+\paragraph{Protect exposed transfer, not every historical byte.}
+The Adapter preloads hot blocks in layer order, skipping Peer-resident
+objects. Selector state must arrive before exact demand can be computed;
+newly revealed misses take priority over speculative preloads. Cold KV
+is filled in the background. Let $\widetilde u$ be the fraction of
+historical bytes in the union of preload and demand-fetch sets, and
+$h$ the preload fraction, both calibrated from replay traces.
+With $N$ homogeneous layers, per-layer replay
+compute $C$, and full-layer transfer $D=L_rs/\beta$ ($L_r$ historical
+tokens, $s$ KV bytes/token/layer, $\beta$ effective bandwidth),
+\begin{align}
+ W_{\mathrm{floor}}&=N(\widetilde u-h)D,\label{eq:demand-floor}\\
+ W_0&=hD+(N-1)[hD-C]^++W_{\mathrm{floor}}.\label{eq:exposed-wait}
+\end{align}
+Here $[x]^+=\max(0,x)$. The first two terms are startup preload and
+backlog that computation cannot hide. The last is demand wait under a
+fixed hot set, causal demand release, and ideal preemptible copy stream.
+It is not a lower bound on other hot sets or loading policies.
+
+Peer-resident front-layer hot sets remove the preload component. Set
+\begin{equation}
+ F^\star(r)=\beta\bigl(W_0-W_{\mathrm{floor}}\bigr),
+ \label{eq:peer-byte-target}
+\end{equation}
+and choose the smallest prefix $L$ with
+$\sum_{l=1}^{L}K_l b\ge F^\star(r)$, where $b$ is bytes per layer-block.
+Admission also counts selector state. When $hD\le C$, one layer's hot
+set suffices. The footprint depends on the request and transfer/compute
+profile, not slack, and is recomputed at placement-window boundaries.
+For heterogeneous layers this is a planning approximation, not a
+runtime guarantee of reaching the homogeneous floor.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/design-single/design-layer-pipeline.pdf}
+  \caption{Modeled recovery pipelines: MiniCPM4-8B, 32 layers, 32K
+    history, 64-token known tail; $C=2.87$\,ms/layer (measured) and
+    $D=5.37$\,ms at an assumed 6.25\,GB/s. In (d), 147\,MiB of Peer
+    residency removes preload wait. Totals end at tail-KV reconstruction.
+    The homogeneous, preemptible-copy model excludes detection,
+    queuing, and interference.}
+  \label{fig:design-pipeline}
+  \Description{Four timelines compare token-block transfer, full-layer
+    pipelining, hot preloads with demand fetch, and Peer-resident hot sets.}
+\end{figure}
+
+Figure~\ref{fig:design-pipeline}(a,b) shows that layer pipelining reduces
+exposed wait from 172 to 83\,ms; hot preloads in (c) reduce it to
+44\,ms; seven Peer-resident hot sets in (d) leave 20\,ms of demand wait.
+These calibrated timelines explain placement, not measured fault recovery.
+
+\input{sections/capacity_allocation}

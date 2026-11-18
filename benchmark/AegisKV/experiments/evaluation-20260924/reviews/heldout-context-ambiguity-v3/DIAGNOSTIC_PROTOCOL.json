@@ -1,0 +1,12 @@
+{
+  "constraints": "diagnostic uses heldout outcomes offline; not deployable, not tuning, not population/future lower bound; not a bound for one particular regressor class",
+  "dependencies": "same62workflows at3loads/model;503Agenttasks per load; shared queues; no independent-repeat claim",
+  "expected_conditions": 6,
+  "expected_rows": 3018,
+  "features": "full serialized derived Context including model; Agent/load/Workflow identity not added",
+  "interpretation": "minimum empirical MAE on this finite case-set for an arbitrary deterministic full-Context-only mapping",
+  "minimum": "each group's observed labels use their exact rational median; sum absolute residuals/N",
+  "objective": "unweighted per-observation MAE across all three tested loads, separately per model",
+  "operation": "group all six healthy actual contexts by canonical derived-Context bytes",
+  "source": "/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/experiments/evaluation-20260924/walltime-primary-v3"
+}

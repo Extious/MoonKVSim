@@ -1,0 +1,90 @@
+\subsection{System Overview}
+\label{sec:system-overview}
+
+Figure~\ref{fig:system-overview} separates applications, the control
+plane, and inference engines. Its numbered badges identify mechanisms
+discussed below; they do not specify execution order.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/system-overview-v10.drawio.pdf}
+  \caption{AegisKV overview. The four annotations identify Workflow Tracker
+    (1), KV Placement Planner (2), Recovery Manager (3), and Adapter (4).
+    DP0 and DP1 have equivalent components; badge 4 is shown once.
+    Black arrows dispatch requests; gray dashed arrows carry control
+    information; red dashed arrows submit retries. Thin gray lines denote
+    DAG dependencies or local interfaces. Blue paths transfer Peer KV;
+    gold paths independently copy to and restore from DRAM. Control arrows
+    show representative instances. The smaller Peer region is schematic.
+    On takeover, the target reads its Peer KV locally.}
+  \label{fig:system-overview}
+  \Description{Three open horizontal bands. Applications supply requests and
+    DAG information. A router and AegisKV Controller direct equivalent DP0 and
+    DP1 engines, each with an adapter, connector, and local/peer HBM regions.
+    Peer transfers and independent DRAM paths bypass the control plane.}
+\end{figure*}
+
+\paragraph{Applications.}
+The agent runtime submits LLM requests with workflow and node IDs and
+declares dependency edges. Static DAGs can be supplied in advance;
+new nodes are reported as they are spawned. Applications need
+not estimate slack.
+
+\paragraph{Control plane.}
+The Router dispatches normal requests using load and KV locality.
+The AegisKV Controller owns workflow state, protection plans, and recovery
+coordination. Workflow Tracker (1) produces slack snapshots
+(Section~\ref{sec:workflow-protection}). KV Placement Planner (2) selects
+tiers, destinations, layer/block sets, and transfer plans from these
+snapshots, calibrated profiles, recent block rankings, and available
+capacity (Sections~\ref{sec:kv-placement} and~\ref{sec:capacity-allocation}).
+Recovery Manager (3) combines membership, engine/GPU progress, and error
+reports to initiate takeover (Section~\ref{sec:parallel-recovery}).
+The KV directory and commit metadata are shared controller state that
+must survive the source engine. Calibration tables are configuration,
+not a separate online service.
+
+\paragraph{Inference engines.}
+DP0 and DP1 each have an Adapter (4), a Connector, and equivalent memory
+regions. Local KV serves that DP's requests; a smaller, reclaimable Peer
+region holds another DP's backups. The Adapter reports selector rankings
+and capacity, manages sealing and commits, and implements reclamation and
+recovery loading (Section~\ref{sec:kv-runtime}). The Connector executes
+transfers selected by the Planner. KV moves directly between engines and
+storage, without passing through the Controller.
+
+By default the Planner refreshes its plan every 1\,s; request arrival,
+completion, or a significant slack change can trigger an earlier refresh.
+The Adapter reconciles the desired objects with committed copies and
+issues only incremental transfers. Peer and DRAM paths commit independently.
+Plans, rankings, and commit state remain available after source failure.
+
+\paragraph{Predetermined takeover.}
+A Peer destination is chosen before failure so that the target can read
+the replica locally. A simple mapping is $p(g)=(g+1)\bmod n$ for $n\ge2$
+DPs. Each DP then backs up one source DP; tensor-parallel deployments
+treat a whole TP group as a DP and restore compatible shards.
+Spreading a source's requests over several recovery targets requires
+binding requests and replicas before failure. An arbitrary post-failure
+target change would lose the no-second-copy property.
+
+\begin{table}[t]
+  \caption{Decision timescales. Block identities change more frequently
+    than calibrated hot-set sizes.}
+  \label{tab:design-timescales}
+  \centering
+  \begin{tabularx}{\columnwidth}{@{}lX@{}}
+    \toprule
+    Timescale & Decisions and ownership \\
+    \midrule
+    Calibration & Block size, $K_l$, costs, and effective bandwidth;
+      stored as Planner configuration. \\
+    Placement window & Tiers, slack order, prefix $L$, footprint $F$,
+      and budget $B$; Tracker and Planner. \\
+    Ranking window & Protected block identities; Adapter counters
+      feed Planner selection. \\
+    Execution & Seal, transfer, commit, reclaim, and demand-fetch;
+      Adapter and Connector. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}

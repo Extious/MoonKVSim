@@ -1,0 +1,30 @@
+\subsection{Adapter: Safe Copies and Demand-Driven Recovery}
+\label{sec:kv-runtime}
+
+\paragraph{Publish only complete replicas.}
+Adapter (4) invokes the Connector to allocate, transfer, and acknowledge
+objects selected by the Planner. Peer and fault-independent DRAM paths
+commit separately. Publication follows transfer completion and
+model/layout/shard validation; a proposed plan is not a readable copy.
+Selector state is transferred with the initial layer and must be ready
+before selection. A Peer object that is the only surviving copy cannot
+be discarded before its DRAM copy commits.
+
+\paragraph{Yield to foreground work.}
+On memory pressure, the Adapter withdraws complete Peer footprints in
+reverse admission priority, releasing later layers first. Those requests
+retain DRAM recovery and compete again in the next window.
+Low-priority copy streams are rate-limited (default 20\% of link
+capacity), accounting also for the target's HBM bandwidth.
+
+\paragraph{Preserve attention inputs.}
+For each retry, preloads overlap earlier-layer computation; newly
+revealed misses outrank queued preloads. The runtime's DMA granularity
+may limit the model's ideal preemption. A layer executes only when
+\emph{all} its required attention inputs are ready; later cold blocks
+can arrive in the background or be fetched by subsequent decode.
+Tier R rebuilds the history. AegisKV changes placement and loading order,
+not selector outputs or known replay tokens. With compatible weights,
+layout, and operators it reconstructs the same logical KV state without
+an added attention approximation, but does not guarantee identical
+future stochastic samples across different floating-point schedules.

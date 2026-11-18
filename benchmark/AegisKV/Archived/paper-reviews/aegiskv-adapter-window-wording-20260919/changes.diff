@@ -1,0 +1,210 @@
+--- before/sections/kv_runtime.tex
++++ after/sections/kv_runtime.tex
+@@ -3,7 +3,7 @@
+ \label{sec:capacity-allocation}
+ 
+ The Adapter (4) adjusts protection to failure risk and foreground
+-memory demand. Every 5\,s, it publishes a checkpoint interval $Z$ in
++memory demand. At each control-window boundary, it publishes a checkpoint interval $Z$ in
+ generated tokens, a target Peer depth $L$, and a total Peer budget $B_p$
+ for each target DP. The Controller coordinates Adapter reports so all
+ requests of the same deployed model use the same $Z$ and $L$, including
+@@ -14,7 +14,7 @@
+ \paragraph{Adjust checkpoint frequency to failure risk.}
+ Failure risk comes from a smoothed history of failures per unit of
+ device operating time in the relevant failure domain. A configured
+-prior is used when observations are insufficient; a fault-free 5\,s
++prior is used when observations are insufficient; a fault-free control
+ window does not imply zero risk. Higher risk favors shorter checkpoint
+ intervals, balancing normal-operation overhead against lost work, as in
+ classical checkpointing~\cite{daly2006checkpoint}. Here, $Z$ advances by
+@@ -77,7 +77,7 @@
+ \begin{figure}[t]
+   \raggedright
+   \refstepcounter{designalgorithm}\label{alg:adapter}
+-  \noindent\textbf{Algorithm \thedesignalgorithm: Update protection every 5\,s}
++  \noindent\textbf{Algorithm \thedesignalgorithm: Windowed protection update}
+   \par\smallskip
+   \noindent Input: current settings, risk and load reports, recovery table.
+   Output: next-window $Z$, common $L$, and budgets $B_p$.
+--- before/sections/kv_placement.tex
++++ after/sections/kv_placement.tex
+@@ -11,7 +11,7 @@
+ \paragraph{Decision triggers.}
+ The Master establishes a policy at arrival, offers sealed state at
+ prefill completion, and reviews an active request after each additional
+-$Z$ generated tokens. The Adapter sets $Z$ each 5\,s window. Sealing
++$Z$ generated tokens. The Adapter sets $Z$ each control window. Sealing
+ updates eligibility; it does not by itself trigger every backup.
+ Significant slack or DAG changes and window updates can refresh policy
+ earlier. Completion releases that request's Peer references, preserving
+@@ -69,7 +69,7 @@
+ the old replica still has a request reference; changing hotness alone
+ does not free its physical slot.
+ 
+-The Adapter uses one $L$ for all requests in each 5\,s window. For
++The Adapter uses one $L$ for all requests in each control window. For
+ uniform layer layouts, a request's candidate Peer set therefore has
+ $LK_r(\tau)$ layer-block objects, plus required selector state.
+ Sealing changes the quota only when the rounded count changes; it does
+--- before/sections/system_design.tex
++++ after/sections/system_design.tex
+@@ -6,7 +6,7 @@
+ recovery demand. The Tracker estimates slack; the Recovery Manager binds
+ takeover destinations at arrival; the KV Master chooses backup tiers
+ and hot blocks; Adapters coordinate checkpoint intervals, a common layer
+-depth, and target-local Peer budgets every 5\,s. The following design
++depth, and target-local Peer budgets at window boundaries. The following design
+ separates these decisions from the evidence that motivates them.
+ 
+ \input{sections/design_insights}
+--- before/sections/system_overview.tex
++++ after/sections/system_overview.tex
+@@ -35,5 +35,5 @@
+ at arrival (\S\ref{sec:recovery-manager}). The KV Master refreshes
+ backup policy on request/KV/slack events and control windows
+ (\S\ref{sec:kv-master}); Adapters update checkpoint intervals, the shared
+-layer depth, and local budgets every 5\,s (\S\ref{sec:kv-runtime}). The Controller
++layer depth, and local budgets at window boundaries (\S\ref{sec:kv-runtime}). The Controller
+ retains directory and commit metadata outside the source's failure domain.
+--- before/sections/README.md
++++ after/sections/README.md
+@@ -72,7 +72,7 @@
+ ## 当前组件职责（2026-09-18）
+ 
+ 最新正文顺序为 §3.4 Recovery Manager、§3.5 KV Master、§3.6 Adapter；旧记录中的 Planner/节号只描述历史版本。
+-Recovery Manager 在请求到达时固定 retry 目标及 Peer DP rank；KV Master 在到达、密封、Slack/DAG 变化、完成及控制窗口做备份策略决策；Adapter 采用 5 秒窗口，所有请求共用窗口内固定的 $L_t$，目标 DP 各自控制总预算 $B_{p,t}$。固定预取比例 $h$ 决定每请求的热块数量 $K_r=\lceil h n_r\rceil$；历史增长只触发块级增量更新，不为请求单独求层数。
++Recovery Manager 在请求到达时固定 retry 目标及 Peer DP rank；KV Master 在到达、密封、Slack/DAG 变化、完成及控制窗口做备份策略决策；Adapter 采用 时间窗口，所有请求共用窗口内固定的 $L_t$，目标 DP 各自控制总预算 $B_{p,t}$。固定预取比例 $h$ 决定每请求的热块数量 $K_r=\lceil h n_r\rceil$；历史增长只触发块级增量更新，不为请求单独求层数。
+ 算法 2 输出 DRAM 集合及按目标分组的 Peer 候选，Adapter 在预算内准入前 $L_t$ 层的完整请求足迹；不足时保留 DRAM 路径。共享参考画像只在窗口边界提供一个统一层数，不保证所有请求都达到各自的等待地板。
+ 预算、层数公式和 Figure 5 的流水线解释移入 §3.6；图数据未改。Overview 保留原比例与双 DP 对称能力，同步名称、编号和接口标注。
+ 本次是论文规格更新，旧实现和历史结果不构成新策略的端到端验证。编译、差异和最终页面检查见 `output/pdf/aegiskv-component-roles-20260918/`。
+--- before/draft/system_design.md
++++ after/draft/system_design.md
+@@ -1,6 +1,6 @@
+ ## 3 AegisKV Design
+ 
+-AegisKV 结合工作流的延迟容忍度与单请求的 KV 恢复需求：Tracker 估计 Slack；Recovery Manager 在请求到达时绑定接管目标；KV Master 决定保护层级及候选热块；Adapter 每 5 秒更新 checkpoint 间隔、所有请求共用的驻留层数和各目标 Peer 预算，并提交副本、执行恢复。下面先说明设计依据，再按模块给出决策与执行过程。
++AegisKV 结合工作流的延迟容忍度与单请求的 KV 恢复需求：Tracker 估计 Slack；Recovery Manager 在请求到达时绑定接管目标；KV Master 决定保护层级及候选热块；Adapter 在每个时间窗口边界更新 checkpoint 间隔、所有请求共用的驻留层数和各目标 Peer 预算，并提交副本、执行恢复。下面先说明设计依据，再按模块给出决策与执行过程。
+ 
+ ### 3.1 Insights 与设计启示
+ 
+@@ -30,7 +30,7 @@
+ 
+ </figure>
+ 
+-Recovery Manager 在请求到达时记录 retry 目标及 Peer DP rank（§3.4）；KV Master 在请求/KV/Slack 事件及控制窗口更新备份策略（§3.5）；Adapter 每 5 秒更新 checkpoint 间隔、统一层数和目标容量（§3.6）。目录与提交元数据保存在源故障域之外。
++Recovery Manager 在请求到达时记录 retry 目标及 Peer DP rank（§3.4）；KV Master 在请求/KV/Slack 事件及控制窗口更新备份策略（§3.5）；Adapter 在每个时间窗口边界更新 checkpoint 间隔、统一层数和目标容量（§3.6）。目录与提交元数据保存在源故障域之外。
+ 
+ ### 3.3 Workflow Tracker：GBDT 与 CPM ①
+ 
+@@ -75,7 +75,7 @@
+ 
+ KV Master 决定请求何时需要备份、采用 Recompute/DRAM/Peer 中哪种保护方式，以及哪些历史块是 Peer 候选。它使用 Recovery Manager 已绑定的目标；Adapter 提供窗口级 checkpoint 间隔、统一层数和容量约束（§3.6）。
+ 
+-**何时决策。** 请求到达时先建立策略，prefill 完成后提供首批密封状态，之后每增加 $Z$ 个生成 token 复核该请求；$Z$ 由 Adapter 按 5 秒窗口发布。块密封只更新候选资格，不再独自触发每次备份。显著 Slack 或 DAG 变化及窗口更新可以提前复核策略。请求完成后释放其 Peer 引用，保留其他请求的共享引用；策略未变则不重复传输。热块统计采用此前 512 个解码步，与 token checkpoint 间隔和墙钟控制窗口分别计量。
++**何时决策。** 请求到达时先建立策略，prefill 完成后提供首批密封状态，之后每增加 $Z$ 个生成 token 复核该请求；$Z$ 由 Adapter 按 时间窗口发布。块密封只更新候选资格，不再独自触发每次备份。显著 Slack 或 DAG 变化及窗口更新可以提前复核策略。请求完成后释放其 Peer 引用，保留其他请求的共享引用；策略未变则不重复传输。热块统计采用此前 512 个解码步，与 token checkpoint 间隔和墙钟控制窗口分别计量。
+ 
+ **选择保护层级。** 设 $T_{\mathrm{rc}}$ 为历史重算代价，$T_{\mathrm{rp}}$ 为已知尾部重放计算代价，$W_0$ 为无 Peer 时暴露的 DRAM 等待；$R_{\mathrm{floor}}$ 包含检测、重路由与准入。Master 使用
+ 
+@@ -91,7 +91,7 @@
+ 
+ Master 先将强制密封起始/窗口块计入该名额，配置须能容纳这些强制块；再按 Adapter 上报的实际选择频次填满剩余槽，同频时最近优先。可选旧块连续两个解码统计窗口跌出热集后移出候选；若旧副本仍有请求引用，新候选必须另外申请容量，不能仅因热度变化就复用旧副本的物理槽。
+ 
+-Adapter 在每个 5 秒窗口内对所有请求使用相同的 $L$。同质层布局下，一个请求的 Peer 候选集合包含 $LK_r(\tau)$ 个逻辑 (layer, block) 对象及必需选择器状态。历史块密封且取整结果改变时才增加候选数量，无需重新求层数；热块身份可在候选数量不变时更新。D/P 两类都保留逐层热集作为恢复预取提示，P 类请求申请前 $L$ 层热集的 Peer 驻留。实际覆盖可以不完整，已被引用的旧副本仍需计账并等待安全释放。
++Adapter 在每个时间窗口内对所有请求使用相同的 $L$。同质层布局下，一个请求的 Peer 候选集合包含 $LK_r(\tau)$ 个逻辑 (layer, block) 对象及必需选择器状态。历史块密封且取整结果改变时才增加候选数量，无需重新求层数；热块身份可在候选数量不变时更新。D/P 两类都保留逐层热集作为恢复预取提示，P 类请求申请前 $L$ 层热集的 Peer 驻留。实际覆盖可以不完整，已被引用的旧副本仍需计账并等待安全释放。
+ 
+ **算法 2：KV 备份策略**
+ 
+@@ -113,9 +113,9 @@
+ 
+ ### 3.6 Adapter：逐窗口保护控制 ④
+ 
+-Adapter 根据故障风险和正常推理的内存需求调整保护强度。每 **5 秒**发布下一窗口的三个参数：以生成 token 数计量的 checkpoint 触发间隔 $Z$、所有请求共用的 Peer 目标层数 $L$，以及各目标 DP 的 Peer 总容量 $B_p$。Controller 汇总各 Adapter 的状态，为同一部署模型发布共同的 $Z$ 和 $L$，窗口内不变，新到请求也使用当前值。实际分配仍需检查即时空闲空间。KV Master 在这些参数下决定请求的保护层级、候选块和准入顺序，Connector 执行传输。
++Adapter 根据故障风险和正常推理的内存需求调整保护强度。在每个**时间窗口边界**发布下一窗口的三个参数：以生成 token 数计量的 checkpoint 触发间隔 $Z$、所有请求共用的 Peer 目标层数 $L$，以及各目标 DP 的 Peer 总容量 $B_p$。Controller 汇总各 Adapter 的状态，为同一部署模型发布共同的 $Z$ 和 $L$，窗口内不变，新到请求也使用当前值。实际分配仍需检查即时空闲空间。KV Master 在这些参数下决定请求的保护层级、候选块和准入顺序，Connector 执行传输。
+ 
+-**根据故障风险调整 checkpoint 频率。** Adapter 使用相关故障域中单位设备运行时间内的故障记录，得到较长统计周期上的平滑风险估计；观测不足时使用配置先验，不把最近 5 秒无故障等同于风险为零。风险升高时，更频繁的 checkpoint 可以减少故障后的丢失进度，但也增加正常备份开销。这一方向与经典 checkpoint 权衡一致（[Daly, 2006](https://doi.org/10.1016/j.future.2004.11.016)），具体间隔仍需按异步增量 KV 备份校准，不能直接套用阻塞式 checkpoint 的公式。
++**根据故障风险调整 checkpoint 频率。** Adapter 使用相关故障域中单位设备运行时间内的故障记录，得到较长统计周期上的平滑风险估计；观测不足时使用配置先验，不把最近一个时间窗口无故障等同于风险为零。风险升高时，更频繁的 checkpoint 可以减少故障后的丢失进度，但也增加正常备份开销。这一方向与经典 checkpoint 权衡一致（[Daly, 2006](https://doi.org/10.1016/j.future.2004.11.016)），具体间隔仍需按异步增量 KV 备份校准，不能直接套用阻塞式 checkpoint 的公式。
+ 
+ $Z$ 从配置的、与物理块大小对齐的离散档位中选择。风险高于上阈值，且复制积压、提交滞后及前台干扰均在允许范围内时，缩短一档；风险低于下阈值时，放宽一档；其余情况保持不变，并遵守最小、最大间隔。这样既响应风险变化，也避免拥塞时不断增加尚未完成的备份工作。
+ 
+@@ -129,7 +129,7 @@
+ 
+ 对每个候选 $L$，Adapter 在当前状态快照上预演 KV Master 的准入，计入共享对象、已有引用、在途复制和下一窗口的复制限额，只按预计能够提交的副本计算恢复收益。候选得分由两部分组成：内存挤占与备份工作引入的前台请求延迟，以及超出请求 Slack 的恢复延迟，后者按请求源在下一窗口内的故障概率加权，两者使用相同的窗口范围。选择得分最低的层数，同分时优先较小值；与新间隔、新预算下保留当前层数相比，只有改善超过配置的不确定性余量才切换，缺少适用画像时保持当前层数。该得分是请求延迟的决策代理，不能把它解释为可直接相加的 Workflow 完成时间损失。
+ 
+-**算法 3：每 5 秒更新保护参数**
++**算法 3：逐窗口更新保护参数**
+ 
+ $Z$ 的档位边界、风险上下阈值、干扰上限、候选层数及切换余量均为部署配置。算法不需要知道下一次故障的时刻，也不为各请求分别求层数。
+ 
+@@ -194,3 +194,5 @@
+ 编辑记录（不进入论文，2026-09-18 统一层数修订）：按用户确认，控制窗口设为 5 秒，所有 Agent 请求共用窗口内固定的 $L_t$；删除按请求求 $L_r(t)$ 并截短层前缀的分配。固定模型/稀疏方法预取比例 $h$，每层块数 $K_r(\tau)=\lceil h n_r(\tau)\rceil$ 随密封历史长度变化，块身份按热度替换。容量不足时按请求足迹准入或回退 DRAM。层数推导改为共享参考画像的窗口级选择，不保证各请求均达等待地板；本轮为论文规格更新，尚无对应端到端验证。
+ 
+ 编辑记录（不进入论文，2026-09-18 故障风险驱动的 Adapter 修订）：§3.6 改为每 5 秒发布 checkpoint 间隔、统一层数和各目标预算的控制流程，新增算法 3，删除该节的闭式等待/字节/层数推导。故障风险来自较长统计周期，间隔调整受复制与前台开销约束；层数通过有限候选的画像比较选择。回收改为请求引用保护及零引用 LRU，预算下调逐步生效；§3.5 同步触发时机、候选与实际占用的区别。图 5 的原始文件和数字不变。本轮仅更新论文设计规格，尚未实现或验证新的控制器。
++
++编辑记录（不进入论文，2026-09-19）：按用户要求，算法 3 及当前中英文正文统一使用“时间窗口”，不再将窗口长度固定为 5 秒；历史修订记录仅用于追溯。
+--- before/draft/introduction.md
++++ after/draft/introduction.md
+@@ -6,11 +6,11 @@
+ 
+ 我们的回答建立在两个观察上。第一，请求之间不平等。在 124 个真实多智能体工作流中，并行分支的执行时间差中位数为 141 s，91% 的 workflow 的时间差大于实测的 128K 前缀重算时间（§2.2）。持续时间差本身不等于 Slack；只有恢复代价不超过请求的 Slack 时，重算才不推迟汇合，而关键路径上的请求多等 1 s，WCT 就多 1 s。用调度理论中的 Slack 度量这种差别，可以把有限容量集中到真正会暴露给 WCT 的请求。第二，请求内部也不平等。原生稀疏注意力模型在每个 query 只读取少数历史 KV 块：在 NOSA-1B 和 MiniCPM4-8B 的真实选块轨迹上，最热的 20% `(layer, block)` 字节分别承担 90% 和 66% 的访问（§3.3）。这一集中性在 256/512 个后续 query 的窗口中都可检验，说明有限的 Peer HBM 不应均匀保护全部 KV。访问频次不直接等于恢复收益：§3.3 再区分历史热度、重算尾部所需的去重块并集和在线预取，以保证未预测到的必要块仍能到齐。
+ 
+-基于这两个观察，我们设计了 AegisKV。Recovery Manager 在请求到达时将恢复目标与 Peer HBM 所在的 DP rank 绑定为同一目标（§3.4）；KV Master 按 checkpoint 触发及请求/Slack 事件决定采用 Recompute、DRAM-only 或 Peer + DRAM，并选择每层候选热块（§3.5）。Adapter 每 5 秒根据故障风险、提交滞后和前台内存需求更新 checkpoint 间隔 $Z$、所有请求共用的目标层数 $L$ 及各目标 Peer 预算，窗口内参数固定。预取比例 $h$ 按模型及稀疏注意力方式配置，每层候选数 $K_r=\lceil h n_r\rceil$ 随密封历史增长。Peer 增量按 Slack 顺序准入，活跃请求的引用不被抢占；空间不足时保留 DRAM，完成后引用归零的副本可在压力下淘汰。故障后按实际已提交对象逐层预取，并在选择器揭示确切需求时补取缺失块（§3.6）。不同请求的 retry、H2D 与计算由引擎并发推进，不设置请求级完成屏障。热度来自稀疏 kernel 已有的块索引，AegisKV 不改变选择器，也不要求额外的专用恢复 GPU。
++基于这两个观察，我们设计了 AegisKV。Recovery Manager 在请求到达时将恢复目标与 Peer HBM 所在的 DP rank 绑定为同一目标（§3.4）；KV Master 按 checkpoint 触发及请求/Slack 事件决定采用 Recompute、DRAM-only 或 Peer + DRAM，并选择每层候选热块（§3.5）。Adapter 在每个时间窗口边界根据故障风险、提交滞后和前台内存需求更新 checkpoint 间隔 $Z$、所有请求共用的目标层数 $L$ 及各目标 Peer 预算，窗口内参数固定。预取比例 $h$ 按模型及稀疏注意力方式配置，每层候选数 $K_r=\lceil h n_r\rceil$ 随密封历史增长。Peer 增量按 Slack 顺序准入，活跃请求的引用不被抢占；空间不足时保留 DRAM，完成后引用归零的副本可在压力下淘汰。故障后按实际已提交对象逐层预取，并在选择器揭示确切需求时补取缺失块（§3.6）。不同请求的 retry、H2D 与计算由引擎并发推进，不设置请求级完成屏障。热度来自稀疏 kernel 已有的块索引，AegisKV 不改变选择器，也不要求额外的专用恢复 GPU。
+ 
+ 本文的贡献：
+ 
+ 1. 用真实轨迹和实机测量指出多智能体长上下文服务中的三个事实：重算代价随上下文超线性增长；工作流结构使同样的恢复延迟对 WCT 的影响相差数量级，且这一结构在真实轨迹中普遍存在；在真实原生稀疏注意力轨迹的 256/512-query 窗口中，请求内部 KV 的访问并不均匀，少量字节承担大量选块事件（§2、§3.3）。
+-2. 设计基于 Slack 的请求间保护优先级、基于层序与稀疏热度的请求内优先级，以及由 KV Master 做层级决策、Adapter 按 5 秒窗口控制 checkpoint 间隔、Peer 容量与统一层数的备份机制；通过"预取 + 按需补取"恢复装载器支持并行 retry，不改变模型的注意力选择（§3）。
++2. 设计基于 Slack 的请求间保护优先级、基于层序与稀疏热度的请求内优先级，以及由 KV Master 做层级决策、Adapter 按 时间窗口控制 checkpoint 间隔、Peer 容量与统一层数的备份机制；通过"预取 + 按需补取"恢复装载器支持并行 retry，不改变模型的注意力选择（§3）。
+ 3. 设计以 WCT 为中心的评估方法：配对无故障/故障运行、按逻辑进度对齐的注入、故障位置扫描、恢复来源与关键路径时间分解、两级优先级消融及带宽/并发度敏感性（§5）。端到端结果待并行恢复实现验证；旧串行队列模型输出不再用于本文结论。
+ 
+--- before/draft/conclusion.md
++++ after/draft/conclusion.md
+@@ -1,6 +1,6 @@
+ ## 7 Conclusion
+ 
+-AegisKV 面向多智能体长上下文服务，以 WCT 为保护目标：Slack 决定请求之间的保护优先级，Recovery Manager 在到达时绑定恢复目标与 Peer DP rank；KV Master 决定请求层级、候选热块和实际备份，Adapter 每 5 秒根据故障风险和前台内存需求更新 checkpoint 间隔、统一层数及 Peer 总预算。增量备份受引用保护和容量准入约束，预算下调后逐步回收零引用副本。故障后，各请求沿用引擎的并行 retry 与计算/传输重叠能力，以实际提交和逐层就绪状态推进。测量与单请求解析图支持设计动机；新版控制器、端到端收益及前台干扰仍需 §5 的实验验证。
++AegisKV 面向多智能体长上下文服务，以 WCT 为保护目标：Slack 决定请求之间的保护优先级，Recovery Manager 在到达时绑定恢复目标与 Peer DP rank；KV Master 决定请求层级、候选热块和实际备份，Adapter 在每个时间窗口边界根据故障风险和前台内存需求更新 checkpoint 间隔、统一层数及 Peer 总预算。增量备份受引用保护和容量准入约束，预算下调后逐步回收零引用副本。故障后，各请求沿用引擎的并行 retry 与计算/传输重叠能力，以实际提交和逐层就绪状态推进。测量与单请求解析图支持设计动机；新版控制器、端到端收益及前台干扰仍需 §5 的实验验证。
+ 
+ ---
+ 
+--- before/draft/implementation.md
++++ after/draft/implementation.md
+@@ -1,3 +1,3 @@
+ ## 4 Implementation
+ 
+-实验平台采用 MoonKVSim（以 Mooncake 为原型、以 KV 块为一等对象的离散事件模拟器），复用块级复制/提交、Peer 容量管理和故障注入接口。新版接入点是 §3.4 的到达时目标绑定与并发重路由、§3.5 的 KV 备份策略，以及 §3.6 的 Adapter 5 秒窗口 checkpoint 间隔/统一层数/容量控制和逐请求异步就绪条件；不向调度器添加请求级串行屏障。GPU 原型需提供选块索引观测、异步块复制与逐层就绪事件。MiniCPM4-8B 和 NOSA-1B 的选块轨迹、完整 prefill 与尾部重放测量已完成；新版故障风险控制、引用回收及并行恢复的端到端实现尚待验证，本节不把旧示意模型视为其实现证据。
++实验平台采用 MoonKVSim（以 Mooncake 为原型、以 KV 块为一等对象的离散事件模拟器），复用块级复制/提交、Peer 容量管理和故障注入接口。新版接入点是 §3.4 的到达时目标绑定与并发重路由、§3.5 的 KV 备份策略，以及 §3.6 的 Adapter 时间窗口 checkpoint 间隔/统一层数/容量控制和逐请求异步就绪条件；不向调度器添加请求级串行屏障。GPU 原型需提供选块索引观测、异步块复制与逐层就绪事件。MiniCPM4-8B 和 NOSA-1B 的选块轨迹、完整 prefill 与尾部重放测量已完成；新版故障风险控制、引用回收及并行恢复的端到端实现尚待验证，本节不把旧示意模型视为其实现证据。
+--- before/draft/evaluation.md
++++ after/draft/evaluation.md
+@@ -38,7 +38,7 @@
+ 
+ ### 5.6 敏感性
+ 
+-另需验证 5 秒窗口的故障风险控制：记录风险估计、$Z$、共同 $L$、各目标预算、实际提交尾长、前台 KV 水位、候选热块数、Peer 准入/拒绝、引用数及复制/释放时延。检查窗口内参数固定、发布 $Z$ 不重置生成进度、引用归零前不驱逐、预算下调不提前计入空闲空间，以及增长失败后的 DRAM 回退。扫描风险估计误差、风险上下阈值、checkpoint 档位、层数切换余量和复制积压，特别测试风险与前台压力同时升高、所有 Peer 副本均有引用、热集持续增长和长 tool 等待。控制效果另用较长故障序列评估，固定各策略的故障域、工作负载和随机种子；§5.1 的 80% 进度注入只用于配对恢复比较，不能作为故障率估计或动态风险控制的验证。扫描 Peer 预算 0–16 GiB、总 H2D 带宽 6.25–50 GB/s、同时 retry 数 1/2/4/8 及低 Slack 请求比例，保留共享总带宽约束。报告实际重叠率、前台开销、请求与 Workflow 延迟，不把算法 3 的请求得分当作 WCT 实测。跨模型分别校准 KV 大小、尾部重放及选块轨迹。
++另需验证 时间窗口的故障风险控制：记录风险估计、$Z$、共同 $L$、各目标预算、实际提交尾长、前台 KV 水位、候选热块数、Peer 准入/拒绝、引用数及复制/释放时延。检查窗口内参数固定、发布 $Z$ 不重置生成进度、引用归零前不驱逐、预算下调不提前计入空闲空间，以及增长失败后的 DRAM 回退。扫描风险估计误差、风险上下阈值、checkpoint 档位、层数切换余量和复制积压，特别测试风险与前台压力同时升高、所有 Peer 副本均有引用、热集持续增长和长 tool 等待。控制效果另用较长故障序列评估，固定各策略的故障域、工作负载和随机种子；§5.1 的 80% 进度注入只用于配对恢复比较，不能作为故障率估计或动态风险控制的验证。扫描 Peer 预算 0–16 GiB、总 H2D 带宽 6.25–50 GB/s、同时 retry 数 1/2/4/8 及低 Slack 请求比例，保留共享总带宽约束。报告实际重叠率、前台开销、请求与 Workflow 延迟，不把算法 3 的请求得分当作 WCT 实测。跨模型分别校准 KV 大小、尾部重放及选块轨迹。
+ 
+ ### 5.7 结论边界
+ 
+--- before/draft/README.md
++++ after/draft/README.md
+@@ -15,7 +15,7 @@
+ 当前图源是 `figures/system-overview-v10.drawio`；`main.tex` 已连接英文 Background/Motivation 与 System Design。
+ 较早日志中的“本轮不修改设计章”“终稿形态”描述历史轮次；当前仍保留端到端验证边界，不能视为投稿完备。
+ 
+-当前职责（2026-09-18 最新修订）：§3.4 Recovery Manager 在到达时绑定 retry/Peer 目标；§3.5 KV Master 在 Adapter 给定的 checkpoint 间隔下决定 R/D/P 层级、热块候选和准入顺序；§3.6 Adapter 每 5 秒按故障风险和前台内存需求更新统一 $Z$、统一 $L$ 及各目标 Peer 预算。固定比例 $h$ 决定每层候选数量，实际驻留受增量准入、提交状态和引用保护约束；预算收缩只回收安全的零引用副本。算法 3 展示新控制流程，尚无对应实现与端到端验证。旧日志中的 Planner、逐请求层数、闭式足迹和整请求抢占属于历史版本。当前图源为 system-overview-v11.drawio，图号 3–5，算法 1–3，组件编号为 ① Tracker、② Recovery Manager、③ KV Master、④ Adapter。
++当前职责（2026-09-18 最新修订）：§3.4 Recovery Manager 在到达时绑定 retry/Peer 目标；§3.5 KV Master 在 Adapter 给定的 checkpoint 间隔下决定 R/D/P 层级、热块候选和准入顺序；§3.6 Adapter 在每个时间窗口边界按故障风险和前台内存需求更新统一 $Z$、统一 $L$ 及各目标 Peer 预算。固定比例 $h$ 决定每层候选数量，实际驻留受增量准入、提交状态和引用保护约束；预算收缩只回收安全的零引用副本。算法 3 展示新控制流程，尚无对应实现与端到端验证。旧日志中的 Planner、逐请求层数、闭式足迹和整请求抢占属于历史版本。当前图源为 system-overview-v11.drawio，图号 3–5，算法 1–3，组件编号为 ① Tracker、② Recovery Manager、③ KV Master、④ Adapter。
+ 
+ | 顺序 | 文件 | 内容 |
+ |---|---|---|
+--- before/draft/appendix_draft_status.md
++++ after/draft/appendix_draft_status.md
+@@ -20,7 +20,7 @@
+ 
+ ## 附录 B：Reviewer 视角的自审与本版修正（不进入投稿）
+ 
+-本轮明确放置与恢复解耦：请求可并行 retry，H2D 与计算可重叠，不引入 EDD/SPT 或请求级完成屏障。当前 KV Master 负责 Slack 排序和层级/热块决策；Adapter 按 5 秒窗口根据故障风险与前台需求更新 checkpoint 间隔、共同层数和各目标预算。旧闭式足迹及整请求抢占已被引用保护、增量准入和零引用回收取代。算法 3 是论文设计规格，新增画像表、评分、阈值和回收行为尚无运行时实现及端到端验证，不声称全局最优。下列条目保留其他历史审查边界。
++本轮明确放置与恢复解耦：请求可并行 retry，H2D 与计算可重叠，不引入 EDD/SPT 或请求级完成屏障。当前 KV Master 负责 Slack 排序和层级/热块决策；Adapter 按 时间窗口根据故障风险与前台需求更新 checkpoint 间隔、共同层数和各目标预算。旧闭式足迹及整请求抢占已被引用保护、增量准入和零引用回收取代。算法 3 是论文设计规格，新增画像表、评分、阈值和回收行为尚无运行时实现及端到端验证，不声称全局最优。下列条目保留其他历史审查边界。
+ 
+ | # | Reviewer 可能的质疑 | 上一版的不足 | 本版处理 |
+ |---|---|---|---|

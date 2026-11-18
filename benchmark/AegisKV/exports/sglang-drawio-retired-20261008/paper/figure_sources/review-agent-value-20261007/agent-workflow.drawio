@@ -1,0 +1,149 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="agent-value" name="Measured branches and schematic Agent roles">
+    <mxGraphModel page="1" pageWidth="520" pageHeight="330" background="#FFFFFF">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="canvas" value="" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=22.6;fontColor=#243746;align=center;verticalAlign=middle;spacing=0;fillColor=#FFFFFF;strokeColor=none;strokeWidth=1.8;" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="520" height="330" as="geometry" />
+        </mxCell>
+        <mxCell id="fork-spine" edge="1" parent="1" style="rounded=0;html=0;strokeColor=#70808A;strokeWidth=1.8;endArrow=none;endSize=5;dashed=0;dashPattern=4 3;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="80" y="79" as="sourcePoint" />
+            <mxPoint x="80" y="263" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="join-spine" edge="1" parent="1" style="rounded=0;html=0;strokeColor=#70808A;strokeWidth=1.8;endArrow=none;endSize=5;dashed=0;dashPattern=4 3;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="419" y="79" as="sourcePoint" />
+            <mxPoint x="419" y="263" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="A0-to-fork" edge="1" parent="1" style="rounded=0;html=0;strokeColor=#AC4251;strokeWidth=1.8;endArrow=none;endSize=5;dashed=0;dashPattern=4 3;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="61" y="171" as="sourcePoint" />
+            <mxPoint x="80" y="171" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="critical-fork" edge="1" parent="1" style="rounded=0;html=0;strokeColor=#AC4251;strokeWidth=1.8;endArrow=none;endSize=5;dashed=0;dashPattern=4 3;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="80" y="171" as="sourcePoint" />
+            <mxPoint x="96" y="125" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="80" y="125" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="critical-join" edge="1" parent="1" style="rounded=0;html=0;strokeColor=#AC4251;strokeWidth=1.8;endArrow=block;endSize=5;dashed=0;dashPattern=4 3;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="419" y="125" as="sourcePoint" />
+            <mxPoint x="459" y="171" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="419" y="171" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fork-A1" edge="1" parent="1" style="rounded=0;html=0;strokeColor=#70808A;strokeWidth=1.8;endArrow=none;endSize=5;dashed=0;dashPattern=4 3;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="80" y="79" as="sourcePoint" />
+            <mxPoint x="96.0037462802622" y="79" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="slack-A1" edge="1" parent="1" style="rounded=0;html=0;strokeColor=#70808A;strokeWidth=1.8;endArrow=none;endSize=5;dashed=1;dashPattern=4 3;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="249.4312323884963" y="79" as="sourcePoint" />
+            <mxPoint x="419" y="79" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="A1" value="A1  40.49 s" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=22.6;fontColor=#243746;align=center;verticalAlign=middle;spacing=0;fillColor=#DDEBF3;strokeColor=#23688D;strokeWidth=1.8;" vertex="1" parent="1">
+          <mxGeometry x="96.0037462802622" y="64" width="153.4274861082341" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="fork-A2" edge="1" parent="1" style="rounded=0;html=0;strokeColor=#AC4251;strokeWidth=1.8;endArrow=none;endSize=5;dashed=0;dashPattern=4 3;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="80" y="125" as="sourcePoint" />
+            <mxPoint x="96.75582703100747" y="125" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="A2" value="A2  85.04 s" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=22.6;fontColor=#243746;align=center;verticalAlign=middle;spacing=0;fillColor=#F7E6E9;strokeColor=#AC4251;strokeWidth=1.8;strokeWidth=2.5;" vertex="1" parent="1">
+          <mxGeometry x="96.75582703100747" y="110" width="322.24417296899253" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="fork-A3" edge="1" parent="1" style="rounded=0;html=0;strokeColor=#70808A;strokeWidth=1.8;endArrow=none;endSize=5;dashed=0;dashPattern=4 3;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="80" y="171" as="sourcePoint" />
+            <mxPoint x="96.7819275337354" y="171" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="slack-A3" edge="1" parent="1" style="rounded=0;html=0;strokeColor=#70808A;strokeWidth=1.8;endArrow=none;endSize=5;dashed=1;dashPattern=4 3;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="402.6005555979889" y="171" as="sourcePoint" />
+            <mxPoint x="419" y="171" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="A3" value="A3  80.71 s" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=22.6;fontColor=#243746;align=center;verticalAlign=middle;spacing=0;fillColor=#DDEBF3;strokeColor=#23688D;strokeWidth=1.8;" vertex="1" parent="1">
+          <mxGeometry x="96.7819275337354" y="156" width="305.8186280642535" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="fork-A4" edge="1" parent="1" style="rounded=0;html=0;strokeColor=#70808A;strokeWidth=1.8;endArrow=none;endSize=5;dashed=0;dashPattern=4 3;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="80" y="217" as="sourcePoint" />
+            <mxPoint x="96.80650952960619" y="217" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="slack-A4" edge="1" parent="1" style="rounded=0;html=0;strokeColor=#70808A;strokeWidth=1.8;endArrow=none;endSize=5;dashed=1;dashPattern=4 3;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="251.20014304148424" y="217" as="sourcePoint" />
+            <mxPoint x="419" y="217" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="A4" value="A4  40.75 s" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=22.6;fontColor=#243746;align=center;verticalAlign=middle;spacing=0;fillColor=#DDEBF3;strokeColor=#23688D;strokeWidth=1.8;" vertex="1" parent="1">
+          <mxGeometry x="96.80650952960619" y="202" width="154.39363351187805" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="fork-A5" edge="1" parent="1" style="rounded=0;html=0;strokeColor=#70808A;strokeWidth=1.8;endArrow=none;endSize=5;dashed=0;dashPattern=4 3;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="80" y="263" as="sourcePoint" />
+            <mxPoint x="96.83062013236818" y="263" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="slack-A5" edge="1" parent="1" style="rounded=0;html=0;strokeColor=#70808A;strokeWidth=1.8;endArrow=none;endSize=5;dashed=1;dashPattern=4 3;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="368.1043347395805" y="263" as="sourcePoint" />
+            <mxPoint x="419" y="263" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="A5" value="A5  71.59 s" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=22.6;fontColor=#243746;align=center;verticalAlign=middle;spacing=0;fillColor=#DDEBF3;strokeColor=#23688D;strokeWidth=1.8;" vertex="1" parent="1">
+          <mxGeometry x="96.83062013236818" y="248" width="271.27371460721236" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="A0" value="A0" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=22.6;fontColor=#243746;align=center;verticalAlign=middle;spacing=0;fillColor=#F7E6E9;strokeColor=#AC4251;strokeWidth=1.8;" vertex="1" parent="1">
+          <mxGeometry x="9" y="156" width="52" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="A6" value="A6" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=22.6;fontColor=#243746;align=center;verticalAlign=middle;spacing=0;fillColor=#F7E6E9;strokeColor=#AC4251;strokeWidth=1.8;" vertex="1" parent="1">
+          <mxGeometry x="462" y="156" width="52" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="A0-role" value="Plan" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=22.6;fontColor=#243746;align=center;verticalAlign=middle;spacing=0;fillColor=none;strokeColor=none;strokeWidth=1.8;" vertex="1" parent="1">
+          <mxGeometry x="0" y="125" width="70" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="A6-role" value="Summary" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=22.6;fontColor=#243746;align=center;verticalAlign=middle;spacing=0;fillColor=none;strokeColor=none;strokeWidth=1.8;" vertex="1" parent="1">
+          <mxGeometry x="435" y="125" width="85" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="slack-label" value="44.75 s slack" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=22.6;fontColor=#243746;align=center;verticalAlign=middle;spacing=0;fillColor=none;strokeColor=none;strokeWidth=1.8;" vertex="1" parent="1">
+          <mxGeometry x="262" y="24" width="171" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-critical-swatch" value="" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=22.6;fontColor=#243746;align=center;verticalAlign=middle;spacing=0;fillColor=#F7E6E9;strokeColor=#AC4251;strokeWidth=1.8;strokeWidth=2.5;" vertex="1" parent="1">
+          <mxGeometry x="76" y="303" width="23" height="17" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-critical" value="Critical path" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=22.6;fontColor=#243746;align=center;verticalAlign=middle;spacing=0;fillColor=none;strokeColor=none;strokeWidth=1.8;" vertex="1" parent="1">
+          <mxGeometry x="106" y="296" width="132" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-slack-swatch" edge="1" parent="1" style="rounded=0;html=0;strokeColor=#70808A;strokeWidth=1.8;endArrow=none;endSize=5;dashed=1;dashPattern=4 3;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="268" y="312" as="sourcePoint" />
+            <mxPoint x="304" y="312" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="legend-slack" value="Join slack" style="rounded=0;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=22.6;fontColor=#243746;align=center;verticalAlign=middle;spacing=0;fillColor=none;strokeColor=none;strokeWidth=1.8;" vertex="1" parent="1">
+          <mxGeometry x="312" y="296" width="114" height="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

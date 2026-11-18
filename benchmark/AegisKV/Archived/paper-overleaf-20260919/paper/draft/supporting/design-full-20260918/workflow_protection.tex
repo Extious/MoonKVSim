@@ -1,0 +1,55 @@
+\subsection{Workflow Tracker: Tiers and Priority}
+\label{sec:workflow-protection}
+
+\paragraph{Estimating slack.}
+Tracker (1) records node durations by agent role, identified by runtime
+node type. The default history is the most recent
+200 completions or one hour. The role's P90 duration estimates an
+unstarted node; a running node uses
+$\max(\widehat T_\rho-\text{elapsed},\tau_{\min})$.
+Roles without history fall back to the global distribution.
+A forward/backward critical-path pass~\cite{kelley1959cpm} over the known
+DAG gives total slack $\sigma_r=\mathrm{LF}_r-\mathrm{EF}_r$.
+Nodes whose successors are still unknown receive $\sigma_r=0$.
+The Tracker refreshes on node completion/spawn events and placement
+windows, with 20\% hysteresis at tier thresholds. P90 estimates and this
+unknown-successor rule are conservative heuristics, not guarantees
+against overestimating slack.
+
+\paragraph{Recovery costs.}
+Let $L_r$ be the historical context length, $T_{\mathrm{rc}}(L_r)$ the
+full-history recomputation cost, and $T_{\mathrm{rp}}(r)$ the pure
+compute cost of replaying the uncommitted tail. Calibration is specific
+to the model, hardware, and representative concurrency. The fixed
+overhead $R_{\mathrm{floor}}$ includes detection, rerouting, and
+readmission. Define
+\begin{align}
+ R_{\mathrm{base}}(r)&=R_{\mathrm{floor}}+T_{\mathrm{rp}}(r),\label{eq:recovery-base}\\
+ R_R(r)&=R_{\mathrm{base}}(r)+T_{\mathrm{rc}}(L_r),\\
+ R_D(r)&=R_{\mathrm{base}}(r)+W_0(r),
+\end{align}
+where $W_0$ is exposed DRAM-loading wait without Peer residency
+(Section~\ref{sec:kv-placement}). Effective bandwidth and calibrated
+costs reflect concurrency; the estimate neither assumes exclusive peak
+bandwidth nor serially sums other requests' transfers.
+
+\paragraph{Three protection tiers.}
+The Planner evaluates each request independently.
+\emph{Tier R} applies when $\sigma_r\ge R_R(r)$: predicted slack absorbs
+recomputation, so no KV backup is required by the plan.
+Otherwise, \emph{Tier D} applies when $\sigma_r\ge R_D(r)$: DRAM recovery
+fits, so only a DRAM copy is retained. The remaining requests enter
+\emph{Tier P}: all retain DRAM copies and compete for Peer HBM in ascending
+slack order. A Tier-P request skipped for lack of capacity still recovers
+from DRAM. These are placement categories, not separate retry queues.
+
+\paragraph{Slack does not scale the footprint.}
+Within a tier, slack orders competition; it does not proportionally shrink
+the layer/block set. Whole-footprint admission makes capacity accounting
+and plan changes predictable and avoids finely allocating millisecond
+preload gains using noisy slack estimates. This is a policy choice, not
+an optimality result. For example, under the exposure approximation
+$[R_{\mathrm{base}}+W-\sigma_r]^+$, partial protection can reduce WCT loss
+even when $\sigma_r<R_{\mathrm{base}}+W_{\mathrm{floor}}$.
+It is not useful only inside the narrow interval between the two wait
+levels. Actual benefit also depends on shared-resource contention.

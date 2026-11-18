@@ -1,0 +1,60 @@
+{
+  "name": "system-overview",
+  "evidence": "design",
+  "width_in": 7,
+  "height_in": 4.584534539116754,
+  "min_font_pt": 10.056017875671387,
+  "sources": [
+    "benchmark/AegisKV/experiments/scripts/paper/build_revised_overview.py"
+  ],
+  "files": {
+    "pdf": "a3582f76ab95c4bbfb828507b137f38f91c81f12ce07dd65ca5987e8656dda6a",
+    "svg": "e5625de0f237f9fe2209768ded82ad9faaf82983b29c5408deb2effc7f527419",
+    "png": "ad24609408c4f89fb4dc6a0c6d2f4ccddfb043f0d4a7c408e8770d73402d9845",
+    "drawio": "02bc580c8c3526ace33cf2bccf7832aab13b1ebc675e02404a5ccea1a42e1879"
+  },
+  "reference_figures": [
+    {
+      "paper": "Mooncake, FAST 2025 Best Paper",
+      "figure": "Fig. 2, PDF p. 3",
+      "url": "https://www.usenix.org/system/files/fast25-qin.pdf",
+      "borrowed": "Resource-local responsibilities and distinct cache-tier boundaries"
+    },
+    {
+      "paper": "Enso, OSDI 2023 Best Paper",
+      "figure": "Figs. 1 and 3, PDF pp. 4-5",
+      "url": "https://www.usenix.org/system/files/osdi23-sadok.pdf",
+      "borrowed": "Concrete named objects carried through operations"
+    }
+  ],
+  "checks": {
+    "xml_unique_ids": true,
+    "edge_geometry_present": true,
+    "same_C0_C1_identity": true,
+    "independent_source_owned_copies": true,
+    "no_joint_value_claim": true,
+    "embedded_editable_xml": true,
+    "one_page_7_inch_pdf": true,
+    "text_within_page": true,
+    "actual_png_pdf_visual_review": "PASS",
+    "grayscale_visual_review": "PASS",
+    "data_edges_attached_to_editable_objects": true,
+    "visual_review_files": [
+      "system-overview.png",
+      "system-overview-pdf-preview.png",
+      "system-overview-grayscale.png"
+    ],
+    "visual_review_width_in": 7,
+    "visual_review_iterations": 2,
+    "visual_review_notes": [
+      "Native first export identified overlapping Grant/revoke and admission text, and a wrapped Recovery worker header.",
+      "Second native PNG and final-size PDF inspected after relocating the control label and setting the narrow recovery header to 24 source px.",
+      "Four native data connectors remain attached to source/destination resource or KV object cells. C0/C1 restore to C0/C1; P0/P1 are not restore targets.",
+      "Gray DAG dependencies do not share the colored KV-arrow encoding; all control arrows are dashed.",
+      "Grayscale final-size rendering remains interpretable from tier, operation and state labels."
+    ]
+  },
+  "note": "Replica drawings illustrate eligible committed copies, not guaranteed equal coverage or simultaneous availability. Recovery may use either surviving compatible prefix. Reserved/foreground/backup geometry is qualitative, not a capacity measurement. Algorithm 2 internals remain deferred.",
+  "source_sha256": "8ec6198fcaaae4d15cb831796ee44746e39bbd1792d9de50d5f523b72a8f43e8",
+  "reviewed_at_utc": "2026-09-08T21:32:30.259125+00:00"
+}

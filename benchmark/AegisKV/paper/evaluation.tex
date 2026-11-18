@@ -1,0 +1,168 @@
+\section{Evaluation Design}\label{sec:evaluation}
+
+This section specifies the replacement evaluation campaign. The
+measurements and application traces will be generated anew; figures in
+Motivation illustrate mechanisms and do not supply campaign observations.
+The campaign tests workflow-level protection, the incremental value of
+Peer-HBM after DRAM coverage, and healthy serving costs.
+
+Figure~\ref{fig:evaluation-protocol} separates application capture and
+quality validation from the paired serving comparison.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=168mm]{figures/evaluation-protocol.pdf}
+\caption{New evaluation protocol. Real application execution supplies
+full Agent histories and explicit dependencies. Quality is checked
+independently. Serving replay preserves dependency gates and compares
+healthy F0 and faulted F1 runs at the same inputs, arrivals, and resource
+budget, measuring paired completion, protection cost, and interference.}
+\label{fig:evaluation-protocol}
+\Description{Public tasks and frozen materials feed real model execution.
+Its outputs feed independent application quality checks and a captured
+trace. Dependency-gated replay runs healthy and worker-fault branches,
+which feed paired job-completion and cost analysis.}
+\end{figure*}
+
+\subsection{Applications and Trace Collection}\label{sec:eval-workloads}
+
+We instantiate the research-report and repository-review Agent-task DAGs
+introduced in Section~\ref{sec:background:serving} with independent public tasks. Research inputs come from DeepResearchBench
+and compatible tasks in DeepResearch Bench II
+\cite{du2025deepresearch,li2026deepresearchii}. Eligibility is defined by
+the need to compare alternatives, application criteria, and contextual
+constraints, before observing recovery outcomes. The report application
+is not limited to software markets. Repository inputs use SWE-bench
+Verified issues and their pre-fix code versions \cite{swebenchverified};
+the application produces review and change plans, rather than executing
+the original patch-resolution benchmark.
+
+Each Agent obtains all predecessor outputs before starting and retains its
+complete local message history. Material groups, analysis, checking, and
+necessary revision produce separate invocations. The main application
+variant uses frozen source materials without tools. Preparation time is
+reported separately; local-file and online-retrieval variants retain their
+actual tool costs. Context overflow, quality failures, and excluded tasks
+remain in the accounting.
+
+The collector records job, Agent, invocation and predecessor identities;
+full messages and serialized input/output tokens; reusable token-prefix
+lengths; submit, admission, GPU-start and completion timestamps; actual
+worker/TP placement; tools; checkpoint frontiers; native selections;
+transfer timelines; and failure/retry events. Real model generation
+establishes application behavior and quality. Deterministic serving replay
+fixes those captured token sequences while preserving Agent-local order,
+predecessor completion gates, and external job arrivals. It does not fix
+F1 successor submissions to F0 absolute times.
+
+\subsection{Platform and Baselines}\label{sec:eval-setup}
+
+The primary platform requires at least two compatible replicas with a
+surviving peer in the stated protection domain. We freeze actual GPU,
+host memory, PCIe/NVLink/network topology, TP layout, precision, model and
+tokenizer hashes, native kernels, scheduling parameters, and failure
+detection. Native-sparse candidates must pass generation-quality and
+recovery-compatibility pilots; a second supported model tests generality.
+Dense-model tests, if included, evaluate Agent protection separately from
+sparse-region claims.
+
+All policies share normal caching, batching, durability, compatible
+routing, and physical byte budgets. The core baselines are restart without
+extra replicas; fixed-interval budgeted checkpoints without Slack;
+reconstruction-cost priority; \system with DRAM only; \system with fixed
+HBM quota; and the full adaptive design. Full DRAM protection is a feasible
+reference only where it fits; an unlimited-capacity reference is labeled
+separately. Available implementations of
+D\'ej\`aVu, LUMEN, and GhostServe are external comparisons when faithfully
+adapted \cite{strati2024dejavu,cao2026lumen,jayakody2026ghostserve};
+an internal inspired policy is not a reproduction.
+
+Normal workflow schedulers and caches are complementary
+\cite{lin2024parrot,pan2025kvflow,ni2026topas}. A recovery comparison on
+such a backend keeps that backend fixed across policies. Recovery assets
+already reachable through normal caching count toward the baseline.
+
+\subsection{Paired Failure and End-to-End Performance}\label{sec:eval-main}
+
+We calibrate low, medium, and high arrival rates on disjoint healthy tasks,
+then save identical arrival sequences across policies. Every policy runs
+both without failure (F0) and with failure (F1). A controlled failure is
+bound to a job, Agent, invocation, phase, and accepted-token or prefill
+landmark. Early, middle, and late failures, mid-prefill and decode, and
+one- or multiple-Agent victim sets are separate cells. Natural wall-time
+worker failures additionally test deployment behavior, recording the actual
+victim set when policy-dependent schedules differ.
+
+For policy $p$, the paired penalty is
+$P_p=W_{p,\mathrm{F1}}-W_{p,\mathrm{F0}}$.
+We report absolute F1 WCT, differences in $P_p$, and F0 overhead. Primary
+metrics include mean, median, and supported tail WCT; completion rate;
+job goodput; TTFT and TPOT; actual DRAM/HBM bytes; and copying and controller
+cost. A worker failure can affect other jobs through takeover load and
+shared transfer queues. We therefore report directly interrupted,
+indirectly affected, and all submitted jobs, with failure-relative latency
+and backlog timelines. Unfinished jobs are not silently removed.
+
+\subsection{Mechanism and Component Experiments}\label{sec:eval-native}
+
+Workload characterization reports calls per Agent, token-prefix growth,
+actual execution overlap, inter-call gaps, and measured tool share.
+Cost experiments compare reconstruction, full DRAM, and DRAM plus HBM on
+the same actual prefixes, accepted tails, retry target, and load. They
+include auxiliary state and all TP shards.
+
+To isolate workflow value, we compare reconstruction-cost priority,
+zero-Slack protection, causal estimated Slack, and an explicitly offline
+oracle at matched budgets. The joint distribution of failure-time Slack
+and reconstruction delay tests the premise rather than substituting
+branch-duration gaps.
+
+To isolate HBM value, we hold protected Agents and DRAM manifests fixed.
+Causal native-count, recency, and random selectors receive equal physical
+bytes, layer ranges, and mandatory local/sink allocations. A future-demand
+oracle supplies an offline reference. We count distinct required
+layer/block/shard bytes and measure actual exposed H2D waiting, misses,
+tail replay, and end-to-end retry latency. Query frequencies or potential
+coverage alone do not establish recovery savings.
+
+An eight-cell ablation varies workflow selection, fast-region placement,
+and quota adaptation. Dynamic-load tests compare adaptive, conservative
+fixed, and aggressive fixed quotas, reporting safe capacity, target quota,
+actual resident replicas, churn, and foreground latency on the same time
+axis. Prediction experiments use task/source-disjoint training and held-out
+causal features, reporting remaining-duration errors, Slack bias,
+missed-protection rates, WCT regret, and controller overhead.
+
+\subsection{Limits, Correctness, and Statistical Protocol}\label{sec:eval-limits}
+
+Sensitivity tests vary protection threshold $\lambda$, checkpoint chunk
+$Z$, block count $K$, depth $L$, capacity, measured effective bandwidth,
+concurrency, and worker count. Fixed $K\times L$ and equal-byte comparisons
+are distinguished. Short histories, sufficient DRAM bandwidth, scattered
+accesses, and poor prediction are retained even when HBM or protection
+has no benefit.
+
+Fault tests cover pending copies, incomplete TP shards, quota shrink,
+unavailable peers, and repeated failures. Recovery uses the last complete
+committed frontier; the replay tail can exceed $Z$ when copying lags.
+Token equivalence, durable accepted outputs, and tool idempotence are
+checked separately from timing. The failure-domain claim matches the
+actual injection: process termination is not labeled host loss.
+
+A pilot determines sample size and test precision before tuning on the
+held-out tasks. Repeated calls, failure positions, and timing repetitions
+are not independent application samples. We use paired estimates and
+task/source- and arrival-block-aware confidence intervals, publish
+denominators and failures, and avoid unsupported p99 claims on small
+cohorts. Research quality uses held-out evidence/rubric checks; repository
+review uses independently verified causes, source references, and
+actionable changes/tests. Reference reports, gold patches and answer tests
+are excluded from generation inputs.
+
+Healthy cost and fault benefit are computed on the same population and
+objective. If $H=W_{\mathrm{A},0}-W_{\mathrm{B},0}>0$ and
+$D=W_{\mathrm{B},1}-W_{\mathrm{A},1}>0$, a specified binary mixture has
+break-even probability $H/(H+D)$. This conditional analysis does not
+estimate production failure frequency. The artifact release binds every
+plot to its raw trace hashes, model configuration, paired fault schedule,
+statistical unit, and physical or analytical evidence class.

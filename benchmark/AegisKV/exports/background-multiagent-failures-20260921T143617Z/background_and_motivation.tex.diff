@@ -1,0 +1,94 @@
+--- before/background_and_motivation.tex
++++ background_and_motivation.tex
+@@ -59,41 +59,58 @@
+     staggered; all edges move forward, without loops or round barriers.}
+ \end{figure}
+ 
+-\paragraph{Reusable KV across agent turns.}
++\paragraph{KV reuse in multi-agent workflows.}
+ During \emph{prefill}, an LLM processes input tokens and computes
+ per-layer keys and values (KV); \emph{decoding} extends this state as
+-output tokens are generated. An agent's next request often appends model
+-outputs and tool results to its existing conversation. Under compatible
+-model and position semantics, a matching token prefix can reuse its KV,
+-so only the new suffix needs to be
+-computed~\cite{gao2024cachedattention,zheng2024sglang}.
+-For example, after the API agent reads a file, its next request can reuse
+-the preceding conversation's KV while processing the returned contents.
+-Prefix changes restrict reuse to the part that still matches.
+-
+-This state can remain useful while the agent executes a tool or waits
+-for another branch, even though no model request is running.
+-Keeping it avoids repeated prefix computation when the agent resumes.
+-KV is derived model state, distinct from the token history and workflow
+-progress stored by the application. In conventional per-token layouts,
+-its size grows with context length, layer count and KV-head dimensions;
+-a long conversation can therefore occupy much more memory as KV than
+-as token IDs.
+-
+-\paragraph{Recovery and storage tiers.}
+-A serving-worker failure can interrupt requests, make GPU-resident KV
+-unavailable and remove serving capacity~\cite{cao2026lumen}. We consider
+-fail-stop worker failures with accepted token histories and workflow
+-progress retained outside the failed worker, and a compatible surviving
+-replica available. The replica has model weights but must obtain the
+-interrupted sequence's state. Without surviving KV, it reconstructs that
+-state by replaying retained tokens. A \emph{KV checkpoint} preserves an
+-already computed prefix: recovery retrieves that prefix and replays only
+-the subsequent tokens whose KV was not saved. Asynchronous checkpointing
+-can leave such a tail at failure~\cite{strati2024dejavu,jayakody2026ghostserve}.
+-A checkpoint must survive the protected failure; same-host DRAM can
+-survive a GPU-worker failure but not loss of the host.
+-
++output tokens are generated. With compatible model and position semantics,
++requests with an identical token prefix can reuse its KV and compute
++only the remaining suffix~\cite{zheng2024sglang}.
++
++Multi-agent workflows create reuse both within and across agents.
++Within an agent, successive requests often append model outputs and
++tool results to the existing conversation, allowing earlier turns'
++KV to be reused~\cite{gao2024cachedattention}. Across agents, branches
++can inherit a common prompt before adding their own tasks. For example,
++the API, UI and test agents in Figure~\ref{fig:agent-workflow-examples}
++can share KV for common project instructions and repository context
++when these form the same initial token sequence. Reuse extends only
++through the matching prefix; different role prompts or context edits
++can shorten it~\cite{zheng2024sglang}.
++
++Retained KV can therefore serve an agent's later turns or another
++agent's requests, including after a tool call or dependency wait.
++KV consists of model-generated tensors rather than the token IDs stored
++by the application. In conventional per-token layouts, its size grows
++with context length, layer count and KV-head dimensions. Retaining
++long histories can thus consume substantially more memory than saving
++their text or token IDs.
++
++\paragraph{Failures and KV reconstruction.}
++Failures are a recurring concern in large-scale LLM serving deployments:
++hardware faults and software crashes can interrupt workers and make
++their GPU-resident KV unavailable~\cite{cao2026lumen,jayakody2026ghostserve}.
++Redirecting an interrupted request to a worker with the model loaded
++does not restore this state. Even when the application retains the
++conversation's tokens, the model must reconstruct the missing KV before
++it can resume generation. Without a usable KV copy, recovery requires
++processing the retained history again~\cite{strati2024dejavu}.
++
++This reconstruction is particularly costly for agents that accumulate
++long contexts over many requests~\cite{jayakody2026ghostserve}.
++Coding agents retain source files, edits and test outputs; research
++agents collect retrieved documents, intermediate findings and tool
++results. A failure late in execution can therefore require rebuilding
++KV for the accumulated history, not just the latest user input.
++In a multi-agent workflow, one failed worker may interrupt several
++co-located agents, leaving the surviving workers to reconstruct multiple
++histories while also handling normal traffic~\cite{cao2026lumen}.
++Reconstruction delays the affected branches and can postpone downstream
++integration or synthesis, increasing workflow completion time.
++
++\paragraph{KV retention across storage tiers.}
++A \emph{KV checkpoint} saves an already computed prefix. If that copy
++survives a failure, recovery can retrieve it and recompute only the
++remaining tail~\cite{strati2024dejavu,jayakody2026ghostserve}.
+ Hierarchical caches extend GPU HBM with host DRAM and local or shared
+ storage to retain more histories~\cite{gao2024cachedattention,qin2025mooncake}.
+ Shared storage, such as a shared filesystem, makes retained KV accessible

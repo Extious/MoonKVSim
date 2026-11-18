@@ -1,0 +1,28 @@
+% Independent single-column Figure 2; native width 3.34 inches.
+% CPU-only static estimates; see reuse-aiconfigurator-architecture-h100/.
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/motivation-row/motivation-recompute.pdf}
+  \caption{Recovery estimates across model scales and architectures.
+    Color denotes path; line style and marker denote model.
+    Qwen3-14B, Llama-3.1-70B, Qwen3-235B-A22B, and DeepSeek-V3.2
+    use 1, 4, 16, and 32 H100 GPUs, respectively. The latter two use
+    MoE; DeepSeek (671B) also uses DSA. BF16, batch one;
+    K~=~1,024. All paths rebuild the same known 64-token tail.
+    DRAM restores full per-rank state concurrently at an assumed
+    64\,GB/s per GPU before compute, without overlap.
+    All curves are static estimates. DSA cached-tail estimates use
+    analytical prefix correction; total lengths beyond 32K involve
+    table extrapolation. Beyond-config shapes do not validate accuracy.
+    Detection, queueing, loading, pre-failure copying, and software
+    takeover overheads are excluded.}
+  \label{fig:motivation-recompute}
+  \Description{One plot compares twelve estimated recovery curves on
+    logarithmic context and latency axes. Blue, orange, and red encode
+    HBM reuse, DRAM reuse, and Recompute. Circles, squares, triangles,
+    and diamonds encode Qwen3-14B, Llama-3.1-70B, Qwen3-235B-A22B,
+    and DeepSeek-V3.2, respectively. The latter two are MoE models;
+    DeepSeek additionally uses sparse attention. At 128K history tokens,
+    HBM spans 22 to 56 milliseconds, DRAM 155 to 358 milliseconds, and
+    Recompute 12.3 to 20.1 seconds. GPU allocations differ across models.}
+\end{figure}

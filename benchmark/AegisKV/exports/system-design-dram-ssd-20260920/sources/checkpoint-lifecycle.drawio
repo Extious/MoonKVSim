@@ -1,0 +1,98 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" version="31.1.5">
+  <diagram id="checkpoint-lifecycle" name="checkpoint-lifecycle">
+    <mxGraphModel page="1" pageScale="1" pageWidth="960" pageHeight="445" background="#FFFFFF">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" value="Mechanism" />
+        <mxCell id="canvas" value="" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#FFFFFF;strokeColor=none;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="960" height="445" as="geometry" />
+        </mxCell>
+        <mxCell id="ha" value="(a) Copy completion does not imply a new checkpoint" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=22;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="10" y="5" width="940" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="s0" value="" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#FFFFFF;strokeColor=#70808A;strokeWidth=1.4;container=1;collapsible=0;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry x="15" y="55" width="300" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="st0" value="Old manifest" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;fontStyle=1;" vertex="1" parent="s0">
+          <mxGeometry x="5" y="6" width="290" height="31" as="geometry" />
+        </mxCell>
+        <mxCell id="sv0" value="M = 128&#10;Dependencies complete" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#DDEBF3;strokeColor=none;strokeWidth=1.4;" vertex="1" parent="s0">
+          <mxGeometry x="8" y="53" width="284" height="66" as="geometry" />
+        </mxCell>
+        <mxCell id="s1" value="" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#FFFFFF;strokeColor=#70808A;strokeWidth=1.4;container=1;collapsible=0;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry x="328" y="55" width="300" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="st1" value="New copies" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;fontStyle=1;" vertex="1" parent="s1">
+          <mxGeometry x="5" y="6" width="290" height="31" as="geometry" />
+        </mxCell>
+        <mxCell id="sv1" value="129..192 pending&#10;M stays 128" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#F3E5D1;strokeColor=none;strokeWidth=1.4;" vertex="1" parent="s1">
+          <mxGeometry x="8" y="53" width="284" height="66" as="geometry" />
+        </mxCell>
+        <mxCell id="s2" value="" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#FFFFFF;strokeColor=#70808A;strokeWidth=1.4;container=1;collapsible=0;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry x="641" y="55" width="300" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="st2" value="New manifest" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;fontStyle=1;" vertex="1" parent="s2">
+          <mxGeometry x="5" y="6" width="290" height="31" as="geometry" />
+        </mxCell>
+        <mxCell id="sv2" value="Dependencies complete&#10;M = 192" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#DDEBF3;strokeColor=none;strokeWidth=1.4;" vertex="1" parent="s2">
+          <mxGeometry x="8" y="53" width="284" height="66" as="geometry" />
+        </mxCell>
+        <mxCell id="old-new" style="rounded=0;strokeColor=#243746;strokeWidth=1.7;endArrow=block;endFill=1;endSize=5;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" parent="1" source="s0" target="s1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="new-commit" style="rounded=0;strokeColor=#243746;strokeWidth=1.7;endArrow=block;endFill=1;endSize=5;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" parent="1" source="s1" target="s2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="hb" value="(b) DRAM-to-SSD demotion preserves the same logical object" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=22;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="10" y="202" width="940" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="d0" value="Copy to SSD" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#F3E5D1;strokeColor=#9B6428;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="15" y="262" width="213" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="d1" value="Commit + redirect" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#F3E5D1;strokeColor=#9B6428;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="252" y="262" width="213" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="de1" style="rounded=0;strokeColor=#243746;strokeWidth=1.7;endArrow=block;endFill=1;endSize=5;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" parent="1" source="d0" target="d1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d2" value="Drain old readers" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="489" y="262" width="213" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="de2" style="rounded=0;strokeColor=#243746;strokeWidth=1.7;endArrow=block;endFill=1;endSize=5;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" parent="1" source="d1" target="d2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d3" value="Free DRAM" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="726" y="262" width="213" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="de3" style="rounded=0;strokeColor=#243746;strokeWidth=1.7;endArrow=block;endFill=1;endSize=5;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" parent="1" source="d2" target="d3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="hc" value="(c) Last-copy removal changes the advertised recovery path" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=22;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="10" y="329" width="940" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="f0" value="Validate fallback" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#FFFFFF;strokeColor=#70808A;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="15" y="382" width="213" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="f1" value="Publish fallback" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#FFFFFF;strokeColor=#70808A;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="252" y="382" width="213" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="fe1" style="rounded=0;strokeColor=#243746;strokeWidth=1.7;endArrow=block;endFill=1;endSize=5;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" parent="1" source="f0" target="f1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f2" value="Drain old readers" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#FFFFFF;strokeColor=#70808A;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="489" y="382" width="213" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="fe2" style="rounded=0;strokeColor=#243746;strokeWidth=1.7;endArrow=block;endFill=1;endSize=5;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" parent="1" source="f1" target="f2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f3" value="Delete SSD KV" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#FFFFFF;strokeColor=#70808A;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="726" y="382" width="213" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="fe3" style="rounded=0;strokeColor=#243746;strokeWidth=1.7;endArrow=block;endFill=1;endSize=5;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" parent="1" source="f2" target="f3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

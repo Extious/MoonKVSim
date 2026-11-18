@@ -1,0 +1,100 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="protocol" name="New trace and paired evaluation protocol">
+    <mxGraphModel page="1" pageWidth="1008" pageHeight="550" background="#FFFFFF">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="canvas" value="" vertex="1" parent="1" style="fillColor=#FFFFFF;strokeColor=none;">
+          <mxGeometry x="0" y="0" width="1008" height="550" as="geometry" />
+        </mxCell>
+        <mxCell id="input" value="Public tasks +&#10;frozen materials" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O,FandolSong;fontSize=22;fontColor=#24323B;fillColor=#EAF4F1;strokeColor=#4D8074;strokeWidth=1.6;spacing=5;">
+          <mxGeometry x="24" y="90" width="230" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="capture" value="Real model execution&#10;DAG + full Agent histories" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O,FandolSong;fontSize=22;fontColor=#24323B;fillColor=#EAF4F1;strokeColor=#4D8074;strokeWidth=1.6;spacing=5;">
+          <mxGeometry x="316" y="90" width="290" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="quality" value="Application quality&#10;Independent checks" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O,FandolSong;fontSize=22;fontColor=#24323B;fillColor=#EDF2F8;strokeColor=#647F9E;strokeWidth=1.6;spacing=5;">
+          <mxGeometry x="674" y="45" width="300" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="trace" value="New captured trace&#10;Tokens + gates + non-LLM time" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O,FandolSong;fontSize=22;fontColor=#24323B;fillColor=#EAF4F1;strokeColor=#4D8074;strokeWidth=1.6;spacing=5;">
+          <mxGeometry x="674" y="186" width="300" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="replay" value="Dependency-gated replay&#10;Same arrivals / inputs / budget" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O,FandolSong;fontSize=22;fontColor=#24323B;fillColor=#EDF2F8;strokeColor=#647F9E;strokeWidth=1.6;spacing=5;">
+          <mxGeometry x="24" y="355" width="290" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="healthy" value="F0&#10;Healthy" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O,FandolSong;fontSize=22;fontColor=#24323B;fillColor=#EDF2F8;strokeColor=#647F9E;strokeWidth=1.6;spacing=5;">
+          <mxGeometry x="380" y="315" width="130" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="fault" value="F1&#10;Worker fault" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O,FandolSong;fontSize=22;fontColor=#24323B;fillColor=#EDF2F8;strokeColor=#647F9E;strokeWidth=1.6;spacing=5;">
+          <mxGeometry x="380" y="415" width="130" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="result" value="Paired job WCT&#10;Cost + recovery + interference" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O,FandolSong;fontSize=22;fontColor=#24323B;fillColor=#FCF2E4;strokeColor=#AC864B;strokeWidth=1.6;spacing=5;">
+          <mxGeometry x="674" y="355" width="300" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="title" value="Collect behavior, then measure serving and recovery" vertex="1" parent="1" style="fillColor=none;strokeColor=none;fontFamily=Linux Libertine O,FandolSong;fontSize=26;fontStyle=1;align=left;">
+          <mxGeometry x="24" y="8" width="960" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="e0" edge="1" parent="1" source="input" target="capture" style="rounded=0;endArrow=block;endFill=1;strokeColor=#53636B;strokeWidth=1.7;jumpStyle=arc;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="capture" target="quality" style="rounded=0;endArrow=block;endFill=1;strokeColor=#53636B;strokeWidth=1.7;jumpStyle=arc;exitX=1;exitY=0.25;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="640" y="115" />
+              <mxPoint x="640" y="92.5" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="capture" target="trace" style="rounded=0;endArrow=block;endFill=1;strokeColor=#53636B;strokeWidth=1.7;jumpStyle=arc;exitX=1;exitY=0.75;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="625" y="165" />
+              <mxPoint x="625" y="233.5" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="trace" target="replay" style="rounded=0;endArrow=block;endFill=1;strokeColor=#53636B;strokeWidth=1.7;jumpStyle=arc;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.5;entryY=0;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="824" y="299" />
+              <mxPoint x="169" y="299" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="replay" target="healthy" style="rounded=0;endArrow=block;endFill=1;strokeColor=#53636B;strokeWidth=1.7;jumpStyle=arc;exitX=1;exitY=0.25;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="346" y="380" />
+              <mxPoint x="346" y="356" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="replay" target="fault" style="rounded=0;endArrow=block;endFill=1;strokeColor=#53636B;strokeWidth=1.7;jumpStyle=arc;exitX=1;exitY=0.75;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="346" y="430" />
+              <mxPoint x="346" y="456" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="healthy" target="result" style="rounded=0;endArrow=block;endFill=1;strokeColor=#53636B;strokeWidth=1.7;jumpStyle=arc;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.25;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="600" y="356" />
+              <mxPoint x="600" y="380" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="fault" target="result" style="rounded=0;endArrow=block;endFill=1;strokeColor=#53636B;strokeWidth=1.7;jumpStyle=arc;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.75;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="625" y="456" />
+              <mxPoint x="625" y="430" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

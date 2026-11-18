@@ -1,0 +1,36 @@
+--- before/background_and_motivation.tex
++++ background_and_motivation.tex
+@@ -135,27 +135,14 @@
+ foreground inference for GPU memory. DRAM and storage-backed shared
+ services can provide cheaper capacity, with additional retrieval latency.
+ 
+-\paragraph{Existing mechanisms.}
+-Existing systems address different parts of this problem.
+-Hierarchical caching reduces repeated prefix work across
+-turns~\cite{gao2024cachedattention,qin2025mooncake}; KV streaming and
+-checkpointing reduce reconstruction after
+-failures~\cite{strati2024dejavu,jayakody2026ghostserve}.
+-Parrot exposes application dependencies for serving optimization, while
+-KVFlow uses upcoming agent steps to guide eviction and
+-prefetching~\cite{lin2024parrot,pan2025kvflow}. LUMEN coordinates
+-checkpoint placement and recovery routing with worker
+-load~\cite{cao2026lumen}.
+-
+ \subsection{Motivation and Challenges}
+ 
+-The mechanisms above provide a basis for workflow-aware recovery.
+-Allocating finite protection resources also requires addressing two
+-limitations of the decision criteria. We examine these limitations using
+-agent execution traces and measured KV readiness costs. The traces
+-characterize branch timing; the model measurements quantify reconstruction
+-and reuse under a common endpoint. Together they motivate two requirements
+-for workflow-aware protection.
++Limited capacity requires deciding which KV histories to retain and
++which merit faster access. We use agent execution traces and measured
++KV readiness costs to examine the workflow consequences of these choices.
++The traces characterize branch timing; the model measurements quantify
++reconstruction and reuse under a common endpoint. Together they motivate
++two challenges in allocating protection resources.
+ 
+ \begin{figure*}[t]
+   \centering

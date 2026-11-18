@@ -1,0 +1,53 @@
+\section{Introduction}\label{sec:introduction}
+
+Multi-agent applications decompose a user task into specialized analyses
+and dependent synthesis. A research report can combine independent study
+of alternatives, application needs, and external constraints; a repository
+review can combine behavior, implementation, and test analysis. Each Agent
+can make several consecutive model calls, retaining its previous inputs and
+outputs. These growing histories become worker-local KV state.
+
+A serving-worker failure can remove the states of several Agents across
+multiple jobs. Without a surviving compatible checkpoint, a replacement
+worker must prefill the durable history before generation resumes
+\cite{strati2024dejavu,cao2026lumen}. Full protection avoids that computation
+but consumes memory and transfer resources during healthy serving. The
+problem is therefore to spend a finite protection budget where it removes
+the most workflow delay.
+
+Three distinctions guide \system. First, reconstruction delay can be
+absorbed by residual work on other dependency paths, so reconstruction cost
+alone is insufficient to prioritize Agents. Second, complete checkpoint
+coverage and fast availability serve different purposes. A complete
+Peer-DRAM checkpoint avoids full reconstruction, while an additional
+Peer-HBM subset only helps when it removes exposed transfer waiting.
+Third, replica HBM competes with foreground execution and must track safe
+capacity. The research-report and repository-review applications described in
+Section~\ref{sec:background:serving} ground these questions; Section~\ref{sec:motivation} explains the
+mechanisms.
+
+\system's Tracker estimates remaining Agent-task duration from causally
+available information and propagates guarded Slack through the residual
+DAG. KV Master selects complete DRAM checkpoints using exposed
+reconstruction delay, chooses causal Top-$K$ blocks in the first $L$
+layers, and ranks HBM copies by their remaining exposed-delay benefit.
+The Adapter adjusts the total HBM quota while preserving full DRAM
+coverage. Router and Connector retain compatibility, failure-domain,
+and committed-state requirements.
+
+This manuscript presents the recovery design and a new evaluation
+protocol. The protocol uses public task inputs and project-authored
+applications, rather than relabeling existing traces as those applications.
+It pairs failure-free and faulted executions at equal physical budgets,
+measures directly interrupted and other co-served jobs, and isolates the
+incremental benefit of HBM beyond complete DRAM coverage. The contributions
+are:
+\begin{itemize}
+\item A workflow-aware protection policy connecting Agent delay tolerance
+to complete checkpoint admission.
+\item A fast-region policy combining causal native KV demand, layer-ordered
+recovery, and safe HBM quota adaptation.
+\item A reproducible experiment design for two multi-turn applications,
+with matched baselines, common-failure analysis, component ablation,
+quality checks, and explicit zero- or negative-benefit cases.
+\end{itemize}

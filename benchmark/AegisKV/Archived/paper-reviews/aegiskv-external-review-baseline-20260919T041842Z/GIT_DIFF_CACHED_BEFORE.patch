@@ -1,0 +1,596 @@
+diff --git a/benchmark/AegisKV/experiments/README.md b/benchmark/AegisKV/Archived/drafts/experiments_README_20260909.md
+similarity index 100%
+rename from benchmark/AegisKV/experiments/README.md
+rename to benchmark/AegisKV/Archived/drafts/experiments_README_20260909.md
+diff --git "a/benchmark/AegisKV/docs/patent/AegisKV\344\270\223\345\210\251\344\272\244\345\272\225\344\271\246-final-version.docx" "b/benchmark/AegisKV/Archived/patent/AegisKV\344\270\223\345\210\251\344\272\244\345\272\225\344\271\246-final-version.docx"
+similarity index 100%
+rename from "benchmark/AegisKV/docs/patent/AegisKV\344\270\223\345\210\251\344\272\244\345\272\225\344\271\246-final-version.docx"
+rename to "benchmark/AegisKV/Archived/patent/AegisKV\344\270\223\345\210\251\344\272\244\345\272\225\344\271\246-final-version.docx"
+diff --git a/benchmark/AegisKV/experiments/baseline-tag-evidence.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/baseline-tag-evidence.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/baseline-tag-evidence.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/baseline-tag-evidence.json
+diff --git a/benchmark/AegisKV/experiments/configs/engine.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/configs/engine.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/configs/engine.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/configs/engine.json
+diff --git a/benchmark/AegisKV/experiments/configs/failure.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/configs/failure.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/configs/failure.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/configs/failure.json
+diff --git a/benchmark/AegisKV/experiments/configs/requests.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/configs/requests.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/configs/requests.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/configs/requests.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-fluid-core-v2/FLUID_CORE_V2_REPORT.md b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-fluid-core-v2/FLUID_CORE_V2_REPORT.md
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-fluid-core-v2/FLUID_CORE_V2_REPORT.md
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-fluid-core-v2/FLUID_CORE_V2_REPORT.md
+diff --git a/benchmark/AegisKV/experiments/results/e2-fluid-core-v2/completeness.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-fluid-core-v2/completeness.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-fluid-core-v2/completeness.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-fluid-core-v2/completeness.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-fluid-core-v2/configs/engine.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-fluid-core-v2/configs/engine.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-fluid-core-v2/configs/engine.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-fluid-core-v2/configs/engine.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-fluid-core-v2/configs/failure.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-fluid-core-v2/configs/failure.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-fluid-core-v2/configs/failure.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-fluid-core-v2/configs/failure.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-fluid-core-v2/configs/requests.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-fluid-core-v2/configs/requests.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-fluid-core-v2/configs/requests.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-fluid-core-v2/configs/requests.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-fluid-core-v2/failure-schedules.jsonl b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-fluid-core-v2/failure-schedules.jsonl
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-fluid-core-v2/failure-schedules.jsonl
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-fluid-core-v2/failure-schedules.jsonl
+diff --git a/benchmark/AegisKV/experiments/results/e2-fluid-core-v2/manifest.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-fluid-core-v2/manifest.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-fluid-core-v2/manifest.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-fluid-core-v2/manifest.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-fluid-core-v2/pair-audit.jsonl b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-fluid-core-v2/pair-audit.jsonl
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-fluid-core-v2/pair-audit.jsonl
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-fluid-core-v2/pair-audit.jsonl
+diff --git a/benchmark/AegisKV/experiments/results/e2-fluid-core-v2/protocol.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-fluid-core-v2/protocol.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-fluid-core-v2/protocol.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-fluid-core-v2/protocol.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-fluid-core-v2/provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-fluid-core-v2/provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-fluid-core-v2/provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-fluid-core-v2/provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-fluid-core-v2/statistics.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-fluid-core-v2/statistics.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-fluid-core-v2/statistics.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-fluid-core-v2/statistics.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-initial-v1/INITIAL_REPORT.md b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-initial-v1/INITIAL_REPORT.md
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-initial-v1/INITIAL_REPORT.md
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-initial-v1/INITIAL_REPORT.md
+diff --git a/benchmark/AegisKV/experiments/results/e2-initial-v1/completeness.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-initial-v1/completeness.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-initial-v1/completeness.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-initial-v1/completeness.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-initial-v1/configs/engine.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-initial-v1/configs/engine.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-initial-v1/configs/engine.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-initial-v1/configs/engine.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-initial-v1/configs/failure.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-initial-v1/configs/failure.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-initial-v1/configs/failure.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-initial-v1/configs/failure.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-initial-v1/configs/requests.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-initial-v1/configs/requests.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-initial-v1/configs/requests.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-initial-v1/configs/requests.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-initial-v1/failure-schedules.jsonl b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-initial-v1/failure-schedules.jsonl
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-initial-v1/failure-schedules.jsonl
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-initial-v1/failure-schedules.jsonl
+diff --git a/benchmark/AegisKV/experiments/results/e2-initial-v1/manifest.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-initial-v1/manifest.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-initial-v1/manifest.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-initial-v1/manifest.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-initial-v1/pair-audit.jsonl b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-initial-v1/pair-audit.jsonl
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-initial-v1/pair-audit.jsonl
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-initial-v1/pair-audit.jsonl
+diff --git a/benchmark/AegisKV/experiments/results/e2-initial-v1/protocol.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-initial-v1/protocol.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-initial-v1/protocol.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-initial-v1/protocol.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-initial-v1/provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-initial-v1/provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-initial-v1/provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-initial-v1/provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-initial-v1/representative-run.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-initial-v1/representative-run.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-initial-v1/representative-run.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-initial-v1/representative-run.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-initial-v1/statistics.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-initial-v1/statistics.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-initial-v1/statistics.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-initial-v1/statistics.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-qwen3-8b-dp-all-v1/QWEN3_8B_DP_ALL_V1_REPORT.md b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-qwen3-8b-dp-all-v1/QWEN3_8B_DP_ALL_V1_REPORT.md
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-qwen3-8b-dp-all-v1/QWEN3_8B_DP_ALL_V1_REPORT.md
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-qwen3-8b-dp-all-v1/QWEN3_8B_DP_ALL_V1_REPORT.md
+diff --git a/benchmark/AegisKV/experiments/results/e2-qwen3-8b-dp-all-v1/completeness.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-qwen3-8b-dp-all-v1/completeness.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-qwen3-8b-dp-all-v1/completeness.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-qwen3-8b-dp-all-v1/completeness.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-qwen3-8b-dp-all-v1/configs/engine.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-qwen3-8b-dp-all-v1/configs/engine.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-qwen3-8b-dp-all-v1/configs/engine.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-qwen3-8b-dp-all-v1/configs/engine.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-qwen3-8b-dp-all-v1/configs/failure.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-qwen3-8b-dp-all-v1/configs/failure.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-qwen3-8b-dp-all-v1/configs/failure.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-qwen3-8b-dp-all-v1/configs/failure.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-qwen3-8b-dp-all-v1/configs/requests.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-qwen3-8b-dp-all-v1/configs/requests.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-qwen3-8b-dp-all-v1/configs/requests.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-qwen3-8b-dp-all-v1/configs/requests.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-qwen3-8b-dp-all-v1/failure-schedules.jsonl b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-qwen3-8b-dp-all-v1/failure-schedules.jsonl
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-qwen3-8b-dp-all-v1/failure-schedules.jsonl
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-qwen3-8b-dp-all-v1/failure-schedules.jsonl
+diff --git a/benchmark/AegisKV/experiments/results/e2-qwen3-8b-dp-all-v1/manifest.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-qwen3-8b-dp-all-v1/manifest.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-qwen3-8b-dp-all-v1/manifest.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-qwen3-8b-dp-all-v1/manifest.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-qwen3-8b-dp-all-v1/pair-audit.jsonl b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-qwen3-8b-dp-all-v1/pair-audit.jsonl
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-qwen3-8b-dp-all-v1/pair-audit.jsonl
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-qwen3-8b-dp-all-v1/pair-audit.jsonl
+diff --git a/benchmark/AegisKV/experiments/results/e2-qwen3-8b-dp-all-v1/protocol.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-qwen3-8b-dp-all-v1/protocol.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-qwen3-8b-dp-all-v1/protocol.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-qwen3-8b-dp-all-v1/protocol.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-qwen3-8b-dp-all-v1/provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-qwen3-8b-dp-all-v1/provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-qwen3-8b-dp-all-v1/provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-qwen3-8b-dp-all-v1/provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-qwen3-8b-dp-all-v1/statistics.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-qwen3-8b-dp-all-v1/statistics.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-qwen3-8b-dp-all-v1/statistics.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-qwen3-8b-dp-all-v1/statistics.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-store-nodes-v1/STORE_NODE_V1_REPORT.md b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-store-nodes-v1/STORE_NODE_V1_REPORT.md
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-store-nodes-v1/STORE_NODE_V1_REPORT.md
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-store-nodes-v1/STORE_NODE_V1_REPORT.md
+diff --git a/benchmark/AegisKV/experiments/results/e2-store-nodes-v1/completeness.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-store-nodes-v1/completeness.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-store-nodes-v1/completeness.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-store-nodes-v1/completeness.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-store-nodes-v1/configs/engine.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-store-nodes-v1/configs/engine.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-store-nodes-v1/configs/engine.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-store-nodes-v1/configs/engine.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-store-nodes-v1/configs/failure.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-store-nodes-v1/configs/failure.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-store-nodes-v1/configs/failure.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-store-nodes-v1/configs/failure.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-store-nodes-v1/configs/requests.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-store-nodes-v1/configs/requests.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-store-nodes-v1/configs/requests.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-store-nodes-v1/configs/requests.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-store-nodes-v1/failure-schedules.jsonl b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-store-nodes-v1/failure-schedules.jsonl
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-store-nodes-v1/failure-schedules.jsonl
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-store-nodes-v1/failure-schedules.jsonl
+diff --git a/benchmark/AegisKV/experiments/results/e2-store-nodes-v1/manifest.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-store-nodes-v1/manifest.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-store-nodes-v1/manifest.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-store-nodes-v1/manifest.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-store-nodes-v1/pair-audit.jsonl b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-store-nodes-v1/pair-audit.jsonl
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-store-nodes-v1/pair-audit.jsonl
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-store-nodes-v1/pair-audit.jsonl
+diff --git a/benchmark/AegisKV/experiments/results/e2-store-nodes-v1/protocol.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-store-nodes-v1/protocol.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-store-nodes-v1/protocol.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-store-nodes-v1/protocol.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-store-nodes-v1/provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-store-nodes-v1/provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-store-nodes-v1/provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-store-nodes-v1/provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-store-nodes-v1/statistics.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-store-nodes-v1/statistics.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-store-nodes-v1/statistics.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-store-nodes-v1/statistics.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-transport-v1/TRANSPORT_V1_REPORT.md b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-transport-v1/TRANSPORT_V1_REPORT.md
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-transport-v1/TRANSPORT_V1_REPORT.md
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-transport-v1/TRANSPORT_V1_REPORT.md
+diff --git a/benchmark/AegisKV/experiments/results/e2-transport-v1/completeness.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-transport-v1/completeness.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-transport-v1/completeness.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-transport-v1/completeness.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-transport-v1/configs/engine.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-transport-v1/configs/engine.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-transport-v1/configs/engine.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-transport-v1/configs/engine.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-transport-v1/configs/failure.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-transport-v1/configs/failure.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-transport-v1/configs/failure.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-transport-v1/configs/failure.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-transport-v1/configs/requests.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-transport-v1/configs/requests.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-transport-v1/configs/requests.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-transport-v1/configs/requests.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-transport-v1/failure-schedules.jsonl b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-transport-v1/failure-schedules.jsonl
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-transport-v1/failure-schedules.jsonl
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-transport-v1/failure-schedules.jsonl
+diff --git a/benchmark/AegisKV/experiments/results/e2-transport-v1/manifest.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-transport-v1/manifest.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-transport-v1/manifest.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-transport-v1/manifest.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-transport-v1/pair-audit.jsonl b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-transport-v1/pair-audit.jsonl
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-transport-v1/pair-audit.jsonl
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-transport-v1/pair-audit.jsonl
+diff --git a/benchmark/AegisKV/experiments/results/e2-transport-v1/protocol.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-transport-v1/protocol.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-transport-v1/protocol.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-transport-v1/protocol.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-transport-v1/provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-transport-v1/provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-transport-v1/provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-transport-v1/provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/e2-transport-v1/statistics.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-transport-v1/statistics.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/e2-transport-v1/statistics.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/e2-transport-v1/statistics.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/README.md b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/README.md
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/README.md
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/README.md
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-fluid-core-v2/f16-recovery-reserve-staging.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-fluid-core-v2/f16-recovery-reserve-staging.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-fluid-core-v2/f16-recovery-reserve-staging.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-fluid-core-v2/f16-recovery-reserve-staging.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-fluid-core-v2/f16-recovery-reserve-staging.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-fluid-core-v2/f16-recovery-reserve-staging.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-fluid-core-v2/f16-recovery-reserve-staging.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-fluid-core-v2/f16-recovery-reserve-staging.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-fluid-core-v2/f3v2-full-gpu-hbm-account-stack.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-fluid-core-v2/f3v2-full-gpu-hbm-account-stack.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-fluid-core-v2/f3v2-full-gpu-hbm-account-stack.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-fluid-core-v2/f3v2-full-gpu-hbm-account-stack.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-fluid-core-v2/f3v2-full-gpu-hbm-account-stack.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-fluid-core-v2/f3v2-full-gpu-hbm-account-stack.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-fluid-core-v2/f3v2-full-gpu-hbm-account-stack.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-fluid-core-v2/f3v2-full-gpu-hbm-account-stack.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-fluid-core-v2/f5v2-fluid-contention-utilization.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-fluid-core-v2/f5v2-fluid-contention-utilization.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-fluid-core-v2/f5v2-fluid-contention-utilization.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-fluid-core-v2/f5v2-fluid-contention-utilization.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-fluid-core-v2/f5v2-fluid-contention-utilization.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-fluid-core-v2/f5v2-fluid-contention-utilization.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-fluid-core-v2/f5v2-fluid-contention-utilization.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-fluid-core-v2/f5v2-fluid-contention-utilization.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-fluid-core-v2/manifest.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-fluid-core-v2/manifest.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-fluid-core-v2/manifest.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-fluid-core-v2/manifest.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f1-system-architecture.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f1-system-architecture.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f1-system-architecture.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f1-system-architecture.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f1-system-architecture.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f1-system-architecture.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f1-system-architecture.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f1-system-architecture.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f10-budget-sensitivity.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f10-budget-sensitivity.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f10-budget-sensitivity.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f10-budget-sensitivity.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f10-budget-sensitivity.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f10-budget-sensitivity.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f10-budget-sensitivity.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f10-budget-sensitivity.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f11-scale.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f11-scale.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f11-scale.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f11-scale.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f11-scale.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f11-scale.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f11-scale.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f11-scale.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f12-simulator-accuracy.excluded.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f12-simulator-accuracy.excluded.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f12-simulator-accuracy.excluded.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f12-simulator-accuracy.excluded.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f13-resource-cost.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f13-resource-cost.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f13-resource-cost.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f13-resource-cost.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f13-resource-cost.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f13-resource-cost.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f13-resource-cost.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f13-resource-cost.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f14-peak-mean.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f14-peak-mean.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f14-peak-mean.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f14-peak-mean.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f14-peak-mean.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f14-peak-mean.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f14-peak-mean.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f14-peak-mean.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f15-trace-coverage.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f15-trace-coverage.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f15-trace-coverage.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f15-trace-coverage.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f15-trace-coverage.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f15-trace-coverage.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f15-trace-coverage.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f15-trace-coverage.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f2-failure-recovery-timeline.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f2-failure-recovery-timeline.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f2-failure-recovery-timeline.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f2-failure-recovery-timeline.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f2-failure-recovery-timeline.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f2-failure-recovery-timeline.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f2-failure-recovery-timeline.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f2-failure-recovery-timeline.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f3-peer-hbm-timeline.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f3-peer-hbm-timeline.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f3-peer-hbm-timeline.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f3-peer-hbm-timeline.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f3-peer-hbm-timeline.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f3-peer-hbm-timeline.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f3-peer-hbm-timeline.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f3-peer-hbm-timeline.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f4-store-dram-timeline.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f4-store-dram-timeline.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f4-store-dram-timeline.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f4-store-dram-timeline.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f4-store-dram-timeline.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f4-store-dram-timeline.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f4-store-dram-timeline.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f4-store-dram-timeline.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f5-kv-migration-gantt.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f5-kv-migration-gantt.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f5-kv-migration-gantt.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f5-kv-migration-gantt.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f5-kv-migration-gantt.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f5-kv-migration-gantt.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f5-kv-migration-gantt.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f5-kv-migration-gantt.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f6-wct-goodput.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f6-wct-goodput.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f6-wct-goodput.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f6-wct-goodput.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f6-wct-goodput.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f6-wct-goodput.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f6-wct-goodput.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f6-wct-goodput.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f7-recovery-cdf.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f7-recovery-cdf.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f7-recovery-cdf.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f7-recovery-cdf.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f7-recovery-cdf.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f7-recovery-cdf.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f7-recovery-cdf.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f7-recovery-cdf.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f8-coverage-recompute.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f8-coverage-recompute.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f8-coverage-recompute.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f8-coverage-recompute.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f8-coverage-recompute.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f8-coverage-recompute.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f8-coverage-recompute.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f8-coverage-recompute.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f9-policy-ablation.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f9-policy-ablation.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f9-policy-ablation.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f9-policy-ablation.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f9-policy-ablation.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f9-policy-ablation.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-initial-v1/f9-policy-ablation.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/f9-policy-ablation.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-initial-v1/manifest.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/manifest.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-initial-v1/manifest.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-initial-v1/manifest.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f1-system-architecture.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f1-system-architecture.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f1-system-architecture.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f1-system-architecture.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f1-system-architecture.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f1-system-architecture.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f1-system-architecture.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f1-system-architecture.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f10-budget-sensitivity.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f10-budget-sensitivity.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f10-budget-sensitivity.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f10-budget-sensitivity.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f10-budget-sensitivity.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f10-budget-sensitivity.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f10-budget-sensitivity.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f10-budget-sensitivity.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f11-scale.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f11-scale.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f11-scale.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f11-scale.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f11-scale.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f11-scale.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f11-scale.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f11-scale.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f12-simulator-accuracy.excluded.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f12-simulator-accuracy.excluded.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f12-simulator-accuracy.excluded.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f12-simulator-accuracy.excluded.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f13-resource-cost.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f13-resource-cost.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f13-resource-cost.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f13-resource-cost.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f13-resource-cost.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f13-resource-cost.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f13-resource-cost.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f13-resource-cost.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f14-peak-mean.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f14-peak-mean.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f14-peak-mean.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f14-peak-mean.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f14-peak-mean.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f14-peak-mean.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f14-peak-mean.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f14-peak-mean.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f15-trace-coverage.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f15-trace-coverage.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f15-trace-coverage.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f15-trace-coverage.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f15-trace-coverage.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f15-trace-coverage.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f15-trace-coverage.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f15-trace-coverage.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f2-failure-recovery-timeline.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f2-failure-recovery-timeline.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f2-failure-recovery-timeline.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f2-failure-recovery-timeline.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f2-failure-recovery-timeline.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f2-failure-recovery-timeline.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f2-failure-recovery-timeline.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f2-failure-recovery-timeline.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f3-peer-hbm-timeline.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f3-peer-hbm-timeline.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f3-peer-hbm-timeline.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f3-peer-hbm-timeline.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f3-peer-hbm-timeline.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f3-peer-hbm-timeline.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f3-peer-hbm-timeline.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f3-peer-hbm-timeline.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f4-store-dram-timeline.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f4-store-dram-timeline.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f4-store-dram-timeline.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f4-store-dram-timeline.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f4-store-dram-timeline.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f4-store-dram-timeline.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f4-store-dram-timeline.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f4-store-dram-timeline.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f5-kv-migration-gantt.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f5-kv-migration-gantt.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f5-kv-migration-gantt.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f5-kv-migration-gantt.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f5-kv-migration-gantt.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f5-kv-migration-gantt.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f5-kv-migration-gantt.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f5-kv-migration-gantt.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f6-wct-goodput.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f6-wct-goodput.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f6-wct-goodput.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f6-wct-goodput.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f6-wct-goodput.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f6-wct-goodput.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f6-wct-goodput.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f6-wct-goodput.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f7-recovery-cdf.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f7-recovery-cdf.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f7-recovery-cdf.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f7-recovery-cdf.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f7-recovery-cdf.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f7-recovery-cdf.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f7-recovery-cdf.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f7-recovery-cdf.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f8-coverage-recompute.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f8-coverage-recompute.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f8-coverage-recompute.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f8-coverage-recompute.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f8-coverage-recompute.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f8-coverage-recompute.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f8-coverage-recompute.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f8-coverage-recompute.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f9-policy-ablation.provenance.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f9-policy-ablation.provenance.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f9-policy-ablation.provenance.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f9-policy-ablation.provenance.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f9-policy-ablation.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f9-policy-ablation.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/f9-policy-ablation.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/f9-policy-ablation.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/manifest.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/manifest.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-qwen3-8b-dp-all-v1/manifest.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-qwen3-8b-dp-all-v1/manifest.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-store-nodes-v1/f18-store-node-sensitivity.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-store-nodes-v1/f18-store-node-sensitivity.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-store-nodes-v1/f18-store-node-sensitivity.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-store-nodes-v1/f18-store-node-sensitivity.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-store-nodes-v1/manifest.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-store-nodes-v1/manifest.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-store-nodes-v1/manifest.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-store-nodes-v1/manifest.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-transport-v1/f17-store-transport-sensitivity.svg b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-transport-v1/f17-store-transport-sensitivity.svg
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-transport-v1/f17-store-transport-sensitivity.svg
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-transport-v1/f17-store-transport-sensitivity.svg
+diff --git a/benchmark/AegisKV/experiments/results/figures/e2-transport-v1/manifest.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-transport-v1/manifest.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/e2-transport-v1/manifest.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/e2-transport-v1/manifest.json
+diff --git a/benchmark/AegisKV/experiments/results/figures/generate_aegiskv_e2_figures.py b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/generate_aegiskv_e2_figures.py
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/generate_aegiskv_e2_figures.py
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/generate_aegiskv_e2_figures.py
+diff --git a/benchmark/AegisKV/experiments/results/figures/generate_aegiskv_fluid_preview.py b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/generate_aegiskv_fluid_preview.py
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/generate_aegiskv_fluid_preview.py
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/generate_aegiskv_fluid_preview.py
+diff --git a/benchmark/AegisKV/experiments/results/figures/generate_aegiskv_store_node_preview.py b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/generate_aegiskv_store_node_preview.py
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/generate_aegiskv_store_node_preview.py
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/generate_aegiskv_store_node_preview.py
+diff --git a/benchmark/AegisKV/experiments/results/figures/generate_aegiskv_transport_preview.py b/benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/generate_aegiskv_transport_preview.py
+similarity index 100%
+rename from benchmark/AegisKV/experiments/results/figures/generate_aegiskv_transport_preview.py
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/results/figures/generate_aegiskv_transport_preview.py
+diff --git a/benchmark/AegisKV/experiments/scripts/audit_aegiskv_e2_artifacts.py b/benchmark/AegisKV/Archived/simulation-qwen3-8b/scripts/audit_aegiskv_e2_artifacts.py
+similarity index 100%
+rename from benchmark/AegisKV/experiments/scripts/audit_aegiskv_e2_artifacts.py
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/scripts/audit_aegiskv_e2_artifacts.py
+diff --git a/benchmark/AegisKV/experiments/scripts/audit_aegiskv_fluid_preview.py b/benchmark/AegisKV/Archived/simulation-qwen3-8b/scripts/audit_aegiskv_fluid_preview.py
+similarity index 100%
+rename from benchmark/AegisKV/experiments/scripts/audit_aegiskv_fluid_preview.py
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/scripts/audit_aegiskv_fluid_preview.py
+diff --git a/benchmark/AegisKV/experiments/scripts/audit_aegiskv_store_node_preview.py b/benchmark/AegisKV/Archived/simulation-qwen3-8b/scripts/audit_aegiskv_store_node_preview.py
+similarity index 100%
+rename from benchmark/AegisKV/experiments/scripts/audit_aegiskv_store_node_preview.py
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/scripts/audit_aegiskv_store_node_preview.py
+diff --git a/benchmark/AegisKV/experiments/scripts/audit_aegiskv_transport_preview.py b/benchmark/AegisKV/Archived/simulation-qwen3-8b/scripts/audit_aegiskv_transport_preview.py
+similarity index 100%
+rename from benchmark/AegisKV/experiments/scripts/audit_aegiskv_transport_preview.py
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/scripts/audit_aegiskv_transport_preview.py
+diff --git a/benchmark/AegisKV/experiments/scripts/prepare_aegiskv_workload.py b/benchmark/AegisKV/Archived/simulation-qwen3-8b/scripts/prepare_aegiskv_workload.py
+similarity index 100%
+rename from benchmark/AegisKV/experiments/scripts/prepare_aegiskv_workload.py
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/scripts/prepare_aegiskv_workload.py
+diff --git a/benchmark/AegisKV/experiments/scripts/run_aegiskv_e2_matrix.py b/benchmark/AegisKV/Archived/simulation-qwen3-8b/scripts/run_aegiskv_e2_matrix.py
+similarity index 100%
+rename from benchmark/AegisKV/experiments/scripts/run_aegiskv_e2_matrix.py
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/scripts/run_aegiskv_e2_matrix.py
+diff --git a/benchmark/AegisKV/experiments/scripts/run_aegiskv_store_node_matrix.py b/benchmark/AegisKV/Archived/simulation-qwen3-8b/scripts/run_aegiskv_store_node_matrix.py
+similarity index 100%
+rename from benchmark/AegisKV/experiments/scripts/run_aegiskv_store_node_matrix.py
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/scripts/run_aegiskv_store_node_matrix.py
+diff --git a/benchmark/AegisKV/experiments/scripts/run_aegiskv_transport_matrix.py b/benchmark/AegisKV/Archived/simulation-qwen3-8b/scripts/run_aegiskv_transport_matrix.py
+similarity index 100%
+rename from benchmark/AegisKV/experiments/scripts/run_aegiskv_transport_matrix.py
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/scripts/run_aegiskv_transport_matrix.py
+diff --git a/benchmark/AegisKV/experiments/scripts/run_qwen3_8b_postfix_preview.py b/benchmark/AegisKV/Archived/simulation-qwen3-8b/scripts/run_qwen3_8b_postfix_preview.py
+similarity index 100%
+rename from benchmark/AegisKV/experiments/scripts/run_qwen3_8b_postfix_preview.py
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/scripts/run_qwen3_8b_postfix_preview.py
+diff --git a/benchmark/AegisKV/experiments/workloads/weka-e2-two-workflow-manifest.json b/benchmark/AegisKV/Archived/simulation-qwen3-8b/workloads/weka-e2-two-workflow-manifest.json
+similarity index 100%
+rename from benchmark/AegisKV/experiments/workloads/weka-e2-two-workflow-manifest.json
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/workloads/weka-e2-two-workflow-manifest.json
+diff --git a/benchmark/AegisKV/experiments/workloads/weka-e2-two-workflow-shapes.jsonl b/benchmark/AegisKV/Archived/simulation-qwen3-8b/workloads/weka-e2-two-workflow-shapes.jsonl
+similarity index 100%
+rename from benchmark/AegisKV/experiments/workloads/weka-e2-two-workflow-shapes.jsonl
+rename to benchmark/AegisKV/Archived/simulation-qwen3-8b/workloads/weka-e2-two-workflow-shapes.jsonl

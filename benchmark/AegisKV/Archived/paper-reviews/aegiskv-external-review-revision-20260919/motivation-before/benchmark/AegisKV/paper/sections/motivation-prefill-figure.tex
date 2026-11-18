@@ -1,0 +1,29 @@
+% Independent single-column Figure 2; native size 3.34 x 2.35 inches.
+% CPU-only static estimates; see reuse-aiconfigurator-max-context-h100/.
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/motivation-row/motivation-recompute.pdf}
+  \caption{Recovery estimates up to each model's context limit.
+    Color denotes path; line style and marker denote model.
+    Qwen14B, Llama70B, Qwen235B (Instruct-2507), and DeepSeek-V3.2
+    use 1/4/16/32 H100 GPUs and end at 128K (YaRN)/128K/1,010,000/160K,
+    respectively. BF16, batch one; total context includes the known
+    64-token tail. K~=~1,024; M~=~$10^6$.
+    Recompute uses 8K chunks; DRAM restores full state at an assumed
+    64\,GB/s per GPU before tail compute, without overlap.
+    All values are static estimates: Qwen beyond 256K projects full
+    attention without DCA acceleration; DSA uses analytical prefix
+    correction and table extrapolation beyond 32K.
+    Detection, queueing, and software takeover are excluded.}
+  \label{fig:motivation-recompute}
+  \Description{One plot compares twelve estimated recovery curves on
+    logarithmic context and latency axes. Blue, orange, and red encode
+    HBM reuse, DRAM reuse, and Recompute. Circles, squares, triangles,
+    and diamonds encode Qwen3-14B, Llama-3.1-70B, Qwen3-235B-A22B-Instruct-2507,
+    and DeepSeek-V3.2, respectively. The latter two are MoE models;
+    DeepSeek additionally uses sparse attention. Curves stop at each
+    model's configured context limit. At 1,010,000 total tokens,
+    Qwen 2507 costs an estimated 70 milliseconds for HBM reuse,
+    830 milliseconds for DRAM reuse, and 220 seconds for chunked
+    full-attention recomputation. GPU allocations differ across models.}
+\end{figure}

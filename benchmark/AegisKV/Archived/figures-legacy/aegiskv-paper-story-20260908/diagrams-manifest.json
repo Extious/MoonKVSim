@@ -1,0 +1,65 @@
+{
+  "schema": "aegiskv.paper_story.diagrams.v2",
+  "figures": [
+    {
+      "name": "system-overview",
+      "evidence": "design",
+      "width_in": 7,
+      "files": {
+        "pdf": "271aeb7c6674f3296e36fc487f8a785ee067b16af32cd88bfff3ff597fdef50b",
+        "svg": "59c297e9bb1f44e4cdb77a4430466b0974623d5b2cd75cdc3313eebc68d42319",
+        "png": "3fa4424eb3791d8a0a1bdfc6e666c9f2592d9e80b0020757ae7c546bcbf67e79",
+        "drawio": "ac12dfc52262f5818bee20190f725e0d0d6480f4a14f2c1a9b4cb3c73ddd5a41"
+      }
+    },
+    {
+      "name": "design-slack-tickets",
+      "evidence": "design",
+      "width_in": 7,
+      "files": {
+        "pdf": "43bf7b0c2076b48914f572367453569e16a85e65ec307e2a8563cd14ac2c0b3b",
+        "svg": "61eec6f2e11c1e6c11af2bf6c69c94f0c9e4b70cb4ccc72eac8b602e63a62d48",
+        "png": "f07c4af77c53994757a80cefd8f2f62182505d99c739f110ec1996ec9f4950a7",
+        "drawio": "1b9b35189efadaa68225dc2e9d9b4d77d9a5d1088bb1c373dc6a621b7fabd685"
+      }
+    },
+    {
+      "name": "design-shared-prefix",
+      "evidence": "design",
+      "width_in": 7,
+      "files": {
+        "pdf": "2790b04d1e339e6a2ad4a0023992e5b3ab9eace3dd0280978b336aaae5db47e0",
+        "svg": "b82cb9e5ba23d0ac7147c6374182ef9e498d6238b166dd25950a291c1504bc4a",
+        "png": "6765f0311d3c8559066f719a5c39c51bbd075d28ea69465506d1d9056054908b",
+        "drawio": "103faf35ffe8f16e35af9d7e6d780b9beb7fb555f042e075dc4036a66bdb757d"
+      }
+    },
+    {
+      "name": "design-foreground-budget",
+      "evidence": "design",
+      "width_in": 7,
+      "files": {
+        "pdf": "44536a6aabdeb232c4cb98d70ab5306c2794b86f0e0ca6c513d080ad2396bbef",
+        "svg": "6c5d24cdd342291d293b6f49112d3c61c5838db735f61662353b8906d86b5b30",
+        "png": "c8bacaac65ae525c0e066fac1133463b15fdb98492f2575b9d65d287d4255b8b",
+        "drawio": "1a4e0614fdcfae539081cff74eafc892e1a8ff3ccbf89bb36bba262d11601961"
+      }
+    },
+    {
+      "name": "commit-tier-timeline",
+      "evidence": "design",
+      "width_in": 7,
+      "files": {
+        "pdf": "9e35d8ef80acf2880557ed91eedecd3775961bda9178635a8a5c1f081f874c88",
+        "svg": "dd95a8212246a10a38ab9007fa544ece7cd28ca36288cb40570d33206f7340e8",
+        "png": "7601cfecb51ccbc085536b6f0ffd57f0f225527e8427265bc87df2c78ca3fbb2",
+        "drawio": "e15d8c696bd4223674eae6f03a603edd66dd1d58e615aecb69f0a456de1007a0"
+      }
+    }
+  ],
+  "input_bindings": {
+    "benchmark/AegisKV/experiments/scripts/paper/build_paper_story_diagrams.py": "e756520c17f598c9b6fa1d2229bb884f56eabd9866b0a5486b3054ec8be25f28",
+    "benchmark/AegisKV/docs/paper/ALGORITHM_REVISION_V3.md": "0c64e05f9f62d9cc1bf024b13aea1674885c11aa6804564bfdccbd4159d28a1e",
+    "output/pdf/aegiskv-paper-story-20260908/design-examples.json": "4fc81f234ae73106165842f996224825d367206ff755fdc51dd69dc7a40845f9"
+  }
+}

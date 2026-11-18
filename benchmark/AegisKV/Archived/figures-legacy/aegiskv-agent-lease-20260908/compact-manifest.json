@@ -1,0 +1,137 @@
+{
+  "figures": [
+    {
+      "name": "motivation-recovery-exposure",
+      "evidence": "trace_anchored_counterfactual",
+      "note": "Five separate branch-fault counterfactuals in one reconstructed trace fan-out, at 349.5 s; max(0, recompute minus join gap). Frozen AIConfigurator Qwen3-235B-A22B/A100-80GB/TP8-PP4-EP8 model, not a measured failure or the Qwen3-8B evaluation. Other branches and queues are held unchanged.",
+      "width_in": 3.3333333333333335,
+      "height_in": 2.55,
+      "sources": [
+        "benchmark/AegisKV/experiments/results/paper/data/motivation-real-cc/real-cc-example-failure-position.csv"
+      ],
+      "files": {
+        "pdf": "156388efdc448d616732fd183346ac7b22b8e864c41325acdd8edb686ca8b8ba",
+        "svg": "52ed6958130c71899134c0af3b9a31fe2131c3bf2034512d3dfa723ab7b5a330",
+        "png": "a6ae787b56b8e37dd1b9f356c105dd3da9994eb06712f21b44671b26fdf2a17d",
+        "csv": "1d99d38bb8eb086f4fd6a64b59dd59f8a38aa54bb151090539031f9ad26b459d"
+      }
+    },
+    {
+      "name": "f1-q50-workflow-penalty",
+      "evidence": "modeled_exploration",
+      "note": "Only the ordinate label is shortened. Same 160 paired workflow values and common q25/q50/q75 limits; original CSV bytes must remain unchanged.",
+      "width_in": 7.0,
+      "height_in": 2.45,
+      "sources": [
+        "f0-base",
+        "f1-q50"
+      ],
+      "files": {
+        "pdf": "e656c01f1cc0da44306265b75a14533d2af4740c245c29f8094fcae0e355db51",
+        "svg": "1b95f7df5c23ed769144bddf129adef9686dae2a358e6f09beb0630d4612e111",
+        "png": "e26003fea28e49d4483ce4c6806316f1997be8f929150606abd259ed2793dce8",
+        "csv": "5bf9b51e55109ef2cf803b134ac71c4b8f3de010ea166a5719ce37c70a06b03d"
+      }
+    },
+    {
+      "name": "evaluation-resource-cost",
+      "evidence": "mixed_reference_CPU_and_simulation",
+      "note": "Each row is a separate metric divided by that metric in Mooncake. Python thread CPU is measured; controller service, bytes and GET contention use frozen DES. No sum across rows. A lower GET byte count can reflect more misses, not efficiency. GET samples are system-specific successful reads. Absolute values and units are retained in CSV.",
+      "width_in": 7.0,
+      "height_in": 3.15,
+      "sources": [
+        "reference-cpu-breakdown.csv",
+        "f0-revisit-controller-breakdown.csv",
+        "f0-revisit-traffic-breakdown.csv",
+        "f0-revisit-transfer-service_slowdown.csv"
+      ],
+      "files": {
+        "pdf": "62524c99946f75c1675efbde7121752592dc9dc2ed3c2998328d650e8d4988f9",
+        "svg": "3834b48161580b54a14c2c84ed4ac4abaf195c4bc5bea0996d58746eb03ecb8a",
+        "png": "fbd502e44e228c71031a27d19d75ce8d016f9c63328fe4977e5281ffef619cb9",
+        "csv": "914204c4250b5f45089c9e244b92f6f2d3ed8c42b947e2737108089823cd674e"
+      }
+    },
+    {
+      "name": "evaluation-native-interference",
+      "evidence": "physical_microbenchmark",
+      "note": "One shared axis for batch 1 and 4, three discrete prompt lengths per group; no lines between categorical conditions. 120 existing observations at extra 8 GiB; Qwen3-8B BF16 SDPA, one exclusive 2xL40S allocation. Points are median of five within-block ratios; whiskers are min/max, not CI. Direction is relative to the foreground GPU. No system WCT is measured.",
+      "width_in": 7.0,
+      "height_in": 3.1,
+      "sources": [
+        "native-forward-b1.csv",
+        "native-forward-b4.csv"
+      ],
+      "files": {
+        "pdf": "71b5e85ac57606fe5c6927f50161b9ba1f444d0f2d8533145f7bf5545f5f5b28",
+        "svg": "a710555cf0dbbd11ea18014f09e776e08dee2dbb10f447d98bcb92c8a24b7b63",
+        "png": "9782ff44cfd5ea506797ee6959725b3659a9aea1f896f156139fa32f31f0bbd5",
+        "csv": "50c598b540ee322b675a427b5f8dd913007bd6f888b75c10b2b5a38e337d8ec0"
+      }
+    },
+    {
+      "name": "evaluation-configuration-effects",
+      "evidence": "modeled_exploration",
+      "note": "Eight distinct configurations from frozen paired executions, three systems per configuration. Each nondefault row changes one factor; values are relative to Mooncake in the same row. CPU/DMA coefficients are model assumptions. No connecting line, fitted trend or confidence interval across heterogeneous settings. Full raw means retained in CSV.",
+      "width_in": 7.0,
+      "height_in": 3.65,
+      "sources": [
+        "f0-base",
+        "f0-bw5",
+        "f0-bw50",
+        "f0-dram250",
+        "f0-c32",
+        "f0-cpu2",
+        "f0-dma5",
+        "f0-dma30"
+      ],
+      "files": {
+        "pdf": "734a633863df96f742ed0e9238d7e3b11dae8c6063690ebe279b1f9596229af8",
+        "svg": "1572386fe48faf7f5110eb11320446aa922f3ba65244a7896c6f69a955d48e89",
+        "png": "385f6fc91d2b5ac63c14f03e9d71e2bee319f68a596ac6d81a6d5bdc890ecac8",
+        "csv": "9533354c5b68de5942f043a14eeccd55161642d7b67ce7ca7a869e16d9ce857b"
+      }
+    },
+    {
+      "name": "system-overview",
+      "evidence": "design",
+      "width_in": 7,
+      "height_in": 6.014412350124783,
+      "note": "Same C0/C1 in independent source-owned Peer and DRAM copies; recovery into new C0/C1 primary plus C2 recomputation. P0/P1 are unrelated foreground objects and never the restore destination. Algorithm 2 internals remain deferred; AIMD observes foreground independently.",
+      "sources": [
+        "benchmark/AegisKV/experiments/scripts/paper/render_compact_paper.py"
+      ],
+      "files": {
+        "pdf": "24e2fdc4e6ed4c3b3757516a34d6c98fec41918f4b98e73ca1f1781146140170",
+        "svg": "8db58e69cc581a4e46629eb349300771e63a4098471e94a035930d1346f4936d",
+        "png": "b2e34076f9c560fb2a6149e0c113eba681bcc11aebb27810fbc3ecde3a1467a4",
+        "drawio": "0b7b8a236f2976a2f31dd8e653ff6587bf423c6ad98ce2757aad87f19ebf7399"
+      }
+    }
+  ],
+  "input_bindings": {
+    "benchmark/AegisKV/experiments/results/paper/data/motivation-real-cc/real-cc-example-failure-position.csv": "96aaf85f4c9f3ed5b19c78548125d70d6fdabdf3bd01602ad189df546c9de7f2",
+    "output/pdf/aegiskv-agent-lease-20260908/f1-q50-workflow-penalty.csv": "5bf9b51e55109ef2cf803b134ac71c4b8f3de010ea166a5719ce37c70a06b03d",
+    "output/pdf/aegiskv-agent-lease-20260908/f1-q25-workflow-penalty.csv": "a938fde03837ca9e4acbd8880a0d9da6f377a43863783880a08afd33a3775fdd",
+    "output/pdf/aegiskv-agent-lease-20260908/f1-q75-workflow-penalty.csv": "03d473af19ae6b74ec40c37a0570dda35c52f17635df5013178880e36bd9c7c4",
+    "output/pdf/aegiskv-agent-lease-20260908/reference-cpu-breakdown.csv": "4ebe0cf1868dc2292bf44cde871649116d9a308723212cff4361111cbc16e4d6",
+    "output/pdf/aegiskv-agent-lease-20260908/f0-revisit-controller-breakdown.csv": "aa6dd84da2dab689f677b9f6ed286f7698353af0408825de0e78fd6250d35174",
+    "output/pdf/aegiskv-agent-lease-20260908/f0-revisit-traffic-breakdown.csv": "d99cbee7209e3428f09bc0342dc43d3e8efd062d42cedc37eac5e0ca0c9429fc",
+    "output/pdf/aegiskv-agent-lease-20260908/f0-revisit-transfer-service_slowdown.csv": "5e0f45630af540284c31ff7ac5e71515859626572f1197392d3df842793b6544",
+    "output/pdf/aegiskv-agent-lease-20260908/native-forward-b1.csv": "551cfacecdf218da3a80f217c4c49e8b3fb5c14703ae68f83cb300ef0d2e0ecc",
+    "output/pdf/aegiskv-agent-lease-20260908/native-forward-b4.csv": "7b5762a765cdfe7a5cd46b63e9726b293edef7d0ad04e9ea1b7791e6f9fa9e0c",
+    "output/pdf/aegiskv-agent-lease-20260908/sensitivity-bandwidth.csv": "46c8240dabd6357363e3f81fc2b6599305e8d2ca7cbad48891de4e7531dbce38",
+    "output/pdf/aegiskv-agent-lease-20260908/sensitivity-concurrency.csv": "ea94a939586e1daa6d1a02fb2b7391854e7d692e72c3c2d81e4a2b1df5612245",
+    "output/pdf/aegiskv-agent-lease-20260908/sensitivity-dram-capacity.csv": "31d1236705508c5261c1ccb33193aab2bb5d2e65600502ebd69f3742edc74af8",
+    "output/agent-lease-20260908/data/f0-dram250/mooncake.json": "df93ec481d98110bbdc3743c13a5347908b2fe17d43536ad24b28442ac67fc49",
+    "output/agent-lease-20260908/data/f0-dram250/dram.json": "9cedf065af5874f826ace6f9d2ca43e6c52e48f4b54eee5e51d7976bdac4bd93",
+    "output/agent-lease-20260908/data/f0-dram250/aegis.json": "05db021c20427734caf6be3c065da91f4fcc9df7042509a445164f24de4a29db",
+    "output/pdf/aegiskv-agent-lease-20260908/sensitivity-cpu-quote.csv": "8a336010b07808f92df1cb1611d8f509405dc42150e7d311565d0725d21265c2",
+    "output/pdf/aegiskv-agent-lease-20260908/sensitivity-dma.csv": "69fe1add2ff8e6c71d10258559e5a15e2f62984de6601530f0dbe102027bbce6",
+    "benchmark/AegisKV/experiments/scripts/paper/render_compact_paper.py": "206c871d7a9c20d95cd06b80527734ca21c7b64bcd8afc1945ff266c4263937c",
+    "benchmark/AegisKV/experiments/scripts/paper/agent_lease_style.py": "4e3baa235397470b9542eb85ab853710e2a3d2b802c728102d532e1b66508072",
+    "benchmark/AegisKV/experiments/scripts/paper/build_paper_story_diagrams.py": "e756520c17f598c9b6fa1d2229bb884f56eabd9866b0a5486b3054ec8be25f28",
+    "benchmark/AegisKV/experiments/scripts/paper/render_paper_story.py": "25843355b039b9a82de1903153b34cc32e24a27197cff937766f71decf57a1dd",
+    "benchmark/AegisKV/experiments/scripts/paper/figure_style.py": "743622d900aea4adc0d02a2510f6037a0042ab416243b8bd283c25dbe67f6488"
+  }
+}

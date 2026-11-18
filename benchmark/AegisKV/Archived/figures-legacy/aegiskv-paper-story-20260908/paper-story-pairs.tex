@@ -1,0 +1,73 @@
+% Optional composition; images remain independent.
+
+\begin{figure*}[t]
+\begin{minipage}[t]{0.47619\textwidth}\vspace{0pt}\centering
+\includegraphics[width=\linewidth]{../../../output/pdf/aegiskv-paper-story-20260908/motivation-branch-gap.pdf}
+\caption{Empirical distribution of the maximum parallel-branch duration gap in each of 124 observed workflows with overlapping branches. The horizontal axis is logarithmic. These observed duration differences are not validated causal CPM slack.}\label{fig:motivation-branch-gap}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.47619\textwidth}\vspace{0pt}\centering
+\includegraphics[width=\linewidth]{../../../output/pdf/aegiskv-paper-story-20260908/motivation-kv-capacity.pdf}
+\caption{Analytical KV footprint for Qwen3-8B BF16 at 147456 bytes per token (Ki=1024). At 96 Ki tokens, one and two copies occupy 13.5 and 27 GiB. The dotted line subtracts model weights and 2 GiB runtime from 40 GiB HBM, before dynamic foreground KV; it is not a lendable Peer quota.}\label{fig:motivation-kv-capacity}
+\end{minipage}
+\end{figure*}
+
+\begin{figure*}[t]
+\begin{minipage}[t]{0.47619\textwidth}\vspace{0pt}\centering
+\includegraphics[width=\linewidth]{../../../output/pdf/aegiskv-paper-story-20260908/workload-prompt_tokens.pdf}
+\caption{Prompt-length distribution of the 1304 original requests in the frozen FanOutQA-derived workload (Ki=1024). Synthetic revisit requests are excluded. The maximum total context is 86214 tokens, so this workload does not establish coverage of 128K contexts.}\label{fig:workload-prompt_tokens}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.47619\textwidth}\vspace{0pt}\centering
+\includegraphics[width=\linewidth]{../../../output/pdf/aegiskv-paper-story-20260908/workload-workflow_call_counts.pdf}
+\caption{Distribution of original call counts across 160 frozen workflows, with a maximum of 27 calls. A sample is a workflow. These counts precede the controlled duplication of the complete DAG into two rounds.}\label{fig:workload-workflow_call_counts}
+\end{minipage}
+\end{figure*}
+
+\begin{figure*}[t]
+\begin{minipage}[t]{0.47619\textwidth}\vspace{0pt}\centering
+\includegraphics[width=\linewidth]{../../../output/pdf/aegiskv-paper-story-20260908/f0-revisit-wct-cdf.pdf}
+\caption{Mechanism simulation of the controlled two-round workload: 160 paired workflows, 2608 requests, C=16, 1 TB DRAM and a 25 GB/s shared path. One execution per system. Empirical WCT distributions contain all 160 workflows per system, including the full tail. Workflows describe within-execution heterogeneity, not independent execution replicates; no population confidence interval is inferred.}\label{fig:f0-revisit-wct-cdf}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.47619\textwidth}\vspace{0pt}\centering
+\includegraphics[width=\linewidth]{../../../output/pdf/aegiskv-paper-story-20260908/f0-revisit-cache-sources.pdf}
+\caption{Mechanism simulation of the controlled two-round workload: 160 paired workflows, 2608 requests, C=16, 1 TB DRAM and a 25 GB/s shared path. One execution per system. Exclusive decomposition of all prompt tokens into Local HBM reuse, Store DRAM reuse, Peer HBM reuse and computed tokens. Fractions sum to 100\%; normal Peer reuse is zero in these runs. Backup bytes are not counted as foreground cache hits.}\label{fig:f0-revisit-cache-sources}
+\end{minipage}
+\end{figure*}
+
+\begin{figure*}[t]
+\begin{minipage}[t]{0.47619\textwidth}\vspace{0pt}\centering
+\includegraphics[width=\linewidth]{../../../output/pdf/aegiskv-paper-story-20260908/f0-revisit-ttft-cdf.pdf}
+\caption{Mechanism simulation of the controlled two-round workload: 160 paired workflows, 2608 requests, C=16, 1 TB DRAM and a 25 GB/s shared path. One execution per system. Empirical time-to-first-token distributions for all 2608 requests per system. The time axis is logarithmic and retains the complete range. These modeled values are not a native-serving QoS certificate.}\label{fig:f0-revisit-ttft-cdf}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.47619\textwidth}\vspace{0pt}\centering
+\includegraphics[width=\linewidth]{../../../output/pdf/aegiskv-paper-story-20260908/f0-revisit-tpot-tail.pdf}
+\caption{Mechanism simulation of the controlled two-round workload: 160 paired workflows, 2608 requests, C=16, 1 TB DRAM and a 25 GB/s shared path. One execution per system. Inclusive empirical survival of request-mean time per output token (TPOT), for 2432 requests with defined TPOT per system. Both axes are logarithmic. Each observation is a request mean rather than an individual inter-token gap; extreme values are retained.}\label{fig:f0-revisit-tpot-tail}
+\end{minipage}
+\end{figure*}
+
+\begin{figure*}[t]
+\begin{minipage}[t]{0.47619\textwidth}\vspace{0pt}\centering
+\includegraphics[width=\linewidth]{../../../output/pdf/aegiskv-paper-story-20260908/f0-revisit-controller-breakdown.pdf}
+\caption{Mechanism simulation of the controlled two-round workload: 160 paired workflows, 2608 requests, C=16, 1 TB DRAM and a 25 GB/s shared path. One execution per system. Additive controller service demand separated into foreground lookup and admission. Totals are 2.58, 5.44 and 6.05 seconds for Mooncake, DRAM-only AegisKV and AegisKV. Waiting time is excluded; this sum is neither request latency nor CPU utilization.}\label{fig:f0-revisit-controller-breakdown}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.47619\textwidth}\vspace{0pt}\centering
+\includegraphics[width=\linewidth]{../../../output/pdf/aegiskv-paper-story-20260908/f0-revisit-traffic-breakdown.pdf}
+\caption{Mechanism simulation of the controlled two-round workload: 160 paired workflows, 2608 requests, C=16, 1 TB DRAM and a 25 GB/s shared path. One execution per system. Transferred bytes are partitioned into foreground GET, DRAM writes and Peer copies, including transferred portions of aborted flows and cleanup. TiB denotes 2\textasciicircum{}40 bytes. DRAM-write volume also changes when Peer protection is enabled.}\label{fig:f0-revisit-traffic-breakdown}
+\end{minipage}
+\end{figure*}
+
+\begin{figure*}[t]
+\begin{minipage}[t]{0.47619\textwidth}\vspace{0pt}\centering
+\includegraphics[width=\linewidth]{../../../output/pdf/aegiskv-paper-story-20260908/sensitivity-bandwidth-mean_wct_s.pdf}
+\caption{Mean WCT in the two-round mechanism workload at 5, 25 and 50 GB/s; C=16 and DRAM=1 TB are fixed. Each point summarizes 160 workflows in one execution per system. The bandwidth axis is linear and segments only connect tested points; no independent-repeat confidence interval is inferred.}\label{fig:sensitivity-bandwidth-mean_wct_s}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.47619\textwidth}\vspace{0pt}\centering
+\includegraphics[width=\linewidth]{../../../output/pdf/aegiskv-paper-story-20260908/sensitivity-concurrency-mean_wct_s.pdf}
+\caption{Mean WCT in the two-round mechanism workload at 8, 16 and 32 active workflows; DRAM=1 TB and bandwidth=25 GB/s are fixed. Each point is one execution with 160 workflows. This closed-loop concurrency sweep is not throughput at a fixed open-loop arrival rate.}\label{fig:sensitivity-concurrency-mean_wct_s}
+\end{minipage}
+\end{figure*}

@@ -27,7 +27,7 @@
     "kv_abi": "vllm-v1.2.2-ordinary-full-attention",
     "kv_layout_id": "qwen3-8b-proposed-yarn-128k-tp1-pp1",
     "kv_layout_path": "configs/resolved/qwen3-8b/proposed-yarn-128k-tp1-pp1/kv-layout.json",
-    "kv_layout_sha256": "3e1eb25dc9d21e06beb5bf1c0aaf6cceb47b9fe627e10c693927460b6f950a18",
+    "kv_layout_sha256": "5702b0f288fdfe90cf7892cb0734f663abc8538b4826e97e798528f8a4d0b21f",
     "tensor_parallel_size": 1,
     "pipeline_parallel_size": 1,
     "context_configuration_status": "proposed_unvalidated"

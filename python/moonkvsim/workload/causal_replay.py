@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -63,6 +64,7 @@ class CausalReleaseEngine:
         *,
         on_release: ReleaseCallback | None = None,
         workflow_concurrency: int | None = None,
+        workflow_admission_seed: int | None = None,
     ) -> None:
         # Validate again at the runtime boundary even when the loader already did so.
         validate_causal_trace(trace.spans)
@@ -73,7 +75,18 @@ class CausalReleaseEngine:
             type(workflow_concurrency) is not int or workflow_concurrency <= 0
         ):
             raise CausalReplayError("workflow_concurrency must be a positive integer or null")
+        if workflow_admission_seed is not None and (
+            type(workflow_admission_seed) is not int or workflow_admission_seed < 0
+        ):
+            raise CausalReplayError(
+                "workflow_admission_seed must be a non-negative integer or null"
+            )
+        if workflow_concurrency is None and workflow_admission_seed is not None:
+            raise CausalReplayError(
+                "workflow_admission_seed requires closed-loop workflow concurrency"
+            )
         self.workflow_concurrency = workflow_concurrency
+        self.workflow_admission_seed = workflow_admission_seed
         self._by_id = trace.by_span_id
         self._states = {span.span_id: _MutableSpanState() for span in trace.spans}
         workflows: dict[str, list[NormalizedSpanMetadata]] = defaultdict(list)
@@ -99,6 +112,7 @@ class CausalReleaseEngine:
         self._eligible_workflow_ids: list[str] = []
         self._active_workflow_ids: set[str] = set()
         self._admitted_workflow_ids: set[str] = set()
+        self._workflow_admission_order: list[str] = []
         try:
             self.des.register_handler(EventKind.REQUEST_ARRIVAL, self._handle_release_event)
         except ValueError as error:
@@ -109,6 +123,10 @@ class CausalReleaseEngine:
     @property
     def release_order(self) -> tuple[str, ...]:
         return tuple(self._release_order)
+
+    @property
+    def workflow_admission_order(self) -> tuple[str, ...]:
+        return tuple(self._workflow_admission_order)
 
     def snapshot(self, span_id: str) -> SpanRuntimeSnapshot:
         state = self._state(span_id)
@@ -145,6 +163,12 @@ class CausalReleaseEngine:
                 "root_count": len(roots),
                 "workflow_count": len(self._workflows),
                 "workflow_concurrency": self.workflow_concurrency,
+                "workflow_admission_seed": self.workflow_admission_seed,
+                "workflow_admission_order": (
+                    "observed_submit_then_source_metadata"
+                    if self.workflow_admission_seed is None
+                    else "observed_submit_then_seeded_sha256_workflow_permutation"
+                ),
                 "admission_mode": (
                     "observed_open_loop"
                     if self.workflow_concurrency is None
@@ -159,7 +183,7 @@ class CausalReleaseEngine:
             return
         for workflow_id, workflow_roots in sorted(
             self._workflow_roots.items(),
-            key=lambda item: (item[1][0].observed_submit_ns, item[1][0].stable_sort_key),
+            key=lambda item: self._workflow_admission_key(item[0]),
         ):
             first_submit_ns = min(root.observed_submit_ns for root in workflow_roots)
             self.des.schedule_at(
@@ -336,7 +360,17 @@ class CausalReleaseEngine:
 
     def _workflow_admission_key(self, workflow_id: str) -> tuple[object, ...]:
         roots = self._workflow_roots[workflow_id]
-        return (min(root.observed_submit_ns for root in roots), roots[0].stable_sort_key)
+        observed_submit_ns = min(root.observed_submit_ns for root in roots)
+        if self.workflow_admission_seed is None:
+            return (observed_submit_ns, roots[0].stable_sort_key)
+        digest = hashlib.sha256(
+            f"workflow-admission:{self.workflow_admission_seed}:{workflow_id}".encode()
+        ).digest()
+        return (
+            observed_submit_ns,
+            int.from_bytes(digest[:8], "big"),
+            roots[0].stable_sort_key,
+        )
 
     def _admit_eligible_workflows(self) -> None:
         if self.workflow_concurrency is None:
@@ -351,6 +385,7 @@ class CausalReleaseEngine:
             admitted_ns = self.des.now_ns
             self._active_workflow_ids.add(workflow_id)
             self._admitted_workflow_ids.add(workflow_id)
+            self._workflow_admission_order.append(workflow_id)
             self.des.journal.append(
                 admitted_ns,
                 "WORKLOAD_WORKFLOW_ADMITTED",

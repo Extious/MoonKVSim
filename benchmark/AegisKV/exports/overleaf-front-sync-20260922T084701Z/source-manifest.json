@@ -1,0 +1,11 @@
+{
+  "archive": "/home/comp/zhanzhao/.codex/attachments/f2b1bab5-de74-4080-8877-5021fb1d0da7/critical_agent_failure__zhaozhan_ (2).zip",
+  "archive_sha256": "82aadb672381a3091854227c73805c4047fcccdc606c318f36fae0ba8157bf45",
+  "scope": "Through Motivation and Challenges, exclusive of system_design and later",
+  "normalizations": {
+    "**Request**": "\\textbf{Request}",
+    "**Agent**": "\\textbf{Agent}",
+    "**Workflow**": "\\textbf{Workflow}",
+    "*Workflow Completion Time*": "\\emph{Workflow Completion Time}"
+  }
+}

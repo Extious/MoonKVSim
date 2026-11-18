@@ -1,0 +1,102 @@
+{
+  "name": "motivation-recompute",
+  "evidence": "historical_silicon_database_configuration_prediction",
+  "new_experiments": 0,
+  "predictor_executed": false,
+  "width_in": 3.3333333333333335,
+  "height_in": 2.9,
+  "sources": {
+    "output/pdf/aegiskv-revision-20260909/sources/motivation-recompute/aiconfigurator-predictor.py": "5fab6d796048e3ec7863787d305c970acbbf514e14c525b0e35a49f981bd2444",
+    "output/pdf/aegiskv-revision-20260909/sources/motivation-recompute/legacy-README.md": "2eaab8a7739b78c357824c4746abf044d0b6d5e906fe9aef16dd6f5b7ecadf8e",
+    "output/pdf/aegiskv-revision-20260909/sources/motivation-recompute/legacy-data.csv": "0d26ac74283c0fa6b905f17750052c87cf93bbebc0ec0ed29bb4dae4e38046f6",
+    "output/pdf/aegiskv-revision-20260909/sources/motivation-recompute/legacy-figure.png": "cf577f6d9ed71156f6b5790df1984023e3832ad144b7d346ea065d92899cc31d",
+    "output/pdf/aegiskv-revision-20260909/sources/motivation-recompute/legacy-renderer.py": "373a50e789333c83fe75517da85440cb3ce619174c89f05a2afad929f88cd021"
+  },
+  "generator": {
+    "path": "benchmark/AegisKV/experiments/scripts/paper/render_motivation_recompute.py",
+    "sha256": "5a2c3862b46d9b77fec270d5a6c9e33b5955411542bfab446e79a8df63641aa0"
+  },
+  "files": {
+    "png": "52bc7af5e4bdd8102a00a89960b558439f8a35aca74cc1d42172f70ae7f1e80a",
+    "pdf": "d14d6166172a626620cf734328945feabff6a93f621ae1833f4a96ce8b999b34",
+    "svg": "331c6a738f124ca43823524e70ce7b1be5a7c2f0d3806c02afe6dba331bf07f6",
+    "csv": "00d578568cb0655e74eee69eef89bc06dece3453f4e9004660a6fd7223eaaffe"
+  },
+  "statistical_unit": "one deterministic configured component-time prediction per model and prefix length",
+  "configuration_count": 8,
+  "full_failure_runs": 0,
+  "independent_repeats": 0,
+  "transformation": "Select all dense-model full-recompute rows; tokens/1024 on x; unchanged component_time_s on y; no smoothing or error bars",
+  "configuration": {
+    "accelerator": "A100-SXM 80GB",
+    "tp": 4,
+    "pp": 2,
+    "ep": 1,
+    "dp": 1,
+    "precision": "BF16",
+    "batch_requests": 1,
+    "chunk_tokens": 8192,
+    "backend": "sglang-0.5.10",
+    "database_mode": "SILICON",
+    "prefill_scale_factor": 1.05
+  },
+  "excluded_source_rows": [
+    {
+      "count": 4,
+      "selector": "Qwen3-235B-A22B recompute",
+      "reason": "Historical README flags unresolved 94-layer PP4 partition and unverified physical PP runtime; retained in source CSV"
+    },
+    {
+      "count": 12,
+      "selector": "peer_hbm, local_dram, ssd",
+      "reason": "Different uncalibrated model-independent path-coefficient evidence; irrelevant to isolated full-prefix recomputation observation"
+    }
+  ],
+  "statistics": [
+    {
+      "model": "Qwen3-8B",
+      "at_16ki_s": 0.4904528887473676,
+      "at_128ki_s": 9.155537466560558,
+      "ratio_128ki_over_16ki": 18.667516649650274
+    },
+    {
+      "model": "Qwen3-32B",
+      "at_16ki_s": 1.715110956609366,
+      "at_128ki_s": 32.82092661399118,
+      "ratio_128ki_over_16ki": 19.136328461731402
+    }
+  ],
+  "observation_zh": "在这两个固定模型与并行配置的历史预测中，丢失前缀由 16 Ki 增至 128 Ki 时，单请求完整前缀重算由 0.49/1.72 s 增至 9.16/32.82 s，长上下文显著放大重建 KV 的计算代价。",
+  "caption_zh": "长上下文的完整前缀重算代价。Qwen3-8B 与 Qwen3-32B 在 A100-80GB、TP4/PP2、BF16 配置下，按 8 Ki-token 分块累加单请求 prefill 预测；Ki=1,024。每条线连接四个历史 AIConfigurator SILICON 配置预测点，无故障运行或重复测量。",
+  "caption_en": "Full-prefix recomputation grows with context length. Historical AIConfigurator SILICON predictions for Qwen3-8B and Qwen3-32B on A100-80GB, TP4/PP2, BF16, summing 8 Ki-token prefill chunks for one request. Ki = 1,024. Lines connect four configured predictions per model; these are neither physical failure runs nor end-to-end recovery measurements.",
+  "boundaries": [
+    "No measured AegisKV or Mooncake comparison",
+    "No failure detection, queueing, state transfer, decode replay, or workflow propagation",
+    "Different parallel configuration from current Qwen3-8B DP8/TP1 evaluation",
+    "Archived predictor and generator hashes verified; underlying performance-database revision was not pinned by the old export",
+    "Component-time prediction does not establish physical PP deployment feasibility or end-to-end recovery latency"
+  ],
+  "visual_review": {
+    "status": "reviewed_actual_exports",
+    "reviewer": "Codex scientific-figure-review and PaperBanana critic",
+    "placed_width_in": 3.3333333333333335,
+    "actual_png_sha256": "52bc7af5e4bdd8102a00a89960b558439f8a35aca74cc1d42172f70ae7f1e80a",
+    "actual_pdf_sha256": "d14d6166172a626620cf734328945feabff6a93f621ae1833f4a96ce8b999b34",
+    "pdf_render": "/tmp/aegiskv-motivation-recompute-review/motivation-recompute.review-page-1.png",
+    "pdf_render_sha256": "e66b5df04150964cd8e50791e4db7d1bbb21f2b3467116986ec46875d66d27bc",
+    "minimum_effective_font_pt": 10.000000039370079,
+    "embedded_rasters": 0,
+    "checks": [
+      "Actual PNG and PDF render viewed at final 3.333 inch width",
+      "All eight rows equal original source rows field by field",
+      "Two line styles and markers distinct; legend outside data",
+      "All labels inside page; zero tick retained; small-value marker fully visible"
+    ],
+    "corrected": [
+      "Removed inset that mixed uncalibrated path defaults with model-aware recomputation predictions",
+      "Excluded unresolved 235B PP4 partition from body figure but retained source rows",
+      "Replaced 5.8-8.1 pt legacy labels with 10-10.5 pt labels",
+      "Added 1.5 s of empty y-axis margin below zero to avoid clipping the 0.49 s marker; no negative data or crop"
+    ]
+  }
+}

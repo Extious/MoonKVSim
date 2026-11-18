@@ -25,11 +25,16 @@ SchemaInstance = Mapping[str, Any]
 
 _REPOSITORY_ROOT: Final = Path(__file__).resolve().parents[3]
 _SCHEMA_DIRECTORY: Final = _REPOSITORY_ROOT / "schemas"
+_AEGISKV_SCHEMA_DIRECTORY: Final = (
+    _REPOSITORY_ROOT / "benchmark/AegisKV/experiments/schemas"
+)
 _SCHEMA_FILES: Final[dict[str, str]] = {
     "requests": "requests.schema.json",
     "failure": "failure.schema.json",
+    "aegiskv-failure": "aegiskv-failure.schema.json",
     "deployment": "deployment.schema.json",
     "multi-agent-trace": "multi-agent-trace.schema.json",
+    "controlled-revisit-trace": "controlled-revisit-trace.schema.json",
     "predictor-held-out-residual-report": (
         "predictor-held-out-residual-report.schema.json"
     ),
@@ -40,8 +45,11 @@ _SCHEMA_FILES: Final[dict[str, str]] = {
 _SCHEMA_IDS: Final[dict[str, str]] = {
     "moonkvsim.requests.v1": "requests",
     "moonkvsim.failure.v1": "failure",
+    "moonkvsim.aegiskv.failure.v3": "aegiskv-failure",
+    "moonkvsim.aegiskv.failure.v5": "aegiskv-failure",
     "moonkvsim.deployment.v1": "deployment",
     "moonkvsim.multi_agent_trace.v1": "multi-agent-trace",
+    "moonkvsim.controlled_revisit_trace.v1": "controlled-revisit-trace",
     "moonkvsim.aiconfigurator-held-out-residual-report.v1": (
         "predictor-held-out-residual-report"
     ),
@@ -59,7 +67,7 @@ _FORBIDDEN_DEPLOYMENT_TERMS: Final = (
     "PERSISTENCE",
 )
 _SOURCE_HASH_IDS_ELISION_SCHEMA_SHA256: Final = (
-    "65af89d4b8475ab72c26eee1158369541f5cfb028aac28fc98e4f8acf7438cee"
+    "9371070654702f49b0f330fe7bae5c98e9010d5949bcaf5007b5bebf94b161d0"
 )
 
 
@@ -87,7 +95,12 @@ def load_schema(schema_name: str) -> dict[str, Any]:
     """Load and meta-validate one repository-owned JSON Schema."""
 
     canonical_name = _canonical_schema_name(schema_name)
-    path = _SCHEMA_DIRECTORY / _SCHEMA_FILES[canonical_name]
+    directory = (
+        _AEGISKV_SCHEMA_DIRECTORY
+        if canonical_name.startswith("aegiskv-")
+        else _SCHEMA_DIRECTORY
+    )
+    path = directory / _SCHEMA_FILES[canonical_name]
     try:
         document = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
@@ -219,6 +232,8 @@ def _multi_agent_span_errors(instance: SchemaInstance) -> list[str]:
     total_tokens = instance.get("total_model_tokens")
     block_size = instance.get("source_block_size_tokens")
     hash_ids = instance.get("source_hash_ids")
+    block_token_counts = instance.get("source_hash_block_token_counts")
+    block_scopes = instance.get("source_hash_block_scopes")
     if (
         isinstance(prompt_tokens, int)
         and isinstance(output_tokens, int)
@@ -230,11 +245,34 @@ def _multi_agent_span_errors(instance: SchemaInstance) -> list[str]:
         isinstance(prompt_tokens, int)
         and isinstance(block_size, int)
         and isinstance(hash_ids, list)
-        and len(hash_ids) * block_size != prompt_tokens
     ):
-        errors.append(
-            "$.prompt_tokens: must equal len(source_hash_ids) * source_block_size_tokens"
-        )
+        if block_token_counts is None:
+            if len(hash_ids) * block_size != prompt_tokens:
+                errors.append(
+                    "$.prompt_tokens: must equal len(source_hash_ids) * "
+                    "source_block_size_tokens"
+                )
+        elif isinstance(block_token_counts, list):
+            if len(block_token_counts) != len(hash_ids):
+                errors.append(
+                    "$.source_hash_block_token_counts: must match source_hash_ids length"
+                )
+            if sum(item for item in block_token_counts if isinstance(item, int)) != prompt_tokens:
+                errors.append(
+                    "$.source_hash_block_token_counts: values must sum to prompt_tokens"
+                )
+            if block_token_counts and any(
+                item != block_size for item in block_token_counts[:-1]
+            ):
+                errors.append(
+                    "$.source_hash_block_token_counts: only the final source block may be partial"
+                )
+    if (
+        isinstance(hash_ids, list)
+        and isinstance(block_scopes, list)
+        and len(block_scopes) != len(hash_ids)
+    ):
+        errors.append("$.source_hash_block_scopes: must match source_hash_ids length")
     cached_tokens = instance.get("cached_prefix_tokens")
     if isinstance(cached_tokens, int) and isinstance(prompt_tokens, int):
         if cached_tokens > prompt_tokens:
@@ -336,7 +374,7 @@ def _run_manifest_errors(instance: SchemaInstance) -> list[str]:
 def _semantic_errors(instance: SchemaInstance, schema_name: str) -> list[str]:
     if schema_name == "deployment":
         return _find_forbidden_storage_terms(instance)
-    if schema_name == "multi-agent-trace":
+    if schema_name in {"multi-agent-trace", "controlled-revisit-trace"}:
         return _multi_agent_span_errors(instance)
     if schema_name == "failure":
         return _failure_errors(instance)
@@ -394,7 +432,10 @@ def validate_deployment_config(instance: SchemaInstance) -> None:
 
 
 def validate_trace_span(instance: SchemaInstance) -> None:
-    validate_instance(instance, "multi-agent-trace")
+    schema = ("controlled-revisit-trace"
+              if instance.get("schema") == "moonkvsim.controlled_revisit_trace.v1"
+              else "multi-agent-trace")
+    validate_instance(instance, schema)
 
 
 def validate_run_manifest(instance: SchemaInstance) -> None:

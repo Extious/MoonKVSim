@@ -1,0 +1,49 @@
+% Continuation of the KV Placement Planner subsection in kv_placement.tex.
+\paragraph{Admit whole footprints within the budget.}
+
+Each window admits these footprints using the target KV pool's capacity above
+its foreground watermark and admission headroom, capped by
+$B_{\mathrm{cap}}$ (default 4\,GiB):
+\begin{equation}
+ B=[\min(B_{\mathrm{cap}},\mathrm{pool}-\mathrm{watermark}
+                         -\mathrm{headroom})]^+.
+ \label{eq:peer-budget}
+\end{equation}
+Algorithm~\ref{alg:placement} admits whole footprints in slack order.
+It counts shared physical objects once, skips footprints that do not
+fit, and continues to smaller candidates. The set $A_r$ contains the
+first $L$ layers' selected sealed blocks and required selector state;
+$\mathrm{sealed}(r)$ contains \emph{all} sealed historical KV.
+
+\begin{figure}[t]
+  \raggedright
+  \refstepcounter{designalgorithm}\label{alg:placement}
+  \noindent\textbf{Algorithm \thedesignalgorithm: Whole-footprint placement}
+  \par\smallskip
+  \noindent Input: requests, slack, profiles, rankings, and budget $B$.
+  Output: desired DRAM/Peer sets $D_s,P_s$.
+  \par\smallskip
+  \begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
+    \toprule
+    1 & $D_s\gets\varnothing$; $P_s\gets\varnothing$ \\
+    2 & \textbf{for} $r$ in $(\sigma_r,\mathrm{ID}_r)$ order: \\
+    3 & \quad\textbf{if} $\sigma_r\ge R_R(r)$: \textbf{continue} \\
+    4 & \quad$D_s\gets D_s\cup\mathrm{sealed}(r)\cup\mathrm{state}(r)$ \\
+    5 & \quad\textbf{if} $\sigma_r\ge R_D(r)$: \textbf{continue} \\
+    6 & \quad$A_r\gets\mathrm{footprint}(r,F^\star(r))$ \\
+    7 & \quad$\Delta\gets\mathrm{bytes}(A_r\setminus P_s)$ \\
+    8 & \quad\textbf{if} $\Delta>B$: \textbf{continue} \\
+    9 & \quad$P_s\gets P_s\cup A_r$; $B\gets B-\Delta$ \\
+   10 & \textbf{return} $D_s,P_s$ \\
+    \bottomrule
+  \end{tabularx}
+  \Description{Requests retain DRAM coverage unless recomputation fits
+    their slack, and gain Peer residency only when their unique footprint fits.}
+\end{figure}
+
+Sorting costs $O(n\log n)$ for $n$ requests; each layer-prefix scan costs
+$O(N)$ using cached rankings. The Adapter reconciles desired sets with
+committed replicas, copying only changes. The target budget is fixed
+within a window, but foreground pressure can force reclamation.
+Copying, committed, and reclaiming bytes remain physically charged
+until release completes; lowering the target does not free addresses.

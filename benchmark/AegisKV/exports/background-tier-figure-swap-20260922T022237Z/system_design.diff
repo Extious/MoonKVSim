@@ -1,0 +1,11 @@
+--- before/paper/system_design.tex
++++ paper/system_design.tex
+@@ -9,7 +9,7 @@
+ \label{sec:design-insights}
+ 
+ \paragraph{1. Workflow dependencies determine recovery urgency.}
+-Figure~\ref{fig:motivation-recovery-exposure} shows similar reconstruction
++Figure~\ref{fig:motivation}(\subref{fig:motivation-recovery-exposure}) shows similar reconstruction
+ costs with different effects on WCT: slack absorbs some branches' delays,
+ while a critical branch exposes its full pause. Thus request recovery
+ time alone is insufficient to rank protection priorities; the request's

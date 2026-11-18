@@ -1,0 +1,382 @@
+U000 heading 
+摘要
+
+U001 prose 
+Multi-agent applications accumulate reusable context while executing
+interdependent LLM requests. A worker failure can lose this state and delay
+several branches at once, yet protecting every context in fast memory is
+expensive. We propose AegisKV, a workflow-aware manager for KV checkpoints
+across Peer HBM, shared DRAM and shared storage. A complete checkpoint
+spans the three tiers, with one managed owner per object: selected layers
+and hot blocks reside on a preassigned takeover DP, and lower tiers
+retain the rest. Request slack and opportunity-normalized block demand
+provide a factorized recovery priority; normal reuse contributes independent
+retention value. Renewable per-Agent credit manages DRAM and storage,
+with lazy refresh separating demand updates from actual-use renewal.
+Peer uses fixed layer/block quotas and greedy zero-slack admission.
+An AIMD Adapter bounds total Peer capacity, while versioned transfers
+preserve checkpoint coverage during migration and explicit fallback.
+These bounded policies preserve native attention semantics. We connect trace-derived
+workflow observations and existing reconstruction microbenchmarks to a
+reproducible analytical study and a complete experimental protocol.
+In 36 declared Peer-disabled scenarios, the placement model improves on
+LRU in 17 and ties in 19. Matched analytical schedules illustrate Peer's
+incremental overlap benefit; neither model measures a three-tier system. Historical outage timing drives a separate recovery-load model in which
+a lower mean coexists with worse tail latency. Mechanism ablations expose
+interactions between layer placement and overlap, and a negative result
+for an earlier rental screen. Bounded repairs reduce that model's gap
+but do not establish the new controller's performance. The study
+identifies when contention, prediction error, and commit
+lag limit the benefit. End-to-end fault injection and normal
+service measurements remain necessary to establish the proposed system's
+performance.
+
+U002 heading 1
+Introduction
+
+U004 prose 
+A multi-agent application completes when its required results are ready:
+a tested patch, a report, or an answer assembled from parallel searches.
+An LLM request's value therefore depends on its workflow position. A
+critical-branch delay postpones completion; another branch may absorb it
+before a join. Application-aware serving exploits this structure during
+normal execution~\cite{lin2024parrot,pan2025kvflow,ni2026topas}. Failures
+raise a further question: which histories should remain quickly
+recoverable when one worker interrupts several requests together?
+
+U005 prose 
+Long contexts make that choice expensive. Agents accumulate reasoning,
+code, and tool results; losing their GPU-resident KV can require substantial
+reconstruction. Checkpointing avoids that work~\cite{strati2024dejavu,jayakody2026ghostserve},
+and load-aware recovery distributes interrupted requests~\cite{cao2026lumen}.
+Hierarchical caches provide DRAM and storage capacity~\cite{qin2025mooncake,xie2026strata},
+but keeping every history in the faster tier is costly.
+
+U006 prose 
+Recency and recovery latency alone do not determine placement. A long,
+recent history may belong to a branch that tolerates storage access,
+while a smaller history lies on the critical path. High slack does not
+justify deleting reusable history: subsequent normal calls may repeatedly
+reconstruct it. Common-worker failures also couple requests through the
+DAG and shared recovery resources. Accelerating only one of two delayed
+branches may leave their join unchanged. Finally, demotion is asynchronous:
+freeing DRAM before its storage replacement commits invalidates protection.
+
+U007 prose 
+AegisKV manages checkpoints across Peer HBM, shared DRAM and shared storage.
+Its Tracker estimates remaining workflow time; the Master combines
+request urgency with opportunity-normalized block demand. Distinct Agents
+contribute credit to shared objects, while one Agent's actual reuse renews
+its own share. Lower-tier rent ages byte occupancy, and lazy value updates
+preserve paid rent. Peer uses fixed layer/block quotas for zero-slack
+requests; its hot identities and admitted requests change online.
+Objects have one managed owner after migration. A bounded event loop
+connects retention, admission and cascading demotion. The Router binds a
+compatible takeover DP at arrival; an AIMD Adapter bounds total Peer
+capacity and Connector executes transfers.
+Versioned manifests, reservations and reader leases preserve checkpoint
+coverage as ownership moves between tiers.
+
+U008 prose 
+Our proposed contributions are a workflow-aware priority and renewable-credit
+policy that separates Peer acceleration from lower-tier retention; a bounded
+online controller and safe transition
+protocol; and reproducible analytical scenarios with a matched physical
+experiment plan. The model exposes gains, ties, prediction sensitivity,
+and regret against a feasible oracle. Trace-driven recovery and independent
+mechanism models expose queue-tail regressions and an adverse historical
+rental screen, whose bounded repairs leave a residual gap. These results
+motivate and constrain the proposed
+system; they do not measure its implementation. The central empirical
+hypothesis is that workflow-aware protection improves finite-resource
+allocation after accounting for healthy-service and migration costs.
+
+U009 heading 2
+Background and Motivation
+
+U011 heading 2.1
+Background
+
+U013 heading 
+Multi-agent execution.
+
+U014 prose 
+A multi-agent application divides a user task among agents that exchange
+intermediate results. Each agent maintains a conversation and advances
+through LLM requests and tool calls: the model generates a response or
+a tool invocation, and the returned result becomes input to a subsequent
+request~\cite{wu2023autogen}. A \emph{request} is one model invocation;
+an \emph{agent} can issue multiple requests to complete its task; a
+\emph{workflow} connects these tasks through sequential dependencies,
+parallel branches and joins. The application orchestrates this workflow,
+while the serving engine executes its model requests.
+
+U015 prose 
+Figure~\ref{fig:agent-workflow-examples} illustrates this structure.
+For code generation, a main agent delegates a CSV-export feature to API,
+UI, test-authoring and documentation agents. Starting from a shared
+specification, each branch alternates model requests with file reads,
+edits or checks. The main agent then integrates the changes and runs
+tests. For deep research, a lead agent delegates technical, cost, safety
+and supply investigations, then synthesizes their evidence into a
+report~\cite{anthropic2025multiagent}. Branches can require different
+numbers of requests and tools; there is no common round barrier.
+A completed model request can therefore leave both its agent and the
+workflow unfinished.
+
+U016 heading 
+Workflow completion time.
+
+U017 prose 
+The user receives a result only after the workflow produces its required
+outputs. We measure this interval as \emph{workflow completion time}
+(WCT): for workflow $w$ released at $a_w$ and completed at $c_w$,
+$\mathrm{WCT}_w=c_w-a_w$. It includes model execution, tool execution,
+queueing and dependency waits. In the coding example, integration waits
+for all required changes. A delay on the last unfinished branch postpones
+integration, while an earlier-finishing branch may absorb the same delay
+before the join. Request latency affects WCT through these dependencies.
+
+U018 caption 
+Illustrative multi-agent workflows.
+    Each row is one agent: $R_i$ denotes its $i$th LLM request, with
+    intervening tool results carried into the next request.
+    Branches have different request counts and no shared round barriers.
+    The coordinator resumes after their results join.
+    Positions and lengths do not encode execution time.
+
+U020 heading 
+Reusable KV across agent turns.
+
+U021 prose 
+During \emph{prefill}, an LLM processes input tokens and computes
+per-layer keys and values (KV); \emph{decoding} extends this state as
+output tokens are generated. An agent's next request often appends model
+outputs and tool results to its existing conversation. Under compatible
+model and position semantics, a matching token prefix can reuse its KV,
+so only the new suffix needs to be
+computed~\cite{gao2024cachedattention,zheng2024sglang}.
+For example, after the API agent reads a file, its next request can reuse
+the preceding conversation's KV while processing the returned contents.
+Prefix changes restrict reuse to the part that still matches.
+
+U022 prose 
+This state can remain useful while the agent executes a tool or waits
+for another branch, even though no model request is running.
+Keeping it avoids repeated prefix computation when the agent resumes.
+KV is derived model state, distinct from the token history and workflow
+progress stored by the application. In conventional per-token layouts,
+its size grows with context length, layer count and KV-head dimensions;
+a long conversation can therefore occupy much more memory as KV than
+as token IDs. Sparse attention reduces the historical KV accessed by
+an operation~\cite{jiang2024minference}, but state skipped by that
+operation may still be needed later.
+
+U023 heading 
+Recovery and storage tiers.
+
+U024 prose 
+A serving-worker failure can interrupt requests, make GPU-resident KV
+unavailable and remove serving capacity~\cite{cao2026lumen}. We consider
+fail-stop worker failures with accepted token histories and workflow
+progress retained outside the failed worker, and a compatible surviving
+replica available. The replica has model weights but must obtain the
+interrupted sequence's state. Without surviving KV, it reconstructs that
+state by replaying retained tokens. A \emph{KV checkpoint} preserves an
+already computed prefix: recovery retrieves that prefix and replays only
+the subsequent tokens whose KV was not saved. Asynchronous checkpointing
+can leave such a tail at failure~\cite{strati2024dejavu,jayakody2026ghostserve}.
+A checkpoint must survive the protected failure; same-host DRAM can
+survive a GPU-worker failure but not loss of the host.
+
+U025 prose 
+Hierarchical caches extend GPU HBM with host DRAM and storage to retain
+more histories~\cite{gao2024cachedattention,qin2025mooncake}.
+Location determines the access path: KV already in the executor's HBM
+is directly available to kernels, DRAM requires host-to-device transfer,
+and storage adds a read that may traverse a network. Computation and
+prefetching can overlap some of this work. Retention nevertheless occupies
+capacity, and copying or moving KV consumes bandwidth that may also serve
+foreground requests. Discarding the last reusable KV copy releases space
+but requires reconstruction if that state is needed again.
+
+U026 heading 
+Existing mechanisms.
+
+U027 prose 
+Hierarchical caching reduces repeated prefix work across
+turns~\cite{gao2024cachedattention,qin2025mooncake}; KV streaming and
+checkpointing reduce reconstruction after
+failures~\cite{strati2024dejavu,jayakody2026ghostserve}.
+Parrot exposes application dependencies for serving optimization, while
+KVFlow uses upcoming agent steps to guide eviction and
+prefetching~\cite{lin2024parrot,pan2025kvflow}. LUMEN coordinates
+checkpoint placement and recovery routing with worker
+load~\cite{cao2026lumen}. These capabilities provide a basis for
+workflow-aware recovery. Allocating finite protection resources also
+requires addressing two limitations of the decision criteria.
+
+U028 heading 
+Limitation 1: Request-level priorities incompletely express
+workflow benefit.
+
+U029 prose 
+Recency, proximity to the next use and reconstruction cost describe when
+state may be needed and how expensive it is to recover. Taken alone,
+they do not determine how restoring a request sooner advances the
+workflow's required outputs. An expensive history can belong to a branch
+with time to spare, while a shorter recovery can delay the branch that
+gates completion. Protection priorities must account for dependencies
+and the branches' remaining progress.
+
+U030 heading 
+Limitation 2: Recovery speed alone omits retention value and
+resource costs.
+
+U031 prose 
+A branch that can tolerate recovery delay may still reuse its history
+on the next normal request. Removing its last KV copy forfeits that reuse;
+moving the copy to a slower tier preserves it but adds retrieval work.
+Conversely, keeping every recoverable history in fast memory consumes
+space needed by other histories and foreground execution. Minimizing
+recovery latency in isolation therefore does not resolve which state
+to retain, where to retain it, or how much protection the serving system
+can afford.
+
+U032 caption 
+Four-branch workflow
+
+U033 caption 
+Workflow-maximum gaps
+
+U034 caption 
+Context and Prefill cost
+
+U035 caption 
+Workflow structure and the cost of reusable KV state.
+    (a) Four trace-derived branches with schematic Main stages A0/A5.
+    Bars preserve timing; dashed tails assume an all-branch join.
+    (b) ECDF of maximum branch-duration gaps per workflow: 121 workflows
+    with temporally inferred fan-in; these are not failure-time slack.
+    (c) Measured Qwen2.5-7B-Instruct-1M Prefill on two A100 PCIe 40\,GB GPUs
+    (TP2, BF16, batch one), with sparse attention above 32K.
+    Reuse starts from $(C-1)$ cached tokens and computes one;
+    DRAM/shared-storage I/O is serialized with computation.
+    HBM/DRAM: median and min--max of three timings;
+    shared storage/full prefill: one timing per length.
+    Protocol: Appendix~\ref{sec:motivation-protocol}.
+    K~=~1,024; M~=~1,000,000.
+
+U037 heading 2.2
+Motivation and Challenges
+
+U038 prose 
+We examine these limitations using agent execution traces and measured
+KV readiness costs. The traces characterize branch timing; the model
+measurements quantify reconstruction and reuse under a common endpoint.
+Together they motivate two requirements for workflow-aware protection.
+
+U039 heading 
+Unequal progress across parallel branches.
+
+U041 prose 
+Figure~\ref{fig:motivation}(\subref{fig:motivation-workflow}) shows four
+trace-derived branches. A2 finishes last, 151.6\,s after the fork;
+A1 finishes at 60.4\,s. If the following Main stage needs all four outputs,
+A1 can absorb 91.2\,s of additional delay before postponing the join,
+whereas any delay on A2 postpones it. We call the additional delay that
+a branch can absorb without postponing the required output its
+\emph{slack}.
+
+U042 prose 
+The public SemiAnalysis CC/Weka trace contains 393 filtered Claude Code
+sessions~\cite{semianalysis2026cctraces}. We retain overlapping subagent
+groups whose branches complete and are followed by a Main request after
+the last branch finishes; Main activity during the branches is allowed.
+This temporal fan-in proxy retains 286 groups in 121 workflows.
+For each group, we compute the longest minus the shortest branch duration,
+then take each workflow's maximum gap.
+Figure~\ref{fig:motivation}(\subref{fig:motivation-branch-gap}) shows a
+median of 138\,s and a 90th percentile of 1,173\,s. These statistics show
+substantial duration differences within the retained workflows.
+The trace does not record explicit result-consumption edges, so they
+neither verify all-branch joins nor measure slack at a fault. The
+four-branch example is one retained group, not a representative
+workflow-maximum gap.
+
+U043 heading 
+From reconstruction time to workflow delay.
+
+U044 prose 
+To quantify the consequence of a join, we measure full prefill at the
+four active requests' input-size proxies. Both this experiment and the
+tier comparison in Figure~\ref{fig:motivation}(\subref{fig:motivation-recompute})
+use Qwen2.5-7B-Instruct-1M~\cite{qwen2025qwen25oneM} on two A100 PCIe
+40\,GB GPUs, with TP2, BF16 and batch one. Our instrumented SGLang
+0.5.10rc0 execution uses MInference vertical/slash
+attention~\cite{jiang2024minference} and dual chunk attention (DCA)
+position handling, with sparse attention above 32K.
+The four history-length proxies come from trace hash-block counts times
+64 and range from 100,864 to 113,664 tokens. Each measured input is a
+fixed synthetic history plus one token. After one complete warmup per
+length, we collect three timings and report their median and min--max.
+Appendix~\ref{sec:motivation-protocol} gives the complete protocol.
+
+U045 caption 
+Measured Prefill costs for
+    Figure~\ref{fig:motivation}(\subref{fig:motivation-workflow}), using
+    Figure~\ref{fig:motivation}(\subref{fig:motivation-recompute})'s configuration
+    at trace input-size proxies plus one token.
+    Bars/whiskers show median/min--max over three timings after warmup.
+    Hatching denotes absorbed delay; solid fill is the calculated WCT
+    increase under an all-branch join with other execution fixed.
+    Each case is a single-branch counterfactual, not a fault-injected
+    WCT measurement.
+
+U047 prose 
+Figure~\ref{fig:motivation-recovery-exposure} maps these costs to the
+assumed all-branch join. At 29.5\,s after the fork, each case separately
+adds a measured reconstruction pause $R_i$ to branch $i$, holding all
+other execution and queues fixed. With offline slack $\sigma_i$ from
+the trace completion times, the WCT increment is
+
+U048 math 
+\[
+  \Delta\mathrm{WCT}_i=\max(0,R_i-\sigma_i).
+\]
+
+U049 prose 
+A1's 33.2\,s reconstruction fits within its 91.2\,s slack and leaves WCT
+unchanged. A2's slightly smaller cost, 32.6\,s, is fully exposed because
+its slack is zero. A3 and A4 expose 16.3 and 18.0\,s, respectively.
+Thus similar reconstruction costs can have different workflow effects.
+The costs are physical measurements; the WCT increments are conditional
+calculations using synthetic inputs and assumed dependencies, not
+fault-injected measurements of the original workflows.
+
+U050 heading 
+Challenge 1: Estimating the workflow impact of recovery.
+
+U051 prose 
+A protection decision must connect the delay it avoids to the required
+workflow outputs. The example uses completed traces to obtain slack,
+but an online system sees only execution so far: remaining model and
+tool durations are uncertain, and later dependencies may not yet be
+exposed. Priorities must change as branches progress. A worker failure
+can also interrupt several branches whose recoveries share resources,
+so their isolated WCT increments cannot simply be added. The challenge
+is to derive useful recovery priorities from partial workflow progress
+while accounting for these uncertainties and interactions.
+
+U052 heading 
+The cost of retaining and accessing long histories.
+
+U054 prose 
+Figure~\ref{fig:motivation}(\subref{fig:motivation-recompute}) compares
+reconstruction with reuse from HBM, DRAM and shared storage under the
+same execution configuration. For $C=M+1$ tokens, full prefill starts
+from empty KV; reuse starts from the same $M$-token history and computes
+one new token. All timers end when the $C$ tokens' KV is ready, before
+vocabulary projection. HBM is a resident-state reference; DRAM and shared
+storage serialize restoration with computation. These measurements
+exclude checkpoint creation, failure detection and recovery routing.

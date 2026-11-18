@@ -277,6 +277,7 @@ def _fresh_multi_agent_schema_errors(instance: dict[str, Any]) -> tuple[str, ...
     [
         "requests",
         "failure",
+        "aegiskv-failure",
         "deployment",
         "multi-agent-trace",
         "predictor-held-out-residual-report",
@@ -298,6 +299,8 @@ def test_schema_validator_cache_uses_canonical_identity_and_one_format_checker()
     assert canonical is _schema_validator("moonkvsim.failure.v1")
     assert canonical.format_checker is _format_checker()
     assert _schema_validator("requests").format_checker is canonical.format_checker
+    assert _schema_validator("moonkvsim.aegiskv.failure.v3") is _schema_validator("aegiskv-failure")
+    assert _schema_validator("moonkvsim.aegiskv.failure.v5") is _schema_validator("aegiskv-failure")
 
 
 def test_cached_validator_reuse_preserves_error_order_and_has_no_state_leak() -> None:

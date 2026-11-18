@@ -1,0 +1,170 @@
+{
+  "schema": "moonkvsim.aegiskv.qwen3_32b_tp4_engine.v1",
+  "model": {
+    "id": "Qwen/Qwen3-32B",
+    "revision": "9216db5781bf21249d130ec9da846c4624c16137",
+    "dtype": "bfloat16",
+    "kv_dtype": "bfloat16",
+    "native_max_context_tokens": 40960,
+    "max_context_tokens": 131072,
+    "context_extension_provenance": "proposed_yarn_128k_modeled_not_runtime_validated",
+    "num_hidden_layers": 64,
+    "num_kv_heads": 8,
+    "head_dim": 128,
+    "kv_scalar_bytes": 2,
+    "kv_bytes_per_token_total": 262144,
+    "kv_bytes_per_token_per_tp_rank": 65536,
+    "kv_layout_status": "proposed_yarn_128k_modeled_runtime_validation_pending"
+  },
+  "parallelism": {
+    "data_parallel_size": 8,
+    "tensor_parallel_size": 4,
+    "pipeline_parallel_size": 1,
+    "world_size": 32
+  },
+  "cluster": {
+    "inference_node_count": 8,
+    "gpus_per_node": 4,
+    "gpu_count": 32,
+    "gpu_sku": "NVIDIA-A100-SXM4-80GB",
+    "physical_hbm_bytes_per_gpu": 85899345920,
+    "tp_group_placement": "one_dp_replica_per_node",
+    "intra_node_gpu_fabric": "NVLINK"
+  },
+  "capacity": {
+    "status": "modeled_uncalibrated",
+    "rank_hbm": {
+      "physical_hbm_bytes_per_rank": 85899345920,
+      "model_weights_bytes_per_rank": 16381061632,
+      "runtime_fixed_bytes_per_rank": 2147483648,
+      "kv_capable_hbm_bytes_per_rank": 67370800640,
+      "peer_hbm_dynamic_quota_upper_bound_bytes_per_rank": 33685400320,
+      "peer_hbm_dynamic_quota_upper_bound_numerator": 1,
+      "peer_hbm_dynamic_quota_upper_bound_denominator": 2,
+      "peer_hbm_accounting_rule": "peer_hbm_dynamic_quota_is_reclaimable_subquota_of_kv_capable_hbm_not_additive"
+    },
+    "store_dram": {
+      "store_node_count": 1,
+      "total_capacity_bytes": 1000000000000,
+      "failure_domain_rule": "outside_all_inference_node_failure_domains",
+      "segments": [
+        {
+          "segment_id": "store-0:segment-0",
+          "node_id": "store-0",
+          "capacity_bytes": 1000000000000
+        }
+      ]
+    },
+    "provenance": {
+      "physical_hbm_bytes_per_rank": "a100_sxm4_80gb_sku_capacity_modeled_as_80_gib_runtime_allocatable_bytes_unobserved",
+      "model_weights_bytes_per_rank": "locked_revision_safetensors_index_total_size_65524246528_evenly_divided_by_tp4_runtime_partition_validation_pending",
+      "runtime_fixed_bytes_per_rank": "modeled_one_eighth_per_rank_weights_rounded_up_to_gib_not_physically_observed",
+      "kv_capable_hbm_bytes_per_rank": "arithmetic_remainder_after_modeled_weights_and_runtime_fixed_shared_by_primary_reusable_and_peer_hbm",
+      "peer_hbm_dynamic_quota_upper_bound_bytes_per_rank": "modeled_alpha_max_one_half_of_kv_capable_hbm_not_selected_from_result_trends",
+      "store_dram_capacity_bytes_per_segment": "modeled_dedicated_store_l3_single_segment_capacity_not_inventory_or_runtime_observation"
+    }
+  },
+  "placement": {
+    "linear_rank_formula": "dp_rank * tensor_parallel_size + tp_rank",
+    "node_formula": "dp_rank",
+    "local_gpu_formula": "tp_rank",
+    "peer_target_dp_by_source_dp": [1, 2, 3, 4, 5, 6, 7, 0],
+    "peer_mapping_rule": "same_tp_rank_on_target_dp",
+    "peer_failure_domain_rule": "different_inference_node"
+  },
+  "protection": {
+    "peer_hbm": {
+      "tier": "PEER_HBM",
+      "source": "PRIMARY_HBM_PRODUCTION_BUFFER",
+      "ownership": "source_owned",
+      "admission": "independent",
+      "shard_granularity": "one_kv_shard_per_tp_rank",
+      "writes_per_logical_chunk": 4,
+      "commit_rule": "all_tp_shard_writes_ack",
+      "cross_tier_copy_allowed": false
+    },
+    "store_dram": {
+      "tier": "STORE_DRAM",
+      "source": "PRIMARY_HBM_PRODUCTION_BUFFER",
+      "ownership": "source_owned",
+      "admission": "independent",
+      "shard_granularity": "one_kv_shard_per_tp_rank",
+      "writes_per_logical_chunk": 4,
+      "commit_rule": "all_tp_shard_writes_ack",
+      "cross_tier_copy_allowed": false
+    },
+    "store_depends_on_peer_hbm": false,
+    "peer_hbm_depends_on_store": false,
+    "same_source_production_buffer": true
+  },
+  "recovery": {
+    "peer_hbm": {
+      "source_tier": "PEER_HBM",
+      "rank_load": "activate_same_tp_rank_peer_hbm_shard",
+      "completion_rule": "all_four_rank_loads_complete_then_collective_sync",
+      "collective": {
+        "kind": "TP_BARRIER",
+        "scope": "single_recovery_tp_group",
+        "payload": "readiness_and_block_table_metadata_only",
+        "mathematical_reduction": false,
+        "all_reduce": false,
+        "logical_reassembly": "install_directory_generation_after_all_rank_shards_ready"
+      }
+    },
+    "store_dram": {
+      "source_tier": "STORE_DRAM",
+      "rank_load": "load_same_tp_rank_store_dram_shard_to_primary_hbm",
+      "completion_rule": "all_four_rank_loads_complete_then_collective_sync",
+      "collective": {
+        "kind": "TP_BARRIER",
+        "scope": "single_recovery_tp_group",
+        "payload": "readiness_and_block_table_metadata_only",
+        "mathematical_reduction": false,
+        "all_reduce": false,
+        "logical_reassembly": "install_directory_generation_after_all_rank_shards_ready"
+      }
+    },
+    "cross_layout_conversion_allowed": false
+  },
+  "algorithm3": {
+    "control_window_ns": 100000,
+    "minimum_fraction": "0",
+    "maximum_fraction": "0.50",
+    "initial_fraction": "0.50",
+    "multiplicative_decrease": "0.50",
+    "additive_increase": "0.05",
+    "stable_window_count": 4,
+    "pressure_source": "explicit_schedule_signal_with_global_des_physical_snapshot",
+    "controller_scope": "one_state_per_peer_target_dp_rank",
+    "provenance": "modeled_uncalibrated_not_selected_from_result_trends"
+  },
+  "modeled_costs": {
+    "intra_node_nvlink": {
+      "transport": "NVLINK",
+      "effective_bandwidth_bytes_per_second": 100000000000,
+      "setup_ns": 1000
+    },
+    "cross_node_peer_hbm": {
+      "transport": "RDMA_GDR",
+      "effective_bandwidth_bytes_per_second": 25000000000,
+      "setup_ns": 5000
+    },
+    "store_dram": {
+      "transport": "MOONCAKE_RDMA",
+      "effective_bandwidth_bytes_per_second": 22000000000,
+      "setup_ns": 250000
+    },
+    "tp_collective_sync": {
+      "transport": "NVLINK",
+      "fixed_overhead_ns": 50000,
+      "data_reduction_bytes": 0
+    }
+  },
+  "evidence": {
+    "timing_and_bandwidth": "modeled_uncalibrated",
+    "capacity": "modeled_uncalibrated",
+    "calibrated": false,
+    "physical_measurement_completed": false,
+    "allowed_claim": "simulation_only"
+  }
+}

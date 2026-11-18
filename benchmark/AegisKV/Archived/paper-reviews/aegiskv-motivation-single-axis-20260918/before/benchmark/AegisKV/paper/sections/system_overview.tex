@@ -1,0 +1,37 @@
+\subsection{System Overview}
+\label{sec:system-overview}
+
+Figure~\ref{fig:system-overview} separates applications, control, and
+inference engines. Applications report request/workflow IDs and DAG
+updates. The Router dispatches by load and locality; the AegisKV
+Controller owns slack, placement, and recovery decisions. Each DP has
+an Adapter and Connector; KV moves directly between engines and
+storage. Badges index the mechanisms below, not execution order.
+
+\begin{figure}[t]
+  \centering
+  % Preserve v11 geometry; only uniform width scaling, as requested.
+  \includegraphics[width=\columnwidth]{figures/system-overview-v11.drawio.pdf}
+  \caption{AegisKV overview. Badges identify Tracker (1), Planner (2),
+    Recovery Manager (3), and Adapter (4). Equivalent DPs hold local KV
+    and smaller Peer regions. Connectors execute the Planner's transfers;
+    Peer and DRAM paths commit independently. Colored cells and memory
+    proportions are schematic.}
+  \label{fig:system-overview}
+  \Description{Three horizontal tiers show applications, control, and inference.
+    A workflow DAG feeds a Tracker with per-request slack bars. The Planner
+    selects protection tiers and layer/block sets; the Recovery Manager forks
+    concurrent retries. Equivalent DP0 and DP1 engines each contain an Adapter,
+    a layer/block grid in Local KV, a smaller Peer KV region holding the other
+    DP's replicas, and a Connector. Adapters invoke Connectors; Peer transfers
+    and independent DRAM copy/restore paths bypass the control plane.}
+\end{figure}
+
+Peer destinations are assigned \emph{before} failure so takeover reads
+the replica locally, e.g., $p(g)=(g+1)\bmod n$ for $n\ge2$ DPs.
+A TP group restores compatible shards as one DP. Distributing requests
+over several targets likewise requires assigning replicas in advance.
+The Controller retains the KV directory and commit metadata outside
+the source's failure domain. The Planner refreshes every 1\,s or on
+significant request/slack events; static profiles size hot sets, while
+Adapter counters update their identities.

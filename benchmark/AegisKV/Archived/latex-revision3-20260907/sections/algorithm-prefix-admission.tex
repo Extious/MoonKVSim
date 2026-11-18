@@ -1,0 +1,42 @@
+\begin{algorithm*}[tp]
+\caption{\textsc{PrefixAdmission}: shared-prefix groups with staged replacement (revision 3)}
+\label{alg:slack-landlord}
+\textit{State:} $C$: committed object set; $Q$: granted bytes; $S$: staging reserve inside $Q$;
+$\Phi$: current tier-local harm; $Y$: tentative deletion closures; $\eta\ge0$: improvement margin.
+\par\medskip
+\noindent\begin{minipage}[t]{.48\textwidth}\vspace{0pt}
+\begin{tabular}[t]{@{}r@{\hspace{0.5em}}>{\raggedright\arraybackslash}p{\dimexpr\linewidth-2.5em\relax}@{}}
+\multicolumn{2}{@{}l}{\textbf{Plan}$(i,r,t)$, independently for HBM and DRAM}\\
+1 & Attach compatible committed shared prefix; $\mathcal F\gets\varnothing$.\\
+2 & Pending group or unacknowledged reclaim $\Rightarrow$ \textsc{Pause}.\\
+3 & \textbf{for} each bounded, sealed, source-readable group $X$ starting at the first missing object \textbf{do}\\
+4 & $\quad$Require valid source lease, placement and path permits; finish estimate before expiry.\\
+5 & $\quad$Require $b(X)\le S$ and $B_{physical}+b(X)\le Q$.\\
+6 & $\quad C'\gets C$; $Y\gets\varnothing$.\\
+7 & $\quad$\textbf{while} $b(C'\cup X)>\max(0,Q-S)$ \textbf{do}\\
+8 & $\qquad Z\gets$ legal descendant closure minimizing current joint loss per distinct byte.\\
+9 & $\qquad$Exclude candidate ancestors and read-pinned objects; no legal $Z\Rightarrow$ reject $X$.\\
+10 & $\qquad C'\gets C'\setminus Z$; $Y\gets Y\cup Z$; recompute closure losses.\\
+11 & $\quad$\textbf{end while}\\
+12 & $\quad\Phi(C,t)-\Phi(C'\cup X,t)>\eta\Rightarrow\mathcal F\gets\mathcal F\cup\{(X,Y)\}$.\\
+13 & \textbf{end for}; $\mathcal F=\varnothing\Rightarrow$ \textsc{Pause}.\\
+14 & Choose minimum final harm, then minimum copied bytes; reserve $X$ within $Q$.\\
+15 & Keep $C$ visible; copy $X$ from source as one PENDING group.\\
+\end{tabular}\end{minipage}\hfill
+\begin{minipage}[t]{.48\textwidth}\vspace{0pt}
+\begin{tabular}[t]{@{}r@{\hspace{0.5em}}>{\raggedright\arraybackslash}p{\dimexpr\linewidth-2.5em\relax}@{}}
+\multicolumn{2}{@{}l}{\textbf{Finish}$(X,Y,t')$}\\
+16 & Validate all shard ACKs, value/route epoch, layout, deadline, quota and read leases.\\
+17 & Recompute $\Phi(C,t')-\Phi((C\setminus Y)\cup X,t')>\eta$.\\
+18 & \textbf{if} all checks pass \textbf{then} atomically publish $C\gets(C\setminus Y)\cup X$; enqueue $Y$ for reclaim.\\
+19 & \textbf{else} retain old $C$; abort $X$ and enqueue fenced cancellation/reclaim.\\
+20 & Retain physical charges and retry reclaim IDs until Worker free ACKs.\\
+\multicolumn{2}{@{}l}{\textbf{OnEvent}$(e)$}\\
+21 & New sealed KV, value/reference changes, free ACKs or restored permits trigger retry from the current gap.\\
+22 & Request completion removes active value; optional zero-weight retention has a bounded TTL.\\
+23 & Expired final references reclaim unpinned objects; shared live references remain.\\
+24 & Hard foreground shrink aborts pending copies and revokes safe closures; physical release still requires ACK.\\
+25 & Recovery reserves primary destinations before acquiring bounded source read leases.\\
+26 & Lease expiry requests cancellation; only completion/cancel ACK permits physical free.\\
+\end{tabular}\end{minipage}
+\end{algorithm*}

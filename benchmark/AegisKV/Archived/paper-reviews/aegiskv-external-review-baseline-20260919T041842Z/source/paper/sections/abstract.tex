@@ -1,0 +1,21 @@
+\begin{abstract}
+Multi-agent applications coordinate interdependent LLM requests and
+accumulate long contexts across interactions. Recovering lost or
+unavailable key--value (KV) state can be costly, but its impact on workflow
+completion depends on each request's delay tolerance. We present AegisKV,
+a workflow-aware KV fault-tolerance framework built on multilevel storage.
+AegisKV derives request slack from workflow dependencies and estimated
+remaining execution time, then combines slack with recovery costs to
+choose protection levels and allocate limited backup resources. Within
+each request, sparse-attention access patterns and layer execution order
+guide KV block placement and recovery. By coordinating request-level
+protection with block-level placement, AegisKV focuses limited backup
+resources on reducing recovery delays that affect workflow completion.
+% Provisional qualitative result sentence requested for the writing draft.
+% Detailed results are not yet available: neither benefit nor overhead
+% is verified here. Confirm both claims against current-design experiments
+% and the chosen baselines before submission; revise if unsupported.
+Experiments show that AegisKV substantially reduces workflow completion
+time under failures while introducing negligible overhead during normal
+inference.
+\end{abstract}

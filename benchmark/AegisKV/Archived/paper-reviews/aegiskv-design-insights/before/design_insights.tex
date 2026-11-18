@@ -1,0 +1,62 @@
+\subsection{Observations and Design Implications}
+\label{sec:design-insights}
+
+\paragraph{Observation 1: recovery speed has workflow-dependent value.}
+The fan-out example in Section~\ref{sec:motivation-workflow} shows that
+the same recovery delay can be absorbed on one branch and delay the join
+on another. A branch-duration gap is not itself the slack at failure time.
+This suggests comparing the delay a request can absorb with the recovery
+cost of each storage tier before allocating capacity. AegisKV estimates
+slack from the workflow DAG and uses it for protection tiers and
+competition order (Section~\ref{sec:workflow-protection}).
+
+\paragraph{Observation 2: access is concentrated within a request.}
+We collect actual selector indices from MiniCPM4-8B, NOSA-1B, and
+NOSA-3B on three PG19 documents per model. Each capture has a 32K-token
+history and a causal continuation; 256- and 512-query windows are nested
+within the same capture. Figure~\ref{fig:design-concentration} ranks
+\emph{(layer, 64-token block)} objects, each containing all KV heads,
+by selection frequency. The hottest 20\% of historical KV bytes account
+for 92.2\%/90.3\% of selection events for NOSA-1B,
+91.5\%/89.5\% for NOSA-3B, and 69.6\%/66.0\% for MiniCPM4-8B
+in the two windows. The two NOSA curves are close in these configurations;
+this does not establish independence from model scale.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/design-sparse-concentration.pdf}
+  \caption{Concentration of native sparse-selection events in historical KV.
+    Each model has three PG19 documents and one causal capture per document;
+    the 256/512-query windows are nested, not independent runs.
+    Curves show the pointwise median across documents after offline
+    frequency ranking. Repeated selections of a block by different queries
+    or selection groups count repeatedly. The denominator excludes new KV.
+    Event coverage is neither an online hit rate nor a recovery-byte saving.}
+  \label{fig:design-concentration}
+  \Description{The highest-frequency layer-block objects cover more selector
+    events than uniform selection; the degree of concentration differs by model.}
+\end{figure*}
+
+This concentration motivates selective protection, but does not determine
+how much KV recovery requires: a block selected repeatedly is transferred
+only once. AegisKV therefore uses historical hotness to predict a needed
+set, while retaining a complete path for prediction misses
+(Section~\ref{sec:kv-placement}).
+
+\paragraph{Observation 3: Peer HBM removes exposed transfer wait.}
+Once a committed DRAM copy exists, recovery can already avoid recomputing
+the entire history. The additional value of Peer HBM is the transfer time
+that remaining computation cannot hide. During layer-by-layer recovery,
+earlier layers need their KV sooner, while later preloads can overlap
+earlier computation. This motivates protecting a front-layer prefix of
+hot sets until preload wait is eliminated. The calibrated pipeline in
+Section~\ref{sec:kv-placement} makes this argument explicit; it does not
+establish optimality over arbitrary placements.
+
+These observations leave two systems challenges: converting layer/block
+choices into a bounded, replaceable placement plan, and executing that
+plan when the recovery target still serves foreground requests.
+AegisKV uses whole-footprint admission to bound placement
+(Section~\ref{sec:capacity-allocation}). Independent commits and
+per-request readiness govern recovery
+(Sections~\ref{sec:parallel-recovery} and~\ref{sec:kv-runtime}).

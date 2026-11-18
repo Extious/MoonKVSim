@@ -83,6 +83,14 @@
       "type": "array",
       "items": {"type": "integer", "minimum": 0}
     },
+    "source_hash_block_token_counts": {
+      "type": "array",
+      "items": {"type": "integer", "minimum": 1, "maximum": 64}
+    },
+    "source_hash_block_scopes": {
+      "type": "array",
+      "items": {"enum": ["global_system_template", "within_workflow"]}
+    },
     "source_hash_ids_sha256": {"$ref": "#/$defs/sha256"},
     "prompt_tokens": {"type": "integer", "minimum": 0},
     "cached_prefix_tokens": {"type": "integer", "minimum": 0},
@@ -96,12 +104,29 @@
     "retry_of_span_id": {"type": ["string", "null"], "minLength": 1},
     "model_id": {"$ref": "#/$defs/nonEmptyString"},
     "model_revision": {"type": ["string", "null"]},
-    "token_count_mode": {"const": "source_hash_blocks_64"},
-    "tokenizer_fingerprint": {"const": "not_available_source_hash_blocks_64"},
+    "token_count_mode": {
+      "enum": ["source_hash_blocks_64", "qwen3_token_ids"]
+    },
+    "tokenizer_fingerprint": {
+      "oneOf": [
+        {"const": "not_available_source_hash_blocks_64"},
+        {"$ref": "#/$defs/sha256"}
+      ]
+    },
     "source_block_size_tokens": {"const": 64},
-    "source_hash_id_scope_raw": {"const": "local"},
-    "hash_id_scope": {"const": "within_workflow_only"},
-    "evidence_class": {"const": "real_trace_shape_replay"},
+    "source_hash_id_scope_raw": {"enum": ["local", "mixed"]},
+    "hash_id_scope": {
+      "enum": [
+        "within_workflow_only",
+        "global_system_template_and_within_workflow"
+      ]
+    },
+    "evidence_class": {
+      "enum": [
+        "real_trace_shape_replay",
+        "public_human_dag_modeled_prompt_replay"
+      ]
+    },
     "synthetic": {"const": false},
     "truncated": {"const": false},
     "model_length_guard_passed": {"const": true},

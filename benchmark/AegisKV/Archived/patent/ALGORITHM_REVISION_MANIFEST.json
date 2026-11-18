@@ -1,0 +1,17 @@
+{
+  "schema": "aegiskv.patent.algorithm-revision.v3",
+  "scope": "supplemental technical disclosure, executable reference; original disclosure hashes preserved",
+  "equation_format": "native OMML",
+  "equations": 8,
+  "files": {
+    "benchmark/AegisKV/docs/patent/ALGORITHMS_2_3_REVISION.md": "7428f50ec91ffcadf9c0304d234f417321d8b616e35310d0d74948d564104172",
+    "benchmark/AegisKV/docs/patent/AegisKV-算法2-3修订技术交底-v3.docx": "6ab2ecaec68e1d8db08c095b109404c73842c49a35cfa66faaceeb94c9cbca07",
+    "benchmark/AegisKV/docs/patent/build_algorithm_revision_docx.py": "c71f78d36c8158220e274f81e30361a16164b3c20fecb003079a37ec26ee04cc",
+    "benchmark/AegisKV/paper/main.pdf": "df8290139f06701826c1803b3b318cc9893c39c8d733f6743fd57cde926181a1",
+    "benchmark/AegisKV/paper/sections/algorithm-prefix-admission.tex": "b3eddf369b3bad7b10fcc284ffe69e331ff7c05e78866c1d28ea9232639369af",
+    "benchmark/AegisKV/paper/sections/algorithm-foreground-budget.tex": "c8ba9f3130759be0422ae2e0923bf59c36f91b30acba3d99b3f09940f19df0e7",
+    "benchmark/AegisKV/experiments/results/algorithm-revision-v3/VALIDATION.json": "ed8604f7c3cd7f54bd0a68928c02b4c2b6919744f0e09cdb5df7a47be613573e"
+  },
+  "native_integration": false,
+  "physical_interference_validation": false
+}

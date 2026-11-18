@@ -1,0 +1,120 @@
+2
+Background and Motivation
+2.1
+Background
+Multi-agent execution. A multi-agent application di-
+vides a user task among agents that exchange intermediate
+results. Each agent maintains a conversation and advances
+through LLM requests and tool calls: the model generates
+a response or a tool invocation, and the returned result be-
+comes input to a subsequent request [33]. A request is one
+model invocation; an agent can issue multiple requests to
+complete its task; a workflow connects these tasks through
+sequential dependencies, parallel branches and joins. The
+application orchestrates this workflow, while the serving
+engine executes its model requests.
+Figure 1 illustrates this structure. For code generation, a
+main agent delegates a CSV-export feature to API, UI, test-
+authoring and documentation agents. Starting from a shared
+specification, each branch alternates model requests with
+file reads, edits or checks. The main agent then integrates
+the changes and runs tests. For deep research, a lead agent
+delegates technical, cost, safety and supply investigations,
+then synthesizes their evidence into a report [1]. Branches
+can require different numbers of requests and tools; there is
+no common round barrier. A completed model request can
+therefore leave both its agent and the workflow unfinished.
+Workflow completion time. Let 𝑤identify a workflow,
+𝑎𝑤denote its arrival time at the system, and 𝑐𝑤denote the
+time when all its required outputs are ready. We define work-
+flow completion time (WCT) as the elapsed time from arrival
+to completion, WCT𝑤= 𝑐𝑤−𝑎𝑤. It includes model execu-
+tion, tool execution, queueing and dependency waits. In the
+coding example, integration waits for all required changes.
+A delay on the last unfinished branch postpones integration,
+while an earlier-finishing branch may absorb the same delay
+before the join. Request latency affects WCT through these
+dependencies.
+Reusable KV across agent turns. During prefill, an LLM
+processes input tokens and computes per-layer keys and
+values (KV); decoding extends this state as output tokens
+are generated. An agent’s next request often appends model
+outputs and tool results to its existing conversation. Under
+compatible model and position semantics, a matching token
+prefix can reuse its KV, so only the new suffix needs to be
+computed [11, 41]. For example, after the API agent reads a
+file, its next request can reuse the preceding conversation’s
+KV while processing the returned contents. Prefix changes
+restrict reuse to the part that still matches.
+This state can remain useful while the agent executes a
+tool or waits for another branch, even though no model
+request is running. Keeping it avoids repeated prefix compu-
+tation when the agent resumes. KV is derived model state,
+distinct from the token history and workflow progress stored
+by the application. In conventional per-token layouts, its size
+(a) Code generation: CSV export
+Main
+Plan
+Main
+Merge
+& test
+Patch
+API agent
+R1 Read R2
+Edit
+R3 Lint R4
+UI agent
+R1 Read R2
+Edit
+R3
+Test agent
+R1 Read R2
+Edit
+R3
+Docs agent
+R1 Read R2
+(b) Deep research: batteries
+Lead
+Plan
+Lead
+Write
+Report
+Technical agent
+R1 Search R2 Read R3 Read R4
+Cost agent
+R1 Search R2
+Safety agent
+R1 Search R2 Read R3
+Supply agent
+R1 Read R2
+R1 LLM request
+Tool call
+Figure 1. Illustrative multi-agent workflows. Each row is
+one agent: 𝑅𝑖denotes its 𝑖th LLM request, with intervening
+tool results carried into the next request. Branches have
+different request counts and no shared round barriers. The
+coordinator resumes after their results join. Positions and
+lengths do not encode execution time.
+grows with context length, layer count and KV-head dimen-
+sions; a long conversation can therefore occupy much more
+memory as KV than as token IDs. Sparse attention reduces
+the historical KV accessed by an operation [15], but state
+skipped by that operation may still be needed later.
+Recovery and storage tiers. A serving-worker failure can
+interrupt requests, make GPU-resident KV unavailable and
+remove serving capacity [4]. We consider fail-stop worker
+failures with accepted token histories and workflow progress
+retained outside the failed worker, and a compatible surviv-
+ing replica available. The replica has model weights but must
+obtain the interrupted sequence’s state. Without surviving
+KV, it reconstructs that state by replaying retained tokens.
+A KV checkpoint preserves an already computed prefix: re-
+covery retrieves that prefix and replays only the subsequent
+tokens whose KV was not saved. Asynchronous checkpoint-
+ing can leave such a tail at failure [14, 32]. A checkpoint
+must survive the protected failure; same-host DRAM can
+survive a GPU-worker failure but not loss of the host.
+Hierarchical caches extend GPU HBM with host DRAM
+and storage to retain more histories [11, 28]. Location deter-
+mines the access path: KV already in the executor’s HBM is
+2

@@ -1,0 +1,17 @@
+\caption{Workflow timing and the WCT impact of KV reconstruction.
+    (a) Four trace-derived parallel agents A1--A4 with schematic Main
+    agents A0/A5. Bar lengths encode execution time; dashed tails mark
+    slack if A5 waits for all four branches.
+    (b) Empirical CDF of workflow-level gaps over 121 workflows.
+    For each parallel group with temporally inferred fan-in, we subtract
+    the shortest agent execution time from the longest, then retain the
+    largest gap per workflow. These gaps are not failure-time slack.
+    (c) Reconstruction costs for A1--A4 in (a), measured by full prefill
+    at trace-estimated context lengths using
+    Figure~\ref{fig:motivation-recompute}'s setup. Total bar lengths and
+    whiskers show the median and min--max over three timings after warmup.
+    Each measured cost is added as a pause to its corresponding branch,
+    one branch at a time, with other execution fixed. If A5 waits for all
+    branches, the hatched portion is absorbed by slack and the solid
+    portion is the calculated WCT increase.
+    Protocol: Appendix~\ref{sec:motivation-protocol}.}

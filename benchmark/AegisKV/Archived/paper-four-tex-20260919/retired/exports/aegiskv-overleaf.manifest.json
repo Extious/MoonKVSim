@@ -1,0 +1,154 @@
+{
+  "main_document": "main.tex",
+  "compiler": "pdfLaTeX",
+  "bibliography": "BibTeX",
+  "file_count": 29,
+  "zip_sha256": "6a38c8978e4ff6e0786a1747eda1217a6f1a278a800f02eebc78934ec0e1359e",
+  "files": [
+    {
+      "path": "ACM-Reference-Format.bst",
+      "bytes": 93560,
+      "sha256": "8ec002c927068bfc5b3cfe71b66aa4767b9e485530ac3c67ba5c064df4c2e6ac"
+    },
+    {
+      "path": "README.md",
+      "bytes": 3371,
+      "sha256": "7ffbb2d3f3338e4ceee62aa86fb806fc816f9bcc4e228588df0b7c3dc4eec1bd"
+    },
+    {
+      "path": "acmart.cls",
+      "bytes": 121737,
+      "sha256": "2f949e6e3f2a79f2cdc218b9dcdbaa7dd451adb4ee0be1af6dc7ebe00b318ea7"
+    },
+    {
+      "path": "build.sh",
+      "bytes": 525,
+      "sha256": "d20eb1864041d9c90c01b41ed9c852008950a3b44884edbaee9c44eb82554990"
+    },
+    {
+      "path": "figures/figure1a-workflow-gaps.pdf",
+      "bytes": 16895,
+      "sha256": "7c72a38316937558dbb138be5bc1930db06b8373ff15f207010e27f930f79787"
+    },
+    {
+      "path": "figures/figure1b-workflow.pdf",
+      "bytes": 11985,
+      "sha256": "c5a617d044f4d90d2f9cc48bbff5ce98be1ff9b82680383801dfb2e6f6201a1e"
+    },
+    {
+      "path": "figures/figure1c-recovery-exposure.pdf",
+      "bytes": 12966,
+      "sha256": "d989d0b497b8e7597a5dcb18d147e9ce60a5481a63a48f0e47c3edafd7b67923"
+    },
+    {
+      "path": "figures/figure2-recovery-cost.pdf",
+      "bytes": 18785,
+      "sha256": "d2e44dc8bafa9c6ad0083044b37d782f4b595e89ecd3e4e38089b4d97bf25e1d"
+    },
+    {
+      "path": "figures/figure3a-agent-prediction.pdf",
+      "bytes": 11423,
+      "sha256": "7e21a4bab2f4bdb216e16e42e1f76a7e8a6873038cf0a0d27dd780c6df766c12"
+    },
+    {
+      "path": "figures/figure3b-sparse-models.pdf",
+      "bytes": 16293,
+      "sha256": "43f823bef46796ca7e7a9f272363c01d991c080955fdccf41b0328797387056c"
+    },
+    {
+      "path": "figures/figure3c-retry-kv-prediction.pdf",
+      "bytes": 19466,
+      "sha256": "6cf63ea6bd7cb10acc0d474a5bf381f4518b72121b87cdd3bcc5c06222dc488b"
+    },
+    {
+      "path": "figures/figure4-system-overview.pdf",
+      "bytes": 57406,
+      "sha256": "453deb75288508e39293d70a1dd920e1a1f0b5010aef66d0571aa122af0a1f7b"
+    },
+    {
+      "path": "figures/figure5-recovery-pipeline.pdf",
+      "bytes": 34902,
+      "sha256": "08870137fb479b18df155c89664a7b42d2068700a4906fd9fde108e73334c02d"
+    },
+    {
+      "path": "latexmkrc",
+      "bytes": 106,
+      "sha256": "8d440b756e6102d00eddef512931f2ba4d1fa008fd79c7888fe1d36f42e55bec"
+    },
+    {
+      "path": "main.tex",
+      "bytes": 1237,
+      "sha256": "ac7cc6405b81e4ff52720824de5461efbfd0dd48542e8b119ef8b54529acb21e"
+    },
+    {
+      "path": "references.bib",
+      "bytes": 13812,
+      "sha256": "2b1817249275777cb95661f5399b9cccd9bc501b49894a6873fca28360711cef"
+    },
+    {
+      "path": "sections/abstract.tex",
+      "bytes": 1300,
+      "sha256": "e254f2d24e324ddc7113738e8f373821fecfe0100e7da89acddee1421b5fb135"
+    },
+    {
+      "path": "sections/background_and_motivation.tex",
+      "bytes": 14890,
+      "sha256": "7638dfccb8579e0de2f4edded8caab8bcc0ba263bc0192cd3a704da43f0dc6e7"
+    },
+    {
+      "path": "sections/capacity_allocation.tex",
+      "bytes": 5421,
+      "sha256": "884756babf035346ab05aa0563ed8b4a3ebe33eb35427a447a22aa7042319a84"
+    },
+    {
+      "path": "sections/design_discussion.tex",
+      "bytes": 1442,
+      "sha256": "b1a8382bd80d489b17fbcebf3e4e96ae3e233547d9779fb9d4f4dcdd5c8d5cce"
+    },
+    {
+      "path": "sections/design_insights.tex",
+      "bytes": 4779,
+      "sha256": "8748d7a2912069d0e3d9f85e0db6f7ee50031b85265194cfec94a667d26b6416"
+    },
+    {
+      "path": "sections/kv_placement.tex",
+      "bytes": 13882,
+      "sha256": "c02335585a73f37acae84eb08b404a46619dde561e5b65c7f90a5837465a5cfb"
+    },
+    {
+      "path": "sections/kv_runtime.tex",
+      "bytes": 2732,
+      "sha256": "6618b73a30fb4fd234b2aa0411d72d8cb94834bd6c7ae2dafc5d7796dbae31c8"
+    },
+    {
+      "path": "sections/motivation-figures.tex",
+      "bytes": 2649,
+      "sha256": "054c8ea8d0c62ef0532a07f106e66eac4f185691d9fa0505c7463ad424cd2ddd"
+    },
+    {
+      "path": "sections/motivation-prefill-figure.tex",
+      "bytes": 1846,
+      "sha256": "873c64a3aa45780523805376ea8b6f3e577ef9a087e463968ffd7d8d0da1ad95"
+    },
+    {
+      "path": "sections/parallel_recovery.tex",
+      "bytes": 5864,
+      "sha256": "20467c0a9fbfed50571d5acc4b95a94e12774a0f3ccadbd81e78f1aa5f18be31"
+    },
+    {
+      "path": "sections/system_design.tex",
+      "bytes": 803,
+      "sha256": "3782f02a160146542cab3ba67817dfa246466b7a79594c8ab3f07947639d7997"
+    },
+    {
+      "path": "sections/system_overview.tex",
+      "bytes": 2227,
+      "sha256": "bc1c084bba62f509b58a474fadc677ee1daf70ecfdaf2a9840613acfdd4f5e42"
+    },
+    {
+      "path": "sections/workflow_protection.tex",
+      "bytes": 4462,
+      "sha256": "c4af541255c40a058ee492e79e29440ddccefc675910c294105782905e8439d1"
+    }
+  ]
+}

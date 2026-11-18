@@ -1,0 +1,208 @@
+--- before/background_and_motivation.tex
++++ background_and_motivation.tex
+@@ -6,27 +6,28 @@
+ \label{sec:motivation-background}
+ 
+ \paragraph{Multi-agent execution.}
+-A multi-agent application divides a user task among agents that exchange
+-intermediate results. Each agent maintains a conversation and advances
+-through LLM requests and tool calls: the model generates a response or
+-a tool invocation, and the returned result becomes input to a subsequent
+-request~\cite{wu2023autogen}. A \emph{request} is one model invocation;
+-an \emph{agent} can issue multiple requests to complete its task; a
+-\emph{workflow} connects these tasks through sequential dependencies,
+-parallel branches and joins. The application orchestrates this workflow,
+-while the serving engine executes its model requests.
++Many LLM applications rely on multi-agent collaboration to complete
++complex tasks. These applications divide a user task into subtasks and
++assign them to several agents for parallel execution. Each agent maintains
++its own conversation, advancing its task through LLM requests and tool
++invocations: the model generates responses or initiates tool calls, and
++the returned results become input to subsequent
++requests~\cite{wu2023autogen}. A \emph{request} is a single model call;
++an \emph{agent} can initiate multiple requests to complete a subtask;
++a \emph{workflow} connects these tasks through serial dependencies,
++parallel branches and joins. The application orchestrates the workflow,
++while the inference service executes its model requests.
+ 
+ Figure~\ref{fig:agent-workflow-examples} illustrates this structure.
+-For code generation, a main agent delegates a CSV-export feature to API,
+-UI, test-authoring and documentation agents. Starting from a shared
+-specification, each branch alternates model requests with file reads,
+-edits or checks. The main agent then integrates the changes and runs
+-tests. For deep research, a lead agent delegates technical, cost, safety
+-and supply investigations, then synthesizes their evidence into a
+-report~\cite{anthropic2025multiagent}. Branches can require different
+-numbers of requests and tools; there is no common round barrier.
+-A completed model request can therefore leave both its agent and the
+-workflow unfinished.
++In code generation, the main agent delegates work on a CSV-export feature
++to API, UI, test-authoring and documentation agents. The branches execute
++in parallel, alternating model requests with file reads, edits or checks.
++The main agent then integrates the changes and runs tests. In deep
++research, the lead agent delegates technical, cost, security and supply
++investigations, then combines the collected evidence into a
++report~\cite{anthropic2025multiagent}. The number of requests and tool
++calls required by each branch may vary. Therefore, after a model request
++completes, its agent and the entire workflow may still be unfinished.
+ 
+ \paragraph{Workflow completion time.}
+ Let $w$ identify a workflow, $a_w$ denote its arrival time at the system,
+@@ -60,60 +61,52 @@
+ \end{figure}
+ 
+ \paragraph{KV reuse in multi-agent workflows.}
+-During \emph{prefill}, an LLM processes input tokens and computes
+-per-layer keys and values (KV); \emph{decoding} extends this state as
+-output tokens are generated. With compatible model and position semantics,
+-requests with an identical token prefix can reuse its KV and compute
+-only the remaining suffix~\cite{zheng2024sglang}.
+-
+-Multi-agent workflows create reuse both within and across agents.
+-Within an agent, successive requests often append model outputs and
+-tool results to the existing conversation, allowing earlier turns'
+-KV to be reused~\cite{gao2024cachedattention}. Across agents, branches
+-can inherit a common prompt before adding their own tasks. For example,
+-the API, UI and test agents in Figure~\ref{fig:agent-workflow-examples}
+-can share KV for common project instructions and repository context
+-when these form the same initial token sequence. Reuse extends only
+-through the matching prefix; different role prompts or context edits
+-can shorten it~\cite{zheng2024sglang}.
+-
+-Retained KV can therefore serve an agent's later turns or another
+-agent's requests, including after a tool call or dependency wait.
+-KV consists of model-generated tensors rather than the token IDs stored
+-by the application. In conventional per-token layouts, its size grows
+-with context length, layer count and KV-head dimensions. Retaining
+-long histories can thus consume substantially more memory than saving
+-their text or token IDs.
++The model requests on these branches repeatedly consume context from
++earlier steps. Coding agents carry source files, edits and test outputs
++into later requests; research agents accumulate retrieved documents,
++intermediate findings and tool results. Processing this growing history
++from scratch on every request would repeat work already performed.
++During \emph{prefill}, an LLM computes per-layer keys and values (KV)
++for input tokens; \emph{decoding} extends this state as output tokens
++are generated. Retaining this KV allows a subsequent request with a
++matching token prefix to compute only the new suffix, provided the model
++and position semantics are compatible~\cite{gao2024cachedattention,zheng2024sglang}.
++
++This reuse occurs both within and across agents. Successive requests
++from one agent can reuse KV for their shared conversation history.
++Different agents can also inherit a common prompt before adding their
++own tasks. For example, the API, UI and test agents in
++Figure~\ref{fig:agent-workflow-examples} can share KV for common project
++instructions and repository context when these form the same initial
++token sequence. Different role prompts or context edits can shorten
++the reusable prefix~\cite{zheng2024sglang}.
++The KV cache therefore preserves computation across requests, including
++while an agent executes tools or waits for another branch.
+ 
+ \paragraph{Failures and KV reconstruction.}
+-Failures are a recurring concern in large-scale LLM serving deployments:
+-hardware faults and software crashes can interrupt workers and make
+-their GPU-resident KV unavailable~\cite{cao2026lumen,jayakody2026ghostserve}.
+-Redirecting an interrupted request to a worker with the model loaded
+-does not restore this state. Even when the application retains the
+-conversation's tokens, the model must reconstruct the missing KV before
+-it can resume generation. Without a usable KV copy, recovery requires
+-processing the retained history again~\cite{strati2024dejavu}.
+-
+-This reconstruction is particularly costly for agents that accumulate
+-long contexts over many requests~\cite{jayakody2026ghostserve}.
+-Coding agents retain source files, edits and test outputs; research
+-agents collect retrieved documents, intermediate findings and tool
+-results. A failure late in execution can therefore require rebuilding
+-KV for the accumulated history, not just the latest user input.
+-In a multi-agent workflow, one failed worker may interrupt several
+-co-located agents, leaving the surviving workers to reconstruct multiple
+-histories while also handling normal traffic~\cite{cao2026lumen}.
+-Reconstruction delays the affected branches and can postpone downstream
+-integration or synthesis, increasing workflow completion time.
+-
+-Figure~\ref{fig:gpu-server-availability} provides production infrastructure
+-context using the public InfiniteHBD training-cluster
+-trace~\cite{shou2025infinitehbd}. Its 584 fault records affect 231 of
+-400 GPU servers over approximately 349 days. Reconstructing the number
+-of servers outside recorded fault intervals yields a minimum of 365
+-available servers. These records characterize infrastructure
+-unavailability; they do not measure KV reconstruction or serving latency.
++These reuse benefits depend on the cached state remaining available.
++In large-scale LLM deployments, hardware faults and software crashes can
++interrupt serving workers and make their GPU-resident KV
++unavailable~\cite{cao2026lumen,jayakody2026ghostserve}.
++For production-cluster context, Figure~\ref{fig:gpu-server-availability}
++shows the public InfiniteHBD training-cluster trace: 584 recorded outages
++affect 231 of 400 GPU servers over approximately 349 days, with reconstructed
++availability falling to 365 servers~\cite{shou2025infinitehbd}.
++The trace includes faults and operational interruptions, as detailed in
++the caption; it characterizes infrastructure availability rather than
++serving recovery latency.
++
++When no reusable KV survives, a replacement worker must reconstruct it
++by replaying the retained tokens, even if it already has the model weights
++and the application has preserved the conversation
++history~\cite{strati2024dejavu}. For a long-running agent, this means
++reprocessing the context accumulated across earlier requests rather than
++only the latest input~\cite{jayakody2026ghostserve}.
++One failed worker can also interrupt several co-located agents, requiring
++surviving workers to reconstruct multiple histories while handling normal
++traffic~\cite{cao2026lumen}. The resulting delays propagate through the
++workflow's dependencies: reconstruction on the last unfinished branch
++postpones its join and can increase WCT.
+ 
+ \begin{figure}[t]
+   \centering
+@@ -131,28 +124,33 @@
+ \end{figure}
+ 
+ \paragraph{KV retention across storage tiers.}
+-A \emph{KV checkpoint} saves an already computed prefix. If that copy
+-survives a failure, recovery can retrieve it and recompute only the
+-remaining tail~\cite{strati2024dejavu,jayakody2026ghostserve}.
+-Hierarchical caches extend GPU HBM with host DRAM and local or shared
+-storage to retain more histories~\cite{gao2024cachedattention,qin2025mooncake}.
++To reduce this reconstruction work, a \emph{KV checkpoint} preserves an
++already computed prefix at a location that survives the failure.
++Recovery can then retrieve the saved prefix and recompute only the
++unsaved tail~\cite{strati2024dejavu,jayakody2026ghostserve}.
++Retaining these histories consumes memory: KV consists of per-layer
++tensors whose size grows with context length, so long conversations can
++require substantially more space as KV than as token IDs.
++Hierarchical caches therefore extend GPU HBM with host DRAM and local
++or shared storage to retain more histories~\cite{gao2024cachedattention,qin2025mooncake}.
+ Shared storage, such as a shared filesystem, makes retained KV accessible
+-to multiple serving workers. A compatible worker can retrieve this state
+-after reassignment or failover, provided the data and storage service
+-survive the failure. Sharing describes the access scope, not a specific
+-medium such as SSD.
+-
+-Location determines the access path: KV already in the executor's HBM
+-is directly available to kernels; local DRAM requires host-to-device
+-transfer, and remote DRAM also requires network transfer. With host
+-staging, shared storage adds storage and network reads before the
+-host-to-device transfer. Computation and prefetching can overlap some
+-of this work. Retention nevertheless occupies
+-capacity, and copying or moving KV consumes bandwidth that may also serve
+-foreground requests. Discarding the last reusable KV copy releases space
+-but requires reconstruction if that state is needed again.
++to compatible workers after reassignment or failover, provided the data
++and storage service remain available.
++
++The choice of tier determines how much work is needed to retrieve this
++state. KV already in the executor's HBM is directly available to kernels;
++local DRAM requires host-to-device transfer, and remote DRAM also requires
++network transfer. With host staging, shared storage adds storage and
++network reads before the host-to-device transfer. Computation and
++prefetching can overlap some of this work, but retention still occupies
++capacity and transfers compete for bandwidth with foreground requests.
++Discarding the last reusable copy releases space at the cost of
++reconstruction on a later request or recovery. The serving system must
++therefore decide which histories to preserve and where, accounting for
++both future reuse and the effect of recovery on workflow completion.
+ 
+ \paragraph{Existing mechanisms.}
++Existing systems address different parts of this problem.
+ Hierarchical caching reduces repeated prefix work across
+ turns~\cite{gao2024cachedattention,qin2025mooncake}; KV streaming and
+ checkpointing reduce reconstruction after

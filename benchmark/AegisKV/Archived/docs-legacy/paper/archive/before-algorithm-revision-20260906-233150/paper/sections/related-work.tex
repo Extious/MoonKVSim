@@ -1,0 +1,26 @@
+\section{Related Work}
+\paragraph{KV storage and fault tolerance.}
+Mooncake coordinates distributed KV storage~\cite{qin2025mooncake};
+D\'ej\`aVu streams KV for disaggregation and recovery~\cite{strati2024dejavu}.
+GhostServe uses coded protection~\cite{jayakody2026ghostserve}, and RaidServe
+addresses post-failure compute/memory imbalance~\cite{xu2026raidserve}.
+AegisKV values request-owned protection by workflow Slack, with independent
+tiers and no parity. These systems are not measured baselines; DRAM-only
+is an AegisKV control.
+
+\paragraph{Workflow-aware serving.}
+Parrot exposes application dataflow~\cite{lin2024parrot}; SGLang combines
+structured execution and radix reuse~\cite{zheng2024sglang}. KVFlow uses
+step graphs and temporal proximity for caching~\cite{pan2025kvflow},
+Pythia exploits predictability~\cite{yu2026pythia}, and Cortex isolates
+stage pools~\cite{pagonas2025cortex}. AegisKV estimates fail-now recovery
+harm using predicted delay tolerance. Its salted prototype provides no
+cross-request prefix reuse.
+
+\paragraph{Caching and control.}
+Strata couples cache-transfer layout and scheduling~\cite{xie2026strata};
+our model reproduces neither its kernels nor throughput. AegisKV combines
+CPM float~\cite{kelley1959cpm}, Landlord credit~\cite{young2002landlord} and
+AIMD feedback~\cite{chiu1989aimd} with prefix dependencies and asynchronous
+commitment. Their classical guarantees do not automatically extend to this
+coupled problem.

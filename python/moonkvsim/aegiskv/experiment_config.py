@@ -8,11 +8,11 @@ for the AegisKV study; the MoonKVSim library maps them onto
 
 from __future__ import annotations
 
-import hashlib
 import json
 import shutil
 from collections.abc import Mapping
 from dataclasses import dataclass
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any, Final
 
@@ -21,27 +21,40 @@ from moonkvsim.aegiskv.experiment import (
     ALLOWED_DP_COUNTS,
     GPU_SKU,
     LOCKED_DP_COUNT,
+    PEER_HBM_ALPHA_MAX,
+    PEER_HBM_ALPHA_MIN,
     QWEN3_8B_CONFIG_SHA256,
     QWEN3_8B_MODEL_ID,
     QWEN3_8B_MODEL_REVISION,
-    TOPOLOGY,
+    QWEN3_8B_MODEL_WEIGHTS_BYTES,
     ModelParameters,
 )
+from moonkvsim.config import SchemaValidationError, validate_instance
 from moonkvsim.store.transfer_engine import TransportKind
 
-REQUESTS_SCHEMA: Final = "moonkvsim.aegiskv.requests.v1"
-FAILURE_SCHEMA: Final = "moonkvsim.aegiskv.failure.v1"
-ENGINE_SCHEMA: Final = "moonkvsim.aegiskv.engine.v1"
+REQUESTS_SCHEMA: Final = "moonkvsim.aegiskv.requests.v2"
+FAILURE_SCHEMA: Final = "moonkvsim.aegiskv.failure.v5"
+ENGINE_SCHEMA: Final = "moonkvsim.aegiskv.engine.v2"
 LAYER_FILES: Final = ("requests.json", "failure.json", "engine.json")
+ALLOWED_CONFIG_ENTRIES: Final = (*LAYER_FILES, "requests.md", "engine", "failure")
 ALLOWED_FAILURE_TYPE: Final = "GPU_FAILURE"
-CURRENT_SCOPE_ID: Final = "qwen3-8b-dp8-a100-40gb-single-node-v1"
-NATIVE_LAYOUT_FINGERPRINT: Final = (
-    "616330f7a5e168edfad90d6e53dc8b754ef3f4c78925e80a49516e4f3f3d8d4f"
+FANOUTQA_STATUS: Final = "selected_public_dataset_pending_workload_build"
+FANOUTQA_READY_STATUS: Final = "ready_frozen_fanoutqa_workload"
+FANOUTQA_DATASET_NAME: Final = "FanOutQA"
+FANOUTQA_SPLIT: Final = "dev"
+FANOUTQA_SOURCE_REVISION: Final = "989f4c40d9deea1ecb0897d7a17a9c0fe20d5c33"
+FANOUTQA_SOURCE_SHA256: Final = (
+    "b62a9797732c716e6b17ba4086f277d154d747ce2fa01614cb76a3372e7fb88c"
 )
+FANOUTQA_TASK_COUNT: Final = 310
+FANOUTQA_MINIMUM_TASK_COUNT_FOR_ECDF: Final = 160
+FANOUTQA_OVERFLOW_POLICY: Final = "split_evidence_if_below_minimum"
+NS_PER_MINUTE: Final = 60_000_000_000
 YARN_LAYOUT_FINGERPRINT: Final = (
-    "d9863189bf94c967e18d4926ecb1fc88cc26e7dcb1553eb69972afaff7dc7d4d"
+    "42cff103674b5a857c1e6308247fbd006bf80ac444efd50a377c40ab4696a29e"
 )
-EXPECTED_CONTEXT_BUCKETS: Final = ("8k", "32k", "64k", "96k", "128k")
+ENGINE_STORE_CAPACITY_BYTES: Final = 1_000_000_000_000
+ENGINE_PCIE_EFFECTIVE_BANDWIDTH_BYTES_PER_SECOND: Final = 25_000_000_000
 
 
 class ExperimentConfigError(ValueError):
@@ -125,11 +138,13 @@ def load_experiment_configs(
     directory = (config_dir or default_config_dir(root)).resolve()
     if not directory.is_dir():
         raise ExperimentConfigError(f"experiment config directory is missing: {directory}")
-    extra = sorted(path.name for path in directory.iterdir() if path.name not in LAYER_FILES)
+    extra = sorted(
+        path.name for path in directory.iterdir() if path.name not in ALLOWED_CONFIG_ENTRIES
+    )
     if extra:
         raise ExperimentConfigError(
-            "experiments/configs may only contain requests.json, failure.json, "
-            f"and engine.json; unexpected files: {extra}"
+            "experiments/configs may only contain the three JSON layers and audited docs; "
+            f"unexpected files: {extra}"
         )
     requests = load_json_object(directory / "requests.json")
     failure = load_json_object(directory / "failure.json")
@@ -141,7 +156,11 @@ def load_experiment_configs(
     if engine.get("schema") != ENGINE_SCHEMA:
         raise ExperimentConfigError(f"engine.json schema must be {ENGINE_SCHEMA}")
     repository = (root or repository_root()).resolve()
-    _validate_requests(requests, repository)
+    _validate_requests(requests)
+    try:
+        validate_instance(failure, FAILURE_SCHEMA)
+    except SchemaValidationError as error:
+        raise ExperimentConfigError(str(error)) from error
     _validate_failure(failure)
     _validate_engine(engine, repository)
     configs = ExperimentLayerConfigs(
@@ -155,15 +174,14 @@ def load_experiment_configs(
 
 
 def matrix_seeds(requests: Mapping[str, Any]) -> tuple[int, ...]:
-    seed = _mapping(requests.get("seed"), "requests.seed")
-    values = seed.get("matrix_seeds")
+    values = requests.get("seeds")
     if not isinstance(values, list) or not values:
-        raise ExperimentConfigError("requests.seed.matrix_seeds must be a non-empty array")
+        raise ExperimentConfigError("requests.seeds must be a non-empty array")
     seeds: list[int] = []
     for index, value in enumerate(values):
         if type(value) is not int or value < 0:
             raise ExperimentConfigError(
-                f"requests.seed.matrix_seeds[{index}] must be a non-negative integer"
+                f"requests.seeds[{index}] must be a non-negative integer"
             )
         seeds.append(value)
     if len(set(seeds)) != len(seeds):
@@ -171,13 +189,28 @@ def matrix_seeds(requests: Mapping[str, Any]) -> tuple[int, ...]:
     return tuple(seeds)
 
 
+def workflow_concurrency(requests: Mapping[str, Any]) -> int:
+    """Return the closed-loop number of simultaneously admitted workflows."""
+
+    replay = _mapping(requests.get("replay"), "requests.replay")
+    return _positive_int(
+        replay.get("workflow_concurrency"),
+        "requests.replay.workflow_concurrency",
+    )
+
+
 def workload_paths(
     requests: Mapping[str, Any],
     *,
     root: Path | None = None,
 ) -> tuple[Path, Path]:
-    artifact = _mapping(requests.get("workload"), "requests.workload").get("frozen_artifact")
-    frozen = _mapping(artifact, "requests.workload.frozen_artifact")
+    if requests.get("status") == FANOUTQA_STATUS:
+        raise ExperimentConfigError(
+            "FanOutQA source is public, but its derived Qwen3-8B workload is not frozen; "
+            "experiment run blocked"
+        )
+    artifact = _mapping(requests.get("dataset"), "requests.dataset").get("frozen_artifact")
+    frozen = _mapping(artifact, "requests.dataset.frozen_artifact")
     path = resolve_repo_path(_string(frozen.get("path"), "frozen_artifact.path"), root)
     manifest = resolve_repo_path(
         _string(frozen.get("manifest_path"), "frozen_artifact.manifest_path"),
@@ -186,146 +219,172 @@ def workload_paths(
     return path, manifest
 
 
-def _sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    try:
-        with path.open("rb") as stream:
-            for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-                digest.update(chunk)
-    except OSError as error:
-        raise ExperimentConfigError(f"cannot hash {path}: {error}") from error
-    return digest.hexdigest()
-
-
 def _expect(value: object, expected: object, location: str) -> None:
     if value != expected or type(value) is not type(expected):
         raise ExperimentConfigError(f"{location} must be {expected!r}")
 
 
-def _validate_requests(requests: Mapping[str, Any], root: Path) -> None:
-    matrix_seeds(requests)
-    arrival = _mapping(requests.get("arrival"), "requests.arrival")
-    for field, expected in (
-        ("mode", "causal_trace_replay"),
-        ("request_rate", None),
-        ("max_concurrency", None),
-        ("closed_loop", True),
-        ("preserve_agent_dag", True),
-        ("preserve_recorded_tool_delay", True),
-    ):
-        _expect(arrival.get(field), expected, f"requests.arrival.{field}")
-    workload = _mapping(requests.get("workload"), "requests.workload")
-    for field, expected in (
-        ("kind", "real_multi_agent_trace"),
-        ("dataset", "semianalysisai/cc-traces-weka-062126"),
-        ("token_count_mode", "source_hash_blocks_64"),
-        ("derive_prefix_sharing_from_source_hash_ids", True),
-    ):
-        _expect(workload.get(field), expected, f"requests.workload.{field}")
-    source = _mapping(workload.get("source"), "requests.workload.source")
-    _expect(source.get("target_tokenizer_equivalence"), False, "requests.workload.source")
-    selection = _mapping(workload.get("selection"), "requests.workload.selection")
-    _expect(selection.get("kind"), "complete_workflows_frozen_by_id", "selection.kind")
-    for field in (
-        "no_truncation",
-        "no_padding",
-        "no_synthesis",
-        "no_span_slicing",
-        "no_cross_workflow_concatenation",
-    ):
-        _expect(selection.get(field), True, f"requests.workload.selection.{field}")
-    trace_tokens = _mapping(requests.get("trace_token_count"), "requests.trace_token_count")
-    _expect(trace_tokens.get("mode"), "source_hash_blocks_64", "trace_token_count.mode")
-    _expect(trace_tokens.get("source_block_size_tokens"), 64, "trace_token_count block size")
-    _expect(trace_tokens.get("hash_id_scope"), "within_workflow_only", "hash_id_scope")
-    _expect(
-        trace_tokens.get("target_tokenizer_equivalence"),
-        False,
-        "trace_token_count.target_tokenizer_equivalence",
+def _validate_requests(requests: Mapping[str, Any]) -> None:
+    _expect_keys(
+        requests,
+        {"schema", "status", "seeds", "dataset", "replay", "context"},
+        "requests",
     )
+    matrix_seeds(requests)
+    workflow_concurrency(requests)
+    status = requests.get("status")
+    if status not in {FANOUTQA_STATUS, FANOUTQA_READY_STATUS}:
+        raise ExperimentConfigError(
+            f"requests.status must be {FANOUTQA_STATUS!r} or "
+            f"{FANOUTQA_READY_STATUS!r}"
+        )
+    dataset = _mapping(requests.get("dataset"), "requests.dataset")
+    dataset_fields = {"name", "split", "source_revision", "source_sha256"}
+    if status == FANOUTQA_READY_STATUS:
+        dataset_fields.add("frozen_artifact")
+    _expect_keys(dataset, dataset_fields, "requests.dataset")
+    for field, expected in (
+        ("name", FANOUTQA_DATASET_NAME),
+        ("split", FANOUTQA_SPLIT),
+        ("source_revision", FANOUTQA_SOURCE_REVISION),
+        ("source_sha256", FANOUTQA_SOURCE_SHA256),
+    ):
+        _expect(dataset.get(field), expected, f"requests.dataset.{field}")
+    frozen_task_count: int | None = None
+    if status == FANOUTQA_STATUS:
+        if "frozen_artifact" in dataset:
+            raise ExperimentConfigError(
+                "pending FanOutQA requests must not declare a frozen_artifact"
+            )
+    else:
+        frozen = _mapping(
+            dataset.get("frozen_artifact"),
+            "requests.dataset.frozen_artifact",
+        )
+        for field in ("path", "manifest_path", "normalizer_version"):
+            _string(frozen.get(field), f"requests.dataset.frozen_artifact.{field}")
+        for field in ("sha256", "manifest_sha256"):
+            value = _string(frozen.get(field), f"requests.dataset.frozen_artifact.{field}")
+            if len(value) != 64 or any(character not in "0123456789abcdef" for character in value):
+                raise ExperimentConfigError(
+                    f"requests.dataset.frozen_artifact.{field} must be lowercase SHA-256"
+                )
+        frozen_task_count = _positive_int(
+            frozen.get("task_count"),
+            "requests.dataset.frozen_artifact.task_count",
+        )
+        if frozen_task_count > FANOUTQA_TASK_COUNT:
+            raise ExperimentConfigError(
+                "frozen FanOutQA task_count cannot exceed the dev split"
+            )
+    replay = _mapping(requests.get("replay"), "requests.replay")
+    _expect_keys(replay, {"workflow_concurrency"}, "requests.replay")
     context = _mapping(requests.get("context"), "requests.context")
+    _expect_keys(
+        context,
+        {
+            "max_model_len_tokens",
+            "minimum_task_count_for_ecdf",
+            "overflow_policy",
+        },
+        "requests.context",
+    )
     _expect(context.get("max_model_len_tokens"), 131_072, "context.max_model_len_tokens")
     _expect(
-        context.get("required_observed_context_buckets"),
-        list(EXPECTED_CONTEXT_BUCKETS),
-        "context.required_observed_context_buckets",
+        context.get("overflow_policy"),
+        FANOUTQA_OVERFLOW_POLICY,
+        "context.overflow_policy",
     )
-    for field, expected in (
-        ("require_real_128k_samples", True),
-        ("overflow_policy", "fail"),
-        ("truncation_policy", "forbid"),
-        ("synthetic_padding", "forbid"),
-    ):
-        _expect(context.get(field), expected, f"requests.context.{field}")
-    frozen = _mapping(workload.get("frozen_artifact"), "requests.workload.frozen_artifact")
-    workload_path, manifest_path = workload_paths(requests, root=root)
-    if not workload_path.is_file() or not manifest_path.is_file():
-        raise ExperimentConfigError("requests frozen workload and manifest must exist")
-    declared_sha = _string(frozen.get("sha256"), "frozen_artifact.sha256")
-    if _sha256_file(workload_path) != declared_sha:
-        raise ExperimentConfigError("requests frozen workload SHA-256 drifted")
-    manifest = load_json_object(manifest_path)
-    artifact = _mapping(manifest.get("artifact"), "workload manifest.artifact")
-    for field in ("sha256", "record_count", "semantic_fingerprint"):
-        if frozen.get(field) != artifact.get(field):
-            raise ExperimentConfigError(f"requests frozen_artifact.{field} drifted")
-    audit = _mapping(
-        _mapping(manifest.get("selection"), "workload manifest.selection").get("audit"),
-        "workload manifest.selection.audit",
+    minimum_tasks = _positive_int(
+        context.get("minimum_task_count_for_ecdf"),
+        "requests.context.minimum_task_count_for_ecdf",
     )
-    if selection.get("workflow_ids") != audit.get("workflow_ids"):
-        raise ExperimentConfigError("requests workflow_ids differ from the frozen manifest")
-    bucket_counts = _mapping(audit.get("context_bucket_counts"), "context_bucket_counts")
-    if any(
-        type(bucket_counts.get(bucket)) is not int or int(bucket_counts[bucket]) <= 0
-        for bucket in EXPECTED_CONTEXT_BUCKETS
-    ):
-        raise ExperimentConfigError("frozen workload lacks a required context bucket")
+    if minimum_tasks < FANOUTQA_MINIMUM_TASK_COUNT_FOR_ECDF:
+        raise ExperimentConfigError(
+            "requests.context.minimum_task_count_for_ecdf must be at least "
+            f"{FANOUTQA_MINIMUM_TASK_COUNT_FOR_ECDF}"
+        )
+    if minimum_tasks > FANOUTQA_TASK_COUNT:
+        raise ExperimentConfigError(
+            "requests.context.minimum_task_count_for_ecdf cannot exceed the FanOutQA dev split"
+        )
+    if frozen_task_count is not None and frozen_task_count < minimum_tasks:
+        raise ExperimentConfigError(
+            "requests.dataset.frozen_artifact.task_count is below "
+            "requests.context.minimum_task_count_for_ecdf"
+        )
 
 
 def _validate_engine(engine: Mapping[str, Any], root: Path) -> None:
-    _expect(engine.get("scope_id"), CURRENT_SCOPE_ID, "engine.scope_id")
+    _expect_keys(
+        engine,
+        {
+            "schema",
+            "model",
+            "parallelism",
+            "hardware",
+            "memory",
+            "store",
+            "network",
+            "control",
+        },
+        "engine",
+    )
     model = _mapping(engine.get("model"), "engine.model")
+    _expect_keys(model, {"id", "revision", "kv_layout_path"}, "engine.model")
+    for field, expected in (
+        ("id", QWEN3_8B_MODEL_ID),
+        ("revision", QWEN3_8B_MODEL_REVISION),
+    ):
+        _expect(model.get(field), expected, f"engine.model.{field}")
+    layout_path = resolve_repo_path(
+        _string(model.get("kv_layout_path"), "engine.model.kv_layout_path"),
+        root,
+    )
+    layout = load_json_object(layout_path)
+    _expect(layout.get("fingerprint"), YARN_LAYOUT_FINGERPRINT, "kv_layout fingerprint")
+    layout_model = _mapping(layout.get("model"), "kv_layout.model")
     for field, expected in (
         ("id", QWEN3_8B_MODEL_ID),
         ("revision", QWEN3_8B_MODEL_REVISION),
         ("config_sha256", QWEN3_8B_CONFIG_SHA256),
-        ("dtype", "bf16"),
-        ("kv_dtype", "bf16"),
     ):
-        _expect(model.get(field), expected, f"engine.model.{field}")
-    layout = _mapping(model.get("kv_layout"), "engine.model.kv_layout")
-    _expect(layout.get("bytes_per_64_source_tokens"), 9_437_184, "kv_layout byte size")
-    for field, fingerprint in (
-        ("native_path", NATIVE_LAYOUT_FINGERPRINT),
-        ("proposed_yarn_128k_path", YARN_LAYOUT_FINGERPRINT),
-    ):
-        path = resolve_repo_path(_string(layout.get(field), f"kv_layout.{field}"), root)
-        document = load_json_object(path)
-        _expect(document.get("fingerprint"), fingerprint, f"kv_layout.{field} fingerprint")
-        layout_model = _mapping(document.get("model"), f"kv_layout.{field}.model")
-        _expect(layout_model.get("id"), QWEN3_8B_MODEL_ID, f"kv_layout.{field}.model.id")
-        _expect(
-            layout_model.get("revision"),
-            QWEN3_8B_MODEL_REVISION,
-            f"kv_layout.{field}.model.revision",
-        )
-    parallelism = _mapping(engine.get("parallelism"), "engine.parallelism")
-    _expect(parallelism.get("data_parallel_size"), LOCKED_DP_COUNT, "data_parallel_size")
+        _expect(layout_model.get(field), expected, f"kv_layout.model.{field}")
     _expect(
-        parallelism.get("allowed_data_parallel_sizes"),
-        list(ALLOWED_DP_COUNTS),
-        "allowed_data_parallel_sizes",
+        layout_model.get("weights_bytes"),
+        QWEN3_8B_MODEL_WEIGHTS_BYTES,
+        "kv_layout.model.weights_bytes",
     )
+    stage_layouts = layout.get("stage_rank_layouts")
+    if not isinstance(stage_layouts, list) or len(stage_layouts) != 1:
+        raise ExperimentConfigError("kv_layout.stage_rank_layouts must contain TP1/PP1")
+    block = _mapping(stage_layouts[0], "kv_layout.stage_rank_layouts[0]").get("block")
+    block = _mapping(block, "kv_layout.stage_rank_layouts[0].block")
+    block_tokens = _positive_int(block.get("block_size_tokens"), "kv_layout block tokens")
+    block_bytes = _positive_int(block.get("allocated_bytes"), "kv_layout block bytes")
+    if 64 % block_tokens or block_bytes * (64 // block_tokens) != 9_437_184:
+        raise ExperimentConfigError("kv_layout must allocate 9,437,184 bytes per 64 tokens")
+
+    parallelism = _mapping(engine.get("parallelism"), "engine.parallelism")
+    _expect_keys(
+        parallelism,
+        {"data_parallel_size", "tensor_parallel_size", "pipeline_parallel_size"},
+        "engine.parallelism",
+    )
+    _expect(parallelism.get("data_parallel_size"), LOCKED_DP_COUNT, "data_parallel_size")
     _expect(parallelism.get("tensor_parallel_size"), 1, "tensor_parallel_size")
     _expect(parallelism.get("pipeline_parallel_size"), 1, "pipeline_parallel_size")
+
     hardware = _mapping(engine.get("hardware"), "engine.hardware")
+    _expect_keys(
+        hardware,
+        {"gpu_sku", "gpu_count", "node_count", "physical_hbm_bytes_per_gpu"},
+        "engine.hardware",
+    )
     hardware_expectations: tuple[tuple[str, object], ...] = (
         ("gpu_sku", GPU_SKU),
         ("gpu_count", LOCKED_DP_COUNT),
         ("node_count", 1),
-        ("topology", TOPOLOGY),
-        ("inference_node_id", "node-inference-0"),
         ("physical_hbm_bytes_per_gpu", A100_40GB_HBM_BYTES),
     )
     for hardware_field, expected_value in hardware_expectations:
@@ -334,38 +393,56 @@ def _validate_engine(engine: Mapping[str, Any], root: Path) -> None:
             expected_value,
             f"engine.hardware.{hardware_field}",
         )
+
+    memory = _mapping(engine.get("memory"), "engine.memory")
+    _expect_keys(memory, {"peer_hbm_alpha"}, "engine.memory")
+    _peer_hbm_alpha(memory.get("peer_hbm_alpha"), "engine.memory.peer_hbm_alpha")
+
     store = _mapping(engine.get("store"), "engine.store")
+    _expect_keys(
+        store,
+        {"kind", "capacity_bytes", "colocated_with_inference"},
+        "engine.store",
+    )
     _expect(store.get("kind"), "mooncake_dram", "engine.store.kind")
-    _expect(store.get("node_count"), 1, "engine.store.node_count")
+    _expect(
+        store.get("capacity_bytes"),
+        ENGINE_STORE_CAPACITY_BYTES,
+        "engine.store.capacity_bytes",
+    )
     _expect(store.get("colocated_with_inference"), True, "engine.store.colocated")
-    predictor = _mapping(engine.get("predictor"), "engine.predictor")
-    _expect(predictor.get("kind"), "aiconfigurator", "engine.predictor.kind")
-    _expect(
-        predictor.get("status"),
-        "unsupported_for_target_profile",
-        "engine.predictor.status",
+
+    network = _mapping(engine.get("network"), "engine.network")
+    _expect_keys(
+        network,
+        {"transport", "effective_bandwidth_bytes_per_second", "transfer_setup_ns"},
+        "engine.network",
     )
-    _expect(predictor.get("formal_use_allowed"), False, "engine.predictor.formal_use_allowed")
-    thresholds = resolve_repo_path(
-        _string(predictor.get("residual_thresholds_path"), "residual_thresholds_path"),
-        root,
-    )
-    if not thresholds.is_file():
-        raise ExperimentConfigError("engine predictor residual thresholds are missing")
+    _expect(network.get("transport"), "PCIE", "engine.network.transport")
     _expect(
-        engine.get("evidence"),
-        {
-            "class": "E2",
-            "scope": "modeled/preliminary",
-            "calibration": "not_calibrated",
-            "physical_execution": False,
-            "paper_ready": False,
-        },
-        "engine.evidence",
+        network.get("effective_bandwidth_bytes_per_second"),
+        ENGINE_PCIE_EFFECTIVE_BANDWIDTH_BYTES_PER_SECOND,
+        "engine.network.effective_bandwidth_bytes_per_second",
+    )
+    _positive_int(network.get("transfer_setup_ns"), "engine.network.transfer_setup_ns")
+
+    control = _mapping(engine.get("control"), "engine.control")
+    _expect_keys(control, {"reroute_ns", "policy_chunk_tokens"} |
+                 ({"runtime_semantics"} if "runtime_semantics" in control else set()),
+                 "engine.control")
+    _non_negative_int(control.get("reroute_ns"), "engine.control.reroute_ns")
+    _positive_int(
+        control.get("policy_chunk_tokens"),
+        "engine.control.policy_chunk_tokens",
     )
 
 
-def model_parameters_from_engine(engine: Mapping[str, Any]) -> ModelParameters:
+def model_parameters_from_engine(
+    engine: Mapping[str, Any],
+    *,
+    failure_progress_per_mille: int,
+    gpu_recovery_time_ns: int,
+) -> ModelParameters:
     parallelism = _mapping(engine.get("parallelism"), "engine.parallelism")
     hardware = _mapping(engine.get("hardware"), "engine.hardware")
     memory = _mapping(engine.get("memory"), "engine.memory")
@@ -376,8 +453,6 @@ def model_parameters_from_engine(engine: Mapping[str, Any]) -> ModelParameters:
         raise ExperimentConfigError(f"engine.model.id must be {QWEN3_8B_MODEL_ID}")
     if model.get("revision") != QWEN3_8B_MODEL_REVISION:
         raise ExperimentConfigError("engine.model.revision must match the locked Qwen3-8B revision")
-    if model.get("config_sha256") != QWEN3_8B_CONFIG_SHA256:
-        raise ExperimentConfigError("engine.model.config_sha256 does not match the locked model")
     dp_count = _positive_int(
         parallelism.get("data_parallel_size"),
         "parallelism.data_parallel_size",
@@ -393,107 +468,96 @@ def model_parameters_from_engine(engine: Mapping[str, Any]) -> ModelParameters:
         raise ExperimentConfigError("engine parallelism locks TP=1 and PP=1")
     if hardware.get("gpu_sku") != GPU_SKU:
         raise ExperimentConfigError(f"engine.hardware.gpu_sku must be {GPU_SKU}")
-    if hardware.get("topology") != TOPOLOGY:
-        raise ExperimentConfigError(f"engine.hardware.topology must be {TOPOLOGY}")
+    if hardware.get("gpu_count") != dp_count:
+        raise ExperimentConfigError("engine.hardware.gpu_count must equal DP size for TP=PP=1")
+    if hardware.get("node_count") != 1:
+        raise ExperimentConfigError("engine.hardware.node_count must be 1 for local PCIe")
     hbm = _positive_int(
         hardware.get("physical_hbm_bytes_per_gpu"),
         "hardware.physical_hbm_bytes_per_gpu",
     )
     if hbm != A100_40GB_HBM_BYTES:
         raise ExperimentConfigError("engine hardware locks modeled A100-40GB HBM")
-    transport_name = _string(network.get("store_transport"), "network.store_transport")
+    transport_name = _string(network.get("transport"), "network.transport")
     try:
         transport = TransportKind(transport_name)
     except ValueError as error:
         raise ExperimentConfigError(
-            f"unsupported store_transport: {transport_name}"
+            f"unsupported transport: {transport_name}"
         ) from error
     store = _mapping(engine.get("store"), "engine.store")
+    if store.get("kind") != "mooncake_dram" or store.get("colocated_with_inference") is not True:
+        raise ExperimentConfigError("engine Store must be colocated Mooncake DRAM")
+    pcie_bandwidth = _positive_int(
+        network.get("effective_bandwidth_bytes_per_second"),
+        "network.effective_bandwidth_bytes_per_second",
+    )
     return ModelParameters(
+        runtime_semantics=str(control.get("runtime_semantics", "legacy_v3")),
         dp_count=dp_count,
-        store_node_count=_positive_int(store.get("node_count"), "store.node_count"),
+        store_node_count=1,
         physical_hbm_bytes_per_gpu=hbm,
-        model_weights_bytes_per_gpu=_positive_int(
-            memory.get("model_weights_bytes_per_gpu"),
-            "memory.model_weights_bytes_per_gpu",
-        ),
-        runtime_fixed_bytes_per_gpu=_positive_int(
-            memory.get("runtime_fixed_bytes_per_gpu"),
-            "memory.runtime_fixed_bytes_per_gpu",
-        ),
-        peer_budget_bytes_per_gpu=_positive_int(
-            memory.get("peer_budget_bytes_per_gpu"),
-            "memory.peer_budget_bytes_per_gpu",
+        peer_hbm_alpha=_peer_hbm_alpha(
+            memory.get("peer_hbm_alpha"),
+            "memory.peer_hbm_alpha",
         ),
         store_budget_bytes=_positive_int(
-            memory.get("store_budget_bytes"),
-            "memory.store_budget_bytes",
+            store.get("capacity_bytes"),
+            "store.capacity_bytes",
         ),
-        peer_bandwidth_bytes_per_second=_positive_int(
-            network.get("peer_bandwidth_bytes_per_second"),
-            "network.peer_bandwidth_bytes_per_second",
-        ),
-        store_bandwidth_bytes_per_second=_positive_int(
-            network.get("store_bandwidth_bytes_per_second"),
-            "network.store_bandwidth_bytes_per_second",
-        ),
-        tcp_store_bandwidth_bytes_per_second=_positive_int(
-            network.get("tcp_store_bandwidth_bytes_per_second"),
-            "network.tcp_store_bandwidth_bytes_per_second",
-        ),
-        host_staging_bandwidth_bytes_per_second=_positive_int(
-            network.get("host_staging_bandwidth_bytes_per_second"),
-            "network.host_staging_bandwidth_bytes_per_second",
-        ),
-        host_staging_capacity_bytes_per_node=_positive_int(
-            memory.get("host_staging_capacity_bytes_per_node"),
-            "memory.host_staging_capacity_bytes_per_node",
-        ),
+        peer_bandwidth_bytes_per_second=pcie_bandwidth,
+        store_bandwidth_bytes_per_second=pcie_bandwidth,
         store_transport=transport,
         transfer_setup_ns=_positive_int(
             network.get("transfer_setup_ns"),
             "network.transfer_setup_ns",
         ),
-        failure_detection_ns=_positive_int(
-            control.get("failure_detection_ns"),
-            "control.failure_detection_ns",
-        ),
+        failure_detection_ns=0,
         reroute_ns=_non_negative_int(control.get("reroute_ns"), "control.reroute_ns"),
         policy_chunk_tokens=_positive_int(
             control.get("policy_chunk_tokens"),
             "control.policy_chunk_tokens",
         ),
         failure_progress_per_mille=_positive_int(
-            control.get("failure_progress_per_mille"),
-            "control.failure_progress_per_mille",
+            failure_progress_per_mille,
+            "failure.injection_progress_percent",
+        ),
+        gpu_recovery_time_ns=_positive_int(
+            gpu_recovery_time_ns,
+            "failure.gpu_recovery_time_minutes",
         ),
     )
 
 
 def model_parameters_from_configs(configs: ExperimentLayerConfigs) -> ModelParameters:
-    parameters = model_parameters_from_engine(configs.engine)
-    control = _mapping(configs.failure.get("control"), "failure.control")
-    detection = _positive_int(
-        configs.failure.get("detection_delay_ns"),
-        "failure.detection_delay_ns",
+    progress_percent = _positive_int(
+        configs.failure.get("injection_progress_percent"),
+        "failure.injection_progress_percent",
     )
-    reroute = _non_negative_int(
-        configs.failure.get("reroute_delay_ns"),
-        "failure.reroute_delay_ns",
+    recovery_minutes = gpu_recovery_time_minutes(configs.failure)
+    return model_parameters_from_engine(
+        configs.engine,
+        failure_progress_per_mille=progress_percent * 10,
+        gpu_recovery_time_ns=recovery_minutes * NS_PER_MINUTE,
     )
-    progress = _positive_int(
-        control.get("progress_per_mille"),
-        "failure.control.progress_per_mille",
+
+
+def gpu_recovery_time_minutes(failure: Mapping[str, Any]) -> int:
+    """Return fixed failure-to-reusable time for the failed GPU capacity."""
+
+    return _positive_int(
+        failure.get("gpu_recovery_time_minutes"),
+        "failure.gpu_recovery_time_minutes",
     )
-    if detection != parameters.failure_detection_ns:
-        raise ExperimentConfigError("failure.detection_delay_ns must match engine.control")
-    if reroute != parameters.reroute_ns:
-        raise ExperimentConfigError("failure.reroute_delay_ns must match engine.control")
-    if progress != parameters.failure_progress_per_mille:
-        raise ExperimentConfigError(
-            "failure.control.progress_per_mille must match engine.control"
-        )
-    return parameters
+
+
+def failure_count(failure: Mapping[str, Any]) -> int:
+    """Return the number of GPU failures in each failure-scenario workload run."""
+
+    return _positive_int(
+        failure.get("failure_count"),
+        "failure.failure_count",
+    )
 
 
 def snapshot_experiment_configs(source_dir: Path, destination_dir: Path) -> None:
@@ -506,58 +570,37 @@ def snapshot_experiment_configs(source_dir: Path, destination_dir: Path) -> None
 
 
 def _validate_failure(failure: Mapping[str, Any]) -> None:
-    _expect(failure.get("enabled"), True, "failure.enabled")
-    allowed = failure.get("allowed_types")
-    if allowed != [ALLOWED_FAILURE_TYPE]:
-        raise ExperimentConfigError("failure.allowed_types must be exactly [GPU_FAILURE]")
     if failure.get("type") != ALLOWED_FAILURE_TYPE:
         raise ExperimentConfigError("this experiment release only supports GPU_FAILURE")
-    if failure.get("semantics") != "fail_stop_hbm_lost":
-        raise ExperimentConfigError("GPU_FAILURE must be fail_stop_hbm_lost")
-    repair = _mapping(failure.get("repair"), "failure.repair")
-    if repair.get("enabled") is not False:
-        raise ExperimentConfigError("first-release GPU_FAILURE does not repair")
-    _expect(repair.get("repair_after_s"), None, "failure.repair.repair_after_s")
-    control = _mapping(failure.get("control"), "failure.control")
-    if control.get("mode") != "focus_span_compute_progress":
-        raise ExperimentConfigError(
-            "failure control must be focus_span_compute_progress"
-        )
-    _positive_int(control.get("progress_per_mille"), "failure.control.progress_per_mille")
-    _expect(
-        control.get("selection_scope"),
-        "same_focus_span_and_compute_progress_in_every_system",
-        "failure.control.selection_scope",
+    progress_percent = _positive_int(
+        failure.get("injection_progress_percent"),
+        "failure.injection_progress_percent",
     )
-    frequency = _mapping(control.get("frequency"), "failure.control.frequency")
-    _expect(
-        frequency.get("kind"),
-        "one_gpu_failure_per_gpu_failure_cell",
-        "failure.control.frequency.kind",
-    )
-    _expect(
-        frequency.get("scenarios"),
-        ["no_failure", "gpu_failure"],
-        "failure.control.frequency.scenarios",
-    )
-    target = _mapping(failure.get("target"), "failure.target")
-    _expect(target.get("resolution"), "deterministic_focus_span_gpu", "failure.target")
-    _expect(target.get("topology"), TOPOLOGY, "failure.target.topology")
-    _expect(target.get("gpu_sku"), GPU_SKU, "failure.target.gpu_sku")
-    effects = _mapping(failure.get("effects"), "failure.effects")
-    for field in (
-        "compute_unavailable",
-        "copy_engines_unavailable",
-        "hbm_lost",
-        "committed_store_dram_remains_usable",
-    ):
-        _expect(effects.get(field), True, f"failure.effects.{field}")
+    if progress_percent >= 100:
+        raise ExperimentConfigError("failure.injection_progress_percent must be between 1 and 99")
+    failure_count(failure)
+    gpu_recovery_time_minutes(failure)
 
 
 def _mapping(value: object, location: str) -> Mapping[str, Any]:
     if not isinstance(value, Mapping):
         raise ExperimentConfigError(f"{location} must be an object")
     return value
+
+
+def _expect_keys(
+    value: Mapping[str, Any],
+    expected: set[str],
+    location: str,
+) -> None:
+    observed = set(value)
+    if observed != expected:
+        missing = sorted(expected - observed)
+        extra = sorted(observed - expected)
+        raise ExperimentConfigError(
+            f"{location} fields must be exactly {sorted(expected)}; "
+            f"missing={missing}, extra={extra}"
+        )
 
 
 def _string(value: object, location: str) -> str:
@@ -576,3 +619,17 @@ def _non_negative_int(value: object, location: str) -> int:
     if type(value) is not int or value < 0:
         raise ExperimentConfigError(f"{location} must be a non-negative integer")
     return value
+
+
+def _peer_hbm_alpha(value: object, location: str) -> Decimal:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ExperimentConfigError(f"{location} must be a JSON number in [0, 0.5]")
+    try:
+        alpha = Decimal(str(value))
+    except InvalidOperation as error:
+        raise ExperimentConfigError(
+            f"{location} must be a JSON number in [0, 0.5]"
+        ) from error
+    if not alpha.is_finite() or not PEER_HBM_ALPHA_MIN <= alpha <= PEER_HBM_ALPHA_MAX:
+        raise ExperimentConfigError(f"{location} must be in [0, 0.5]")
+    return alpha

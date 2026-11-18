@@ -1,0 +1,95 @@
+--- before
++++ after
+@@ -246,16 +246,19 @@
+ \]
+ A1's 33.2\,s reconstruction fits within its 91.2\,s slack and leaves WCT
+ unchanged. A2's slightly smaller cost, 32.6\,s, is fully exposed because
+-its slack is zero. Thus prioritizing the more expensive reconstruction
+-can favor a branch with less immediate effect on completion.
++its slack is zero.
+ Only the Prefill costs are measured; WCT increments are conditional
+ calculations using synthetic inputs and trace timing, not fault-injected
+ workflow measurements. Appendix~\ref{sec:motivation-protocol} gives the
+ input construction, timing samples and mapping protocol.
++The example shows that recovery priorities should account for a request's
++position in the workflow, in addition to its reconstruction cost.
+ 
+ \paragraph{Limitation 2: Workflow-aware caching without a recovery objective.}
+-Workflow-aware serving already uses such dependencies to improve normal
+-execution. Parrot exposes inter-request dependencies for application-level
++Reducing these workflow delays through KV protection requires decisions
++before a failure: which histories to retain and where to place them.
++Workflow-aware serving provides a starting point: Parrot exposes
++inter-request dependencies for application-level
+ scheduling~\cite{lin2024parrot}. KVFlow guides prefix retention and
+ prefetching by upcoming agent invocations~\cite{pan2025kvflow}, while Pythia
+ predicts future workflow steps and prompt contents to manage and stage
+@@ -265,7 +268,8 @@
+ progress, but do not explicitly value KV by the WCT increase its retention
+ prevents after a serving-worker failure.
+ 
+-The gap first concerns \emph{which state is worth retaining}.
++Applying workflow information to recovery changes \emph{which state is
++worth retaining}.
+ Normal reuse depends on future requests, whereas recovery can require
+ state from an interrupted request even when no later request would reuse
+ it. For example, KVFlow protects fixed prompts while assigning varying
+@@ -277,7 +281,8 @@
+ the reconstruction it avoids and the affected branch's slack, in
+ addition to its expected reuse.
+ 
+-The gap also concerns \emph{where retained state can support recovery}.
++Realizing this protection value also depends on \emph{where the state is
++retained}.
+ CachedAttention and Mooncake already extend KV retention beyond GPU
+ memory~\cite{gao2024cachedattention,qin2025mooncake}; Pythia writes
+ future-relevant contexts to shared storage accessible by other
+@@ -289,27 +294,31 @@
+ the surviving state must be retrieved.
+ 
+ \label{sec:motivation-long-context}
+-Figure~\ref{fig:motivation-recompute} shows why this distinction matters
+-under a storage budget. A surviving copy in a lower-cost tier can already
+-avoid most reconstruction work. If recovery from that tier fits within
+-the branch's slack, faster retrieval provides no further WCT benefit
+-when other execution is unchanged. For a branch with little slack,
+-the same latency reduction can advance workflow completion.
+-Meanwhile, normal reuse can justify retaining either branch's KV.
+-The missing objective is therefore to allocate protection according to
+-the workflow delay avoided after failure while preserving the value of
+-KV reuse during normal execution.
++Once a history can survive the failure, its placement determines the
++cost of making it available again. Figure~\ref{fig:motivation-recompute}
++shows that retaining KV in a lower-cost tier can already avoid most
++reconstruction work. Whether faster storage is worthwhile then depends
++on the workflow priorities illustrated in
++Figure~\ref{fig:motivation}(\subref{fig:motivation-recovery-exposure}).
++If recovery from the lower-cost tier fits within a branch's slack,
++faster retrieval provides no further WCT benefit when other execution is
++unchanged; a branch with little slack may benefit from the same reduction.
++Normal reuse can still justify retaining either branch's KV.
++Protection must therefore connect the workflow impact of recovery to
++which histories are retained and where, balancing that benefit against
++storage cost and the value of normal reuse.
+ 
+ \subsection{Design Challenges}
+ \label{sec:motivation-challenges}
+ 
+-Together, these limitations call for a policy that connects workflow
+-progress, failure recovery and KV storage management. Closing the gap
+-requires estimating the value of retained state, translating that value
+-into placement decisions, and maintaining those decisions as execution
+-changes. These are coupled challenges: the usefulness of fast recovery
+-depends on workflow progress, while protection itself consumes resources
+-needed by the workflow.
++Meeting this objective requires reasoning jointly about workflow progress
++and KV placement. Progress determines how much recovery delay a workflow
++can tolerate; retained KV and its location determine how much recovery
++work remains. Both change as agents execute and compete for finite
++capacity. An online policy must therefore estimate protection value from
++incomplete execution information, translate it into storage decisions,
++and revise those decisions without disrupting inference.
++This gives rise to three coupled challenges.
+ 
+ \paragraph{Challenge 1: Estimating the value of KV protection online.}
+ A protection decision must relate saved reconstruction or retrieval time

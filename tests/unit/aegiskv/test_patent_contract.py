@@ -13,7 +13,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[3]
 DOCS_ROOT = ROOT / "benchmark/AegisKV/docs"
-AUDIT_PATH = DOCS_ROOT / "audit_patent_contract.py"
+AUDIT_PATH = DOCS_ROOT / "patent/audit_patent_contract.py"
 
 
 def _load_audit_module() -> ModuleType:
@@ -33,7 +33,7 @@ def test_authoritative_bundle_passes_fail_closed_audit() -> None:
 
 
 def test_contract_has_complete_ordered_coverage_and_unique_tests() -> None:
-    contract = AUDIT.load_contract(DOCS_ROOT / "design/patent-contract.yaml")
+    contract = AUDIT.load_contract(DOCS_ROOT / "patent/patent-contract.yaml")
     clauses = contract["clauses"]
 
     assert [clause["id"] for clause in clauses] == list(AUDIT.REQUIRED_CLAUSE_IDS)
@@ -44,8 +44,8 @@ def test_contract_has_complete_ordered_coverage_and_unique_tests() -> None:
 
 
 def test_missing_patent_clause_fails_closed() -> None:
-    contract = copy.deepcopy(AUDIT.load_contract(DOCS_ROOT / "design/patent-contract.yaml"))
-    manifest = AUDIT.load_manifest(DOCS_ROOT / "provenance/SOURCE_MANIFEST.json")
+    contract = copy.deepcopy(AUDIT.load_contract(DOCS_ROOT / "patent/patent-contract.yaml"))
+    manifest = AUDIT.load_manifest(DOCS_ROOT / "patent/SOURCE_MANIFEST.json")
     contract["clauses"] = contract["clauses"][:-1]
 
     errors = AUDIT.validate_contract(contract, manifest)
@@ -54,8 +54,8 @@ def test_missing_patent_clause_fails_closed() -> None:
 
 
 def test_unknown_semantic_or_implementation_overclaim_fails_closed() -> None:
-    contract = copy.deepcopy(AUDIT.load_contract(DOCS_ROOT / "design/patent-contract.yaml"))
-    manifest = AUDIT.load_manifest(DOCS_ROOT / "provenance/SOURCE_MANIFEST.json")
+    contract = copy.deepcopy(AUDIT.load_contract(DOCS_ROOT / "patent/patent-contract.yaml"))
+    manifest = AUDIT.load_manifest(DOCS_ROOT / "patent/SOURCE_MANIFEST.json")
     contract["semantic_sets"]["forbidden_semantics"].append("unreviewed_new_semantic")
     contract["manual_review"] = "complete"
     contract["clauses"][1]["status"] = "implemented"
@@ -69,7 +69,7 @@ def test_unknown_semantic_or_implementation_overclaim_fails_closed() -> None:
 
 def test_source_manifest_rejects_any_second_input() -> None:
     manifest = copy.deepcopy(
-        AUDIT.load_manifest(DOCS_ROOT / "provenance/SOURCE_MANIFEST.json")
+        AUDIT.load_manifest(DOCS_ROOT / "patent/SOURCE_MANIFEST.json")
     )
     manifest["source_count"] = 2
     manifest["sources"].append(copy.deepcopy(manifest["sources"][0]))
@@ -89,8 +89,8 @@ def test_duplicate_yaml_key_is_rejected(tmp_path: Path) -> None:
 
 
 def test_manifest_and_contract_bind_the_actual_patent_hash() -> None:
-    contract = AUDIT.load_contract(DOCS_ROOT / "design/patent-contract.yaml")
-    manifest = AUDIT.load_manifest(DOCS_ROOT / "provenance/SOURCE_MANIFEST.json")
+    contract = AUDIT.load_contract(DOCS_ROOT / "patent/patent-contract.yaml")
+    manifest = AUDIT.load_manifest(DOCS_ROOT / "patent/SOURCE_MANIFEST.json")
     patent = ROOT / AUDIT.PATENT_PATH
 
     assert AUDIT.sha256_file(patent) == AUDIT.PATENT_SHA256
@@ -103,7 +103,7 @@ def test_sha256sums_is_accepted_by_sha256sum() -> None:
     executable = shutil.which("sha256sum")
     assert executable is not None
     result = subprocess.run(
-        [executable, "--strict", "-c", "benchmark/AegisKV/docs/provenance/SHA256SUMS"],
+        [executable, "--strict", "-c", "benchmark/AegisKV/docs/patent/SHA256SUMS"],
         cwd=ROOT,
         check=False,
         capture_output=True,

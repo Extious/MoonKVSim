@@ -1,0 +1,508 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base href="file:///home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/experiments/"><title>AegisKV paper draft</title><link rel="stylesheet" href="file:///home/comp/zhanzhao/MoonKVSim/tmp/figure-browser/node_modules/katex/dist/katex.min.css"><style>
+body{margin:0;background:#edf0f3;color:#18212b;font:16px/1.65 'Noto Sans CJK SC',sans-serif}
+main{box-sizing:border-box;width:1056px;max-width:100%;margin:0 auto;background:white;padding:24px}
+h1{font-size:28px;line-height:1.3}h2{font-size:24px;margin-top:44px;border-bottom:1px solid #d6dbe2;padding-bottom:6px}
+h3{font-size:19px;margin-top:30px}p{margin:14px 0}a{color:#0069a7;text-decoration:none}
+img{display:block;max-width:100%;height:auto}figure.paper-figure{margin:24px 0}figure.paper-figure p:last-child{font-size:14px;line-height:1.55}figure.paper-figure img{margin:0 auto}table{border-collapse:collapse;width:100%;font-size:14px;line-height:1.55;margin:18px 0}
+th,td{border:1px solid #dce1e6;padding:9px;vertical-align:top;text-align:left;overflow-wrap:anywhere}
+th{background:#f5f7f9}.figpair{table-layout:fixed}.figpair th,.figpair td{width:50%;padding:8px}
+.figpair td img{width:480px;max-width:100%;margin:auto}.figpair td{font-size:14px}
+code{font-family:monospace;font-size:.91em;overflow-wrap:anywhere}pre{white-space:pre-wrap;background:#f5f7f9;padding:12px}
+.math.block{margin:22px 0;text-align:center}.katex{font-size:1.08em}.katex-display{overflow:auto hidden}
+aside.planned-figure{margin:24px 0;padding:14px 18px;border-left:4px solid #8795a1;background:#f7f9fb}
+aside.planned-figure p{font-size:14px;line-height:1.6;margin:10px 0}aside.planned-figure table{background:white}
+aside.planned-figure td:first-child{width:18%}aside.planned-figure th{background:#edf1f4}
+</style><main><h1>AegisKV：面向多 Agent Workflow 的 KV 保护</h1>
+<!-- 中文论文初稿；Motivation 3 图，System Design 1 图，Evaluation 按证据组织。
+设计接口与历史 source-v3 结果分开；Algorithm 2 后续实现仍待冻结。
+图稿、来源、复现与投稿证据缺口见 PAPER_FIGURE_REVIEW.md。 -->
+<h2>Motivation</h2>
+<p>多 Agent 应用将一次任务组织为模型调用、工具调用与汇合结点组成的依赖图。用户等待整个 Workflow 完成，而汇合结点必须等待所有前驱。因此，恢复时间的节省只有传递到依赖图的完成时间时，才产生用户可见收益。本文以 Workflow Completion Time（WCT）作为保护目标，即从 Workflow 首个请求释放到最后一个请求完成的时间。</p>
+<p><a href="https://www.usenix.org/conference/fast25/presentation/qin">Mooncake</a> 利用分布式 KV 存储减少重复计算，<a href="https://proceedings.mlr.press/v235/strati24a.html">DéjàVu</a> 将 KV 流式复制用于故障恢复。AegisKV 关注这一能力在多 Agent 工作流中的资源分配问题：当容量和复制带宽有限时，应保护哪些已生成状态，才能减少故障对整个 Workflow 的影响，同时控制正常推理的代价？这个问题需要同时理解分支时间差、故障恢复代价以及保护与前台服务的竞争。</p>
+<h3>Observation 1：并行分支具有显著的执行时间差</h3>
+<p>公开 <a href="https://huggingface.co/datasets/semianalysisai/cc-traces-weka-062126">CC/Weka 轨迹</a>提供了分支执行不均衡的观测依据。我们保留存在共同重叠区间的并行分支组，并对每个 Workflow 取最大的最长与最短分支持续时间差。图 1 中，124 个符合条件的 Workflow 的中位差值为 140.6 s，P90 为 1,570.3 s。这说明不同分支距汇合完成的时间余量可能相差很大；持续时间差本身并不等于故障时刻可使用的 Slack。</p>
+<h3>Observation 2：重算代价的排序不等于 Workflow 损失的排序</h3>
+<p>图 2 使用同一个五分支轨迹示例，分离恢复暂停中被并行执行吸收的部分与推迟汇合的部分。对每条分支分别在 349.5 s 假设一次故障，保持其他分支的执行不变。若恢复增加的时间为 <span class="math inline">T_i</span>、分支到原汇合终点的间隔为 <span class="math inline">s_i</span>，暴露的延迟为</p>
+<div class="math block">
+J_i=\max(0,T_i-s_i).
+</div>
+<p>A3 的假设重算时间最长，为 46.6 s，但其 52.4 s 的间隔可吸收全部暂停；A4 的重算时间较短，为 35.9 s，却因处于关键分支而全部暴露给 Workflow。仅按 KV 大小或重算时间选择保护对象，可能把资源分配给不改变完成时间的分支。保护优先级需要结合 Agent 的执行位置、恢复代价与剩余 Slack。</p>
+<p><a id="paper-motivation-branch-gap"></a>
+<a id="paper-motivation-recovery-exposure"></a></p>
+<table class="figpair">
+<thead>
+<tr>
+<th><strong>图 1：并行分支的执行时间不均衡</strong></th>
+<th><strong>图 2：重算代价与 Workflow 损失并不等价</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../../../output/pdf/aegiskv-revision-20260909/motivation-branch-gap.pdf"><img src="../../../output/pdf/aegiskv-revision-20260909/motivation-branch-gap.png" width="480" alt="1 并行分支的执行时间不均衡"></a></td>
+<td><a href="../../../output/pdf/aegiskv-revision-20260909/motivation-recovery-exposure.pdf"><img src="../../../output/pdf/aegiskv-revision-20260909/motivation-recovery-exposure.png" width="480" alt="2 重算代价与 Workflow 损失并不等价"></a></td>
+</tr>
+<tr>
+<td>CC/Weka 中 124 个具有重叠分支的 Workflow；每个对象取最大分支持续时间差。横轴为对数秒。该观测描述不均衡，不直接估计可用 Slack。</td>
+<td>同一五分支轨迹中，分别在 349.5 s 假设单分支故障。柱长为模型化重算时间，分为被并行执行吸收和推迟汇合两部分。旧 Qwen3-235B/A100 配置的反事实推演，不是实测故障或后文 8B 实验。</td>
+</tr>
+</tbody>
+</table>
+<p>图 2 是轨迹锚定的反事实算例。其暂停参数沿用旧 Qwen3-235B/A100 模型预测，不能作为可部署并行配置的性能测量；该旧预测的 PP 配置未获得物理验证。这个算例说明评价目标的差别，不估计部署收益。真实故障还会改变排队和其他分支的进度，因而后文同时检查恢复过程与完整 WCT。</p>
+<p>算例中的 Slack 来自离线轨迹终点；在线决策只能使用当前估计。上式仅描述单分支暂停且其他分支及资源竞争保持不变的情形，不作为多个分支同时恢复时的完整 WCT 公式。</p>
+<h3>Observation 3：长上下文放大故障后的重算代价</h3>
+<p>Agent 在多轮模型调用中积累上下文；当执行该请求的 GPU 故障，未保留的 KV 必须重新计算。图 3 固定模型和并行配置，只增加需要重建的前缀长度。上下文从 16 Ki 增至 128 Ki tokens 时，Qwen3-8B 的完整前缀重算预测由 0.49 s 增至 9.16 s，Qwen3-32B 则由 1.72 s 增至 32.82 s，分别增长 18.7 与 19.1 倍。</p>
+<p><a id="paper-motivation-recompute"></a></p>
+<figure class="paper-figure">
+<p><a href="../../../output/pdf/aegiskv-revision-20260909/motivation-recompute.pdf"><img src="../../../output/pdf/aegiskv-revision-20260909/motivation-recompute.png" width="480" alt="3 长上下文的完整前缀重算代价"></a></p>
+<p><strong>图 3：长上下文的完整前缀重算代价。</strong> Qwen3-8B/32B 在 A100-80GB、TP4/PP2、BF16 配置下的完整前缀重算预测；每点按 8 Ki-token 分块累计单请求 prefill 时间，Ki=1,024。共八个历史 AIConfigurator SILICON 预测点，不含故障检测、传输与排队，不是物理故障实验。</p>
+</figure>
+<p>长上下文使一次故障后的状态重建成为不可忽略的计算开销。它能否转化为同等幅度的 Workflow 延迟，仍取决于分支 Slack、恢复来源与排队。该图沿用旧论文的上下文—重算曲线，使用历史 AIConfigurator SILICON 预测；不包含检测、传输、排队或故障实测，也不与后文 DP8/TP1 模拟混合统计。</p>
+<p>三条 Observation 导出 AegisKV 的设计目标：优先保护会影响 Workflow 终点的 Agent 状态，通过已提交前缀减少长上下文重算，并在有限的 DRAM 与 Peer HBM 中保留高价值副本。保护同时可能改变正常复用、占用前台显存并消耗 CPU 与带宽，因此其正常成本与故障收益必须共同评价。</p>
+<p>这些观测形成三个设计要求。首先，保护价值应考虑当前 Agent 的 Slack，不能仅按状态大小或重算时长排序。其次，共享前缀必须作为物理对象管理，避免重复复制和重复计费。最后，备份借用必须能随前台压力退让；内存容量可行不代表传输与控制没有干扰。三个要求分别由 Agent 价值与租值准入、独立分层副本和前台约束控制实现，并在评估中分别检验。</p>
+<h2>System Design</h2>
+<h3>系统模型与故障范围</h3>
+<p>AegisKV 管理已生成 KV 的保护，应用侧仍拥有 Workflow 依赖关系、请求输入和执行进度。系统使用执行时已经可见的结点与状态，不提前获知未知工具结果或未来分支。目标是降低故障条件下的 Workflow 完成时间；正常复用、计算、控制和传输成本是共同约束，而非可以忽略的免费资源。</p>
+<p>本文考虑执行 GPU 的 fail-stop 故障：该设备的 primary、正常可复用 cache 与本地备份 KV 均不可用，应用、Router、元数据服务及其他故障域继续运行。副本必须位于源设备以外的存活故障域；同机另一 GPU 不自动构成节点掉电保护。当前评估固定设备故障和停机时长，不涵盖控制平面故障、网络分区或相关节点故障。模型权重、输入以及已确认的输出 token 序列和位置必须能够在健康 Worker 获得，以重放未被 KV 保护的已确认后缀，KV 保护也不替代工具调用副作用的事务恢复。</p>
+<h3>面向物理 KV 对象的系统架构</h3>
+<p>图 4 展示 AegisKV 的系统架构。应用侧提供当前可见的 Workflow DAG 与 Agent 状态；价值接口结合恢复代价与 Slack 更新 Agent 的保护优先级，池级准入决定保留哪些物理 KV chunk。目标 GPU 上的独立显存控制器根据前台需求和 forward 反馈约束备份借用。</p>
+<p><a id="paper-system-overview"></a></p>
+<figure class="paper-figure">
+<p><a href="../../../output/pdf/aegiskv-revision-20260909/system-overview.pdf"><img src="../../../output/pdf/aegiskv-revision-20260909/system-overview.png" width="1008" alt="4 AegisKV System Overview"></a></p>
+<p><strong>图 4：AegisKV System Overview。</strong> 工作流上下文生成 Agent 保护优先级，源端独立向 Peer HBM 和 DRAM 复制同名 KV；副本在复制 ACK 后可读。Peer 控制器独立约束备份借用。故障后从存活层恢复新 primary C0/C1，再重算 C2。彩色箭头为 KV 传输，虚线为控制，灰色 DAG 边为依赖。</p>
+</figure>
+<p>源 Worker 持有正常推理的 primary KV。密封的 C0、C1 独立复制到 Peer HBM 和 DRAM Store；每条路径分别分配空间、执行传输并确认提交。一层拒绝或丢失副本，不改变另一层已提交的同名对象。多个 Agent 共享 C0 时，同一存储池只计一份物理容量。Peer Worker 的前台 P0、P1 与备份 C0、C1 占用不同物理地址。</p>
+<p>图中两条复制路径表示独立候选，不保证每个块始终具有两份副本；容量、准入和传输完成情况决定各层实际可读前缀。保护决策被拒绝时，正常推理继续执行，并保留回退到存活层或重算的路径。</p>
+<p>Router 撤销旧执行权限，将请求迁移到原有的健康 Worker，不增加额外恢复 GPU。图中的 Peer 与恢复 Worker 表示角色，可以由同一健康设备承担。恢复过程在新的 primary 分配中装入兼容、连续、已提交的前缀，再重算缺失后缀并恢复解码。图中恢复的是 C0、C1，重算的是 C2；pending 副本不可读。副本身份包含模型、数据类型、布局和分片，不能跨不兼容布局复用。分片布局改变时，只有所有必需分片均兼容且可用的前缀才能参与恢复。</p>
+<h3>Agent 价值、共享对象与池级准入</h3>
+<p>应用侧随请求进度与工具返回更新可见的剩余 DAG。对正在执行的结点估计剩余时间，对已知但尚未开始的结点估计完整时间；未知分支不预先计价。请求携带本次决策使用的 Slack 快照，池内一次估值与准入试算使用同一份快照。后续请求可以携带更新值，但不在一次试算中混入变化的预测。预测 Slack 只是恢复损失的估计依据，不保证真实剩余执行时间。</p>
+<p>准入以物理块为容量单位，以 Agent 的价值和信用为保护依据。一次请求只触发当前 Agent 在相应块上的估值与续租；其他共享者可以结算已经发生的租金，但不会因为这个请求而重新估值或补回信用。共享块聚合租后份额，却只占一份物理容量。候选块与可释放尾块进行容量竞争；在读、未完成复制或仍有必要后继的前缀，不因账面淘汰立即变成可用空间。</p>
+<p>这种方法把请求级收益与共享物理容量联系起来，但各 Agent 的信用之和不是完整 DAG 期望损失的精确解，也不直接继承经典缓存算法的最优性保证。保护当前恢复价值还可能与保留未来重访前缀发生冲突；有效复用实验和算法 2 消融将检验这一取舍。算法 2 仍在调整，本稿固定以上接口与语义，后文冻结版本的数值不用于证明尚未实现的修订。</p>
+<h3>副本发布、回收与恢复的约束</h3>
+<p>价值估计、账本提交、复制发布和物理释放具有不同的完成条件。试算不改变真实可读集合；复制完成及身份核验后才发布副本，释放确认后容量才可复用。三条约束贯穿正常路径与恢复路径：</p>
+<table class="metrics">
+<thead>
+<tr>
+<th>约束</th>
+<th>设计含义</th>
+<th>需要观察的结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>已提交且兼容的连续前缀才可读</td>
+<td>不读取 pending 或缺分片对象；独立确认两条复制路径</td>
+<td>已提交覆盖率、实际恢复来源、失效身份拒绝</td>
+</tr>
+<tr>
+<td>物理地址释放前持续计费</td>
+<td>copying、committed、reclaiming 与 recovery-primary 分开计量；额度下降不提前复用地址</td>
+<td>实际占用、回收完成、前台分配可行性</td>
+</tr>
+<tr>
+<td>故障后旧执行权限失效</td>
+<td>新路由装入前缀并从已提交进度继续，处理迟到的完成事件</td>
+<td>无重复或缺失输出位置；完整 WCT 与后续释放变化</td>
+</tr>
+</tbody>
+</table>
+<p>这些是设计契约，不能仅由流程图证明。状态与输出检查用于验证实现正确性；性能实验另行判断减少的重算是否足以抵消复制和争用。</p>
+<p>发布要核对副本代次、源执行权限和所需分片；迟到 ACK 不能发布过期对象。回收先撤销新读取资格，再等待已固定读取或 DMA 结束并归还地址。未执行试算失败可以直接丢弃，执行阶段失败则按已经发生的分配和释放清理，不能假定已释放的旧副本自动恢复。</p>
+<h3>前台约束下的 Peer HBM 控制</h3>
+<p>Peer 控制器与价值及信用计算独立。它区分备份可用显存硬上限 <span class="math inline">C_{\mathrm{HBM}}(t)</span>、授权字节数 <span class="math inline">B(t)</span> 和仍占用物理地址的备份 <span class="math inline">U(t)</span>。硬上限扣除固定开销、前台分配、下一步需求与保留量，并受实际分配器限制，授权满足</p>
+<div class="math block">
+0\le B(t)\le C_{\mathrm{HBM}}(t).
+</div>
+<p>稳定且有备份需求时，Guarded AIMD 逐步增加授权；forward 预警触发乘法退让，新的前台需求直接裁剪硬上限。降低授权不等于立即释放物理地址：pending、committed 和 reclaiming 字节都持续计费，直到 DMA fence 与释放完成。前台分配必须检查真实物理可行性。</p>
+<p>收缩期间 U 可以暂时高于新的 B，不能把授权差额直接视为已空闲地址。可借总额度须包含已借给保护的页，而非只读取当前 free bytes；正常可复用 cache 仍是前台占用。额度控制不能替代共享传输限速，forward 没有预警也不等于没有干扰。</p>
+<p>这一区分也决定评估方式。前台缓存已经占满 HBM 时，安全控制器可能不允许 Peer 备份；此时不能用“系统配置了 Peer HBM”代替“故障时存在可用 Peer 副本”。恢复前缀装入完成后，后缀重算、调度等待与其他分支仍会影响最终 WCT。</p>
+<p>因此，AegisKV 的预期适用区间是：有兼容且有用的已生成前缀、故障前有足够复制时间和可借资源，且恢复节省能穿过分支 Slack 传递到终点。在没有可借空间、链路接近饱和或预测明显偏差时，收益可能减小甚至反转。评估必须覆盖这些边界，不能只展示成功形成副本的故障。</p>
+<h2>Evaluation</h2>
+<h3>实验设置与证据范围</h3>
+<p>评估依次回答四个问题：正常保护引入了多少服务代价；同一故障如何改变同一 Workflow 的完成时间；变化能否由已提交副本、重算和排队解释；收益在多大资源与负载范围内成立。三条系列为 Mooncake、DRAM-only AegisKV 和 AegisKV。DRAM-only 保留 AegisKV 的 DRAM 准入并关闭 Peer，用于分离两类机制；它是内部对照，不代表另一套外部系统。</p>
+<p>默认模型为 Qwen3-8B BF16，DP=8、TP=PP=1；模拟资源为 8×40 GiB GPU、1 TB DRAM Store、25 GB/s 共享路径，KV chunk 为 4096 tokens。输入包含 160 个 FanOutQA-derived Workflow，每个完整 DAG 执行两轮精确重访，共 2608 个请求，默认最大活跃 Workflow 数为 16。这是控制复用压力的负载构造，不代表生产重访频率。</p>
+<p>F0 表示无故障，F1 表示一次预定故障。一次运行处理整套输入；逐 Workflow 图中的点是同一逻辑对象，完整运行的重复才用于估计运行间不确定性。本节图像使用冻结参考算法的离散事件模拟，GPU 时序尚未经过目标硬件标定；Mooncake 系列是共享引擎中的策略基线，不能称为完整原生 Mooncake 部署。新扩展只改变预定并发或故障注入，算法 2/3 保持冻结。</p>
+<p>冻结模型的 DMA-to-forward 慢化系数为零。因此，它能反映已建模的容量、路由和共享传输排队，却不能检验保护 DMA 对真实 GPU forward 的减速。P2 的原生干扰测量用于补足这一缺口，当前模拟中没有 forward 慢化不构成无干扰证据。</p>
+<p>WCT 从 Workflow 首个请求释放计到 DAG 完成。同一配置下按 Workflow ID 配对，逐对象曲线沿用冻结 Mooncake F0 顺序，三系统不各自排序。并发限制在 Workflow 释放前产生的等待不含在该 WCT 中；因此扩展同时报告完成速率或批次时长，不能仅用较小的已准入 WCT 宣称吞吐改善。</p>
+<p>设 <span class="math inline">W_{s,i}^{0}</span> 是系统 <span class="math inline">s</span> 无故障时 Workflow <span class="math inline">i</span> 的 WCT，正常开销为 <span class="math inline">O_{s,i}=W_{s,i}^{0}-W_{M,i}^{0}</span>，其中 M 表示同配置 Mooncake。故障效应先在同系统、同 ID 内计算 <span class="math inline">D_{s,i}=W_{s,i}^{F}-W_{s,i}^{\mathrm{control}}</span>；保护收益定义为 <span class="math inline">S_{s,i}=D_{M,i}-D_{s,i}</span>，正值表示故障增量更小。收益不能代替故障后的绝对 WCT，因而同时保留原始终点。固定追加故障以 K1 为 control、K2 为 F；单故障实验才以 F0 为 control。</p>
+<p>所有配对还记录从实验起点计的释放时刻 R 和完成时刻 C，满足 <span class="math inline">\Delta C=\Delta W+\Delta R</span>。以相同 ID 及配置比较，避免异质 Workflow 的全体原始 WCT P95 掩盖被故障影响的对象。当前数据均为探索性单次模拟，Workflow 共享资源，不能把 160 个对象当作 160 次独立重复。</p>
+<p>以下“待绘图 P1–P8”是本稿尚缺证据的具体位置，其趋势均为待检验假设。每项给出图型、坐标、比较与可能反转的条件；在获得对应数据前不绘制结果曲线。未来实验沿用三系统配对输入，在参数与故障日程冻结后做独立完整重复；计划重复数、目标硬件及可接受退化边界记录在执行前协议中，不由现有结果反推。每个待绘位置优先补强或替换附近的诊断图，不意味着将所有候选继续累加为正文图。</p>
+<h3>正常运行的复用与排队成本</h3>
+<p>在这一固定输入上，AegisKV 的平均 WCT 比 Mooncake 增加 4.92%，且部分 Workflow 明显退化，尚不支持“几乎无额外服务开销”。图 5 展示全部 160 个同 ID 差值，单位为秒；零表示基准，正值表示更慢。</p>
+<p><a id="paper-eval-workflow-delay"></a></p>
+<figure class="paper-figure">
+<p><a href="../../../output/pdf/aegiskv-revision-20260909/eval-workflow-delay.pdf"><img src="../../../output/pdf/aegiskv-revision-20260909/eval-workflow-delay.png" width="1008" alt="5 正常场景的逐 Workflow 绝对延迟变化"></a></p>
+<p><strong>图 5：正常场景的逐 Workflow 绝对延迟变化。</strong> 同一 F0 配置下，全部 160 个 Workflow 相对同 ID Mooncake 的 WCT 差值。三系统共享 Mooncake F0 排序；负值更快，完整尾部保留。标注最大离群对象；各系统一次冻结算法模拟。</p>
+</figure>
+<table class="metrics">
+<thead>
+<tr>
+<th>系统</th>
+<th>F0 平均 WCT (s)</th>
+<th>TTFT P99 (s)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mooncake</td>
+<td>52.642</td>
+<td>23.202</td>
+</tr>
+<tr>
+<td>DRAM-only AegisKV</td>
+<td>54.158</td>
+<td>21.302</td>
+</tr>
+<tr>
+<td>AegisKV</td>
+<td>55.230</td>
+<td>22.653</td>
+</tr>
+</tbody>
+</table>
+<p>表中均值仅描述这批固定 Workflow；TTFT P99 按两轮共 2608 个请求统计，不是 Workflow 分位数。Workflow <code>3d0739b161908b67</code> 从 Mooncake 的 25.553 s 增至 155.130 s，绝对增加 129.577 s，相对增加 507.1%。这一对象需要结合其执行过程解释。</p>
+<p>第二轮精确重访中，三系统 token 加权的初次 DRAM 命中率分别为 94.257%、81.568% 和 82.245%，完整 AegisKV 比 Mooncake 下降 12.01 个百分点。图 6 展示同一组 Workflow 的对应比例，排除首轮冷访问。冻结准入以当前恢复价值驱动，未显式估计未来重访收益，因而可能与正常复用目标冲突；这一解释还需要 P7 的策略对照。初次读取成功只表示 KV 曾装入，如果随后抢占丢失并重新 prefill，就不等于最终避免了这些计算。</p>
+<p><a id="paper-eval-initial-reuse"></a></p>
+<figure class="paper-figure">
+<p><a href="../../../output/pdf/aegiskv-revision-20260909/eval-initial-reuse.pdf"><img src="../../../output/pdf/aegiskv-revision-20260909/eval-initial-reuse.png" width="1008" alt="6 重访请求首次查询的 DRAM token 命中"></a></p>
+<p><strong>图 6：重访请求首次查询的 DRAM token 命中。</strong> 同一组 Workflow 的第二轮初次 DRAM 查询命中 token 占该轮 prompt token 的比例，排除冷访问；三系统各一次模拟。总体 token 加权命中率为 94.257%、81.568%、82.245%。初次命中不等于抢占后最终避免的计算量。</p>
+</figure>
+<p>保护若只是让初次查询命中，却在抢占后重复执行 prefill，便没有保住有效复用。因而下一步以完整请求生命周期中的实际计算量检验这条机制，而非只改变命中率的分母。</p>
+<aside class="planned-figure" id="planned-effective-reuse">
+<p><strong>待绘图 P1：正常命中是否减少实际 prefill（尚无结果）</strong></p>
+<p>把初次查询命中与完整请求生命周期中真正执行的计算区分开。</p>
+<table class="metrics">
+<thead>
+<tr>
+<th>独立候选图 / 图型</th>
+<th>横轴</th>
+<th>纵轴</th>
+<th>系列与对照</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1：通栏逐 Workflow 配对点线图</td>
+<td>全部第二轮 Workflow ID，按冻结的共同顺序排列</td>
+<td>第二轮 revisit-1 相对同 ID Mooncake 的累计实际 prefill 增量（Ki tokens，Ki=1,024）</td>
+<td>Mooncake 零线、DRAM-only AegisKV、AegisKV</td>
+</tr>
+</tbody>
+</table>
+<p><strong>固定条件与统计：</strong> F0；同模型、DP/TP、输入、两轮重访、并发与资源。仅统计 revisit-1 全生命周期；该轮每个逻辑 token 位置每次实际重算都计费，先按同 ID 求差；完整运行组成配对重复，token 和请求不是独立重复。预定分层包括上下文长度、共享比例和重访间隔。</p>
+<p><strong>理论预期（待检验）：</strong> 若保护保住了正常计算会消费的前缀，额外 prefill 应接近零或下降；有效复用增加应伴随累计实际工作减少。</p>
+<p><strong>不成立或反转的条件：</strong> 价值准入淘汰复用前缀、初次读取后抢占丢弃，会使差值为正；命中率相同也可能有更多重算。token 减少不保证 GPU 时间等比例下降。</p>
+<p><strong>待采集数据：</strong> 每次 prefill 的逻辑区间、实际执行计数和起止时间；GET 来源、失效与重置；request→Workflow/revisit 映射；全部 WCT/release/completion。没有无复用对照时不把命中 token 直接命名为避免计算。</p>
+<p><strong>正文取舍：</strong> 补强图 eval-initial-reuse；数据齐备后可将初次命中图移至补充，以本图承担有效复用证据。</p>
+</aside>
+<p>图 7 跟踪上述最大离群 Workflow 的同一个长请求。AegisKV 在模拟绝对时刻 102.367 s 因 KV block 压力被抢占，直到 207.297 s 才重新进入 GPU，停顿约 104.929 s；随后从零重新 prefill。图内横轴对齐各系统该 Workflow 的首个释放时刻。初始前缀包含 DRAM 读取的 63,088 个 token 和本地复用的 64 个 token，但这 63,152 个初次命中并未在抢占后保住。仅统计首次入场前等待会漏掉这一长停顿。</p>
+<p><a id="paper-eval-preemption-progress"></a></p>
+<figure class="paper-figure">
+<p><a href="../../../output/pdf/aegiskv-revision-20260909/eval-preemption-progress.pdf"><img src="../../../output/pdf/aegiskv-revision-20260909/eval-preemption-progress.png" width="1008" alt="7 正常抢占使初次命中失效的具体轨迹"></a></p>
+<p><strong>图 7：正常抢占使初次命中失效的具体轨迹。</strong> 最大离群 Workflow 中同一重访请求的有效 prefill 进度；三系统分别对齐该 Workflow 的首个释放时刻。AegisKV 抢占后进度归零，等待 104.929 s 再入场。三个轨迹来自各系统一次模拟；抢占附近 Peer 占用为零。</p>
+</figure>
+<p>这条事件轨迹解释了该离群点中的长停顿。该抢占时刻附近的 Peer pending/committed 占用为零，因此不能直接归因于 Peer 副本挤占；路由顺序、正常缓存布局与调度竞争的贡献尚未隔离。下一轮机制实验需要同时计量每次入队/恢复入队、被丢弃的前缀和实际执行的 prefill token；不能仅通过改变绘图分母修复问题。</p>
+<p>下表分别给出参考实现的 CPU 工作、模拟单控制器队列的服务需求，以及共享路径的读写量。它们属于不同计量层，不能相加为总时延。</p>
+<table class="metrics">
+<thead>
+<tr>
+<th>指标</th>
+<th>Mooncake</th>
+<th>DRAM-only AegisKV</th>
+<th>AegisKV</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python 参考控制 CPU (s)</td>
+<td>9.989</td>
+<td>56.538</td>
+<td>68.502</td>
+</tr>
+<tr>
+<td>模拟入场/准入 CPU 服务需求 (s)</td>
+<td>3.743</td>
+<td>18.335</td>
+<td>27.729</td>
+</tr>
+<tr>
+<td>DRAM + Peer 写入 (TiB)</td>
+<td>3.549</td>
+<td>3.471</td>
+<td>3.643</td>
+</tr>
+<tr>
+<td>正常 GET (TiB)</td>
+<td>3.386</td>
+<td>2.930</td>
+<td>2.954</td>
+</tr>
+</tbody>
+</table>
+<p>Python 参考 CPU 与模拟服务报价来自不同计量过程，不能视为两个可相加阶段，也不代表原生服务进程的 CPU 利用率。GET 流量减少同时伴随命中下降，不能单独解释为带宽效率提高。类似 <a href="https://www.usenix.org/conference/osdi23/presentation/sadok">Ensō</a> 对计算与数据移动成本分别解释的方式，本系统需要把控制 CPU 和共享链路干扰分别测量，再联系到 Workflow 服务表现。只有预先规定的退化边界和独立配对测量支持时，才能使用“服务开销可忽略”的结论。</p>
+<aside class="planned-figure" id="planned-native-overhead">
+<p><strong>待绘图 P2：原生 CPU 成本与复制干扰（尚无结果）</strong></p>
+<p>分别测量在线控制成本，以及共享传输对固定前台计算的干扰。</p>
+<table class="metrics">
+<thead>
+<tr>
+<th>独立候选图 / 图型</th>
+<th>横轴</th>
+<th>纵轴</th>
+<th>系列与对照</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P2a：单栏点线图</td>
+<td>最大活跃 Workflow 数 C（拟 8/16/32/64；原生可行性核对后冻结）</td>
+<td>完整批次控制 CPU 时间 / 160 个 Workflow（核秒/Workflow）</td>
+<td>原生 Mooncake、DRAM-only AegisKV、AegisKV</td>
+</tr>
+<tr>
+<td>P2b：单栏固定计算探针点线图</td>
+<td>源 GPU 实际达到的保护读出速率（GiB/s）；提供量/限速为事前操作变量</td>
+<td>同 batch、同 tensor 形状 forward step 相对 copy off 的时长增量（ms）</td>
+<td>DRAM copy、DRAM+Peer copy；copy off 只有零流量观测点，横向零线是参考</td>
+</tr>
+</tbody>
+</table>
+<p><strong>固定条件与统计：</strong> P2a 固定同一批次输入、CPU 核数/亲和、GPU/NUMA/网络拓扑和计时范围；未完成批次另报完成率，不只除以幸存对象。P2b 固定一种 prefill 或 decode 形状、驻留状态、GPU 时钟与同步方法，按完整探针批次配对 copy on/off；步不是独立重复。两复制组保持同 DRAM 提供量，额外 Peer 负载单独记录。 P2b 主图固定在源 GPU 执行 forward，固定 DRAM/Peer 的传输方向与物理拓扑，核对其共享 HBM 读带宽及出口资源；Peer 目的 GPU 干扰另表，不混合两个角色或不同拓扑。</p>
+<p><strong>理论预期（待检验）：</strong> 批量处理可能摊薄固定 CPU 成本，但账本和替换仍有非零成本。链路有余量时计算增量可能很小；共享 HBM/PCIe/copy engine 接近饱和时预计出现干扰拐点。</p>
+<p><strong>不成立或反转的条件：</strong> 锁竞争、NUMA 远端访问、DMA 批量过大或共享资源饱和可使代价升高；两横轴均不保证单调。当前零 DMA 慢化系数的模拟不能提供 P2b 证据。实测速率也是竞争结果，不能当作不受系统影响的外部剂量。</p>
+<p><strong>待采集数据：</strong> 原生线程/cgroup CPU 计时与 profiler、在线事件次数与活跃 Agent/chunk 数；固定计算步身份及可靠 GPU 起止计时；路径提交/完成字节、提供与达到的速率、NIC/PCIe/HBM 计数。前台 GET 服务时间与复制未完成数另表，路径字节不重复累加。</p>
+<p><strong>正文取舍：</strong> P2a 替换参考 Python CPU 表的原生证据位置，P2b 补总字节表无法说明的干扰；两张独立 PDF 可同行，不使用混合量纲双轴。</p>
+</aside>
+<p>Peer HBM 是否挤占前台空间，还需要将真实物理占用与完整生命周期排队对齐；额度曲线本身不足以回答这一问题。这组实验同时是算法 3 的消融，因此统一放在 P8，避免另列重复图。</p>
+<h3>固定追加故障：同一 Workflow 的完成时间变化</h3>
+<p>嵌套故障日程提供了同一 Workflow 的直接配对：K1 与 K2 都在 60 s 使 GPU0 失效，只有 K2 在 180 s 追加 GPU2 故障。对同一系统和同一 Workflow，计算 <span class="math inline">\Delta W_{s,i}^{180}=W_{s,i}^{K2}-W_{s,i}^{K1}</span>，比较给定共同故障历史后追加一个事件的完整影响。</p>
+<p><a id="paper-eval-fixed-event-wct"></a></p>
+<figure class="paper-figure">
+<p><a href="../../../output/pdf/aegiskv-revision-20260909/eval-fixed-event-wct.pdf"><img src="../../../output/pdf/aegiskv-revision-20260909/eval-fixed-event-wct.png" width="1008" alt="8 固定追加故障对同一Workflow的WCT影响"></a></p>
+<p><strong>图 8：固定追加故障对同一Workflow的WCT影响。</strong> 追加 180 s/GPU2 故障的同 ID 效应：K1/K2 共享 60 s/GPU0 故障，每次停机 120 s，纵轴为同系统 WCT(K2)−WCT(K1)。七个 ID 为三系统直接受害者的事后并集；实心、空心、叉号分别为含活跃受害请求、仅排队受害、无直接受害。21 对释放时刻相等，负值和零值保留。每系统每日程一次模拟。</p>
+</figure>
+<p>图中保留三个系统在 180 s 的直接受害 Workflow 并集，所有系统都比较同一组七个 ID；不同系统是否直接丢失 active KV、只被移出队列或未直接受害，由 marker 区分。并集按实际受害身份形成，是事后描述性分组，不能当作事前随机样本或宣称三系统丢失集合相同。未筛选的全部 160 个 Workflow 配对与释放/完成变化另存于 <a href="../../../output/aegiskv-revision-20260909/scaling-rate/data/fixed-event-all-workflows.json">完整事件配对数据</a>。</p>
+<p>60 s 的首个故障在三个系统中均没有 active/queued 直接受害请求，但会减少可用容量并丢失正常可复用缓存；它在两组中作为相同历史保留。180 s 是该嵌套日程中首个具有直接受害对象的事件，并未按 AegisKV 的收益选择案例。K2−K1 隔离的是给定共同历史后追加这个事件的影响；不能将 K4−K2 拆称 300 s 或 420 s 中任一次故障的独立代价。</p>
+<p>在每个系统内部，K1 与 K2 在 [0,180 s) 的已记录执行日志具有相同语义前缀。图中七个 Workflow 在两组中的首次释放时刻全部相等，因此这 21 对的 WCT 差值也等于完成时刻差值；这不要求三个系统之间的调度或副本状态相同。日志比较的字段与边界见实验设计。</p>
+<p>闭环并发仍会改变后续 Workflow 首次释放时刻。因此，完整数据逐对象同时核查 <span class="math inline">\Delta C=\Delta W+\Delta R</span>，其中 C 为完成时刻，R 为释放时刻；释放延后带来的短 WCT 不能直接解释为更早完成。正、负变化和完整计数均保留，结果仍未显示所有受害 Workflow 上一致的 AegisKV 优势。</p>
+<p>该比较使用给定共同历史后的完整后续执行，因而也包含追加故障引发的调度变化。故障率扫描在后文使用同一嵌套日程；复用这些执行不增加独立样本数。</p>
+<h3>恢复机制：已有副本是否减少了重算</h3>
+<p>图 9 对每个预选故障实例，同时展示同一个焦点 Workflow 的 F0 和 F1 WCT。每一行的空心与实心点属于同一系统、同一对象；跨系统比较 F1 终点，行内比较故障前后的增量。这样既保留故障代价，也不会将一个系统正常时已经较慢的部分隐藏在归一化分母中。</p>
+<p><a id="paper-eval-fault-paired-wct"></a></p>
+<figure class="paper-figure">
+<p><a href="../../../output/pdf/aegiskv-revision-20260909/eval-fault-paired-wct.pdf"><img src="../../../output/pdf/aegiskv-revision-20260909/eval-fault-paired-wct.png" width="1008" alt="9 同一焦点 Workflow 的故障前后配对 WCT"></a></p>
+<p><strong>图 9：同一焦点 Workflow 的故障前后配对 WCT。</strong> C1/C2/C3 分别为 Workflow 98ced84a/220852c6/5aa09932，源 GPU 为 6/2/0。箭头从同系统、同 ID 的 F0 指向 F1；各例各系统一次 F1，复用相应 F0。故障固定焦点请求与 token 进度，其他受害者集合不同；该图为机制诊断。</p>
+</figure>
+<p>这三个历史实例在基准完成进度附近选定焦点请求，并在同一请求总 token 进度约 60% 时触发。三系统的焦点 Workflow 和源 GPU 相同，但完整受害请求集合并不相同，因而它们是自然混部下的配对诊断，尚不满足隔离直接受害者的新协议。负的 F1−F0 反映故障后调度发生变化，不能解释为故障本身有益。当前实例也没有展示一致的 AegisKV 完整 WCT 优势。</p>
+<p><a id="paper-eval-fault-token-source"></a></p>
+<figure class="paper-figure">
+<p><a href="../../../output/pdf/aegiskv-revision-20260909/eval-fault-token-source.pdf"><img src="../../../output/pdf/aegiskv-revision-20260909/eval-fault-token-source.png" width="1008" alt="10 同一故障请求的恢复来源与重算量"></a></p>
+<p><strong>图 10：同一故障请求的恢复来源与重算量。</strong> 与前图相同焦点请求的 Peer、DRAM 恢复量与重算量，Ki=1,024；每行来自一次 F1 执行。Peer 恢复量全为零，仍保留其图例。本地 primary 复用未计入这些分段；这些 token 数不分解完整 DAG 时间。</p>
+</figure>
+<p>图 10 解释为何不能将这些结果归因于 Peer：三例焦点请求的 Peer 恢复 token 全部为零，故障前也没有焦点 Peer 准入事件。前两例故障前最近的 50 ms 控制采样中，八张 GPU 的备份硬上限、额度和物理备份均为零；第三例只有一张 GPU 存在非零硬上限，但当时物理备份仍为零。冻结实现从实际空闲字节扣除前台保留量后计算可借空间，不把可复用的正常 HBM cache 自动当成空闲容量。</p>
+<p>因此，当前图表暴露的是“这三个焦点未形成可用于恢复的 Peer 副本”的条件；DRAM 保护已经参与恢复，不能把 Peer 缺位扩大为全部保护路径失效。后续单故障主实验应按输入预选短/长上下文及关键/非关键分支，固定焦点请求、故障域与 decode 边界，并逐例报告故障前连续已提交前缀、保护覆盖率、Peer 容量和被丢失 token。资源条件应同时覆盖无借用余量与有借用余量，不删除未形成保护或恢复无收益的案例，也不能等 AegisKV 复制完成后才注入。</p>
+<aside class="planned-figure" id="planned-recovery-critical-path">
+<p><strong>待绘图 P3：恢复节省是否传递到 Workflow 终点（尚无结果）</strong></p>
+<p>在相同故障与相同恢复进度边界下，将恢复过程和端到端效应直接联系起来。</p>
+<table class="metrics">
+<thead>
+<tr>
+<th>独立候选图 / 图型</th>
+<th>横轴</th>
+<th>纵轴</th>
+<th>系列与对照</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P3：通栏四象限配对散点图</td>
+<td>相对 Mooncake，焦点请求重建至共同 consumed-token cursor 的状态就绪时间节省（s）</td>
+<td>同 Workflow 的保护收益 S_s,i=D_M,i−D_s,i（s，正值更好）</td>
+<td>三系统颜色；marker 区分事前规定的 Slack/可借容量层；显示两条零轴</td>
+</tr>
+</tbody>
+</table>
+<p><strong>固定条件与统计：</strong> 每个预定焦点均有同系统 F0/F1；固定输入、源故障域、直接丢失 primary 集合、逻辑 decode 边界和 120 s 停机，允许自然形成不同副本。逻辑边界不冒称同绝对注入时刻；若无法隔离集合，另列自然混部实验。一个点对应完整配对块中的同一焦点，共享运行的点不独立。 共同状态身份为（Workflow ID、request ID、consumed-token cursor）；已对外输出位置与已进入 KV 的位置分别记录。state-ready 要求所有必需分片兼容且缺失段重建完成，横轴只描述该焦点请求。</p>
+<p><strong>理论预期（待检验）：</strong> 在其他分支与后续竞争不变的简化模型中，只有未被 Slack 吸收的恢复时间变化才传到终点，即由 J=max(0,T−s) 的变化决定。关键分支可能同时获得状态就绪和 WCT 改善；有较大 Slack 时，横轴为正而纵轴可接近零。</p>
+<p><strong>不成立或反转的条件：</strong> 缺副本、复制未提交、分片不兼容或恢复拥塞可能令两轴为负；真实排队重排会破坏简化模型。不得把各系统不同长度的自身已备份前缀就绪当作同一恢复终点，也不以接近零的横轴作比值分母。</p>
+<p><strong>待采集数据：</strong> 故障前直接丢失身份、已提交连续前缀及其长度、各分片 ACK；恢复到相同 consumed-token cursor前的加载/重算、首次新输出、所有排队与 DAG 汇合；完整 F0/F1 WCT、释放/完成及 Peer/DRAM/重算量。状态就绪包含缺失段重建；部分副本加载完成单独记时。</p>
+<p><strong>正文取舍：</strong> 接固定追加故障结果；严格协议齐备后可替换两个历史故障诊断图。两轴保留不利点，不绘制预设等比例拟合线。</p>
+</aside>
+<h3>Workflow 并发扩展</h3>
+<p>并发扫描固定同一 160 个 Workflow、两轮重访、资源和输入顺序，只改变最大活跃 Workflow 数。图 11 展示完整批次完成速率 <span class="math inline">160/T_{\mathrm{batch}}</span>，包含填充与排空，不等于带 SLO 约束的 goodput。图 12 则在最高并发 64 下，逐一比较相同 Workflow 相对同配置 Mooncake 的 WCT 差值，避免用异质 Workflow 的原始分位数代替对象级比较。</p>
+<p>这一扫描检验系统从资源未充分利用到接近饱和的变化：增加并发可能先提高完成速率，随后因显存、计算或链路竞争形成拐点。Peer 可借空间也会随前台需求收缩，因此不预设 AegisKV 的优势随并发单调增加。</p>
+<p><a id="paper-eval-concurrency-throughput"></a></p>
+<figure class="paper-figure">
+<p><a href="../../../output/pdf/aegiskv-revision-20260909/eval-concurrency-throughput.pdf"><img src="../../../output/pdf/aegiskv-revision-20260909/eval-concurrency-throughput.png" width="480" alt="11 并发扩展的完整批次完成速率"></a></p>
+<p><strong>图 11：并发扩展的完整批次完成速率。</strong> 固定 160 个 Workflow、两轮重访和相同资源，改变最大活跃 Workflow 数，横轴为 log2 刻度。完成速率为 160 除以完整批次时长，包含填充与排空；不是 SLO goodput。每个系统每点一次冻结算法模拟，无重复置信区间。</p>
+</figure>
+<p><a id="paper-eval-concurrency-workflow"></a></p>
+<figure class="paper-figure">
+<p><a href="../../../output/pdf/aegiskv-revision-20260909/eval-concurrency-workflow.pdf"><img src="../../../output/pdf/aegiskv-revision-20260909/eval-concurrency-workflow.png" width="1008" alt="12 并发64下同一 Workflow 的 WCT 差值"></a></p>
+<p><strong>图 12：并发64下同一 Workflow 的 WCT 差值。</strong> C64 下全部 160 个 Workflow 相对同 ID、同 C64 Mooncake 的 WCT 差值。横轴只沿用 C16 Mooncake 的排序，数值比较均在 C64；每系统一次模拟。AegisKV 有 65 个更快、95 个更慢，保留所有正负变化。</p>
+</figure>
+<p>四个并发值形成 12 个配置—系统点，每系统每点一次完整模拟。并发 32 时，Mooncake 与 AegisKV 的完成速率分别为 0.318 与 0.302 Workflow/s。并发 64 时，完成速率从 Mooncake 的 0.285 提高到 AegisKV 的 0.296 Workflow/s，但同 ID 比较中有 65 个 Workflow 更快、95 个更慢。批次整体完成得更快，并不意味着各对象的 WCT 均降低。这些点体现配置相关的得失，不能外推为所有负载下均无开销。</p>
+<h3>故障频率扩展</h3>
+<p>频率扫描使用外部时钟预定干预，固定观察窗口 <span class="math inline">H=480</span> s、默认并发 16。四个负载点为 <span class="math inline">K=0,1,2,4</span> 次故障，依次取嵌套事件表的前 <span class="math inline">K</span> 个事件：(60 s, GPU0)、(180 s, GPU2)、(300 s, GPU4)、(420 s, GPU6)。每次故障不可用 120 s，三系统的时刻、目标和停机时长完全相同，不因副本是否完成或目标是否空闲而延后。</p>
+<p>横轴为预定 <span class="math inline">K/H</span>，换算为 0、7.5、15、30 次/集群小时。该高频范围用于压力测试，不是生产可靠性假设。窗口内停机暴露分别为 0、120、240、420 GPU·s，最后一次故障在窗口内覆盖 60 s，其修复发生在 540 s。固定窗口完成速率为窗口内完成 Workflow 数除以 480 s，未完成数量同时记录。</p>
+<p>保护在低故障率下主要体现常态成本，在故障更频繁时可能获得更多恢复机会；若存活容量、复制带宽或完整副本不足，恢复收益又可能被抵消。故障频率曲线用于找出这种条件变化，不预设两系统之间必有交叉点。有限输入和调度重排还可能使相邻点不单调，因而保留实际窗口完成数。</p>
+<p><a id="paper-eval-failure-rate-throughput"></a></p>
+<figure class="paper-figure">
+<p><a href="../../../output/pdf/aegiskv-revision-20260909/eval-failure-rate-throughput.pdf"><img src="../../../output/pdf/aegiskv-revision-20260909/eval-failure-rate-throughput.png" width="480" alt="13 固定时间窗口内的故障频率与完成速率"></a></p>
+<p><strong>图 13：固定时间窗口内的故障频率与完成速率。</strong> 预定 480 s 窗口内注入 K=0/1/2/4 次故障，横轴为 K/480 s 的每集群小时换算。三系统使用相同外部时刻与 GPU，每次不可用 120 s；窗口内停机暴露分别为 0/120/240/420 GPU·s，末次修复越过窗口。纵轴为窗口内完成数/480 s。此范围为压力扫描；每点每系统一次模拟。</p>
+</figure>
+<p>四个频率点共 12 个系统—配置结果；每点每系统一次模拟，未构造跨运行置信区间。各点实际注入次数、受害集合、修复事件和完成率随原始结果一同记录。在每集群小时 30 次的压力点，Mooncake 与 AegisKV 的窗口完成速率分别为 0.263 与 0.258 Workflow/s，窗口内分别完成 126 与 124 个 Workflow。</p>
+<h3>DP、模型与分片布局扩展</h3>
+<p>已有并发曲线改变的是同一资源池中的工作量，不等于系统规模扩展。DP 扩展将区分固定总工作量和固定每副本负载；模型与 TP 扩展则显式计入模型常驻空间、KV 分片和通信成本，避免把额外 GPU 带来的收益归因于保护策略。</p>
+<aside class="planned-figure" id="planned-dp-scale">
+<p><strong>待绘图 P4：DP 强扩展（尚无结果）</strong></p>
+<p>固定工作量能否有效使用增加的执行副本？</p>
+<table class="metrics">
+<thead>
+<tr>
+<th>独立候选图 / 图型</th>
+<th>横轴</th>
+<th>纵轴</th>
+<th>系列与对照</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P4：单栏吞吐点线图</td>
+<td>DP 副本数（拟 2/4/8/16）</td>
+<td>固定批次 160/T_batch（Workflow/s）</td>
+<td>Mooncake、DRAM-only AegisKV、AegisKV</td>
+</tr>
+</tbody>
+</table>
+<p><strong>固定条件与统计：</strong> F0 强扩展：同一 160 个 Workflow、C=16、模型、TP=PP=1、单 GPU 规格与顺序，DP 增大意味着 GPU 总数增大；Store/共享网络总预算固定。每个点是完整批次，包含填充和排空；同 ID WCT 与完成时刻随表发布。</p>
+<p><strong>理论预期（待检验）：</strong> 资源未充分利用时增加 DP 可能降低排队并提高吞吐；达到 DAG 并行度、C 或共享链路上限后应出现平台，而非无限线性增长。</p>
+<p><strong>不成立或反转的条件：</strong> 路由开销、短批次和共享存储瓶颈可能导致吞吐下降；更多总 HBM 也改变保护空间，不能把跨 DP 的变化全归因于保护。</p>
+<p><strong>待采集数据：</strong> 实际 DP/GPU 拓扑、完整批次起止、所有对象与请求计数、利用率及链路吞吐、逐 ID WCT/release/completion。不可运行配置留缺测，不插值。</p>
+<p><strong>正文取舍：</strong> 补 DP 空位，与固定资源的并发图分开。弱扩展须另冻固定每 DP 负载及资源增长规则；故障扩展还须区分固定失效设备数与失效比例，不并入这条 F0 曲线。</p>
+</aside>
+<aside class="planned-figure" id="planned-model-tp">
+<p><strong>待绘图 P5：固定 GPU 预算下的模型与 TP（尚无结果）</strong></p>
+<p>重算、分片恢复和 collective 的变化如何影响同一 Workflow 的故障代价？</p>
+<table class="metrics">
+<thead>
+<tr>
+<th>独立候选图 / 图型</th>
+<th>横轴</th>
+<th>纵轴</th>
+<th>系列与对照</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P5：单栏分类点图，不跨模型连线</td>
+<td>模型 / TP / DP 配置：候选 8B/1/8、8B/2/4、32B/2/4、32B/4/2</td>
+<td>同一事前指定焦点 Workflow 的 D_s,i=F1−F0（s）</td>
+<td>三系统；模型内按同 ID、同布局配对，全部其他 Workflow 另表</td>
+</tr>
+</tbody>
+</table>
+<p><strong>固定条件与统计：</strong> 总 GPU 数 G=8、GPU 规格、BF16、PP=1 及 CPU/DRAM/网络预算相同，DP×TP=G。候选先核对权重、KV 与运行时余量，再冻结可行配置。同一 DAG 和强制输出轨迹；tokenizer 兼容性核验。每配置内部固定逻辑故障边界及物理故障域，报告受影响 ranks/replicas；完整 F0/F1 块为重复。 各配置保持共同并发上限、提供到达日程、输入顺序与预热契约；若不支持同一协议则单独说明，不连接成同一比较。</p>
+<p><strong>理论预期（待检验）：</strong> 较大模型的重算可能更昂贵；TP 可能缩短单步计算，同时增加通信、分片恢复与故障耦合。保护能否受益取决于实际保留的兼容状态，预期呈配置相关的取舍。</p>
+<p><strong>不成立或反转的条件：</strong> 固定 G 时增 TP 会减 DP，因此不能单独归因于 TP。collective 拥塞、模型常驻空间挤压或没有兼容副本时，保护收益可能下降；强制轨迹不验证不同模型的自然生成质量。</p>
+<p><strong>待采集数据：</strong> 权重和 KV 分片实际尺寸、布局/模型/tokenizer 版本、collective 事件、故障传播契约、每 shard 的提交与恢复边界、全部 F0/F1 绝对 WCT 和完成率。</p>
+<p><strong>正文取舍：</strong> 补 Model/TP 空位；完整预定焦点分层与全 Workflow 配对发布补充数据。增加 GPU 的固定 DP/增 TP 实验另列预算，不与此图连线。</p>
+</aside>
+<h3>与相关恢复方案的比较</h3>
+<p>三系统对照可以识别 DRAM 准入和 Peer 借用的内部作用，却不足以回答相对其他恢复策略的优势。外部比较需要先对齐故障范围、恢复语义和资源成本。<a href="https://proceedings.mlr.press/v235/strati24a.html">DéjàVu</a> 的状态复制提供相关的恢复参照，但它的执行并行方式不能直接等同于当前 TP1 模拟。若仅移植一种复制策略，应以“机制移植”命名；只有运行原系统并匹配服务条件，才按原系统名称报告端到端比较。</p>
+<aside class="planned-figure" id="planned-related-baselines">
+<p><strong>待绘图 P6：同一契约下的外部恢复基线（尚无结果）</strong></p>
+<p>AegisKV 相对兼容的 KV 保存/恢复方法，能否以相同资源获得更好的故障后终点？</p>
+<table class="metrics">
+<thead>
+<tr>
+<th>独立候选图 / 图型</th>
+<th>横轴</th>
+<th>纵轴</th>
+<th>系列与对照</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P6：通栏逐 Workflow 配对曲线</td>
+<td>全部相同 Workflow ID 的冻结顺序</td>
+<td>故障后 WCT_s,i − WCT_M,i（s）</td>
+<td>三系统加一个通过兼容性核对的外部方法，至多四系列</td>
+</tr>
+</tbody>
+</table>
+<p><strong>固定条件与统计：</strong> 先核对 DéjàVu 类方法的执行/故障兼容性、复制状态与额外资源；原系统运行与机制移植分别命名。固定模型、输入、健康恢复设备及 GPU/DRAM/CPU/带宽总预算。同一严格故障内逐 ID 比较；无法固定直接集合时明确为自然混部并发布实际集合。完整运行构成重复。</p>
+<p><strong>理论预期（待检验）：</strong> 容量稀缺、价值估计准确且有可借 HBM 时，按对象分配保护可能降低故障后 WCT；正常成本和故障收益须同时成立。</p>
+<p><strong>不成立或反转的条件：</strong> 资源充裕、状态很小或估计偏差较大时，简单周期复制可能相当或更好。故障语义或资源不兼容的原系统不硬放同图，也不借原论文名称包装简单基线。</p>
+<p><strong>待采集数据：</strong> 原生/移植身份与版本、保存周期/粒度、额外资源、可读发布条件、故障契约、恢复来源，全部 F0/F1 WCT 及各自 D_s,i；超时与不支持配置不删除。</p>
+<p><strong>正文取舍：</strong> 扩展现有同 Workflow 故障对照的位置；当前 DRAM-only 是内部对照，不能替代本图。一个外部方法通过兼容审查后再决定是否扩充基线。</p>
+</aside>
+<h3>机制消融与适用边界</h3>
+<p>算法 2 消融回答“保护谁”：Slack 是否使有限容量优先服务那些恢复时间会暴露到 Workflow 终点的请求？算法 3 消融回答“借用多少”：在变化的前台需求下，自适应额度是否比固定预算保留更多有用副本，同时限制正常服务的损失？P7 对各变体保留同输入的 F0/F1；P8 主图采用 F0 的预定前台突发，故障覆盖复用 P3 的日程。各组逐次只改变所考察的机制。</p>
+<aside class="planned-figure" id="planned-algorithm2-ablation">
+<p><strong>待绘图 P7：算法 2 的价值与容量竞争消融（尚无结果）</strong></p>
+<p>考虑 Slack 是否使保护更偏向会影响 Workflow 终点的对象？</p>
+<table class="metrics">
+<thead>
+<tr>
+<th>独立候选图 / 图型</th>
+<th>横轴</th>
+<th>纵轴</th>
+<th>系列与对照</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P7：通栏逐 Workflow 点线图</td>
+<td>全部预定 Workflow ID 的共同顺序</td>
+<td>各变体同 ID 故障增量 F1−F0（s）</td>
+<td>最终冻结算法 2、仅将请求 Slack 置零（保留边际恢复成本）、LRU 策略替换；至多三系列</td>
+</tr>
+</tbody>
+</table>
+<p><strong>固定条件与统计：</strong> 固定算法 3、容量、复制/ACK/释放、物理记账和严格单故障。单因素消融只改可辨认接口；若 LRU 同时改变信用机制，标为策略替换。每变体保留自身 F0/F1，按完整运行配对。按容量、DAG 分支宽度、共享比例和预测误差预定分层；训练与测试 Workflow 分离。 Slack 消融保留相同 T(k)/T(k+1) 成本模型及其他规则，不把候选边际恢复节省改成总重算时长。</p>
+<p><strong>理论预期（待检验）：</strong> 容量有限且 Slack 估计可靠时，完整价值应更常保护实际暴露到终点的分支，降低这些对象的故障增量；资源足够保留全部对象时，差别应减弱。</p>
+<p><strong>不成立或反转的条件：</strong> 预测失准、未知工具延迟或正常重访价值更重要时，简单重算/缓存策略可能更好；信用聚合不保证精确联合 WCT 最优，也不预设每个对象获益。</p>
+<p><strong>待采集数据：</strong> 冻结变体差异、每次触发 Agent 与请求快照、价值/信用结算、候选与可释放块、共享物理字节、准入/拒绝原因、连续保护前缀，完整正常复用/CPU/流量及 F0/F1 终点。</p>
+<p><strong>正文取舍：</strong> 补算法 2 空位并检验 Observation 1/2；不把旧联合分账参考当作当前算法，也不在算法未冻结时执行矩阵。</p>
+</aside>
+<aside class="planned-figure" id="planned-algorithm3-ablation">
+<p><strong>待绘图 P8：算法 3、真实 HBM 与前台排队（尚无结果）</strong></p>
+<p>在负载突发中，借用控制能否及时让出真实地址，并限制前台等待？</p>
+<table class="metrics">
+<thead>
+<tr>
+<th>独立候选图 / 图型</th>
+<th>横轴</th>
+<th>纵轴</th>
+<th>系列与对照</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P8a：单栏物理占用分区时间图</td>
+<td>预定前台负载轨迹的绝对时间（s）</td>
+<td>事前指定 GPU 的实际 HBM 占用（GiB）</td>
+<td>AIMD 的固定/前台/Peer-pending/committed/reclaiming 互斥分区及物理容量线；其他变体另表</td>
+</tr>
+<tr>
+<td>P8b：单栏事件阶梯图，与 P8a 对齐</td>
+<td>同一绝对负载时间（s）</td>
+<td>同一 GPU 上已释放且依赖满足、仍待首次/重新入场的请求数（requests）</td>
+<td>no Peer、预定 static quota、Guarded AIMD</td>
+</tr>
+</tbody>
+</table>
+<p><strong>固定条件与统计：</strong> F0，固定算法 2 和 DRAM 路径，事前规定平稳→突发→回落的输入、映射与 CPU/网络背景；选择 GPU 不看结果。静态额度也遵守相同物理安全和释放规则。完整运行配对，相关时间采样点不是重复；同输入不意味着实际占用轨迹相同。 static quota 用独立校准负载选择，或预定范围全部报告；AIMD 使用同等调优预算。各变体采用共同提供到达日程和并发门限，另报入口前等待与已准入/已完成计数，防止少入场造成局部队列较短。 每个请求只计一次，包含 HBM、GET 或 CPU 准入导致的首次/抢占后资源等待；排除未满足 DAG/工具依赖和已入场请求的正常步间间隔。</p>
+<p><strong>理论预期（待检验）：</strong> 有借用余量时，AIMD 应在空闲期保留有用副本，在前台突发后收缩；相对过高的静态额度，预期减少回收阻塞及队列积累。过低静态额度可能保护更少，但排队也更少。</p>
+<p><strong>不成立或反转的条件：</strong> 观测延迟、控制振荡、长 DMA fence、读取 pin 或碎片会延迟退让；授权下降不等于 U 立即下降。没有余量时可无保护收益，容量可行也不保证没有 DMA 干扰。</p>
+<p><strong>待采集数据：</strong> 逐 GPU 对象与地址生命周期、active/reusable/recovery-primary 及三类 Peer 分区、硬上限/授权/真实占用、forward 反馈、分配失败与回收 ACK；首次及抢占后所有入队/出队、入口前等待、已准入/完成计数及全体 Workflow 的队列差值和 WCT/release/completion。故障覆盖复用 P3 的事前日程，不按 ACK 选择故障。</p>
+<p><strong>正文取舍：</strong> 两张独立单栏图可同行，补齐前台压力与算法 3 消融；齐备后替换单一抢占离群点的正文位置。没有把 GiB、排队数与延迟放在双轴或可加堆叠中。</p>
+</aside>
+<h3>结论边界与可复现性</h3>
+<p>当前观测支持分支异质性这一动机，预测曲线揭示了长前缀重算可能具有较高代价；两者尚不是完整系统收益。冻结原型暴露出正常重访下降、抢占停顿及部分场景没有 Peer 副本的问题，固定故障与扩展实验也未显示统一优势。因此，“近零正常开销”和“稳定故障收益”仍是待检验主张，不能由更换指标或绘图方式获得。</p>
+<p>后续验证还需要覆盖不同 DAG 宽度与共享比例、重访间隔和长短上下文分层，并将 Slack 预测训练与评估 Workflow 分离。它们首先作为 P1、P3 和 P7 的预定分层报告，不为每个条件新增重复图。独立完整重复用于估计运行间变异；有限窗口未完成、复制失败和没有可借空间的情况均保留。原生执行还需核对输出语义，而当前模拟的输出位置一致性检查不能替代真实模型与工具链验证。</p>
+<p>配置、输入、注入日程、逐 Workflow 数据与绘图源分别由 <a href="EVALUATION_DESIGN.md">实验设计</a>、<a href="PAPER_FIGURE_REVIEW.md">逐图审查</a> 和 <a href="Old_Figures.md">历史图像</a> 提供。对相关论文的逐项审查及本次已落实修改见 <a href="PAPER_DRAFT_REVIEW.md">论文改进记录</a>。</p>
+</main><script src="file:///home/comp/zhanzhao/MoonKVSim/tmp/figure-browser/node_modules/katex/dist/katex.min.js"></script><script>
+document.querySelectorAll('.math').forEach(el=>katex.render(el.textContent,el,{displayMode:el.classList.contains('block'),throwOnError:true,strict:'error'}));
+document.documentElement.dataset.mathReady='true';
+</script></html>

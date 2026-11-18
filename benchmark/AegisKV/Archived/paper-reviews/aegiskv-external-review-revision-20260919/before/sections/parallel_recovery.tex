@@ -1,0 +1,32 @@
+\subsection{Recovery Manager: Preassigned Takeover}
+\label{sec:parallel-recovery}
+\label{sec:recovery-manager}
+
+Recovery Manager (2) decides where each request will resume before
+failure occurs. When request $r$ arrives and the Router selects source
+DP rank $g_r$, the Manager records a target assignment $p_r\ne g_r$
+in control state outside the source's failure domain. The same $p_r$
+is both the retry destination and the DP rank that will hold any
+Peer-HBM backup of $r$. A simple mapping for $n\ge2$ DPs is
+$p_r=(g_r+1)\bmod n$; per-request assignments may distribute load across
+several targets. The assignment does not reserve HBM: the KV Master
+chooses whether to request Peer protection, and the target Adapter
+controls its capacity. A TP group restores compatible shards as one DP.
+
+\paragraph{Activate the recorded route after failure.}
+The Manager combines membership, device errors, and GPU progress
+reported by Adapters; a process heartbeat alone does not prove GPU
+progress. After confirming and isolating a failed source, it obtains
+request token prefixes, commit frontiers, model/layout IDs, and replica
+locations from surviving control state, then submits retries to their
+recorded targets. Available Peer replicas are therefore local to takeover.
+DRAM or recomputation supplies the remaining state. Control-state
+survival, fencing, failure-domain separation, and retry deduplication
+are runtime contracts. A failed target requires a new valid assignment;
+copies on the old target cannot be treated as local to the new target.
+
+Retries enter independently, subject to foreground admission, continuous
+batching, and shared compute/copy capacity. Each request advances on its
+own layer-readiness events. Slack determines protection, not a request-level
+completion barrier; the Manager never waits for earlier retries merely
+because they had higher placement priority.

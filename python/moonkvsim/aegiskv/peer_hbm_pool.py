@@ -400,7 +400,8 @@ class PeerHBMPool:
     def _check_timestamp(self, timestamp_ns: int) -> None:
         if timestamp_ns < 0:
             raise ValueError("timestamp_ns must be non-negative")
-        if self.journal.records and timestamp_ns < self.journal.records[-1].timestamp_ns:
+        last_timestamp_ns = self.journal.last_timestamp_ns
+        if last_timestamp_ns is not None and timestamp_ns < last_timestamp_ns:
             raise ValueError("Peer-HBM operation would move the journal backwards")
 
     def _require_pending(self, ticket: PeerHBMTicket) -> None:

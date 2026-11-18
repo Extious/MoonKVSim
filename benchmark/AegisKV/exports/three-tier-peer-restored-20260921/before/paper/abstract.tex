@@ -1,0 +1,26 @@
+\begin{abstract}
+Multi-agent applications accumulate reusable context while executing
+interdependent LLM requests. A worker failure can lose this state and delay
+several branches at once, yet protecting every context in fast memory is
+expensive. We propose AegisKV, a workflow-aware manager for KV checkpoints
+in shared DRAM and SSD or shared storage. AegisKV values DRAM retention,
+storage demotion, and final eviction separately, combining normal reuse
+with the workflow cost of recovery. It evaluates requests affected by a
+common failure together, uses sparse demand and layer overlap to value
+fast-tier residency, and directly re-evaluates complete replacement plans
+under bounded decision work and a migration threshold.
+Versioned transitions preserve recovery validity during migration and
+explicit fallback. The design requires no dedicated GPU backup region and leaves
+the model's attention semantics unchanged. We connect trace-derived
+workflow observations and existing reconstruction microbenchmarks to a
+reproducible analytical study and a complete experimental protocol.
+In 36 declared scenarios, the placement model improves on LRU in 17 and
+ties in 19; these are model outcomes, not measurements of an implemented
+system. Historical outage timing drives a separate recovery-load model in which
+a lower mean coexists with worse tail latency. Mechanism ablations expose
+interactions between layer placement and overlap, and a rejected rental
+alternative. The study identifies when contention, prediction error, and commit
+lag limit the benefit. End-to-end fault injection and normal
+service measurements remain necessary to establish the proposed system's
+performance.
+\end{abstract}

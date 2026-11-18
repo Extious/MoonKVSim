@@ -90,7 +90,7 @@ from moonkvsim.simulation.ledger import (
     CapacityLedger,
     CapacityResourceKind,
 )
-from moonkvsim.simulation.network import FlowContentionModel, FlowRateInterval
+from moonkvsim.simulation.network import ActiveFlow, FlowContentionModel, FlowRateInterval
 from moonkvsim.simulation.resource import ConcurrencyResource, RateResource
 from moonkvsim.simulation.transaction import AllocationDelta, ResourceTransaction
 from moonkvsim.store.transfer_engine import (
@@ -160,7 +160,7 @@ AIMD_PARAMETERS: Final = AIMDParameters(
 )
 
 _FAILURE_SCHEDULE_CACHE: dict[
-    tuple[str, str, str, int, int | None, int, tuple[object, ...] | None, bool],
+    tuple[str, str, str, int, int | None, int, tuple[object, ...] | None, bool, bool],
     dict[str, FailureSchedule],
 ] = {}
 
@@ -205,6 +205,7 @@ class SystemId(StrEnum):
 
 
 class EvictionKind(StrEnum):
+    PREFIX_FRONTIER = "prefix_frontier_revision3"
     FIFO = "fifo"
     LRU = "lru"
     LFU = "lfu"
@@ -307,7 +308,7 @@ SYSTEM_PROFILES: Final[dict[SystemId, SystemProfile]] = {
     ),
     SystemId.VANILLA_MOONCAKE_DRAM: SystemProfile(
         SystemId.VANILLA_MOONCAKE_DRAM,
-        "Vanilla Mooncake DRAM",
+        "Mooncake proactive Store-only 75% prefix (LRU)",
         Fraction(0),
         Fraction(3, 4),
         False,
@@ -411,8 +412,15 @@ class ModelParameters:
     policy_chunk_tokens: int = 1_024
     failure_progress_per_mille: int = 600
     gpu_recovery_time_ns: int = 120_000_000_000
+    batch_serialization_per_mille: int = 0
+    runtime_semantics: str = "legacy_v3"
+    aimd_control_interval_ns: int = 1_000_000_000
 
     def __post_init__(self) -> None:
+        if self.runtime_semantics not in {
+            "legacy_v3", "mooncake_prompt_v1", "shared_prefix_v3",
+        }:
+            raise ValueError("unknown AegisKV runtime semantics")
         positive = (
             self.dp_count,
             self.store_node_count,
@@ -426,6 +434,7 @@ class ModelParameters:
             self.transfer_setup_ns,
             self.policy_chunk_tokens,
             self.gpu_recovery_time_ns,
+            self.aimd_control_interval_ns,
         )
         if any(type(item) is not int or item <= 0 for item in positive):
             raise ValueError("modeled parameters must be positive integers")
@@ -464,6 +473,11 @@ class ModelParameters:
             raise ValueError("policy chunks must align to 64-token source blocks")
         if not 1 <= self.failure_progress_per_mille <= 999:
             raise ValueError("failure progress must be strictly within a request")
+        if (
+            type(self.batch_serialization_per_mille) is not int
+            or not 0 <= self.batch_serialization_per_mille <= 1000
+        ):
+            raise ValueError("batch serialization must be an integer in [0, 1000]")
 
     @property
     def model_weights_bytes_per_gpu(self) -> int:
@@ -489,15 +503,28 @@ class ModelParameters:
 
     @property
     def peer_hbm_quota_bytes_per_gpu(self) -> int:
-        """Initial Peer-HBM protection quota: floor(alpha * KV-capable HBM)."""
+        """Initial protection quota from the mode's declared AIMD capacity."""
 
-        return int(self.peer_hbm_alpha * Decimal(self.kv_capacity_bytes_per_gpu))
+        return int(self.peer_hbm_alpha * Decimal(self.aimd_capacity_bytes_per_gpu))
+
+    @property
+    def mooncake_semantics(self) -> bool:
+        return self.runtime_semantics in {"mooncake_prompt_v1", "shared_prefix_v3"}
+
+    @property
+    def aimd_capacity_bytes_per_gpu(self) -> int:
+        """Mooncake publishes alpha times total HBM; allocation stays physical."""
+        return (
+            self.physical_hbm_bytes_per_gpu
+            if self.mooncake_semantics
+            else self.kv_capacity_bytes_per_gpu
+        )
 
     @property
     def peer_hbm_max_quota_bytes_per_gpu(self) -> int:
         """Maximum dynamic Peer-HBM quota under the alpha <= 0.5 contract."""
 
-        return int(PEER_HBM_ALPHA_MAX * Decimal(self.kv_capacity_bytes_per_gpu))
+        return int(PEER_HBM_ALPHA_MAX * Decimal(self.aimd_capacity_bytes_per_gpu))
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -533,6 +560,10 @@ class ModelParameters:
             "policy_chunk_tokens": self.policy_chunk_tokens,
             "failure_progress_per_mille": self.failure_progress_per_mille,
             "gpu_recovery_time_ns": self.gpu_recovery_time_ns,
+            "batch_serialization_per_mille": self.batch_serialization_per_mille,
+            "runtime_semantics": self.runtime_semantics,
+            "aimd_control_interval_ns": self.aimd_control_interval_ns,
+            "aimd_capacity_bytes_per_gpu": self.aimd_capacity_bytes_per_gpu,
             "provenance": {
                 "kv_bytes_per_64_tokens": {
                     "value": KV_BYTES_PER_SOURCE_BLOCK,
@@ -572,6 +603,17 @@ class ExperimentVariant:
     def __post_init__(self) -> None:
         if not self.suite or not self.variant_id:
             raise ValueError("suite and variant_id must be non-empty")
+        if self.parameters.mooncake_semantics:
+            # Every sealed prefix is a candidate. Admission, capacity and ACKs
+            # decide actual coverage; artificial per-tier percentages do not.
+            object.__setattr__(self, "profile", replace(
+                self.profile,
+                peer_replication_fraction=Fraction(
+                    int(self.profile.peer_replication_fraction > 0)
+                ),
+                store_fraction=Fraction(int(self.profile.store_fraction > 0)),
+                cache_aware_routing=False,
+            ))
 
     @property
     def fingerprint(self) -> str:
@@ -588,6 +630,22 @@ class ExperimentVariant:
                 profile.peer_replication_fraction
             ),
             "store_fraction": _fraction_dict(profile.store_fraction),
+            "protection_semantics": {
+                "proactive_seal_time_copy": (
+                    profile.peer_replication_fraction > 0
+                    or profile.store_fraction > 0
+                ),
+                "peer_candidate_prefix_fraction": _fraction_dict(
+                    profile.peer_replication_fraction
+                ),
+                "store_candidate_prefix_fraction": _fraction_dict(
+                    profile.store_fraction
+                ),
+                "candidate_fractions_are_nested_from_token_zero": True,
+                "overlapping_tier_prefixes_are_not_additive": True,
+                "committed_copies_are_failure_recovery_eligible": True,
+                "retention_policy": profile.eviction.value,
+            },
             "peer_cache_reuse": profile.peer_cache_reuse,
             "store_cache_reuse": profile.store_cache_reuse,
             "eviction": profile.eviction.value,
@@ -601,6 +659,42 @@ class ExperimentVariant:
             "parameters": self.parameters.to_dict(),
             "negative_control": self.negative_control,
             "interpretation": self.interpretation,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class FailureImpactContract:
+    """Exact natural pre-fence request partition for one physical failure."""
+
+    active_span_ids: tuple[str, ...]
+    queued_span_ids: tuple[str, ...]
+    reroute_only_queued_span_ids: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        for label, values in (
+            ("active", self.active_span_ids),
+            ("queued", self.queued_span_ids),
+            ("reroute-only queued", self.reroute_only_queued_span_ids),
+        ):
+            if values != tuple(sorted(values)) or len(set(values)) != len(values):
+                raise ValueError(f"failure {label} victim IDs must be sorted and unique")
+        if set(self.active_span_ids) & set(self.queued_span_ids):
+            raise ValueError("failure active and queued victims must be disjoint")
+        if not set(self.reroute_only_queued_span_ids).issubset(self.queued_span_ids):
+            raise ValueError("reroute-only victims must be a subset of queued victims")
+
+    @property
+    def fingerprint(self) -> str:
+        return sha256_json(self.to_dict())
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "kind": "EXACT_NATURAL_PRE_FENCE_REQUEST_PARTITION",
+            "active_span_ids": list(self.active_span_ids),
+            "queued_span_ids": list(self.queued_span_ids),
+            "reroute_only_queued_span_ids": list(
+                self.reroute_only_queued_span_ids
+            ),
         }
 
 
@@ -627,6 +721,9 @@ class FailureEventSchedule:
     detection_delay_ns: int
     trigger_progress_per_mille: int
     gpu_recovery_time_ns: int | None = None
+    physical_target_frozen: bool = False
+    impact_contract: FailureImpactContract | None = None
+    profile_impact_contracts: Mapping[str, FailureImpactContract] | None = None
     selection_scope: str = (
         "variant_local_focus_span_gpu_at_shared_workload_target_after_prior_failures"
     )
@@ -648,6 +745,29 @@ class FailureEventSchedule:
             raise ValueError("logical failure progress must be strictly inside a request")
         if self.gpu_recovery_time_ns is not None and self.gpu_recovery_time_ns <= 0:
             raise ValueError("GPU recovery time must be positive or null")
+        if self.impact_contract is not None:
+            if not self.physical_target_frozen:
+                raise ValueError("failure impact contract requires a frozen physical target")
+            if self.focus_span_id not in self.impact_contract.active_span_ids:
+                raise ValueError("failure focus must be an active contracted victim")
+        if self.profile_impact_contracts is not None:
+            if not self.physical_target_frozen:
+                raise ValueError(
+                    "profile failure impact contracts require a frozen physical target"
+                )
+            if self.impact_contract is not None:
+                raise ValueError(
+                    "shared and profile-specific impact contracts are mutually exclusive"
+                )
+            if not self.profile_impact_contracts:
+                raise ValueError("profile failure impact contracts cannot be empty")
+            for profile_fingerprint, contract in self.profile_impact_contracts.items():
+                if not profile_fingerprint:
+                    raise ValueError("failure impact profile fingerprint cannot be empty")
+                if self.focus_span_id not in contract.active_span_ids:
+                    raise ValueError(
+                        "failure focus must be active in every profile impact contract"
+                    )
 
     @property
     def fingerprint(self) -> str:
@@ -663,7 +783,22 @@ class FailureEventSchedule:
             "focus_span_id": self.focus_span_id,
             "target_gpu_id": self.target_gpu_id,
             "target_gpu_id_semantics": (
-                "REFERENCE_ROUTE_PROVENANCE_NOT_RUNTIME_FAILURE_TARGET"
+                "FROZEN_PHYSICAL_FAILURE_TARGET"
+                if self.physical_target_frozen
+                else "REFERENCE_ROUTE_PROVENANCE_NOT_RUNTIME_FAILURE_TARGET"
+            ),
+            "impact_contract": (
+                None if self.impact_contract is None else self.impact_contract.to_dict()
+            ),
+            "profile_impact_contracts": (
+                None
+                if self.profile_impact_contracts is None
+                else {
+                    profile_fingerprint: contract.to_dict()
+                    for profile_fingerprint, contract in sorted(
+                        self.profile_impact_contracts.items()
+                    )
+                }
             ),
             "workload_position": {
                 "kind": "COMPLETED_WORKFLOW_FRACTION_NEAREST_COMMON_ROUTE_SPAN",
@@ -744,13 +879,18 @@ class CellSpec:
     repetition: str
     failure_schedule: FailureSchedule | None = None
     workflow_concurrency: int | None = None
+    workflow_admission_seed: int | None = None
     oracle_fast_path: bool = False
+    peer_binding_seed: int = 0
+    paper_causal_mode: bool = False
 
     def __post_init__(self) -> None:
         if self.context_bucket not in {item.name for item in CONTEXT_BUCKETS}:
             raise ValueError("unknown context bucket")
         if self.seed < 0:
             raise ValueError("seed must be non-negative")
+        if self.peer_binding_seed < 0:
+            raise ValueError("peer_binding_seed must be non-negative")
         if self.repetition not in {"A", "B"}:
             raise ValueError("repetition must be A or B")
         if (self.scenario is Scenario.GPU_FAILURE) != (self.failure_schedule is not None):
@@ -778,10 +918,37 @@ class CellSpec:
             type(self.workflow_concurrency) is not int or self.workflow_concurrency <= 0
         ):
             raise ValueError("workflow_concurrency must be a positive integer or null")
+        if self.workflow_admission_seed is not None and (
+            type(self.workflow_admission_seed) is not int
+            or self.workflow_admission_seed < 0
+        ):
+            raise ValueError(
+                "workflow_admission_seed must be a non-negative integer or null"
+            )
+        if self.workflow_concurrency is None and self.workflow_admission_seed is not None:
+            raise ValueError(
+                "workflow_admission_seed requires closed-loop workflow concurrency"
+            )
         if type(self.oracle_fast_path) is not bool:
             raise TypeError("oracle_fast_path must be bool")
+        if type(self.paper_causal_mode) is not bool:
+            raise TypeError("paper_causal_mode must be bool")
         if self.oracle_fast_path and self.variant.suite != "failure_schedule_oracle":
             raise ValueError("oracle_fast_path is restricted to failure schedule oracles")
+        if self.paper_causal_mode and self.failure_schedule is not None:
+            if len(self.failure_schedule.events) != 1:
+                raise ValueError("paper causal mode requires exactly one failure event")
+            paper_event = self.failure_schedule.events[0]
+            if not paper_event.physical_target_frozen:
+                raise ValueError("paper causal mode requires a frozen physical target")
+            if (
+                paper_event.impact_contract is not None
+                or paper_event.profile_impact_contracts is not None
+            ):
+                raise ValueError(
+                    "paper causal mode treats victim partitions as post-treatment "
+                    "outcomes and therefore rejects frozen impact contracts"
+                )
 
     @property
     def pair_id(self) -> str:
@@ -970,7 +1137,51 @@ class _ModeledPool:
                 return [], "VALUE_BLOCKED"
             selected.append(victim)
             released += victim.chunk.bytes
+        selected_keys = {entry.chunk.key for entry in selected}
+        for item in popped:
+            if item[2] not in selected_keys:
+                heapq.heappush(self._heap, item)
         return selected, "OK"
+
+    def preview_victims(
+        self,
+        required_bytes: int,
+        *,
+        incoming_score: Fraction | None = None,
+    ) -> tuple[tuple[_PoolEntry, ...], str]:
+        """Plan the same complete, unpinned victims without touching the heap."""
+
+        if required_bytes <= 0:
+            return (), "OK"
+        view = list(self._heap)
+        heapq.heapify(view)
+        selected: list[_PoolEntry] = []
+        released = 0
+        while released < required_bytes:
+            candidate: _PoolEntry | None = None
+            while view:
+                _priority, sequence, key, version = heapq.heappop(view)
+                entry = self.entries.get(key)
+                if (
+                    entry is None
+                    or entry.version != version
+                    or entry.inserted_sequence != sequence
+                    or key in self._pins_by_key
+                ):
+                    continue
+                candidate = entry
+                break
+            if candidate is None:
+                return (), "INSUFFICIENT"
+            if (
+                incoming_score is not None
+                and self.eviction is EvictionKind.SLACK_LANDLORD_VALUE
+                and incoming_score <= candidate.base_score
+            ):
+                return (), "VALUE_BLOCKED"
+            selected.append(candidate)
+            released += candidate.chunk.bytes
+        return tuple(selected), "OK"
 
     def contains(self, key: str, *, now_ns: int) -> bool:
         if self.failed:
@@ -998,6 +1209,19 @@ class _ModeledPool:
         tokens = 0
         for chunk in chunks:
             if chunk.key not in self.entries:
+                break
+            tokens += chunk.token_count
+        return tokens
+
+    def peek_exclusively_activatable_prefix_tokens(
+        self,
+        chunks: Sequence[_Chunk],
+    ) -> int:
+        """Return the continuous committed prefix with no outstanding readers."""
+
+        tokens = 0
+        for chunk in chunks:
+            if chunk.key not in self.entries or chunk.key in self._pins_by_key:
                 break
             tokens += chunk.token_count
         return tokens
@@ -1036,6 +1260,15 @@ class _ModeledPool:
             self.entries[key].chunk.bytes
             for key in self._pins_by_key
             if key in self.entries
+        )
+
+    def pinned_bytes_for(self, pin_id: str) -> int:
+        if not pin_id:
+            raise ExperimentError("pool pin lookup requires a non-empty owner")
+        return sum(
+            self.entries[key].chunk.bytes
+            for key, owners in self._pins_by_key.items()
+            if pin_id in owners and key in self.entries
         )
 
     def release_pin(self, pin_id: str) -> int:
@@ -1927,9 +2160,45 @@ class _PendingRecoveryTransfer:
     source_gpu_id: str
     target_gpu_id: str
     task: TransferTask
-    handle: EventHandle
+    handle: EventHandle | None
     bytes: int
     staging_bytes: int
+
+
+@dataclass(frozen=True, slots=True)
+class _RecoverySourceInterval:
+    source: str
+    start_token: int
+    end_token: int
+
+    @property
+    def token_count(self) -> int:
+        return self.end_token - self.start_token
+
+
+@dataclass(frozen=True, slots=True)
+class _RecoveryCandidateFlowSpec:
+    transfer_id: str
+    source: str
+    source_id: str
+    target_id: str
+    bytes: int
+    path_resource_ids: tuple[str, ...]
+    slice_bytes: tuple[int, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class _RecoverySourceCandidate:
+    strategy: str
+    feasible: bool
+    intervals: tuple[_RecoverySourceInterval, ...]
+    recompute_tokens: int
+    flow_specs: tuple[_RecoveryCandidateFlowSpec, ...]
+    estimated_prefix_materialization_ns: int
+    estimated_scheduler_admission_ns: int
+    estimated_scheduler_completion_ns: int
+    total_transferred_bytes: int
+    selection_key: tuple[int, int, int, int, int, int]
 
 
 @dataclass(slots=True)
@@ -1980,7 +2249,10 @@ class _StudyRuntime:
         seed: int,
         failure_schedule: FailureSchedule | None,
         workflow_concurrency: int | None,
+        workflow_admission_seed: int | None = None,
         oracle_fast_path: bool = False,
+        peer_binding_seed: int = 0,
+        paper_causal_mode: bool = False,
     ) -> None:
         self.records = tuple(records)
         self.variant = variant
@@ -1988,6 +2260,8 @@ class _StudyRuntime:
         self.profile = variant.profile
         self.parameters = variant.parameters
         self.seed = seed
+        self.peer_binding_seed = peer_binding_seed
+        self.paper_causal_mode = paper_causal_mode
         self.failure_schedule = failure_schedule
         self._failure_schedule_by_id = (
             {}
@@ -2000,6 +2274,7 @@ class _StudyRuntime:
             else {event.focus_span_id: event for event in failure_schedule.events}
         )
         self.workflow_concurrency = workflow_concurrency
+        self.workflow_admission_seed = workflow_admission_seed
         self.oracle_fast_path = oracle_fast_path
         self.des = GlobalDES()
         self.trace = load_normalized_trace_records(records)
@@ -2010,6 +2285,8 @@ class _StudyRuntime:
                 list(self.algorithm1_cpm.workflow_makespan_ns.values())
             ),
         )
+        if self.parameters.mooncake_semantics:
+            self.aimd_control_window_ns = self.parameters.aimd_control_interval_ns
         by_span = {span.span_id: span for span in self.trace.spans}
         records_by_span = {str(record["span_id"]): record for record in records}
         self.executions = {
@@ -2241,7 +2518,7 @@ class _StudyRuntime:
         self.aimd_states = {
             gpu_id: AIMDTargetState(
                 target_id=gpu_id,
-                peer_hbm_capacity_bytes=self.parameters.kv_capacity_bytes_per_gpu,
+                peer_hbm_capacity_bytes=self.parameters.aimd_capacity_bytes_per_gpu,
                 protection_fraction=self.parameters.peer_hbm_alpha,
             )
             for gpu_id in self.gpu_ids
@@ -2250,6 +2527,7 @@ class _StudyRuntime:
         self.aimd_events: list[dict[str, Any]] = []
         self._aimd_last_decisions: dict[str, AIMDDecision] = {}
         self._aimd_window_handles: dict[str, EventHandle] = {}
+        self._aimd_terminal_canceled_targets: set[str] = set()
         self._aimd_pending_pressure = {
             gpu_id: False for gpu_id in self.aimd_states
         }
@@ -2265,6 +2543,7 @@ class _StudyRuntime:
         self.hbm_pressure_observations: list[dict[str, Any]] = []
         self.scheduler_preemption_events: list[dict[str, Any]] = []
         self.route_events: list[dict[str, Any]] = []
+        self.peer_target_binding_events: list[dict[str, Any]] = []
         self.cache_aware_route_evaluations = 0
         self.cache_aware_route_changes = 0
         self.protection_path_bypasses: Counter[str] = Counter()
@@ -2317,6 +2596,7 @@ class _StudyRuntime:
                 on_before_admit=self._on_continuous_before_admit,
                 on_after_admit=self._on_continuous_after_admit,
                 on_admit_abort=self._on_continuous_admit_abort,
+                recovery_priority_key=self._continuous_recovery_priority_key,
                 on_step_started=self._on_continuous_step_started,
                 on_step_completed=self._on_continuous_step_completed,
                 on_maintenance_step=self._on_continuous_maintenance_step,
@@ -2326,6 +2606,7 @@ class _StudyRuntime:
             self.des,
             on_release=self._on_release,
             workflow_concurrency=workflow_concurrency,
+            workflow_admission_seed=workflow_admission_seed,
         )
         self.pending_put_starts: dict[str, _PendingPutStart] = {}
         self.pending_puts: dict[str, _PendingPut] = {}
@@ -2349,6 +2630,9 @@ class _StudyRuntime:
         self.failure_events: list[dict[str, Any]] = []
         self.recovery_events: list[dict[str, Any]] = []
         self.recovery_source_events: list[dict[str, Any]] = []
+        self._runtime_recovery_retries: dict[str, EventHandle] = {}
+        self._runtime_gate_frontier: dict[tuple[str, int], int] = {}
+        self._runtime_gate_outcomes: dict[tuple[str, int, int], dict[str, str]] = {}
         self.foreground_store_events: list[dict[str, Any]] = []
         self._failure_event_handles: dict[str, EventHandle] = {}
         self._continuous_failure_active_steps: dict[
@@ -2386,6 +2670,7 @@ class _StudyRuntime:
         self.des.register_handler(EventKind.FAILURE_DETECT, self._on_failure_detect)
         self.des.register_handler(EventKind.REPAIR_COMPLETE, self._on_repair_complete)
         self.des.register_handler(EventKind.RECOVERY_START, self._on_recovery_start)
+        self.des.register_handler(EventKind.REROUTE, self._on_runtime_recovery_retry)
         self.des.register_handler(EventKind.RECOVERY_COMPLETE, self._on_recovery_complete)
         self.des.register_handler(
             EventKind.RECOVERY_RECOMPUTE_COMPLETE,
@@ -2565,6 +2850,7 @@ class _StudyRuntime:
             or self._formal_waiting_put_starts
             or self._formal_content_alias_waiters
             or self.pending_recovery_transfers
+            or self._runtime_recovery_retries
             or self.recovery_transfer_ids_by_span
             or self.pending_foreground_store_transfers
             or self.foreground_store_restore_by_span
@@ -2574,7 +2860,27 @@ class _StudyRuntime:
                 record.get("status") == "PENDING" for record in self.transfers
             )
         ):
-            raise ExperimentError("study ended with a non-terminal transfer")
+            pending_transfer_ids = sorted(
+                str(record.get("transfer_id"))
+                for record in self.transfers
+                if record.get("status") == "PENDING"
+            )
+            raise ExperimentError(
+                "study ended with a non-terminal transfer: "
+                f"pending_put_starts={sorted(self.pending_put_starts)}, "
+                f"pending_puts={sorted(self.pending_puts)}, "
+                f"active_request_paths={sorted(self._formal_active_request_paths)}, "
+                f"waiting_put_starts={sorted(self._formal_waiting_put_starts)}, "
+                f"content_alias_waiters={sorted(self._formal_content_alias_waiters)}, "
+                f"recovery_transfers={sorted(self.pending_recovery_transfers)}, "
+                f"recovery_retries={sorted(self._runtime_recovery_retries)}, "
+                f"recovery_spans={sorted(self.recovery_transfer_ids_by_span)}, "
+                f"foreground_transfers={sorted(self.pending_foreground_store_transfers)}, "
+                f"foreground_spans={sorted(self.foreground_store_restore_by_span)}, "
+                f"host_staging={sorted(self.active_host_staging)}, "
+                f"source_pins={sorted(self.active_source_pins)}, "
+                f"transfer_records={pending_transfer_ids}"
+            )
         self._validate_all_transfer_records()
         self.transfer_runtime.audit()
         if self.flow_model.flows or self.transfer_runtime.active_flow_ids:
@@ -2646,8 +2952,27 @@ class _StudyRuntime:
             },
             "aimd_events": self.aimd_events,
             "hbm_pressure_observations": self.hbm_pressure_observations,
+            "aimd_terminal_state": {
+                gpu_id: {
+                    "control_window_canceled_at_workload_completion": (
+                        gpu_id in self._aimd_terminal_canceled_targets
+                    ),
+                    "pending_pressure": self._aimd_pending_pressure[gpu_id],
+                    "pending_shortfall_bytes": self._aimd_pending_shortfall_bytes[
+                        gpu_id
+                    ],
+                    "pending_pressure_active_requests": (
+                        self._aimd_pending_pressure_active_requests[gpu_id]
+                    ),
+                    "pending_pressure_reasons": sorted(
+                        self._aimd_pending_pressure_reasons[gpu_id]
+                    ),
+                }
+                for gpu_id in sorted(self.aimd_states)
+            },
             "scheduler_preemption_events": self.scheduler_preemption_events,
             "route_events": self.route_events,
+            "peer_target_binding_events": self.peer_target_binding_events,
             "algorithm1_cpm": {
                 span_id: {
                     "agent_id": timing.agent_id,
@@ -2975,7 +3300,9 @@ class _StudyRuntime:
     def _continuous_prediction_profile(self) -> PredictionProfile:
         return PredictionProfile(
             provider_name=ObservedIdealTraceDurationProvider.PROVIDER_NAME,
-            provider_version=ObservedIdealTraceDurationProvider.PROVIDER_VERSION,
+            provider_version=ObservedIdealTraceDurationProvider.version_for_composition(
+                self.parameters.batch_serialization_per_mille
+            ),
             provider_source_revision=VLLM_SOURCE_COMMIT,
             database_mode="ideal_trace_observed_request_duration",
             database_sha256=sha256_json(
@@ -3008,6 +3335,11 @@ class _StudyRuntime:
             inactive_account=HBM_INACTIVE_REUSABLE_ACCOUNT,
             recovery_reserved_account=HBM_RECOVERY_RESERVED_ACCOUNT,
             reclaim_free_bytes=partial(self._continuous_reclaim, gpu_id),
+            reclaimable_inactive_bytes=lambda: self.primary_pools[gpu_id].evictable_bytes,
+            preview_reclaim_free_bytes=partial(
+                self._preview_continuous_reclaim,
+                gpu_id,
+            ),
             on_commit=partial(self._record_continuous_hbm_commit, gpu_id),
         )
 
@@ -3027,6 +3359,7 @@ class _StudyRuntime:
         provider = ObservedIdealTraceDurationProvider(
             prediction_profile=prediction_profile,
             trace_provenance_sha256=trace_provenance_sha256,
+            batch_serialization_per_mille=self.parameters.batch_serialization_per_mille,
         )
         scheduler = ContinuousBatchScheduler(
             block_pool=BlockPool(
@@ -3096,6 +3429,36 @@ class _StudyRuntime:
                 force=True,
             )
         return admitted
+
+    def _preview_continuous_reclaim(
+        self,
+        gpu_id: str,
+        required_free_bytes: int,
+        reserved_primary_bytes: int,
+    ) -> bool:
+        """Mirror continuous reclaim success without changing modeled state."""
+
+        return (
+            self._foreground_hbm_feasibility_preview(
+                gpu_id,
+                required_free_bytes,
+                reserved_primary_bytes=reserved_primary_bytes,
+            )
+            >= required_free_bytes
+        )
+
+    def _continuous_recovery_priority_key(
+        self,
+        span_id: str,
+    ) -> tuple[int, int, str]:
+        execution = self.executions[span_id]
+        if execution.failure_at_ns is None:
+            raise ExperimentError("recovery priority lacks failure timestamp")
+        return (
+            self._remaining_ideal_slack_ns(execution, at_ns=self.des.now_ns),
+            execution.failure_at_ns,
+            span_id,
+        )
 
     def _on_continuous_before_admit(
         self,
@@ -3200,15 +3563,45 @@ class _StudyRuntime:
             min(normal_tokens, restored_tokens),
             logical_page_tokens=16,
         )
-        if normal_tokens <= 0:
+        primary_pool = self.primary_pools[target_gpu_id]
+        pinned_bytes_before_admit = primary_pool.pinned_bytes_for(spec.request_id)
+        # Routing deliberately chooses one complete normal-HBM source rather
+        # than stitching ACTIVE and inactive fragments.  A pin identifies the
+        # inactive-pool source; without one, the scheduler's prefix-cache
+        # refcounts own the complete ACTIVE source and no resident binding is
+        # required here.
+        if pinned_bytes_before_admit <= 0:
             return
-        # Initial local-HBM hits use an immutable logical alias.  The simplified
-        # experiment authority conservatively charges a complete ACTIVE copy for
-        # the request while retaining the shared inactive cache master, rather
-        # than destructively reclassifying bytes away from other concurrent
-        # system-prompt readers.  This overcharges capacity but never invents
-        # bandwidth or makes a second reader lose an otherwise valid HBM hit.
-        self.primary_pools[target_gpu_id].release_pin(spec.request_id)
+        if normal_tokens % SOURCE_BLOCK_TOKENS:
+            raise ExperimentError(
+                "shared inactive alias is not source-chunk aligned"
+            )
+        expected_source_chunks = normal_tokens // SOURCE_BLOCK_TOKENS
+        adopted_source_chunks = 0
+
+        def activate_shared_inactive(source_chunk_count: int) -> int:
+            nonlocal adopted_source_chunks
+            expected_bytes = source_chunk_count * KV_BYTES_PER_SOURCE_BLOCK
+            adopted_source_chunks += source_chunk_count
+            if adopted_source_chunks > expected_source_chunks:
+                raise ExperimentError("shared inactive alias exceeded its pinned interval")
+            if primary_pool.pinned_bytes_for(spec.request_id) <= 0:
+                raise ExperimentError("shared inactive alias lost its pinned physical backing")
+            return expected_bytes
+
+        def release_shared_inactive() -> None:
+            # A zero-copy reader owns a reference to the original physical
+            # backing for its complete scheduler lifetime. Adoption alone does
+            # not make those bytes evictable. Preemption, retirement, rollback,
+            # or GPU loss releases the reference through the HBM authority.
+            primary_pool.release_pin(spec.request_id)
+
+        authority.bind_shared_inactive_prefix(
+            request_id=spec.request_id,
+            restored_tokens=normal_tokens,
+            activate=activate_shared_inactive,
+            on_release=release_shared_inactive,
+        )
 
     def _sync_continuous_execution_hbm(self, target_gpu_id: str) -> None:
         authority = self.continuous_hbm_authorities[target_gpu_id]
@@ -3231,7 +3624,10 @@ class _StudyRuntime:
                     )
             else:
                 execution.hbm_allocation_gpu_id = None
-            if span_id not in active_ids and execution.status is _ExecutionStatus.RUNNING:
+            if span_id not in active_ids and execution.status in {
+                _ExecutionStatus.RUNNING,
+                _ExecutionStatus.RESUMED,
+            }:
                 execution.status = _ExecutionStatus.QUEUED
 
     def _on_continuous_after_admit(
@@ -3307,12 +3703,6 @@ class _StudyRuntime:
                     ],
                 }
             )
-            self._latch_aimd_foreground_pressure(
-                target_gpu_id,
-                0,
-                reason="CONTINUOUS_BATCH_SCHEDULER_RECOMPUTE_PREEMPTION",
-                force=True,
-            )
         for participant in step.participants:
             execution = self.executions[participant.request_id]
             if execution.route_version != participant.route_version:
@@ -3336,6 +3726,20 @@ class _StudyRuntime:
                 _ExecutionStatus.RESUMED
                 if execution.route_version > 0
                 else _ExecutionStatus.RUNNING
+            )
+            self._schedule_continuous_sealed_protection_puts(
+                execution,
+                source_gpu_id=target_gpu_id,
+                computed_prompt_tokens_before=min(
+                    execution.metadata.prompt_tokens,
+                    participant.num_computed_tokens_before,
+                ),
+                computed_prompt_tokens_after=min(
+                    execution.metadata.prompt_tokens,
+                    participant.num_computed_tokens_after,
+                ),
+                step_start_ns=start_ns,
+                step_end_ns=planned_end_ns,
             )
             recovery_source_tokens = (
                 execution.recovery_normal_hbm_local_tokens
@@ -3386,6 +3790,11 @@ class _StudyRuntime:
                     step=active_failure_step,
                 )
         self._sync_continuous_execution_hbm(target_gpu_id)
+        if step.preempted_request_ids:
+            self._formal_wake_parked_frontiers_for_pool(
+                self.peer_pools[target_gpu_id],
+                trigger="FOREGROUND_PREEMPTION_RELEASE",
+            )
 
     def _on_continuous_maintenance_step(
         self,
@@ -3409,13 +3818,11 @@ class _StudyRuntime:
                 "participant_request_ids": [],
             }
         )
-        self._latch_aimd_foreground_pressure(
-            target_gpu_id,
-            0,
-            reason="CONTINUOUS_BATCH_SCHEDULER_RECOMPUTE_PREEMPTION",
-            force=True,
-        )
         self._sync_continuous_execution_hbm(target_gpu_id)
+        self._formal_wake_parked_frontiers_for_pool(
+            self.peer_pools[target_gpu_id],
+            trigger="FOREGROUND_PREEMPTION_RELEASE",
+        )
 
     def _on_continuous_step_completed(
         self,
@@ -3445,14 +3852,6 @@ class _StudyRuntime:
                 raise ExperimentError(
                     "continuous failure focus lost its active scheduler-step evidence"
                 )
-            self._schedule_continuous_sealed_protection_puts(
-                execution,
-                source_gpu_id=target_gpu_id,
-                computed_prompt_tokens=min(
-                    execution.metadata.prompt_tokens,
-                    participant.num_computed_tokens_after,
-                ),
-            )
             recovery_source_tokens = (
                 execution.recovery_normal_hbm_local_tokens
                 + execution.restored_peer_tokens
@@ -3548,6 +3947,10 @@ class _StudyRuntime:
                 target_gpu_id,
                 cause="CONTINUOUS_BATCH_TERMINAL_ACTIVE_TO_INACTIVE",
             )
+            self._formal_wake_parked_frontiers_for_pool(
+                self.peer_pools[target_gpu_id],
+                trigger="FOREGROUND_PRIMARY_RELEASE",
+            )
             execution.hbm_allocated_bytes = 0
             execution.hbm_allocation_gpu_id = None
             execution.status = _ExecutionStatus.COMPLETED
@@ -3560,6 +3963,7 @@ class _StudyRuntime:
                 participant.request_id,
                 reason="REQUEST_COMPLETE",
             )
+            self._complete_runtime_protection(participant.request_id)
             self._update_residual_slack(
                 execution.metadata.workflow_id,
                 reason="REQUEST_COMPLETE",
@@ -3581,6 +3985,7 @@ class _StudyRuntime:
             for gpu_id, handle in tuple(self._aimd_window_handles.items()):
                 if not self.des.cancel(handle, reason="AIMD_WORKLOAD_COMPLETE"):
                     raise ExperimentError("final AIMD control window could not be canceled")
+                self._aimd_terminal_canceled_targets.add(gpu_id)
                 del self._aimd_window_handles[gpu_id]
 
     def _schedule_continuous_sealed_protection_puts(
@@ -3588,8 +3993,20 @@ class _StudyRuntime:
         execution: _SpanExecution,
         *,
         source_gpu_id: str,
-        computed_prompt_tokens: int,
+        computed_prompt_tokens_before: int,
+        computed_prompt_tokens_after: int,
+        step_start_ns: int,
+        step_end_ns: int,
     ) -> None:
+        if not (
+            0
+            <= computed_prompt_tokens_before
+            <= computed_prompt_tokens_after
+            <= execution.metadata.prompt_tokens
+        ):
+            raise ExperimentError("continuous protection frontier is invalid")
+        if step_end_ns < step_start_ns:
+            raise ExperimentError("continuous protection step interval is invalid")
         paths = (
             ("PEER_HBM", self.profile.peer_replication_fraction),
             ("STORE_DRAM", self.profile.store_fraction),
@@ -3624,6 +4041,8 @@ class _StudyRuntime:
                     execution.chunks[:candidate_count]
                 ),
             )
+            if self.parameters.mooncake_semantics:
+                transport_ranges = tuple((i, i + 1) for i in range(len(policy_ranges)))
             for batch_index, (candidate_begin, candidate_end) in enumerate(
                 transport_ranges
             ):
@@ -3633,9 +4052,26 @@ class _StudyRuntime:
                     execution.chunks[end - 1].token_start
                     + execution.chunks[end - 1].token_count
                 )
-                if sealed_tokens > computed_prompt_tokens:
+                if sealed_tokens > computed_prompt_tokens_after:
                     continue
-                if self._formal_policy_enabled():
+                if sealed_tokens <= computed_prompt_tokens_before:
+                    produced_ns = step_start_ns
+                else:
+                    advanced_tokens = (
+                        computed_prompt_tokens_after - computed_prompt_tokens_before
+                    )
+                    if advanced_tokens <= 0:
+                        continue
+                    produced_ns = step_start_ns + (
+                        (step_end_ns - step_start_ns)
+                        * (sealed_tokens - computed_prompt_tokens_before)
+                        // advanced_tokens
+                    )
+                if self.parameters.mooncake_semantics:
+                    # Scheduler steps are atomic forward operations. Their
+                    # output buffers become readable only after completion.
+                    produced_ns = step_end_ns
+                if self._formal_policy_enabled() or self.parameters.mooncake_semantics:
                     chunks = tuple(
                         self._protection_chunk(
                             execution,
@@ -3674,7 +4110,7 @@ class _StudyRuntime:
                         f"batch-{batch_index}:{group_target_store_id or 'peer'}"
                     )
                     handle = self.des.schedule_at(
-                        self.des.now_ns,
+                        produced_ns,
                         EventKind.PUT_START,
                         event_id=f"start:{plan_id}",
                         payload={"plan_id": plan_id, "path": path},
@@ -3688,7 +4124,7 @@ class _StudyRuntime:
                         target_store_id=group_target_store_id,
                         chunks=tuple(group),
                         handle=handle,
-                        produced_ns=self.des.now_ns,
+                        produced_ns=produced_ns,
                         continuous_batch_key=continuous_batch_key,
                     )
                     execution.continuous_protection_batch_states[
@@ -3751,6 +4187,53 @@ class _StudyRuntime:
             del states[batch_key]
         else:
             state.committed = True
+        self._runtime_gate_resolve(span_id, batch_key, committed=not state.failed)
+
+    def _runtime_gate_resolve(
+        self, span_id: str, batch_key: tuple[int, str, int, str] | None,
+        *, committed: bool,
+    ) -> None:
+        """Mirror the connector's shared ordinal and independent tier outcomes.
+
+        Neither tier's admission requires the other. The next ordinal waits
+        for both decisions/copies; if only one commits, the bypassed tier seals.
+        When both bypass, the same frontier may retry on a later callback.
+        """
+        if not self.parameters.mooncake_semantics or batch_key is None:
+            return
+        execution = self.executions[span_id]
+        if execution.status in {_ExecutionStatus.FENCED, _ExecutionStatus.COMPLETED}:
+            return
+        route, path, ordinal, _target = batch_key
+        owner = (span_id, route)
+        if route != execution.route_version or ordinal != self._runtime_gate_frontier.get(owner, 0):
+            return
+        enabled = [p for p, fraction in (
+            ("PEER_HBM", self.profile.peer_replication_fraction),
+            ("STORE_DRAM", self.profile.store_fraction),
+        ) if fraction > 0 and (span_id, p) not in self._formal_blocked_request_paths]
+        outcomes = self._runtime_gate_outcomes.setdefault((*owner, ordinal), {})
+        outcomes[path] = "COMMITTED" if committed else "BYPASS"
+        if not all(p in outcomes for p in enabled):
+            return
+        if not any(outcomes.get(p) == "COMMITTED" for p in enabled):
+            # A later callback starts a new attempt at this same ordinal.
+            # No result from this all-bypass attempt may seal a tier in it.
+            self._runtime_gate_outcomes.pop((*owner, ordinal), None)
+            return
+        self._runtime_gate_frontier[owner] = ordinal + 1
+        for p in enabled:
+            if outcomes[p] == "BYPASS":
+                self._formal_finish_request_path(span_id, p, block=True)
+        self.formal_policy_events.append({
+            "timestamp_ns": self.des.now_ns, "event": "RUNTIME_SHARED_ORDINAL_ADVANCED",
+            "span_id": span_id, "route_version": route, "ordinal": ordinal,
+            "tier_outcomes": dict(outcomes),
+        })
+        for p in enabled:
+            key = (span_id, p)
+            if key not in self._formal_blocked_request_paths and key not in self._formal_active_request_paths:
+                self._formal_finish_request_path(span_id, p, block=False)
 
     def _on_release(self, metadata: NormalizedSpanMetadata, _des: GlobalDES) -> None:
         execution = self.executions[metadata.span_id]
@@ -3766,6 +4249,12 @@ class _StudyRuntime:
             route_version=0,
             required_hbm_bytes=_tokens_to_allocated_bytes(metadata.prompt_tokens),
         )
+        if self.profile.peer_replication_fraction > 0 or self.parameters.mooncake_semantics:
+            execution.designated_peer_gpu_id = self._bind_peer_target(
+                source_gpu_id=gpu_id,
+                span_id=metadata.span_id,
+                route_version=0,
+            )
         local = self._local_hbm_prefix_breakdown(
             gpu_id,
             execution,
@@ -3955,15 +4444,19 @@ class _StudyRuntime:
         self.foreground_store_restore_by_span[span_id] = group
         registered = False
         try:
-            driver.register_suspended(
-                self._continuous_request_spec(
-                    execution,
-                    gpu_id=gpu_id,
-                    release_ns=execution.released_ns,
-                    restored_tokens=restored_tokens,
+            queued_owner = driver._requests.get(span_id)
+            if queued_owner is None:
+                driver.register_suspended(
+                    self._continuous_request_spec(
+                        execution,
+                        gpu_id=gpu_id,
+                        release_ns=execution.released_ns,
+                        restored_tokens=restored_tokens,
+                    )
                 )
-            )
-            registered = True
+                registered = True
+            elif queued_owner.target_id != gpu_id:
+                raise ExperimentError("foreground GET crossed its queued target")
             for source_store_id, (transfer_bytes, source_keys) in layout.items():
                 transfer_id = self._next_id(
                     f"foreground-store:{source_store_id}:{span_id}"
@@ -4153,12 +4646,19 @@ class _StudyRuntime:
         driver = self.continuous_batch_driver
         if driver is None:
             raise ExperimentError("foreground Store completion lost scheduler driver")
-        driver.schedule_registered_initial_admission(
-            request_id=span_id,
-            target_id=group.target_gpu_id,
-            ready_ns=self.des.now_ns,
-            restored_tokens=group.restored_tokens,
-        )
+        queued_owner = driver._requests[span_id]
+        if queued_owner.target_id is not None:
+            self.foreground_connector.bind_ready(
+                group.target_gpu_id, span_id, group.restored_tokens, external=True
+            )
+            driver._request_step(group.target_gpu_id)
+        else:
+            driver.schedule_registered_initial_admission(
+                request_id=span_id,
+                target_id=group.target_gpu_id,
+                ready_ns=self.des.now_ns,
+                restored_tokens=group.restored_tokens,
+            )
         self.foreground_store_events.append(
             {
                 "timestamp_ns": self.des.now_ns,
@@ -4315,6 +4815,14 @@ class _StudyRuntime:
             continuous_prefix(active_keys, chunks) if include_active_primary else 0
         )
         inactive_primary_prefix = continuous_prefix(inactive_keys, chunks)
+        if self.parameters.runtime_semantics == "shared_prefix_v3":
+            # Inactive aliases are immutable. A partially filled physical
+            # source block cannot also become the new request's writable tail.
+            # Retain complete policy/source boundaries until tail COW is modeled.
+            safe_ends = (0, *(c.token_start + c.token_count for c in chunks
+                             if (c.token_start + c.token_count) % SOURCE_BLOCK_TOKENS == 0))
+            active_primary_prefix = max(n for n in safe_ends if n <= active_primary_prefix)
+            inactive_primary_prefix = max(n for n in safe_ends if n <= inactive_primary_prefix)
         # One route source must cover the whole adopted prefix.  Do not stitch
         # disjoint ACTIVE and inactive cache fragments into a fictitious hit.
         normal_prefix = max(active_primary_prefix, inactive_primary_prefix)
@@ -4356,12 +4864,69 @@ class _StudyRuntime:
     ) -> str:
         if required_hbm_bytes < 0:
             raise ValueError("required HBM bytes must be non-negative")
+        execution = self.executions[span_id]
+        chunks = execution.chunks
+        available_gpu_ids = tuple(
+            gpu for gpu in self.gpu_ids if gpu not in self.failed_gpu_ids
+        )
+        local_scores = {
+            gpu_id: self._local_hbm_prefix_breakdown(
+                gpu_id,
+                execution,
+                mutate_signals=False,
+                # Initial requests can read a sealed ACTIVE prefix through a
+                # read-only local alias. Recovery still uses only explicitly
+                # reservable inactive/Peer/Store sources.
+                include_active_primary=not recovery,
+            )
+            for gpu_id in available_gpu_ids
+        }
+
+        def route_feasible(gpu_id: str) -> bool:
+            shared_resident_bytes = 0
+            if self.continuous_batch_enabled and not recovery:
+                adoptable_normal_tokens = _source_chunk_page_aligned_prefix(
+                    chunks,
+                    int(local_scores[gpu_id]["normal_hbm_contribution_tokens"]),
+                    logical_page_tokens=16,
+                )
+                if (
+                    adoptable_normal_tokens > 0
+                    and int(local_scores[gpu_id]["inactive_reusable_prefix_tokens"])
+                    >= adoptable_normal_tokens
+                ):
+                    shared_resident_bytes = _tokens_to_allocated_bytes(
+                        adoptable_normal_tokens
+                    )
+            required_free_bytes = max(
+                0,
+                required_hbm_bytes - shared_resident_bytes,
+            )
+            if self.continuous_batch_enabled:
+                return self.continuous_hbm_authorities[
+                    gpu_id
+                ].preview_fresh_request_admission(
+                    required_hbm_bytes,
+                    shared_resident_bytes=shared_resident_bytes,
+                )
+            return (
+                self._foreground_hbm_feasibility_preview(
+                    gpu_id,
+                    required_free_bytes,
+                    reserved_primary_bytes=shared_resident_bytes,
+                )
+                >= required_free_bytes
+            )
+
         healthy = tuple(
             gpu
-            for gpu in self.gpu_ids
-            if gpu not in self.failed_gpu_ids
-            and self._foreground_reclaimable_hbm_bytes(gpu) >= required_hbm_bytes
+            for gpu in available_gpu_ids
+            if route_feasible(gpu)
         )
+        if self.parameters.mooncake_semantics:
+            # The reference Router hashes over compatible healthy workers.
+            # Their local scheduler/enforcer handles capacity and queueing.
+            healthy = available_gpu_ids
         if not healthy:
             raise ExperimentError("no healthy modeled GPU has enough reclaimable HBM")
         preferred_destination_id = (
@@ -4378,23 +4943,12 @@ class _StudyRuntime:
         )
         digest = hashlib.sha256(f"{self.seed}:{span_id}:{route_version}".encode()).digest()
         hashed = healthy[int.from_bytes(digest[:8], "big") % len(healthy)]
-        execution = self.executions[span_id]
-        chunks = execution.chunks
         scored_gpu_ids = set(healthy)
         if peer_source_gpu_id is not None:
             scored_gpu_ids.add(peer_source_gpu_id)
-        local_scores = {
-            gpu_id: self._local_hbm_prefix_breakdown(
-                gpu_id,
-                execution,
-                mutate_signals=False,
-                # Initial requests can read a sealed ACTIVE prefix through a
-                # read-only local alias.  Recovery still uses only explicitly
-                # reservable inactive/Peer/Store sources.
-                include_active_primary=not recovery,
-            )
-            for gpu_id in scored_gpu_ids
-        }
+        missing_score_gpu_ids = scored_gpu_ids - set(local_scores)
+        if missing_score_gpu_ids:
+            raise ExperimentError("route scored an unavailable GPU")
         store_prefix = (
             self._store_lookup_prefix_tokens(
                 (
@@ -4578,11 +5132,24 @@ class _StudyRuntime:
                     if continuous_load is None
                     else continuous_load["queued_tokens"]
                 ),
+                "continuous_weighted_queued_work": (
+                    0
+                    if continuous_load is None
+                    else continuous_load["weighted_queued_work"]
+                ),
                 "foreground_reclaimable_hbm_bytes": (
                     self._foreground_reclaimable_hbm_bytes(gpu_id)
                 ),
             }
         selected = hashed
+        if self.parameters.mooncake_semantics:
+            selected = (
+                preferred_gpu_id
+                if recovery and preferred_gpu_id in healthy
+                else self._mooncake_rendezvous(
+                    span_id, healthy, role=f"source:route={route_version + 1}"
+                )
+            )
         if self.profile.cache_aware_routing:
             self.cache_aware_route_evaluations += 1
             def route_key(gpu_id: str) -> tuple[int, int, int, int, int, str]:
@@ -4597,8 +5164,8 @@ class _StudyRuntime:
                         gpu_id,
                     )
                 return (
-                    int(candidate["continuous_queued_tokens"]),
                     int(candidate["estimated_completion_ns"]),
+                    int(candidate["continuous_weighted_queued_work"]),
                     -int(candidate["effective_prefix_tokens"]),
                     int(candidate["queue_wait_ns"]),
                     0 if gpu_id == preferred_gpu_id else 1,
@@ -4612,6 +5179,24 @@ class _StudyRuntime:
             if selected != hashed:
                 self.cache_aware_route_changes += 1
         selected_candidate = candidates[selected]
+        ranked_candidate_ids = sorted(healthy, key=route_key) if self.profile.cache_aware_routing else [selected]
+        runner_up_gpu_id = (
+            ranked_candidate_ids[1] if len(ranked_candidate_ids) > 1 else None
+        )
+        selected_estimated_completion_ns = int(
+            selected_candidate["estimated_completion_ns"]
+        )
+        runner_up_estimated_completion_ns = (
+            None
+            if runner_up_gpu_id is None
+            else int(candidates[runner_up_gpu_id]["estimated_completion_ns"])
+        )
+        estimated_completion_margin_ns = (
+            None
+            if runner_up_estimated_completion_ns is None
+            else runner_up_estimated_completion_ns
+            - selected_estimated_completion_ns
+        )
         self.route_events.append(
             {
                 "timestamp_ns": self.des.now_ns,
@@ -4635,6 +5220,16 @@ class _StudyRuntime:
                     else "stable_hash"
                 ),
                 "required_hbm_bytes": required_hbm_bytes,
+                "runner_up_gpu_id": runner_up_gpu_id,
+                "selected_estimated_completion_ns": (
+                    selected_estimated_completion_ns
+                ),
+                "runner_up_estimated_completion_ns": (
+                    runner_up_estimated_completion_ns
+                ),
+                "estimated_completion_margin_ns": estimated_completion_margin_ns,
+                "near_tie_diagnostic_only": True,
+                "near_tie_policy_applied": False,
                 "continuous_prefix_stop_rule": "first_missing_policy_chunk",
                 "selected_cache_source": selected_candidate["cache_source"],
                 "selected_effective_prefix_tokens": selected_candidate[
@@ -4665,6 +5260,8 @@ class _StudyRuntime:
         return selected
 
     def _foreground_reclaimable_hbm_bytes(self, gpu_id: str) -> int:
+        """Return broad HBM headroom for non-admission value estimation."""
+
         ledger = self.hbm_ledgers[gpu_id]
         return sum(
             ledger.bytes_in(account)
@@ -4675,6 +5272,52 @@ class _StudyRuntime:
                 HBM_PEER_PENDING_ACCOUNT,
             )
         )
+
+    def _foreground_hbm_feasibility_preview(
+        self,
+        gpu_id: str,
+        required_free_bytes: int,
+        *,
+        reserved_primary_bytes: int = 0,
+    ) -> int:
+        """Preview reclaim using the same ordering and safety gates as admission."""
+
+        if required_free_bytes < 0 or reserved_primary_bytes < 0:
+            raise ValueError("preview HBM bytes must be non-negative")
+        ledger = self.hbm_ledgers[gpu_id]
+        projected_free = ledger.bytes_in(FREE_ACCOUNT)
+        if projected_free >= required_free_bytes:
+            return projected_free
+
+        primary_pool = self.primary_pools[gpu_id]
+        protected_primary_bytes = min(
+            reserved_primary_bytes,
+            primary_pool.evictable_bytes,
+        )
+        projected_free += primary_pool.evictable_bytes - protected_primary_bytes
+        if projected_free >= required_free_bytes:
+            return projected_free
+
+        peer_pool = self.peer_pools[gpu_id]
+        projected_free += peer_pool.pending_bytes
+        if projected_free >= required_free_bytes:
+            return projected_free
+
+        committed_required = required_free_bytes - projected_free
+        committed_reclaimable = 0
+        if committed_required > 0:
+            if self._formal_policy_enabled():
+                committed_reclaimable = self._formal_reclaim_preview_bytes(
+                    peer_pool,
+                    committed_required,
+                )
+            else:
+                selected, status = peer_pool.preview_victims(committed_required)
+                if status == "OK":
+                    committed_reclaimable = sum(
+                        entry.chunk.bytes for entry in selected
+                    )
+        return projected_free + committed_reclaimable
 
     def _store_restore_bandwidth_bytes_per_second(self) -> int:
         if self.parameters.store_transport in {
@@ -4803,41 +5446,189 @@ class _StudyRuntime:
             for segment_id in sorted(bytes_by_segment)
         }
 
-    def _peer_target(self, *, source_gpu_id: str, span_id: str) -> str:
-        healthy = tuple(gpu for gpu in self.gpu_ids if gpu not in self.failed_gpu_ids)
+    def _mooncake_rendezvous(
+        self, span_id: str, candidates: Sequence[str], *, role: str,
+    ) -> str:
+        """Same stable role/worker/request hash as Mooncake AegisRouter."""
+        if not candidates:
+            raise ExperimentError("no compatible healthy routing candidate")
+        def score(gpu_id: str) -> tuple[int, int, str]:
+            material = "\0".join((
+                "rendezvous-sha256-v1", str(self.peer_binding_seed),
+                role, span_id, gpu_id,
+            )).encode("utf-8")
+            return (-int.from_bytes(hashlib.sha256(material).digest(), "big"),
+                    int(gpu_id.rsplit("-", 1)[1]), gpu_id)
+        return min(candidates, key=score)
+
+    def _bind_peer_target(
+        self,
+        *,
+        source_gpu_id: str,
+        span_id: str,
+        route_version: int,
+    ) -> str:
+        healthy = tuple(
+            sorted(gpu for gpu in self.gpu_ids if gpu not in self.failed_gpu_ids)
+        )
         if not self.profile.anti_colocation:
             if source_gpu_id not in healthy:
                 raise ExperimentError("negative-control Peer target source is not healthy")
             return source_gpu_id
-        execution = self.executions[span_id]
-        designated = execution.designated_peer_gpu_id
-        if (
-            designated is not None
-            and designated in healthy
-            and designated != source_gpu_id
-        ):
-            return designated
         candidates = tuple(gpu for gpu in healthy if gpu != source_gpu_id)
         if not candidates:
             raise ExperimentError("Peer-HBM protection requires a healthy anti-colocated GPU")
+        if self.parameters.mooncake_semantics:
+            selected = self._mooncake_rendezvous(
+                span_id, candidates,
+                role=f"failover:route={route_version + 1}:source={source_gpu_id}",
+            )
+            self.peer_target_binding_events.append({
+                "timestamp_ns": self.des.now_ns,
+                "span_id": span_id,
+                "route_version": route_version,
+                "source_gpu_id": source_gpu_id,
+                "selected_gpu_id": selected,
+                "target_gpu_id": selected,
+                "selection_objective": "rendezvous-sha256-v1",
+                "healthy_candidates": list(candidates),
+                "future_capacity_used": False,
+            })
+            return selected
+        execution = self.executions[span_id]
+        candidate_count = _fraction_prefix_chunk_count(
+            execution.chunks,
+            self.profile.peer_replication_fraction,
+        )
+        projected_peer_bytes = sum(
+            chunk.bytes for chunk in execution.chunks[:candidate_count]
+        )
+        designated_bytes = {gpu_id: 0 for gpu_id in candidates}
+        for other in self.executions.values():
+            target_gpu_id = other.designated_peer_gpu_id
+            if (
+                other.metadata.span_id == span_id
+                or target_gpu_id not in designated_bytes
+                or other.released_ns is None
+                or other.status
+                in {
+                    _ExecutionStatus.FENCED,
+                    _ExecutionStatus.COMPLETED,
+                }
+            ):
+                continue
+            other_count = _fraction_prefix_chunk_count(
+                other.chunks,
+                self.profile.peer_replication_fraction,
+            )
+            designated_bytes[target_gpu_id] += sum(
+                chunk.bytes for chunk in other.chunks[:other_count]
+            )
 
-        def target_key(gpu_id: str) -> tuple[int, int, int, str]:
+        evidence: list[dict[str, Any]] = []
+        for gpu_id in candidates:
+            ledger = self.hbm_ledgers[gpu_id]
             pool = self.peer_pools[gpu_id]
-            free_quota_bytes = max(
+            nonpeer_headroom = (
+                ledger.bytes_in(FREE_ACCOUNT)
+                + self.primary_pools[gpu_id].evictable_bytes
+            )
+            physical_margin = nonpeer_headroom - projected_peer_bytes
+            quota_remaining = max(
                 0,
                 pool.capacity_bytes - pool.occupied_bytes - pool.pending_bytes,
             )
+            quota_margin = quota_remaining - projected_peer_bytes
             digest = hashlib.sha256(
-                f"peer-target:{self.seed}:{span_id}:{gpu_id}".encode()
+                (
+                    f"peer-route:{self.peer_binding_seed}:{span_id}:{route_version}:"
+                    f"{source_gpu_id}:{gpu_id}"
+                ).encode()
             ).digest()
-            return (
-                -free_quota_bytes,
-                self._active_request_count(gpu_id),
-                int.from_bytes(digest[:8], "big"),
-                gpu_id,
+            evidence.append(
+                {
+                    "gpu_id": gpu_id,
+                    "free_bytes": ledger.bytes_in(FREE_ACCOUNT),
+                    "evictable_inactive_primary_bytes": self.primary_pools[
+                        gpu_id
+                    ].evictable_bytes,
+                    "nonpeer_headroom_bytes": nonpeer_headroom,
+                    "physical_margin_bytes": physical_margin,
+                    "peer_quota_remaining_bytes": quota_remaining,
+                    "quota_margin_bytes": quota_margin,
+                    "designated_peer_bytes": designated_bytes[gpu_id],
+                    "stable_hash_rank": int.from_bytes(digest[:8], "big"),
+                    "feasible": physical_margin >= 0 and quota_margin >= 0,
+                }
             )
+        feasible = [item for item in evidence if item["feasible"]]
+        ranked = feasible if feasible else evidence
+        selected = min(
+            ranked,
+            key=lambda item: (
+                -min(
+                    int(item["physical_margin_bytes"]),
+                    int(item["quota_margin_bytes"]),
+                ),
+                int(item["designated_peer_bytes"]),
+                int(item["stable_hash_rank"]),
+                str(item["gpu_id"]),
+            ),
+        )
+        selection_mode = (
+            "HEADROOM_FEASIBLE" if feasible else "ALL_SHORT_LEAST_SHORT"
+        )
+        self.peer_target_binding_events.append(
+            {
+                "timestamp_ns": self.des.now_ns,
+                "peer_binding_seed": self.peer_binding_seed,
+                "span_id": span_id,
+                "route_version": route_version,
+                "source_gpu_id": source_gpu_id,
+                "projected_peer_bytes": projected_peer_bytes,
+                "selection_mode": selection_mode,
+                "selected_gpu_id": selected["gpu_id"],
+                "candidates": evidence,
+                "causal_inputs": (
+                    "CURRENT_HEALTH_HBM_PEER_QUOTA_AND_RELEASED_BINDINGS_ONLY"
+                ),
+            }
+        )
+        return str(selected["gpu_id"])
 
-        return min(candidates, key=target_key)
+    def _peer_target(self, *, source_gpu_id: str, span_id: str) -> str:
+        execution = self.executions[span_id]
+        designated = execution.designated_peer_gpu_id
+        if designated is None:
+            raise ExperimentError("Peer-HBM protection lacks router-bound target")
+        if designated in self.failed_gpu_ids:
+            raise ExperimentError("router-bound Peer-HBM target is failed")
+        if self.profile.anti_colocation and designated == source_gpu_id:
+            raise ExperimentError("router-bound Peer-HBM target violates anti-colocation")
+        return designated
+
+    def _rebind_failed_peer_targets(self, failed_gpu_id: str) -> tuple[str, ...]:
+        rebound: list[str] = []
+        for execution in self.executions.values():
+            if (
+                execution.designated_peer_gpu_id != failed_gpu_id
+                or execution.gpu_id is None
+                or execution.gpu_id == failed_gpu_id
+                or execution.status
+                in {
+                    _ExecutionStatus.PENDING,
+                    _ExecutionStatus.FENCED,
+                    _ExecutionStatus.COMPLETED,
+                }
+            ):
+                continue
+            execution.designated_peer_gpu_id = self._bind_peer_target(
+                source_gpu_id=execution.gpu_id,
+                span_id=execution.metadata.span_id,
+                route_version=execution.route_version,
+            )
+            rebound.append(execution.metadata.span_id)
+        return tuple(sorted(rebound))
 
     def _active_request_count(self, gpu_id: str) -> int:
         return sum(
@@ -4904,14 +5695,16 @@ class _StudyRuntime:
         )
         if before_quota_decision is not None:
             before_quota_decision()
-        self._apply_peer_quota_decision(
-            target_gpu_id=gpu_id,
-            foreground_pressure=True,
-            foreground_shortfall_bytes=audited_shortfall,
-            pressure_active_request_count=resident_with_contender,
-            pressure_reasons=(reason,),
-            update_basis="IMMEDIATE_PRESSURE_EVENT",
+        self._aimd_pending_pressure[gpu_id] = True
+        self._aimd_pending_shortfall_bytes[gpu_id] = max(
+            self._aimd_pending_shortfall_bytes[gpu_id],
+            audited_shortfall,
         )
+        self._aimd_pending_pressure_active_requests[gpu_id] = max(
+            self._aimd_pending_pressure_active_requests[gpu_id],
+            resident_with_contender,
+        )
+        self._aimd_pending_pressure_reasons[gpu_id].add(reason)
         return True
 
     def _apply_peer_quota_decision(
@@ -4922,7 +5715,6 @@ class _StudyRuntime:
         foreground_shortfall_bytes: int = 0,
         pressure_active_request_count: int = 0,
         pressure_reasons: Sequence[str] = (),
-        update_basis: str = "FIXED_GLOBAL_DES_CONTROL_WINDOW",
     ) -> None:
         if not self.profile.aimd_enabled:
             return
@@ -4992,8 +5784,7 @@ class _StudyRuntime:
             current_protection_bytes=pool.occupied_bytes + pool.pending_bytes,
             timestamp_ns=self.des.now_ns,
         )
-        self.aimd_states[target_gpu_id] = decision.next_state
-        self._aimd_last_decisions[target_gpu_id] = decision
+        pending_peer_aborted = False
         if decision.quota_bytes < pool.pending_bytes:
             for transfer_id, pending in sorted(tuple(self.pending_puts.items())):
                 if pending.path != "PEER_HBM" or pending.target_gpu_id != target_gpu_id:
@@ -5021,6 +5812,7 @@ class _StudyRuntime:
                     committed=False,
                 )
                 self.protection_path_bypasses["PEER_HBM_AIMD_PRESSURE"] += 1
+                pending_peer_aborted = True
                 if decision.quota_bytes >= pool.pending_bytes:
                     break
             if decision.quota_bytes < pool.pending_bytes:
@@ -5028,10 +5820,71 @@ class _StudyRuntime:
         formal_lifecycle: dict[str, object] | None = None
         if self._formal_policy_enabled():
             landlord = self._formal_landlord_for_pool(pool)
-            capacity_preview = landlord.preview_capacity_change(
-                decision.quota_bytes,
-                latest_values=self._formal_latest_values(landlord),
-            )
+            try:
+                capacity_preview = landlord.preview_capacity_change(
+                    decision.quota_bytes,
+                    latest_values=self._formal_latest_values(landlord),
+                    excluded_chunk_ids=self._formal_pinned_chunk_ids(pool),
+                )
+            except RuntimeError as error:
+                if str(error) != "capacity contraction found no safe committed tail":
+                    raise
+                self.formal_policy_events.append(
+                    {
+                        "timestamp_ns": self.des.now_ns,
+                        "event": "FORMAL_CAPACITY_RECLAIM_BLOCKED_NO_SAFE_TAIL",
+                        "pool_id": pool.pool_id,
+                        "cause": f"AEGIS_AIMD_{decision.action.value}",
+                        "required_bytes": decision.bytes_to_reclaim,
+                        "temporary_capacity_bytes": decision.quota_bytes,
+                        "formal_capacity_bytes": landlord.capacity_bytes,
+                        "formal_committed_bytes": landlord.committed_bytes,
+                        "formal_pending_bytes": landlord.pending_bytes,
+                        "formal_heap_tail_chunk_ids": list(landlord.heap_chunk_ids),
+                        "physical_capacity_bytes": pool.capacity_bytes,
+                        "physical_committed_bytes": pool.occupied_bytes,
+                        "physical_pending_bytes": pool.pending_bytes,
+                        "physical_pinned_bytes": pool.pinned_bytes,
+                        "physical_pinned_entry_count": pool.pinned_entry_count,
+                        "blocked_controller": "AIMD",
+                        "proposed_action": decision.action.value,
+                        "proposed_quota_bytes": decision.quota_bytes,
+                        "preserved_quota_bytes": pool.capacity_bytes,
+                    }
+                )
+                # A quota contraction is not committed until Algorithm 2 can
+                # expose enough safe suffix tails. Preserve the prior AIMD
+                # state/quota and retry the pressure observation at the next
+                # fixed control window.
+                self._aimd_pending_pressure[target_gpu_id] = True
+                self._aimd_pending_shortfall_bytes[target_gpu_id] = max(
+                    self._aimd_pending_shortfall_bytes[target_gpu_id],
+                    foreground_shortfall_bytes,
+                )
+                self._aimd_pending_pressure_active_requests[target_gpu_id] = max(
+                    self._aimd_pending_pressure_active_requests[target_gpu_id],
+                    pressure_active_request_count,
+                )
+                self._aimd_pending_pressure_reasons[target_gpu_id].update(
+                    pressure_reasons
+                )
+                self._aimd_pending_pressure_reasons[target_gpu_id].add(
+                    "AIMD_CONTRACTION_BLOCKED_NO_SAFE_TAIL"
+                )
+                if pending_peer_aborted:
+                    # Canceling pending transfers is already a committed
+                    # resource release, even when the subsequent quota change
+                    # cannot evict a safe suffix. Publish those freed bytes
+                    # before returning with the prior controller state.
+                    self._sync_peer_hbm_ledger(
+                        target_gpu_id,
+                        cause="AIMD_BLOCKED_CONTRACTION_PENDING_ABORT",
+                    )
+                    self._formal_wake_parked_frontiers_for_pool(
+                        pool,
+                        trigger="PEER_PENDING_ABORT",
+                    )
+                return
             resolution = landlord.apply_capacity_change(
                 capacity_preview,
                 cause=f"AEGIS_AIMD_{decision.action.value}",
@@ -5054,15 +5907,22 @@ class _StudyRuntime:
                 now_ns=self.des.now_ns,
                 cause=f"AEGIS_AIMD_{decision.action.value}",
             )
+        self.aimd_states[target_gpu_id] = decision.next_state
+        self._aimd_last_decisions[target_gpu_id] = decision
         self._sync_peer_hbm_ledger(
             target_gpu_id,
             cause=f"AEGIS_AIMD_{decision.action.value}",
         )
+        previous_quota_bytes = int(
+            decision.previous_state.protection_fraction
+            * decision.previous_state.peer_hbm_capacity_bytes
+        )
         self.aimd_events.append(
             {
                 **decision.to_dict(),
+                "target_id": target_gpu_id,
                 "control_window_ns": self.aimd_control_window_ns,
-                "update_basis": update_basis,
+                "update_basis": "FIXED_GLOBAL_DES_CONTROL_WINDOW",
                 "active_request_count": self._active_request_count(target_gpu_id),
                 "pressure_active_request_count": pressure_active_request_count,
                 "pressure_resident_primary_count": pressure_active_request_count,
@@ -5072,6 +5932,16 @@ class _StudyRuntime:
                 "formal_algorithm2_capacity_lifecycle": formal_lifecycle,
             }
         )
+        if pending_peer_aborted:
+            self._formal_wake_parked_frontiers_for_pool(
+                pool,
+                trigger="PEER_PENDING_ABORT",
+            )
+        if decision.quota_bytes > previous_quota_bytes:
+            self._formal_wake_parked_frontiers_for_pool(
+                pool,
+                trigger="AIMD_QUOTA_INCREASE",
+            )
 
     def _schedule_next_aimd_control_window(
         self,
@@ -5315,6 +6185,18 @@ class _StudyRuntime:
         ledger = self.hbm_ledgers[gpu_id]
         current_bytes = ledger.bytes_in(HBM_INACTIVE_REUSABLE_ACCOUNT)
         target_bytes = pool.occupied_bytes
+        available_bytes = current_bytes + ledger.bytes_in(FREE_ACCOUNT)
+        if target_bytes > available_bytes:
+            # Terminal ACTIVE-to-inactive conversion is a cache admission, not
+            # a capacity entitlement. Concurrent Peer/staging reservations can
+            # consume FREE HBM before the terminal callback runs, so retain only
+            # the complete, unpinned inactive chunks that physically fit.
+            pool.evict_at_least(
+                target_bytes - available_bytes,
+                now_ns=self.des.now_ns,
+                cause=f"{cause}:TRIM_TO_SHARED_HBM",
+            )
+            target_bytes = pool.occupied_bytes
         moves: list[tuple[str, str, int]] = []
         if current_bytes > target_bytes:
             moves.append(
@@ -5403,18 +6285,33 @@ class _StudyRuntime:
             pool.occupied_bytes,
         )
         if bytes_to_free > 0:
+            reclaimed_peer_bytes = 0
             if self._formal_policy_enabled():
-                self._formal_evict_committed_at_least(
+                reclaimed_peer_bytes = self._formal_evict_committed_at_least(
                     pool,
                     bytes_to_free,
                     cause="FOREGROUND_KV_RECLAIM_PEER",
                 )
             else:
-                pool.evict_at_least(
+                reclaimed_peer_bytes = pool.evict_at_least(
                     bytes_to_free,
                     now_ns=self.des.now_ns,
                     cause="FOREGROUND_KV_RECLAIM_PEER",
                 )
+            self.formal_policy_events.append(
+                {
+                    "timestamp_ns": self.des.now_ns,
+                    "event": "FOREGROUND_KV_RECLAIM_PEER_RESULT",
+                    "pool_id": pool.pool_id,
+                    "target_gpu_id": gpu_id,
+                    "requested_allocation_bytes": allocated_bytes,
+                    "free_bytes_before_peer_reclaim": ledger.bytes_in(FREE_ACCOUNT),
+                    "projected_free_before_peer_reclaim": projected_free,
+                    "required_peer_reclaim_bytes": bytes_to_free,
+                    "actual_peer_reclaimed_bytes": reclaimed_peer_bytes,
+                    "formal_policy_enabled": self._formal_policy_enabled(),
+                }
+            )
             projected_free = (
                 ledger.bytes_in(FREE_ACCOUNT)
                 + current_peer_bytes
@@ -5531,6 +6428,15 @@ class _StudyRuntime:
             )
             self.protection_path_bypasses["PEER_HBM_FOREGROUND_HBM_PRESSURE"] += 1
             released.append(released_bytes)
+        if released:
+            self._sync_peer_hbm_ledger(
+                gpu_id,
+                cause=f"{reason}_PENDING_PEER_ABORT",
+            )
+            self._formal_wake_parked_frontiers_for_pool(
+                self.peer_pools[gpu_id],
+                trigger="PEER_PENDING_ABORT",
+            )
         return tuple(released)
 
     def _booking_for_compute_event(
@@ -6240,6 +7146,13 @@ class _StudyRuntime:
         if ordered_lower_bound_ns > resolved_at_ns:
             resolution_mode = "ORDERED_DEFERRED_ACTIVE_STEP"
         resolved_at_ns = max(resolved_at_ns, ordered_lower_bound_ns)
+        if (
+            self.paper_causal_mode
+            and resolution_mode != "FIRST_TOKEN_THRESHOLD_CROSSING"
+        ):
+            raise ExperimentError(
+                "paper causal failure missed the first exact token-threshold crossing"
+            )
         if resolved_at_ns > step.end_ns:
             raise ExperimentError(
                 "ordered continuous failure trigger missed its active scheduler step"
@@ -6267,11 +7180,18 @@ class _StudyRuntime:
             "first_crossing_evidence": crossing_evidence,
         }
         payload = schedule.to_dict()
+        if schedule.physical_target_frozen and step.gpu_id != schedule.target_gpu_id:
+            raise ExperimentError(
+                "failure focus is not naturally routed to its frozen physical target"
+            )
+        physical_target_gpu_id = (
+            schedule.target_gpu_id if schedule.physical_target_frozen else step.gpu_id
+        )
         payload.update(
             {
                 "reference_target_gpu_id": schedule.target_gpu_id,
-                "target_gpu_id": step.gpu_id,
-                "resolved_target_gpu_id": step.gpu_id,
+                "target_gpu_id": physical_target_gpu_id,
+                "resolved_target_gpu_id": physical_target_gpu_id,
                 "resolved_at_ns": resolved_at_ns,
                 "resolved_compute_start_ns": step.start_ns,
                 "resolved_compute_end_ns": step.end_ns,
@@ -6314,6 +7234,10 @@ class _StudyRuntime:
             return
         if execution.gpu_id != gpu_id or gpu_id in self.failed_gpu_ids:
             raise ExperimentError("logical failure focus has no live natural GPU route")
+        if schedule.physical_target_frozen and gpu_id != schedule.target_gpu_id:
+            raise ExperimentError(
+                "failure focus is not naturally routed to its frozen physical target"
+            )
         duration_ns = compute_end_ns - compute_start_ns
         if duration_ns <= 0:
             raise ExperimentError("failure focus span has an empty compute interval")
@@ -6326,8 +7250,16 @@ class _StudyRuntime:
         payload.update(
             {
                 "reference_target_gpu_id": schedule.target_gpu_id,
-                "target_gpu_id": gpu_id,
-                "resolved_target_gpu_id": gpu_id,
+                "target_gpu_id": (
+                    schedule.target_gpu_id
+                    if schedule.physical_target_frozen
+                    else gpu_id
+                ),
+                "resolved_target_gpu_id": (
+                    schedule.target_gpu_id
+                    if schedule.physical_target_frozen
+                    else gpu_id
+                ),
                 "resolved_at_ns": resolved_at_ns,
                 "resolved_compute_start_ns": compute_start_ns,
                 "resolved_compute_end_ns": compute_end_ns,
@@ -6471,6 +7403,10 @@ class _StudyRuntime:
             gpu_id,
             cause="REQUEST_PRIMARY_KV_ACTIVE_TO_INACTIVE_REUSABLE",
         )
+        self._formal_wake_parked_frontiers_for_pool(
+            self.peer_pools[gpu_id],
+            trigger="FOREGROUND_PRIMARY_RELEASE",
+        )
         execution.hbm_allocated_bytes = 0
         execution.hbm_allocation_gpu_id = None
         execution.status = _ExecutionStatus.COMPLETED
@@ -6500,6 +7436,7 @@ class _StudyRuntime:
             for target_gpu_id, handle in tuple(self._aimd_window_handles.items()):
                 if not self.des.cancel(handle, reason="AIMD_WORKLOAD_COMPLETE"):
                     raise ExperimentError("final AIMD control window could not be canceled")
+                self._aimd_terminal_canceled_targets.add(target_gpu_id)
                 del self._aimd_window_handles[target_gpu_id]
 
     def _formal_policy_enabled(self) -> bool:
@@ -6530,6 +7467,8 @@ class _StudyRuntime:
             key=sha256_json(
                 {
                     "schema": "moonkvsim.aegiskv.content_addressed_protection_chunk.v1",
+                    **({"request_id": execution.metadata.span_id}
+                       if self.parameters.runtime_semantics == "mooncake_prompt_v1" else {}),
                     "path": path,
                     "token_start": first.token_start,
                     "content_keys": [chunk.key for chunk in chunks],
@@ -6543,7 +7482,7 @@ class _StudyRuntime:
         *,
         path: str,
     ) -> tuple[_Chunk, ...]:
-        if not self._formal_policy_enabled():
+        if not self._formal_policy_enabled() and not self.parameters.mooncake_semantics:
             return execution.chunks
         fraction = (
             self.profile.peer_replication_fraction
@@ -6704,8 +7643,77 @@ class _StudyRuntime:
         prefix = self._protection_chunks(execution, path=path)[:prefix_count]
         prefix_tokens = sum(chunk.token_count for chunk in prefix)
         prefix_bytes = sum(chunk.bytes for chunk in prefix)
-        if completed or path == "PEER_HBM":
+        if not completed and self.parameters.mooncake_semantics:
+            # Native restoration copies backups into separate primary slots.
+            bandwidth = (
+                self.parameters.peer_bandwidth_bytes_per_second
+                if path == "PEER_HBM"
+                else self._store_restore_bandwidth_bytes_per_second()
+            )
+            load_ns = _transfer_duration_ns(
+                prefix_bytes, bandwidth, self.parameters.transfer_setup_ns,
+            )
+        elif completed:
             load_ns = 0
+        elif path == "PEER_HBM":
+            source_gpu_id = execution.designated_peer_gpu_id
+            if source_gpu_id is None or source_gpu_id in self.failed_gpu_ids:
+                load_ns = 0
+            else:
+                destination_candidates = tuple(
+                    gpu_id
+                    for gpu_id in self.gpu_ids
+                    if gpu_id not in self.failed_gpu_ids
+                    and self._foreground_reclaimable_hbm_bytes(gpu_id)
+                    >= _tokens_to_allocated_bytes(execution.metadata.prompt_tokens)
+                )
+                if destination_candidates:
+                    peer_d2d_ns = _transfer_duration_ns(
+                        prefix_bytes,
+                        self.parameters.peer_bandwidth_bytes_per_second,
+                        self.parameters.transfer_setup_ns,
+                    )
+                    compute_duration_ns = _duration_after_prefix_reuse(
+                        execution.metadata,
+                        max(1, execution.base_duration_ns),
+                        prefix_tokens,
+                    )
+
+                    def estimated_completion_ns(gpu_id: str) -> tuple[int, str]:
+                        transfer_ns = 0 if gpu_id == source_gpu_id else peer_d2d_ns
+                        ready_ns = self.des.now_ns + transfer_ns
+                        if (
+                            self.continuous_batch_enabled
+                            and self.continuous_batch_driver is not None
+                        ):
+                            compute_start_ns = max(
+                                ready_ns,
+                                self.continuous_batch_driver.target_load_snapshot(
+                                    gpu_id
+                                )["estimated_available_ns"],
+                            )
+                        else:
+                            compute_start_ns = self.compute[gpu_id].earliest_start(
+                                ready_ns=ready_ns,
+                                duration_ns=compute_duration_ns,
+                            )
+                        return compute_start_ns + compute_duration_ns, gpu_id
+
+                    destination_gpu_id = min(
+                        destination_candidates,
+                        key=estimated_completion_ns,
+                    )
+                else:
+                    destination_gpu_id = source_gpu_id
+                load_ns = (
+                    0
+                    if destination_gpu_id == source_gpu_id
+                    else _transfer_duration_ns(
+                        prefix_bytes,
+                        self.parameters.peer_bandwidth_bytes_per_second,
+                        self.parameters.transfer_setup_ns,
+                    )
+                )
         else:
             load_ns = _transfer_duration_ns(
                 prefix_bytes,
@@ -6725,24 +7733,32 @@ class _StudyRuntime:
                 // weighted_total
             )
         )
-        committed_output_tokens = 0
-        if (
-            execution.compute_start_ns is not None
-            and execution.planned_complete_ns is not None
-            and self.des.now_ns > execution.compute_start_ns
-        ):
-            elapsed = min(
-                self.des.now_ns - execution.compute_start_ns,
-                execution.planned_complete_ns - execution.compute_start_ns,
-            )
-            duration = max(
-                1,
-                execution.planned_complete_ns - execution.compute_start_ns,
-            )
-            committed_output_tokens = min(
-                execution.metadata.output_tokens,
-                execution.metadata.output_tokens * elapsed // duration,
-            )
+        if self.continuous_batch_enabled:
+            driver = self.continuous_batch_driver
+            if driver is None:
+                raise ExperimentError(
+                    "continuous formal recovery harm lost scheduler state"
+                )
+            committed_output_tokens = driver.router_committed_output_tokens(span_id)
+        else:
+            committed_output_tokens = 0
+            if (
+                execution.compute_start_ns is not None
+                and execution.planned_complete_ns is not None
+                and self.des.now_ns > execution.compute_start_ns
+            ):
+                elapsed = min(
+                    self.des.now_ns - execution.compute_start_ns,
+                    execution.planned_complete_ns - execution.compute_start_ns,
+                )
+                duration = max(
+                    1,
+                    execution.planned_complete_ns - execution.compute_start_ns,
+                )
+                committed_output_tokens = min(
+                    execution.metadata.output_tokens,
+                    execution.metadata.output_tokens * elapsed // duration,
+                )
         silent_replay_ns = (
             0
             if completed
@@ -6816,6 +7832,68 @@ class _StudyRuntime:
         )
         return value, gain
 
+    def _formal_pinned_chunk_ids(self, pool: _ModeledPool) -> frozenset[str]:
+        pinned = pool.pinned_entry_keys
+        if not pinned:
+            return frozenset()
+        return frozenset(
+            chunk_id for chunk_id, metadata in self._formal_chunk_metadata.items()
+            if metadata.pool_id == pool.pool_id
+            and metadata.physical_chunk.key in pinned
+        )
+
+    def _release_runtime_recovery_pins(self, span_id: str) -> None:
+        for pool in self.peer_pools.values():
+            pool.release_pin(f"runtime-recovery:{span_id}")
+
+    def _complete_runtime_protection(self, span_id: str) -> None:
+        """Mirror CompleteRequest after both independent paths have drained."""
+        if not self.parameters.mooncake_semantics:
+            return
+        if self.executions[span_id].completed_ns is None:
+            return
+        if any(pending.span_id == span_id for pending in self.pending_puts.values()):
+            return
+        for pool in (*self.peer_pools.values(), *self.store_pools.values()):
+            if not self._formal_policy_enabled():
+                path = "PEER_HBM" if pool in self.peer_pools.values() else "STORE_DRAM"
+                keys = tuple(c.key for c in self._protection_chunks(
+                    self.executions[span_id], path=path) if c.key in pool.entries)
+                if keys:
+                    pool.set_capacity_exact(
+                        pool.capacity_bytes, victim_keys=keys, proposed_rent=pool.rent,
+                        now_ns=self.des.now_ns, cause="COMPLETE_REQUEST",
+                    )
+                    for gpu_id, peer_pool in self.peer_pools.items():
+                        if pool is peer_pool:
+                            self._sync_peer_hbm_ledger(gpu_id, cause="COMPLETE_REQUEST")
+                continue
+            landlord = self._formal_landlord_for_pool(pool)
+            entries = landlord.committed_entries(span_id)
+            if not entries:
+                continue
+            keys = tuple(self._formal_chunk_metadata[e.chunk_id].physical_chunk.key
+                         for e in entries)
+            if set(keys) & pool.pinned_entry_keys:
+                raise ExperimentError("completed protection still has a recovery reader")
+            result = landlord.release_committed_suffix(
+                span_id, tuple(e.chunk_id for e in entries), cause="COMPLETE_REQUEST",
+            )
+            pool.set_capacity_exact(
+                pool.capacity_bytes, victim_keys=keys, proposed_rent=landlord.rent,
+                now_ns=self.des.now_ns, cause="COMPLETE_REQUEST",
+            )
+            self._formal_dirty_pool_ids.add(pool.pool_id)
+            self.formal_policy_events.append({
+                "timestamp_ns": self.des.now_ns,
+                "event": "FORMAL_COMPLETE_REQUEST",
+                "span_id": span_id, "pool_id": pool.pool_id,
+                "lifecycle": result.to_canonical_json(),
+            })
+            for gpu_id, peer_pool in self.peer_pools.items():
+                if pool is peer_pool:
+                    self._sync_peer_hbm_ledger(gpu_id, cause="COMPLETE_REQUEST")
+
     def _formal_latest_values(
         self,
         landlord: SlackLandlord,
@@ -6847,7 +7925,7 @@ class _StudyRuntime:
         metadata: _FormalChunkMetadata,
         *,
         landlord: SlackLandlord,
-    ) -> frozenset[str]:
+    ) -> tuple[frozenset[str], dict[str, tuple[str, ...]]]:
         """Protect aliases and committed tails with an in-flight successor.
 
         A different request's pending transfer has already frozen the sequence
@@ -6875,21 +7953,21 @@ class _StudyRuntime:
             for pool in (*self.peer_pools.values(), *self.store_pools.values())
         }
         pinned_physical_keys = physical_pools[pool_id].pinned_entry_keys
-        return frozenset(
-            entry.chunk_id
-            for request_id in self._formal_request_ids_by_pool[pool_id]
-            for entry in landlord.committed_entries(request_id)
-            if request_id in pending_request_ids
-            or self._formal_chunk_metadata[entry.chunk_id].physical_chunk.key
-            in pinned_physical_keys
-            or (
-                (
-                    self._formal_chunk_metadata[entry.chunk_id].pool_id,
-                    self._formal_chunk_metadata[entry.chunk_id].physical_chunk.key,
-                )
-                in candidate_locations
-            )
-        )
+        reasons_by_chunk_id: dict[str, tuple[str, ...]] = {}
+        for request_id in self._formal_request_ids_by_pool[pool_id]:
+            for entry in landlord.committed_entries(request_id):
+                entry_metadata = self._formal_chunk_metadata[entry.chunk_id]
+                physical_key = entry_metadata.physical_chunk.key
+                reasons: list[str] = []
+                if request_id in pending_request_ids:
+                    reasons.append("PENDING_SUCCESSOR_CONTIGUITY")
+                if physical_key in pinned_physical_keys:
+                    reasons.append("PHYSICAL_SOURCE_PIN")
+                if (entry_metadata.pool_id, physical_key) in candidate_locations:
+                    reasons.append("CANDIDATE_PHYSICAL_ALIAS")
+                if reasons:
+                    reasons_by_chunk_id[entry.chunk_id] = tuple(reasons)
+        return frozenset(reasons_by_chunk_id), reasons_by_chunk_id
 
     def _formal_joint_loss(
         self,
@@ -6978,6 +8056,10 @@ class _StudyRuntime:
                     ),
                 }
             )
+            queue = self._formal_waiting_put_starts.get(key)
+            if queue:
+                self._runtime_gate_resolve(span_id, queue[0].continuous_batch_key,
+                                           committed=False)
             return
         if block:
             self._formal_blocked_request_paths.add(key)
@@ -7006,19 +8088,218 @@ class _StudyRuntime:
         plan = queue.pop(0)
         if not queue:
             self._formal_waiting_put_starts.pop(key, None)
+        resume_event_id = self._next_id(
+            f"resume:{plan.plan_id}:{self.des.now_ns}"
+        )
         plan.handle = self.des.schedule_at(
             self.des.now_ns,
             EventKind.PUT_START,
-            event_id=f"resume:{plan.plan_id}:{self.des.now_ns}",
+            event_id=resume_event_id,
             payload={"plan_id": plan.plan_id, "path": plan.path},
         )
         self.pending_put_starts[plan.plan_id] = plan
+
+    def _formal_wake_parked_frontiers_for_pool(
+        self,
+        pool: _ModeledPool,
+        *,
+        trigger: str,
+    ) -> None:
+        """Retry serialized frontiers after their destination pool improves."""
+
+        if not self._formal_policy_enabled():
+            return
+        for (span_id, path), queue in sorted(
+            tuple(self._formal_waiting_put_starts.items())
+        ):
+            if not queue:
+                continue
+            key = (span_id, path)
+            if (
+                key in self._formal_blocked_request_paths
+                or key in self._formal_active_request_paths
+                or any(
+                    pending.span_id == span_id and pending.path == path
+                    for pending in self.pending_put_starts.values()
+                )
+            ):
+                continue
+            frontier = queue[0]
+            frontier_pool = (
+                self.peer_pools.get(frontier.target_gpu_id)
+                if path == "PEER_HBM"
+                else self.store_pools.get(frontier.target_store_id)
+            )
+            if frontier_pool is not pool:
+                continue
+            self.formal_policy_events.append(
+                {
+                    "timestamp_ns": self.des.now_ns,
+                    "event": "FORMAL_PREFIX_RETRY_TRIGGERED",
+                    "span_id": span_id,
+                    "path": path,
+                    "plan_id": frontier.plan_id,
+                    "pool_id": pool.pool_id,
+                    "trigger": trigger,
+                }
+            )
+            self._formal_finish_request_path(span_id, path, block=False)
+
+    def _formal_park_rejected_frontier(
+        self,
+        plan: _PendingPutStart,
+        *,
+        candidate_offset: int,
+        split_batch_owner: bool,
+    ) -> None:
+        """Park the rejected frontier before every later serialized suffix."""
+
+        if not 0 <= candidate_offset < len(plan.chunks):
+            raise ExperimentError("formal rejected frontier offset is invalid")
+        key = (plan.span_id, plan.path)
+        queue = self._formal_waiting_put_starts[key]
+        if plan.plan_id in self.pending_put_starts or any(
+            queued is plan or queued.plan_id == plan.plan_id for queued in queue
+        ):
+            raise ExperimentError("formal rejected frontier plan is already registered")
+        if split_batch_owner:
+            self._split_continuous_protection_batch(
+                span_id=plan.span_id,
+                batch_key=plan.continuous_batch_key,
+            )
+        plan.chunks = plan.chunks[candidate_offset:]
+        plan.handle = None
+        plan.formal_alias_waiting = False
+        queue.insert(0, plan)
+
+    def _peer_admission_preserves_foreground_headroom(
+        self,
+        *,
+        plan: _PendingPutStart,
+        pool: _ModeledPool,
+        candidate: _Chunk,
+        selected_victim_bytes: int,
+        preview_audit: Mapping[str, object],
+    ) -> bool:
+        """Gate policy-approved Peer growth before mutating Algorithm 2 state."""
+
+        if plan.path != "PEER_HBM" or plan.target_gpu_id is None:
+            return True
+        if selected_victim_bytes < 0:
+            raise ExperimentError("Peer admission victim bytes cannot be negative")
+        ledger = self.hbm_ledgers[plan.target_gpu_id]
+        current_physical_peer_bytes = ledger.bytes_in(
+            HBM_PEER_PROTECTION_ACCOUNT
+        ) + ledger.bytes_in(HBM_PEER_PENDING_ACCOUNT)
+        desired_peer_bytes = (
+            pool.occupied_bytes
+            + pool.pending_bytes
+            + candidate.bytes
+            - selected_victim_bytes
+        )
+        if desired_peer_bytes < 0:
+            raise ExperimentError("Peer admission preview produced negative occupancy")
+        net_peer_growth = max(0, desired_peer_bytes - current_physical_peer_bytes)
+        free_bytes = ledger.bytes_in(FREE_ACCOUNT)
+        evictable_inactive_bytes = self.primary_pools[
+            plan.target_gpu_id
+        ].evictable_bytes
+        foreground_headroom_bytes = free_bytes + evictable_inactive_bytes
+        foreground_growth_commitments: list[dict[str, int | str]] = []
+        foreground_reserve_bytes = 0
+        if self.continuous_batch_enabled:
+            driver = self.continuous_batch_driver
+            if driver is None:
+                raise ExperimentError(
+                    "continuous Peer admission lacks scheduler growth evidence"
+                )
+            target = driver._targets[plan.target_gpu_id]
+            authority = self.continuous_hbm_authorities[plan.target_gpu_id]
+            for (
+                request_id,
+                prompt_tokens,
+                computed_prompt_tokens,
+            ) in target.bridge.scheduler.running_request_prompt_progress:
+                required_prompt_source_chunks = (
+                    prompt_tokens + SOURCE_BLOCK_TOKENS - 1
+                ) // SOURCE_BLOCK_TOKENS
+                committed_source_chunks = authority.committed_source_chunks_for_request(
+                    request_id
+                )
+                remaining_source_chunks = max(
+                    0,
+                    required_prompt_source_chunks - committed_source_chunks,
+                )
+                committed_growth_bytes = (
+                    remaining_source_chunks * KV_BYTES_PER_SOURCE_BLOCK
+                )
+                foreground_reserve_bytes += committed_growth_bytes
+                foreground_growth_commitments.append(
+                    {
+                        "request_id": request_id,
+                        "prompt_tokens": prompt_tokens,
+                        "computed_prompt_tokens": computed_prompt_tokens,
+                        "required_prompt_source_chunks": (
+                            required_prompt_source_chunks
+                        ),
+                        "committed_source_chunks": committed_source_chunks,
+                        "remaining_source_chunks": remaining_source_chunks,
+                        "committed_growth_bytes": committed_growth_bytes,
+                    }
+                )
+        admitted = (
+            foreground_headroom_bytes - net_peer_growth
+            >= foreground_reserve_bytes
+        )
+        if admitted:
+            return True
+        self.formal_policy_events.append(
+            {
+                "timestamp_ns": self.des.now_ns,
+                "event": "AEGIS_PEER_HBM_FOREGROUND_HEADROOM_DEFERRED",
+                "span_id": plan.span_id,
+                "plan_id": plan.plan_id,
+                "source_gpu_id": plan.source_gpu_id,
+                "target_gpu_id": plan.target_gpu_id,
+                "candidate_token_start": candidate.token_start,
+                "candidate_token_count": candidate.token_count,
+                "candidate_allocated_bytes": candidate.bytes,
+                "selected_victim_bytes": selected_victim_bytes,
+                "net_peer_growth_bytes": net_peer_growth,
+                "free_bytes": free_bytes,
+                "evictable_inactive_primary_bytes": evictable_inactive_bytes,
+                "foreground_headroom_bytes": foreground_headroom_bytes,
+                "foreground_reserve_bytes": foreground_reserve_bytes,
+                "foreground_reserve_basis": (
+                    "RUNNING_REQUEST_REMAINING_PROMPT_SOURCE_CHUNKS"
+                    if self.continuous_batch_enabled
+                    else "NONE"
+                ),
+                "foreground_growth_commitments": (
+                    foreground_growth_commitments
+                ),
+                "projected_headroom_after_admission_bytes": (
+                    foreground_headroom_bytes - net_peer_growth
+                ),
+                "algorithm2_applied": False,
+                "physical_capacity_mutated": False,
+                "store_path_affected": False,
+                "preview": dict(preview_audit),
+            }
+        )
+        return False
 
     def _formal_drop_waiting_suffixes(self, span_id: str, *, reason: str) -> None:
         """Release parked suffix batches that can no longer extend a live frontier."""
 
         for path in ("PEER_HBM", "STORE_DRAM"):
             key = (span_id, path)
+            # A request may terminate after its final formal preview creates a
+            # serialization owner but before any physical reservation is
+            # needed.  At terminal there can be no later suffix to serialize;
+            # real in-flight work remains independently owned by pending_puts
+            # and is still rejected by the final transfer audit below.
+            self._formal_active_request_paths.discard(key)
             queued = self._formal_waiting_put_starts.pop(key, [])
             for plan in queued:
                 self._resolve_continuous_protection_batch(
@@ -7100,10 +8381,62 @@ class _StudyRuntime:
             landlord.pending_bytes,
             landlord.committed_bytes + landlord.pending_bytes - required_bytes,
         )
-        preview = landlord.preview_capacity_change(
-            temporary_capacity,
-            latest_values=self._formal_latest_values(landlord),
-        )
+        try:
+            preview = landlord.preview_capacity_change(
+                temporary_capacity,
+                latest_values=self._formal_latest_values(landlord),
+                excluded_chunk_ids=self._formal_pinned_chunk_ids(pool),
+            )
+        except RuntimeError as error:
+            if str(error) != "capacity contraction found no safe committed tail":
+                raise
+            # A committed entry may be temporarily pinned by a source/recovery
+            # dependency.  That is a valid "cannot reclaim now" outcome, not a
+            # corrupt Landlord state.  Let the caller abort pending Peer PUTs
+            # and retry before failing foreground admission.
+            pool_entries_by_key = {
+                key: entry for key, entry in sorted(pool.entries.items())
+            }
+            committed_tails = []
+            for request_id in sorted(landlord.to_canonical_json()["committed"]):
+                entries = landlord.committed_entries(request_id)
+                if not entries:
+                    continue
+                tail = entries[-1]
+                metadata = self._formal_chunk_metadata[tail.chunk_id]
+                physical_key = metadata.physical_chunk.key
+                committed_tails.append(
+                    {
+                        "request_id": request_id,
+                        "sequence_index": tail.sequence_index,
+                        "chunk_id": tail.chunk_id,
+                        "allocated_bytes": tail.allocated_bytes,
+                        "physical_chunk_key": physical_key,
+                        "physical_entry_present": physical_key in pool_entries_by_key,
+                        "physical_entry_pinned": physical_key in pool.pinned_entry_keys,
+                    }
+                )
+            self.formal_policy_events.append(
+                {
+                    "timestamp_ns": self.des.now_ns,
+                    "event": "FORMAL_CAPACITY_RECLAIM_BLOCKED_NO_SAFE_TAIL",
+                    "pool_id": pool.pool_id,
+                    "cause": cause,
+                    "required_bytes": required_bytes,
+                    "temporary_capacity_bytes": temporary_capacity,
+                    "formal_capacity_bytes": landlord.capacity_bytes,
+                    "formal_committed_bytes": landlord.committed_bytes,
+                    "formal_pending_bytes": landlord.pending_bytes,
+                    "formal_heap_tail_chunk_ids": list(landlord.heap_chunk_ids),
+                    "physical_capacity_bytes": pool.capacity_bytes,
+                    "physical_committed_bytes": pool.occupied_bytes,
+                    "physical_pending_bytes": pool.pending_bytes,
+                    "physical_pinned_bytes": pool.pinned_bytes,
+                    "physical_pinned_entry_count": pool.pinned_entry_count,
+                    "committed_tails": committed_tails,
+                }
+            )
+            return 0
         contraction = landlord.apply_capacity_change(
             preview,
             cause=f"{cause}:TEMPORARY_CONTRACTION",
@@ -7133,6 +8466,32 @@ class _StudyRuntime:
         )
         self._formal_dirty_pool_ids.add(pool.pool_id)
         return contraction.released_bytes
+
+    def _formal_reclaim_preview_bytes(
+        self,
+        pool: _ModeledPool,
+        required_bytes: int,
+    ) -> int:
+        """Return an Algorithm 2-safe committed-tail reclaim plan size."""
+
+        if required_bytes <= 0:
+            return 0
+        landlord = self._formal_landlord_for_pool(pool)
+        temporary_capacity = max(
+            landlord.pending_bytes,
+            landlord.committed_bytes + landlord.pending_bytes - required_bytes,
+        )
+        try:
+            preview = landlord.preview_capacity_change(
+                temporary_capacity,
+                latest_values=self._formal_latest_values(landlord),
+                excluded_chunk_ids=self._formal_pinned_chunk_ids(pool),
+            )
+        except RuntimeError as error:
+            if str(error) != "capacity contraction found no safe committed tail":
+                raise
+            return 0
+        return preview.released_bytes
 
     def _schedule_protection_puts(
         self,
@@ -7201,13 +8560,15 @@ class _StudyRuntime:
                     execution.chunks[:candidate_count]
                 ),
             )
+            if self.parameters.mooncake_semantics:
+                transport_ranges = tuple((i, i + 1) for i in range(len(policy_ranges)))
             total_chunk_tokens = sum(chunk.token_count for chunk in execution.chunks)
             for batch_index, (candidate_begin, candidate_end) in enumerate(
                 transport_ranges
             ):
                 begin = policy_ranges[candidate_begin][0]
                 end = policy_ranges[candidate_end - 1][1]
-                if self._formal_policy_enabled():
+                if self._formal_policy_enabled() or self.parameters.mooncake_semantics:
                     chunks = tuple(
                         self._protection_chunk(
                             execution,
@@ -7423,17 +8784,390 @@ class _StudyRuntime:
         )
         return TransferTask.create(metadata, slice_size_bytes=slice_size_bytes)
 
+    def _recovery_candidate_flow_specs(
+        self,
+        execution: _SpanExecution,
+        *,
+        strategy: str,
+        intervals: tuple[_RecoverySourceInterval, ...],
+        peer_source_gpu: str | None,
+        target_gpu: str,
+        ready_ns: int,
+    ) -> tuple[_RecoveryCandidateFlowSpec, ...]:
+        specs: list[_RecoveryCandidateFlowSpec] = []
+        for interval_index, interval in enumerate(intervals):
+            if interval.source == "NORMAL_HBM_LOCAL":
+                continue
+            if interval.source == "PEER_HBM":
+                if peer_source_gpu is None:
+                    raise ExperimentError("Peer candidate lacks its committed source")
+                if peer_source_gpu == target_gpu and not self.parameters.mooncake_semantics:
+                    continue
+                source_bytes = {
+                    peer_source_gpu: _prefix_bytes_between(
+                        execution.chunks,
+                        interval.start_token,
+                        interval.end_token,
+                    )
+                }
+            elif interval.source == "STORE_DRAM":
+                source_bytes = self._store_recovery_bytes_by_segment(
+                    execution,
+                    start_token=interval.start_token,
+                    token_count=interval.token_count,
+                )
+            else:
+                raise ExperimentError("recovery candidate contains an unknown source")
+            for source_index, (source_id, transfer_bytes) in enumerate(
+                sorted(source_bytes.items())
+            ):
+                transfer_id = (
+                    f"recovery-candidate:{strategy}:{execution.metadata.span_id}:"
+                    f"{interval_index:02d}:{source_index:02d}"
+                )
+                task = self._make_transfer_task(
+                    transfer_id=transfer_id,
+                    span_id=execution.metadata.span_id,
+                    source_id=source_id,
+                    target_id=target_gpu,
+                    cause=f"AEGIS_RECOVERY_{interval.source}_CANDIDATE",
+                    route_version=execution.route_version,
+                    ready_ns=ready_ns,
+                    total_bytes=transfer_bytes,
+                )
+                specs.append(
+                    _RecoveryCandidateFlowSpec(
+                        transfer_id=transfer_id,
+                        source=interval.source,
+                        source_id=source_id,
+                        target_id=target_gpu,
+                        bytes=transfer_bytes,
+                        path_resource_ids=task.metadata.path.rate_resource_ids,
+                        slice_bytes=tuple(item.length_bytes for item in task.slices),
+                    )
+                )
+        return tuple(specs)
+
+    def _predict_recovery_candidate_materialization_ns(
+        self,
+        flow_specs: tuple[_RecoveryCandidateFlowSpec, ...],
+        *,
+        transfer_start_ns: int,
+    ) -> int:
+        if not flow_specs:
+            return transfer_start_ns - self.parameters.transfer_setup_ns
+        shadow = FlowContentionModel(
+            [
+                RateResource(
+                    resource_id=resource_id,
+                    capacity_bytes_per_second=resource.capacity_bytes_per_second,
+                )
+                for resource_id, resource in sorted(self.flow_model.resources.items())
+            ],
+            initial_now_ns=self.flow_model.last_update_ns,
+        )
+        for flow_id, flow in sorted(self.flow_model.flows.items()):
+            cloned = ActiveFlow(
+                flow_id=flow.flow_id,
+                transfer_id=flow.transfer_id,
+                slice_id=flow.slice_id,
+                cause=flow.cause,
+                path_resource_ids=flow.path_resource_ids,
+                payload_bytes=flow.payload_bytes,
+                remaining_bytes=float(flow.payload_bytes),
+                weight=flow.weight,
+            )
+            cloned.remaining_bytes = flow.remaining_bytes
+            cloned.allocated_rate_bytes_per_second = (
+                flow.allocated_rate_bytes_per_second
+            )
+            shadow.flows[flow_id] = cloned
+        shadow._recompute_rates()
+        while shadow.flows and shadow.last_update_ns < transfer_start_ns:
+            next_completion_ns = shadow.next_completion_ns()
+            if next_completion_ns is None or next_completion_ns > transfer_start_ns:
+                shadow.advance_to(transfer_start_ns)
+                break
+            shadow.complete_flows(now_ns=next_completion_ns)
+        if shadow.last_update_ns < transfer_start_ns:
+            shadow.advance_to(transfer_start_ns)
+        candidate_flow_ids: set[str] = set()
+        for spec in flow_specs:
+            for slice_index, slice_bytes in enumerate(spec.slice_bytes):
+                flow_id = f"candidate-flow:{spec.transfer_id}:{slice_index:06d}"
+                candidate_flow_ids.add(flow_id)
+                shadow.add_flow(
+                    ActiveFlow(
+                        flow_id=flow_id,
+                        transfer_id=spec.transfer_id,
+                        slice_id=f"{spec.transfer_id}:slice-{slice_index:06d}",
+                        cause=f"AEGIS_RECOVERY_{spec.source}_CANDIDATE",
+                        path_resource_ids=spec.path_resource_ids,
+                        payload_bytes=slice_bytes,
+                        remaining_bytes=float(slice_bytes),
+                    ),
+                    now_ns=transfer_start_ns,
+                )
+        while candidate_flow_ids:
+            completion_ns = shadow.next_completion_ns()
+            if completion_ns is None:
+                raise ExperimentError("candidate flow prediction lost active flows")
+            completed = shadow.complete_flows(now_ns=completion_ns)
+            candidate_flow_ids.difference_update(flow.flow_id for flow in completed)
+        return shadow.last_update_ns
+
+    def _select_recovery_source_candidate(
+        self,
+        execution: _SpanExecution,
+        *,
+        normal_prefix_tokens: int,
+        peer_prefix_tokens: int,
+        store_prefix_tokens: int,
+        peer_source_gpu: str | None,
+        target_gpu: str,
+    ) -> tuple[_RecoverySourceCandidate, tuple[_RecoverySourceCandidate, ...]]:
+        now_ns = self.des.now_ns
+        ready_ns = now_ns + self.parameters.reroute_ns
+        transfer_start_ns = ready_ns + self.parameters.transfer_setup_ns
+        normal_boundaries = _chunk_interval_boundaries(execution.chunks)
+        peer_boundaries = _chunk_interval_boundaries(
+            self._protection_chunks(execution, path="PEER_HBM")
+        )
+        store_boundaries = _chunk_interval_boundaries(
+            self._protection_chunks(execution, path="STORE_DRAM")
+        )
+        target_load_snapshot: Mapping[str, int] | None = None
+        if self.continuous_batch_enabled:
+            driver = self.continuous_batch_driver
+            if driver is None:
+                raise ExperimentError("continuous recovery selector lost its driver")
+            target_load_snapshot = self._peek_target_load_snapshot(driver, target_gpu)
+        candidates: list[_RecoverySourceCandidate] = []
+        for strategy in ("PEER_FIRST_CONTROL", "STORE_FIRST"):
+            intervals, recompute_tokens, feasible = (
+                _recovery_source_candidate_intervals(
+                    execution.metadata.prompt_tokens,
+                    normal_prefix_tokens=normal_prefix_tokens,
+                    peer_prefix_tokens=peer_prefix_tokens,
+                    store_prefix_tokens=store_prefix_tokens,
+                    strategy=strategy,
+                    normal_boundaries=normal_boundaries,
+                    peer_boundaries=peer_boundaries,
+                    store_boundaries=store_boundaries,
+                )
+            )
+            flow_specs = (
+                self._recovery_candidate_flow_specs(
+                    execution,
+                    strategy=strategy,
+                    intervals=intervals,
+                    peer_source_gpu=peer_source_gpu,
+                    target_gpu=target_gpu,
+                    ready_ns=transfer_start_ns,
+                )
+                if feasible
+                else ()
+            )
+            materialization_ns = (
+                self._predict_recovery_candidate_materialization_ns(
+                    flow_specs,
+                    transfer_start_ns=transfer_start_ns,
+                )
+                if feasible
+                else 2**63 - 1
+            )
+            if target_load_snapshot is not None:
+                admission_ns = max(
+                    materialization_ns,
+                    target_load_snapshot["estimated_available_ns"],
+                )
+            else:
+                prompt_ns, silent_ns, decode_ns = _post_failure_compute_durations(
+                    replace(
+                        execution,
+                        recompute_tokens=recompute_tokens,
+                    )
+                )
+                total_compute_ns = max(1, prompt_ns + silent_ns + decode_ns)
+                admission_ns = self.compute[target_gpu].earliest_start(
+                    ready_ns=materialization_ns,
+                    duration_ns=total_compute_ns,
+                )
+            prompt_ns, silent_ns, decode_ns = _post_failure_compute_durations(
+                replace(execution, recompute_tokens=recompute_tokens)
+            )
+            completion_ns = admission_ns + prompt_ns + silent_ns + decode_ns
+            total_bytes = sum(spec.bytes for spec in flow_specs)
+            key = (
+                0 if feasible else 1,
+                completion_ns,
+                admission_ns,
+                materialization_ns,
+                total_bytes,
+                0 if strategy == "PEER_FIRST_CONTROL" else 1,
+            )
+            candidates.append(
+                _RecoverySourceCandidate(
+                    strategy=strategy,
+                    feasible=feasible,
+                    intervals=intervals,
+                    recompute_tokens=recompute_tokens,
+                    flow_specs=flow_specs,
+                    estimated_prefix_materialization_ns=materialization_ns,
+                    estimated_scheduler_admission_ns=admission_ns,
+                    estimated_scheduler_completion_ns=completion_ns,
+                    total_transferred_bytes=total_bytes,
+                    selection_key=key,
+                )
+            )
+        selected = min(candidates, key=lambda item: item.selection_key)
+        control = candidates[0]
+        if self.parameters.mooncake_semantics:
+            selected = control
+        evidence = {
+            "timestamp_ns": now_ns,
+            "event": "RECOVERY_SOURCE_SELECTION",
+            "span_id": execution.metadata.span_id,
+            "route_version": execution.route_version,
+            "target_gpu_id": target_gpu,
+            "peer_source_gpu_id": peer_source_gpu,
+            "selected_strategy": selected.strategy,
+            "control_strategy": control.strategy,
+            "effective_prefix_tokens": execution.metadata.prompt_tokens
+            - selected.recompute_tokens,
+            "recompute_tokens": selected.recompute_tokens,
+            "candidate_order": [item.strategy for item in candidates],
+            "candidates": {
+                item.strategy: {
+                    "feasible": item.feasible,
+                    "intervals": [
+                        {
+                            "source": interval.source,
+                            "start_token": interval.start_token,
+                            "end_token": interval.end_token,
+                            "token_count": interval.token_count,
+                        }
+                        for interval in item.intervals
+                    ],
+                    "transfers": [
+                        {
+                            "source": spec.source,
+                            "source_id": spec.source_id,
+                            "target_id": spec.target_id,
+                            "bytes": spec.bytes,
+                            "slice_count": len(spec.slice_bytes),
+                            "slice_bytes": list(spec.slice_bytes),
+                            "path_resource_ids": list(spec.path_resource_ids),
+                            "path_capacities_bytes_per_second": {
+                                resource_id: self.transfer_rate_resources[
+                                    resource_id
+                                ].capacity_bytes_per_second
+                                for resource_id in spec.path_resource_ids
+                            },
+                        }
+                        for spec in item.flow_specs
+                    ],
+                    "total_transferred_bytes": item.total_transferred_bytes,
+                    "estimated_prefix_materialization_ns": (
+                        item.estimated_prefix_materialization_ns
+                    ),
+                    "estimated_scheduler_admission_ns": (
+                        item.estimated_scheduler_admission_ns
+                    ),
+                    "estimated_scheduler_completion_ns": (
+                        item.estimated_scheduler_completion_ns
+                    ),
+                    "selection_key": list(item.selection_key),
+                }
+                for item in candidates
+            },
+            "prediction_scope": (
+                "snapshot_active_flows_plus_candidate_no_future_arrivals"
+            ),
+            "prediction_limitations": [
+                "deterministic_E2_model_estimate",
+                "scheduler_gating_from_current_target_load_shadow",
+                "no_future_flow_arrivals",
+                "not_calibrated_hardware_measurement",
+            ],
+            "target_load_snapshot": (
+                None if target_load_snapshot is None else dict(target_load_snapshot)
+            ),
+            "invariance_assertions": {
+                "same_effective_prefix": all(
+                    item.recompute_tokens == selected.recompute_tokens
+                    for item in candidates
+                ),
+                "same_recompute_suffix": all(
+                    item.recompute_tokens == selected.recompute_tokens
+                    for item in candidates
+                ),
+                "same_target_gpu": True,
+                "source_ownership_only": True,
+                "candidate_evaluation_side_effect_free": True,
+            },
+            "selected_vs_control_deltas_ns": {
+                "scheduler_completion": (
+                    selected.estimated_scheduler_completion_ns
+                    - control.estimated_scheduler_completion_ns
+                ),
+                "scheduler_admission": (
+                    selected.estimated_scheduler_admission_ns
+                    - control.estimated_scheduler_admission_ns
+                ),
+                "prefix_materialization": (
+                    selected.estimated_prefix_materialization_ns
+                    - control.estimated_prefix_materialization_ns
+                ),
+            },
+            "selected_vs_control_transferred_bytes_delta": (
+                selected.total_transferred_bytes - control.total_transferred_bytes
+            ),
+        }
+        self.recovery_events.append(evidence)
+        self.des.journal.append(now_ns, "RECOVERY_SOURCE_SELECTION", evidence)
+        return selected, tuple(candidates)
+
+    @staticmethod
+    def _peek_target_load_snapshot(
+        driver: object,
+        target_gpu: str,
+    ) -> Mapping[str, int]:
+        """Read the scheduler shadow while restoring its diagnostic cache state."""
+
+        targets = getattr(driver, "_targets", None)
+        if not isinstance(targets, dict) or target_gpu not in targets:
+            snapshot = driver.target_load_snapshot(target_gpu)  # type: ignore[attr-defined]
+            return dict(snapshot)
+        target = targets[target_gpu]
+        saved = (
+            getattr(driver, "target_load_snapshot_cache_hits"),
+            getattr(driver, "target_load_snapshot_cache_misses"),
+            target.load_snapshot_cache_key,
+            target.load_snapshot_cache_value,
+        )
+        try:
+            return dict(driver.target_load_snapshot(target_gpu))  # type: ignore[attr-defined]
+        finally:
+            (
+                driver.target_load_snapshot_cache_hits,
+                driver.target_load_snapshot_cache_misses,
+                target.load_snapshot_cache_key,
+                target.load_snapshot_cache_value,
+            ) = saved
+
     def _on_put_start(self, event: ScheduledEvent, _des: GlobalDES) -> None:
         plan_id = _required_str(event.payload, "plan_id")
         plan = self.pending_put_starts.pop(plan_id, None)
         if plan is None:
             raise ExperimentError("unknown or canceled protection start executed")
         if plan.produced_ns != self.des.now_ns and not (
-            self._formal_policy_enabled() and plan.produced_ns <= self.des.now_ns
+            (self._formal_policy_enabled() or self.parameters.mooncake_semantics)
+            and plan.produced_ns <= self.des.now_ns
         ):
             raise ExperimentError("protection start diverged from chunk seal time")
         formal_request_path = (plan.span_id, plan.path)
-        if self._formal_policy_enabled():
+        if self._formal_policy_enabled() or self.parameters.mooncake_semantics:
             if formal_request_path in self._formal_blocked_request_paths:
                 self.protection_path_bypasses[
                     f"{plan.path}_FORMAL_PREFIX_BLOCKED"
@@ -7444,6 +9178,22 @@ class _StudyRuntime:
                     committed=False,
                 )
                 return
+            if self.parameters.mooncake_semantics and plan.continuous_batch_key is not None:
+                route, path, ordinal, _target = plan.continuous_batch_key
+                owner = (plan.span_id, route)
+                if ordinal > self._runtime_gate_frontier.get(owner, 0):
+                    queue = self._formal_waiting_put_starts[formal_request_path]
+                    queue.append(plan)
+                    queue.sort(key=lambda item: item.chunks[0].token_start)
+                    return
+                outcomes = self._runtime_gate_outcomes.setdefault((*owner, ordinal), {})
+                if outcomes.get(path) == "BYPASS":
+                    # The other path has not resolved the current attempt.
+                    # Native batch_put waits for it before retrying either tier.
+                    queue = self._formal_waiting_put_starts[formal_request_path]
+                    queue.insert(0, plan)
+                    return
+                outcomes.pop(path, None)
             if (
                 formal_request_path in self._formal_active_request_paths
                 and not plan.formal_alias_waiting
@@ -7604,6 +9354,13 @@ class _StudyRuntime:
                     landlord=landlord,
                     resident=False,
                 )
+                (
+                    excluded_victim_chunk_ids,
+                    excluded_victim_reasons,
+                ) = self._formal_alias_excluded_victim_ids(
+                    metadata,
+                    landlord=landlord,
+                )
                 preview = landlord.preview(
                     candidate_value,
                     latest_values=self._formal_latest_values(landlord),
@@ -7613,12 +9370,17 @@ class _StudyRuntime:
                         path=plan.path,
                         pool=landlord.pool,
                     ),
-                    excluded_victim_chunk_ids=self._formal_alias_excluded_victim_ids(
-                        metadata,
-                        landlord=landlord,
-                    ),
+                    excluded_victim_chunk_ids=excluded_victim_chunk_ids,
                 )
                 preview_audit = preview.to_canonical_json()
+                # A formal preview may subsequently be rejected by the physical
+                # foreground-headroom gate.  Keep that distinction explicit:
+                # only SlackLandlord.apply() is allowed to advance pool rent.
+                preview_audit["landlord_applied"] = False
+                preview_audit["excluded_victim_reasons"] = {
+                    chunk_id: list(excluded_victim_reasons[chunk_id])
+                    for chunk_id in sorted(excluded_victim_reasons)
+                }
                 self.formal_policy_events.append(
                     {
                         "timestamp_ns": self.des.now_ns,
@@ -7637,17 +9399,52 @@ class _StudyRuntime:
                         "preview": preview_audit,
                     }
                 )
+                selected_victim_bytes = sum(
+                    item.allocated_bytes for item in preview.selected_victims
+                )
+                if (
+                    preview.bypass_reason is None
+                    and not self._peer_admission_preserves_foreground_headroom(
+                        plan=plan,
+                        pool=pool,
+                        candidate=physical_chunk,
+                        selected_victim_bytes=selected_victim_bytes,
+                        preview_audit=preview_audit,
+                    )
+                ):
+                    blocked_suffix_count = len(plan.chunks) - candidate_offset - 1
+                    self._formal_park_rejected_frontier(
+                        plan,
+                        candidate_offset=candidate_offset,
+                        split_batch_owner=bool(pool_reservations),
+                    )
+                    formal_block_after_resolution = True
+                    self.protection_path_bypasses[
+                        "PEER_HBM_FOREGROUND_HEADROOM_DEFERRED"
+                    ] += 1
+                    for _ in range(blocked_suffix_count):
+                        self.protection_path_bypasses[
+                            f"{plan.path}_FORMAL_PREFIX_BLOCKED"
+                        ] += 1
+                    break
                 formal_pending = landlord.apply(preview)
                 if formal_pending is None:
                     self.protection_path_bypasses[
                         f"{plan.path}_FORMAL_ADMISSION_{preview.bypass_reason}"
                     ] += 1
+                    blocked_suffix_count = len(plan.chunks) - candidate_offset - 1
+                    self._formal_park_rejected_frontier(
+                        plan,
+                        candidate_offset=candidate_offset,
+                        split_batch_owner=bool(pool_reservations),
+                    )
                     formal_block_after_resolution = True
-                    for _blocked_chunk in plan.chunks[candidate_offset + 1 :]:
+                    for _ in range(blocked_suffix_count):
                         self.protection_path_bypasses[
                             f"{plan.path}_FORMAL_PREFIX_BLOCKED"
                         ] += 1
                     break
+                preview_audit["landlord_applied"] = True
                 reservation_id = (
                     f"{transfer_id}:candidate-{candidate_offset}"
                 )
@@ -7677,15 +9474,19 @@ class _StudyRuntime:
                     block=False,
                     park_suffix=formal_block_after_resolution,
                 )
-                self._resolve_continuous_protection_batch(
-                    span_id=plan.span_id,
-                    batch_key=plan.continuous_batch_key,
-                    committed=not formal_block_after_resolution,
-                )
+                if not formal_block_after_resolution:
+                    self._resolve_continuous_protection_batch(
+                        span_id=plan.span_id,
+                        batch_key=plan.continuous_batch_key,
+                        committed=True,
+                    )
                 return
         else:
             chunk_ordinals = {
-                chunk.key: index for index, chunk in enumerate(execution.chunks)
+                chunk.key: index for index, chunk in enumerate(
+                    self._protection_chunks(execution, path=plan.path)
+                    if self.parameters.mooncake_semantics else execution.chunks
+                )
             }
             scores = tuple(
                 self._chunk_score(
@@ -7956,6 +9757,10 @@ class _StudyRuntime:
                     pending.target_gpu_id,
                     cause="AEGIS_PEER_HBM_FLOW_START_ROLLBACK",
                 )
+                self._formal_wake_parked_frontiers_for_pool(
+                    pool,
+                    trigger="PEER_PENDING_ABORT",
+                )
             self._abort_transfer_from_task(
                 transfer_id,
                 task=pending.task,
@@ -8149,10 +9954,11 @@ class _StudyRuntime:
         if committed_bytes != pending.bytes:
             raise ExperimentError("pool commit bytes diverged from transfer bytes")
         self._commit_transfer(transfer_id)
+        self._complete_runtime_protection(pending.span_id)
         self._resolve_continuous_protection_batch(
             span_id=pending.span_id,
             batch_key=pending.continuous_batch_key,
-            committed=not pending.formal_block_after_resolution,
+            committed=True,
         )
         admitted = sum(len(item.chunks) for item in committed_reservations)
         self.des.journal.append(
@@ -8197,6 +10003,14 @@ class _StudyRuntime:
         schedule = self._failure_schedule_by_id.get(failure_id)
         if schedule is None:
             raise ExperimentError("failure executed without a frozen schedule")
+        if self.paper_causal_mode:
+            if (
+                schedule.impact_contract is not None
+                or schedule.profile_impact_contracts is not None
+            ):
+                raise ExperimentError(
+                    "paper causal failure must not freeze post-treatment victim partitions"
+                )
         if failure_id in self._failure_event_executed:
             raise ExperimentError("failure event executed more than once")
         failure_plan = self.failure_schedule
@@ -8212,6 +10026,8 @@ class _StudyRuntime:
             raise ExperimentError("failure event lost its reference-route provenance")
         if _required_str(event.payload, "resolved_target_gpu_id") != target_gpu:
             raise ExperimentError("failure payload resolved two different physical targets")
+        if schedule.physical_target_frozen and target_gpu != schedule.target_gpu_id:
+            raise ExperimentError("failure event changed its frozen physical target")
         focus_execution = self.executions[schedule.focus_span_id]
         if focus_execution.gpu_id != target_gpu:
             raise ExperimentError("resolved failure target is not the focus span's live route")
@@ -8453,6 +10269,28 @@ class _StudyRuntime:
 
         if schedule.focus_span_id not in impacted_active:
             raise ExperimentError("logical failure trigger did not hit its focus span")
+        actual_impact_contract = FailureImpactContract(
+            active_span_ids=tuple(sorted(impacted_active)),
+            queued_span_ids=tuple(sorted(impacted_queued)),
+            reroute_only_queued_span_ids=tuple(sorted(reroute_only_queued)),
+        )
+        expected_impact_contract = schedule.impact_contract
+        if not self.paper_causal_mode and schedule.profile_impact_contracts is not None:
+            profile_fingerprint = _failure_oracle_profile_fingerprint(self.profile)
+            expected_impact_contract = schedule.profile_impact_contracts.get(
+                profile_fingerprint
+            )
+            if expected_impact_contract is None:
+                raise ExperimentError(
+                    "failure schedule lacks an impact contract for this profile"
+                )
+        if (
+            expected_impact_contract is not None
+            and actual_impact_contract != expected_impact_contract
+        ):
+            raise ExperimentError(
+                "failure natural victim partition diverged from its frozen contract"
+            )
 
         canceled_paths: list[str] = []
         canceled_before_start_paths: list[str] = []
@@ -8565,6 +10403,10 @@ class _StudyRuntime:
                     pending.target_gpu_id,
                     cause="GPU_FAILURE_PEER_DESTINATION_ABORT",
                 )
+                self._formal_wake_parked_frontiers_for_pool(
+                    destination_pool,
+                    trigger="PEER_PENDING_ABORT",
+                )
             self._abort_transfer_from_task(
                 transfer_id,
                 task=pending.task,
@@ -8612,6 +10454,7 @@ class _StudyRuntime:
                 execution.hbm_allocated_bytes = 0
                 execution.hbm_recovery_reserved_bytes = 0
                 execution.hbm_allocation_gpu_id = None
+        rebound_peer_target_spans = self._rebind_failed_peer_targets(target_gpu)
 
         logical_trigger: dict[str, object] = {
             "focus_span_id": schedule.focus_span_id,
@@ -8638,9 +10481,23 @@ class _StudyRuntime:
             "reference_target_gpu_id": schedule.target_gpu_id,
             "impacted_active_span_ids": sorted(impacted_active),
             "impacted_queued_span_ids": sorted(impacted_queued),
+            "reroute_only_queued_span_ids": sorted(reroute_only_queued),
+            "impact_contract_match": (
+                expected_impact_contract is None
+                or actual_impact_contract == expected_impact_contract
+            ),
+            "impact_contract_fingerprint": actual_impact_contract.fingerprint,
+            "impact_contract_scope": (
+                "PROFILE_SPECIFIC_POST_TREATMENT_NATURAL_PARTITION"
+                if schedule.profile_impact_contracts is not None
+                else "SHARED_PRE_TREATMENT_NATURAL_PARTITION"
+                if schedule.impact_contract is not None
+                else "OBSERVED_ONLY"
+            ),
             "canceled_source_dependent_paths": sorted(canceled_paths),
             "canceled_before_start_paths": sorted(canceled_before_start_paths),
             "peer_hbm_lost_committed_bytes": lost_peer_hbm_bytes,
+            "rebound_peer_target_span_ids": list(rebound_peer_target_spans),
             "peer_hbm_unavailable_bytes": failed_peer_pool.unavailable_bytes,
             "normal_hbm_lost_reusable_bytes": lost_normal_hbm_bytes,
             "store_dram_unavailable_bytes": 0,
@@ -8989,7 +10846,15 @@ class _StudyRuntime:
                 required_hbm_bytes=_tokens_to_allocated_bytes(
                     execution.metadata.prompt_tokens
                 ),
+                preferred_gpu_id=(execution.designated_peer_gpu_id
+                                  if self.parameters.mooncake_semantics else None),
             )
+            if self.profile.peer_replication_fraction > 0 or self.parameters.mooncake_semantics:
+                execution.designated_peer_gpu_id = self._bind_peer_target(
+                    source_gpu_id=target,
+                    span_id=span_id,
+                    route_version=execution.route_version,
+                )
             if self.continuous_batch_enabled:
                 driver = self.continuous_batch_driver
                 if driver is None:
@@ -9022,12 +10887,94 @@ class _StudyRuntime:
                     ready_ns=self.des.now_ns + self.parameters.reroute_ns,
                     duration_ns=execution.scheduled_duration_ns,
                 )
+        if self.parameters.mooncake_semantics:
+            active_ids = sorted(active_ids, key=self._runtime_recovery_priority)
         for span_id in active_ids:
             self._plan_recovery(self.executions[span_id])
+
+    def _runtime_recovery_priority(self, span_id: str) -> tuple[Fraction, int, str]:
+        execution = self.executions[span_id]
+        slack = self._published_slack_signal(span_id).value_at(self.des.now_ns)
+        prompt, silent, _decode = _post_failure_compute_durations(
+            replace(execution, recompute_tokens=execution.metadata.prompt_tokens))
+        costs = [prompt + silent]
+        target = execution.designated_peer_gpu_id
+        if target is not None and target not in self.failed_gpu_ids:
+            chunks = self._protection_chunks(execution, path="PEER_HBM")
+            tokens = self.peer_pools[target].peek_prefix_tokens(chunks)
+            prompt, silent, _ = _post_failure_compute_durations(replace(
+                execution, recompute_tokens=execution.metadata.prompt_tokens-tokens))
+            costs.append(prompt + silent + _transfer_duration_ns(
+                _tokens_to_allocated_bytes(tokens), self.parameters.peer_bandwidth_bytes_per_second,
+                self.parameters.transfer_setup_ns))
+        chunks = self._protection_chunks(execution, path="STORE_DRAM")
+        tokens = self._store_lookup_prefix_tokens(chunks, now_ns=self.des.now_ns, mutate_signals=False)
+        prompt, silent, _ = _post_failure_compute_durations(replace(
+            execution, recompute_tokens=execution.metadata.prompt_tokens-tokens))
+        costs.append(prompt + silent + _transfer_duration_ns(
+            _tokens_to_allocated_bytes(tokens), self._store_restore_bandwidth_bytes_per_second(),
+            self.parameters.transfer_setup_ns))
+        return slack, -max(int(min(costs)-slack), 0), span_id
+
+    def _on_runtime_recovery_retry(self, event: ScheduledEvent, _des: GlobalDES) -> None:
+        span_id = _required_str(event.payload, "span_id")
+        if self._runtime_recovery_retries.pop(span_id, None) != EventHandle(event.event_id):
+            raise ExperimentError("stale runtime recovery retry")
+        execution = self.executions[span_id]
+        if execution.route_version != _required_int(event.payload, "route_version"):
+            raise ExperimentError("recovery retry crossed route ownership")
+        self._plan_recovery(execution)
+
+    def _runtime_recovery_capacity_ready(self, execution: _SpanExecution) -> bool:
+        """Primary capacity may reclaim backup tails before taking a read lease.
+
+        Keep the bound destination and wait for its foreground work when active
+        primary KV cannot be reclaimed. In particular, two full prompt copies
+        need not fit: trimming HBM tails exposes DRAM or recompute fallback.
+        """
+        span_id = execution.metadata.span_id
+        target = execution.designated_peer_gpu_id
+        if target is None or target in self.failed_gpu_ids:
+            candidates = tuple(g for g in self.gpu_ids if g not in self.failed_gpu_ids)
+            target = self._mooncake_rendezvous(
+                span_id, candidates, role=f"recovery:route={execution.route_version + 2}",
+            )
+            execution.designated_peer_gpu_id = target
+        required = _tokens_to_allocated_bytes(execution.metadata.prompt_tokens)
+        if self._preempt_peer_puts_for_foreground_hbm(target, required):
+            return True
+        self._latch_aimd_foreground_pressure(
+            target, required, reason="BOUND_RECOVERY_WAITING_FOR_PRIMARY_CAPACITY",
+            force=True,
+        )
+        now = self.des.now_ns
+        retry_at = now + self.parameters.aimd_control_interval_ns
+        driver = self.continuous_batch_driver
+        if driver is not None:
+            active = driver._targets[target].active_record
+            if active is not None and active.planned_end_ns > now:
+                retry_at = min(retry_at, active.planned_end_ns + 1)
+        if span_id in self._runtime_recovery_retries:
+            raise ExperimentError("duplicate runtime recovery wait")
+        handle = self.des.schedule_at(
+            retry_at, EventKind.REROUTE,
+            event_id=self._next_id(f"bound-recovery-wait:{span_id}"),
+            payload={"span_id":span_id,"route_version":execution.route_version},
+        )
+        self._runtime_recovery_retries[span_id] = handle
+        self.recovery_events.append({
+            "timestamp_ns":now,"event":"BOUND_RECOVERY_CAPACITY_WAIT",
+            "span_id":span_id,"target_gpu_id":target,"required_bytes":required,
+            "retry_at_ns":retry_at,
+        })
+        return False
 
     def _plan_recovery(self, execution: _SpanExecution) -> None:
         if execution.failure_at_ns is None:
             raise ExperimentError("recovery lacks failure progress timestamps")
+        if (self.parameters.mooncake_semantics
+                and not self._runtime_recovery_capacity_ready(execution)):
+            return
         if self.continuous_batch_enabled:
             # The failure fence already froze the exact scheduler-visible output
             # position for every resident request.  A request may be in the
@@ -9078,21 +11025,39 @@ class _StudyRuntime:
             required_hbm_bytes=recovery_reserve_bytes,
             recovery=True,
             preferred_gpu_id=(
-                designated_peer_gpu if route_bound_peer_prefix > 0 else None
+                designated_peer_gpu
+                if route_bound_peer_prefix > 0 or self.parameters.mooncake_semantics
+                else None
             ),
         )
+        if self.profile.peer_replication_fraction > 0 or self.parameters.mooncake_semantics:
+            execution.designated_peer_gpu_id = self._bind_peer_target(
+                source_gpu_id=target_gpu,
+                span_id=execution.metadata.span_id,
+                route_version=execution.route_version,
+            )
         execution.gpu_id = target_gpu
         execution.status = _ExecutionStatus.RECOVERING
         # Recovery may opportunistically adopt only target-local inactive
         # primary cache.  Active-primary keys are observations without a pin or
         # reference-counted ownership model, so they are deliberately excluded.
         normal_primary_tokens = min(
-            self.primary_pools[target_gpu].lookup_prefix_tokens(
+            self.primary_pools[
+                target_gpu
+            ].peek_exclusively_activatable_prefix_tokens(
                 execution.chunks,
-                now_ns=self.des.now_ns,
             ),
             execution.metadata.prompt_tokens,
         )
+        if normal_primary_tokens > 0:
+            self.primary_pools[target_gpu].lookup_prefix_tokens(
+                tuple(
+                    chunk
+                    for chunk in execution.chunks
+                    if chunk.token_start < normal_primary_tokens
+                ),
+                now_ns=self.des.now_ns,
+            )
         peer_source_gpu: str | None = None
         committed_peer_tokens = 0
         if route_bound_peer_prefix > 0 and designated_peer_gpu is not None:
@@ -9112,40 +11077,61 @@ class _StudyRuntime:
             if self.profile.store_fraction > 0
             else 0
         )
-        if self._formal_policy_enabled():
-            boundary_sets = []
-            if committed_peer_tokens > 0:
-                boundary_sets.append(_chunk_interval_boundaries(peer_protection_chunks))
-            if committed_store_tokens > 0:
-                boundary_sets.append(_chunk_interval_boundaries(store_protection_chunks))
-            if boundary_sets:
-                common_boundaries = set.intersection(*boundary_sets)
-                normal_primary_tokens = max(
-                    (
-                        boundary
-                        for boundary in common_boundaries
-                        if boundary <= normal_primary_tokens
-                    ),
-                    default=0,
-                )
-            store_start = max(normal_primary_tokens, committed_peer_tokens)
-            if (
-                committed_store_tokens > store_start
-                and store_start
-                not in _chunk_interval_boundaries(store_protection_chunks)
-            ):
-                committed_store_tokens = store_start
-        (
-            execution.recovery_normal_hbm_local_tokens,
-            execution.restored_peer_tokens,
-            execution.restored_store_tokens,
-            execution.recompute_tokens,
-        ) = _recovery_source_intervals(
+        selected_source_candidate, _source_candidates = (
+            self._select_recovery_source_candidate(
+                execution,
+                normal_prefix_tokens=normal_primary_tokens,
+                peer_prefix_tokens=committed_peer_tokens,
+                store_prefix_tokens=committed_store_tokens,
+                peer_source_gpu=peer_source_gpu,
+                target_gpu=target_gpu,
+            )
+        )
+        if not selected_source_candidate.feasible:
+            raise ExperimentError("no feasible fixed-prefix recovery source assignment")
+        selected_intervals = selected_source_candidate.intervals
+        normal_interval = next(
+            (
+                interval
+                for interval in selected_intervals
+                if interval.source == "NORMAL_HBM_LOCAL"
+            ),
+            None,
+        )
+        peer_interval = next(
+            (
+                interval
+                for interval in selected_intervals
+                if interval.source == "PEER_HBM"
+            ),
+            None,
+        )
+        store_interval = next(
+            (
+                interval
+                for interval in selected_intervals
+                if interval.source == "STORE_DRAM"
+            ),
+            None,
+        )
+        execution.recovery_normal_hbm_local_tokens = (
+            0 if normal_interval is None else normal_interval.token_count
+        )
+        execution.restored_peer_tokens = (
+            0 if peer_interval is None else peer_interval.token_count
+        )
+        execution.restored_store_tokens = (
+            0 if store_interval is None else store_interval.token_count
+        )
+        execution.recompute_tokens = selected_source_candidate.recompute_tokens
+        control_intervals = _recovery_source_intervals(
             execution.metadata.prompt_tokens,
             normal_prefix_tokens=normal_primary_tokens,
             peer_prefix_tokens=committed_peer_tokens,
             store_prefix_tokens=committed_store_tokens,
         )
+        if sum(control_intervals) != execution.metadata.prompt_tokens:
+            raise ExperimentError("Peer-first compatibility control lost conservation")
         restored_tokens = (
             execution.recovery_normal_hbm_local_tokens
             + execution.restored_peer_tokens
@@ -9186,9 +11172,12 @@ class _StudyRuntime:
                     "protection_evidence": False,
                 }
             )
-        if execution.restored_peer_tokens > 0 and peer_source_gpu == target_gpu:
-            peer_interval_start = execution.recovery_normal_hbm_local_tokens
-            peer_interval_end = peer_interval_start + execution.restored_peer_tokens
+        if (execution.restored_peer_tokens > 0 and peer_source_gpu == target_gpu
+                and not self.parameters.mooncake_semantics):
+            if peer_interval is None:
+                raise ExperimentError("local Peer activation lost selected interval")
+            peer_interval_start = peer_interval.start_token
+            peer_interval_end = peer_interval.end_token
             activated_peer_chunks = tuple(
                 chunk
                 for chunk in peer_protection_chunks
@@ -9240,6 +11229,10 @@ class _StudyRuntime:
                 hbm_moves,
                 cause="AEGIS_RECOVERY_PEER_HBM_LOCAL_RECLASSIFY",
             )
+            self._formal_wake_parked_frontiers_for_pool(
+                self.peer_pools[target_gpu],
+                trigger="RECOVERY_ROLE_TRANSITION_RELEASE",
+            )
             local_activation_bytes += peer_activation_bytes
             execution.restored_peer_local_tokens = execution.restored_peer_tokens
             self.recovery_source_events.append(
@@ -9257,6 +11250,15 @@ class _StudyRuntime:
             )
         elif execution.restored_peer_tokens > 0:
             execution.restored_peer_d2d_tokens = execution.restored_peer_tokens
+        if self.parameters.mooncake_semantics and peer_interval is not None:
+            if peer_source_gpu is None:
+                raise ExperimentError("recovery read lease lost its Peer source")
+            self.peer_pools[peer_source_gpu].pin_interval(
+                peer_protection_chunks,
+                start_token=peer_interval.start_token,
+                token_count=peer_interval.token_count,
+                pin_id=f"runtime-recovery:{execution.metadata.span_id}",
+            )
         missing_reserve_bytes = recovery_reserve_bytes - local_activation_bytes
         if missing_reserve_bytes < 0:
             raise ExperimentError("local Peer-HBM activation exceeded recovery reserve")
@@ -9301,27 +11303,30 @@ class _StudyRuntime:
 
         ready_ns = self.des.now_ns + self.parameters.reroute_ns
         recovery_transfer_ids: set[str] = set()
-        store_recovery_bytes = self._store_recovery_bytes_by_segment(
-            execution,
-            start_token=(
-                execution.recovery_normal_hbm_local_tokens
-                + execution.restored_peer_tokens
-            ),
-            token_count=execution.restored_store_tokens,
+        store_recovery_bytes = (
+            {}
+            if store_interval is None
+            else self._store_recovery_bytes_by_segment(
+                execution,
+                start_token=store_interval.start_token,
+                token_count=store_interval.token_count,
+            )
         )
         transfer_specs: list[tuple[str, str, int]] = []
-        if execution.restored_peer_tokens > 0 and peer_source_gpu != target_gpu:
+        if (execution.restored_peer_tokens > 0 and
+                (peer_source_gpu != target_gpu or self.parameters.mooncake_semantics)):
             if peer_source_gpu is None:
                 raise ExperimentError("Peer-HBM recovery lost its committed source")
+            if peer_interval is None:
+                raise ExperimentError("Peer-HBM transfer lost selected interval")
             transfer_specs.append(
                 (
                     "PEER_HBM",
                     peer_source_gpu,
                     _prefix_bytes_between(
                         execution.chunks,
-                        execution.recovery_normal_hbm_local_tokens,
-                        execution.recovery_normal_hbm_local_tokens
-                        + execution.restored_peer_tokens,
+                        peer_interval.start_token,
+                        peer_interval.end_token,
                     ),
                 )
             )
@@ -9351,6 +11356,10 @@ class _StudyRuntime:
                 event_id=f"flow-start:{transfer_id}",
                 payload={"transfer_id": transfer_id},
             )
+            if (self.parameters.mooncake_semantics and source == "STORE_DRAM"
+                    and any(kind == "PEER_HBM" for kind, _, _ in transfer_specs)):
+                self.des.cancel(start_handle, reason="WAIT_FOR_PEER_RECOVERY_COPY")
+                start_handle = None
             self.pending_recovery_transfers[transfer_id] = _PendingRecoveryTransfer(
                 transfer_id=transfer_id,
                 span_id=execution.metadata.span_id,
@@ -9373,7 +11382,9 @@ class _StudyRuntime:
             self._record_transfer(
                 _transfer_record(
                     transfer_id=transfer_id,
-                    path="D2D_P2P" if source == "PEER_HBM" else "STORE_H2D",
+                    path=("HBM_LOCAL_COPY" if source == "PEER_HBM"
+                          and transfer_source == target_gpu else
+                          "D2D_P2P" if source == "PEER_HBM" else "STORE_H2D"),
                     cause=cause,
                     start_ns=transfer_start_ns,
                     end_ns=transfer_start_ns + max(1, initial_service_ns),
@@ -9401,7 +11412,16 @@ class _StudyRuntime:
                 "route_version": execution.route_version,
                 "target_gpu_id": target_gpu,
                 "peer_source_gpu_id": peer_source_gpu,
+                "recovery_source_strategy": selected_source_candidate.strategy,
                 "store_source_segment_ids": sorted(store_recovery_bytes),
+                "source_intervals": [
+                    {
+                        "source": interval.source,
+                        "start_token": interval.start_token,
+                        "end_token": interval.end_token,
+                    }
+                    for interval in selected_intervals
+                ],
                 "source_tokens": {
                     "NORMAL_HBM_LOCAL": execution.recovery_normal_hbm_local_tokens,
                     "PEER_HBM": execution.restored_peer_tokens,
@@ -9538,7 +11558,7 @@ class _StudyRuntime:
                     raise ExperimentError("recovery group lost a pending transfer")
                 reason = f"GPU_FAILURE_RECOVERY_DEPENDENCY:{failure_id}"
                 if pending.task.status is TransferStatus.WAITING:
-                    if not self.des.cancel(pending.handle, reason=reason):
+                    if pending.handle is not None and not self.des.cancel(pending.handle, reason=reason):
                         raise ExperimentError(
                             "waiting recovery transfer start was not cancellable"
                         )
@@ -9564,6 +11584,7 @@ class _StudyRuntime:
                     )
             if span_id in self.recovery_transfer_ids_by_span:
                 raise ExperimentError("recovery failure fence left a live transfer group")
+            self._release_runtime_recovery_pins(span_id)
             self.recovery_events.append(
                 {
                     "timestamp_ns": self.des.now_ns,
@@ -9600,6 +11621,7 @@ class _StudyRuntime:
             remaining.remove(transfer_id)
             if not remaining:
                 del self.recovery_transfer_ids_by_span[pending.span_id]
+                self._release_runtime_recovery_pins(pending.span_id)
             return
         if task.status is not TransferStatus.COMPLETED:
             raise ExperimentError("recovery flow did not complete successfully")
@@ -9613,6 +11635,16 @@ class _StudyRuntime:
         if remaining is None or transfer_id not in remaining:
             raise ExperimentError("recovery flow group lost a transfer")
         remaining.remove(transfer_id)
+        if self.parameters.mooncake_semantics and pending.source == "PEER_HBM":
+            waiting = [self.pending_recovery_transfers[item] for item in remaining]
+            if not any(item.source == "PEER_HBM" for item in waiting):
+                for item in waiting:
+                    if item.handle is None and item.task.status is TransferStatus.WAITING:
+                        item.handle = self.des.schedule_at(
+                            self.des.now_ns, EventKind.RECOVERY_START,
+                            event_id=f"after-peer:{item.transfer_id}",
+                            payload={"transfer_id": item.transfer_id},
+                        )
         if not remaining:
             del self.recovery_transfer_ids_by_span[pending.span_id]
             self._schedule_recovery_materialized(
@@ -9765,6 +11797,7 @@ class _StudyRuntime:
         target_gpu = _required_str(event.payload, "target_gpu_id")
         if target_gpu in self.failed_gpu_ids:
             raise ExperimentError("recovery selected a failed target")
+        self._release_runtime_recovery_pins(span_id)
         if execution.hbm_staging_bytes != 0:
             raise ExperimentError("recovery materialized with live transfer staging")
         restored_tokens = (
@@ -10597,9 +12630,7 @@ class _StudyRuntime:
                 ),
                 "formal_algorithm2_event_count": len(self.formal_policy_events),
                 "aimd_enabled": self.profile.aimd_enabled,
-                "aimd_update_basis": (
-                    "IMMEDIATE_PRESSURE_EVENT_AND_FIXED_STABLE_CONTROL_WINDOW"
-                ),
+                "aimd_update_basis": "FIXED_GLOBAL_DES_CONTROL_WINDOW",
                 "aimd_quota_lifecycle_uses_formal_safe_tails": (
                     self._formal_policy_enabled()
                 ),
@@ -10779,6 +12810,32 @@ class _StudyRuntime:
                     else "closed_loop_workflow_concurrency"
                 ),
                 "workflow_concurrency": self.workflow_concurrency,
+                "order_policy": (
+                    "observed_submit_then_source_metadata"
+                    if self.workflow_admission_seed is None
+                    else "observed_submit_then_seeded_sha256_workflow_permutation"
+                ),
+                "seed": self.workflow_admission_seed,
+                "realized_workflow_order": list(
+                    self.causal.workflow_admission_order
+                ),
+                "realized_workflow_order_sha256": sha256_json(
+                    self.causal.workflow_admission_order
+                ),
+            },
+            "randomization": {
+                "experiment_seed": self.seed,
+                "workflow_admission_seed": self.workflow_admission_seed,
+                "peer_binding_seed": self.peer_binding_seed,
+                "peer_binding_seed_decoupled_from_experiment_seed": True,
+            },
+            "causal_failure_contract": {
+                "paper_causal_mode": self.paper_causal_mode,
+                "requires_single_failure": self.paper_causal_mode,
+                "requires_frozen_physical_target": self.paper_causal_mode,
+                "requires_first_exact_token_crossing": self.paper_causal_mode,
+                "freezes_post_treatment_impact_contract": False,
+                "records_realized_impact_per_system": self.paper_causal_mode,
             },
             "resource_model": {
                 "normal_hbm_resources": list(sorted(self.primary_pools)),
@@ -10981,7 +13038,10 @@ def run_study_cell(
         seed=spec.seed,
         failure_schedule=spec.failure_schedule,
         workflow_concurrency=spec.workflow_concurrency,
+        workflow_admission_seed=spec.workflow_admission_seed,
         oracle_fast_path=spec.oracle_fast_path,
+        peer_binding_seed=spec.peer_binding_seed,
+        paper_causal_mode=spec.paper_causal_mode,
     )
     return runtime.run()
 
@@ -11018,9 +13078,13 @@ def derive_failure_schedules(
     seed: int,
     parameters: ModelParameters = DEFAULT_PARAMETERS,
     workflow_concurrency: int | None = None,
+    workflow_admission_seed: int | None = None,
+    peer_binding_seed: int = 0,
     failure_count: int = 2,
     compared_profiles: Sequence[SystemProfile] | None = None,
     enforce_all_events_in_bucket: bool = False,
+    require_shared_impact_contract: bool = False,
+    freeze_post_treatment_impact_contracts: bool = True,
 ) -> dict[str, FailureSchedule]:
     """Freeze an ordered multi-failure plan for one workload run per bucket.
 
@@ -11058,13 +13122,32 @@ def derive_failure_schedules(
         raise ValueError("failure schedule comparison profiles must be non-empty")
     schedules: dict[str, FailureSchedule] = {}
     for bucket in canonical_buckets:
-        selected_events: list[FailureEventSchedule] = []
-        for event_index, target_progress in enumerate(progress_targets):
+        bucket_name = bucket
+        deepest_failure: tuple[int, str, Counter[str]] | None = None
+
+        def remember_failure(
+            event_index: int,
+            phase: str,
+            rejection_counts: Counter[str],
+        ) -> None:
+            nonlocal deepest_failure
+            if deepest_failure is None or event_index > deepest_failure[0]:
+                deepest_failure = (event_index, phase, rejection_counts.copy())
+
+        def search(
+            selected_events: tuple[FailureEventSchedule, ...],
+            inherited_oracles: tuple[StudyRunResult, ...] | None = None,
+            bucket_name: str = bucket_name,
+        ) -> tuple[FailureEventSchedule, ...] | None:
+            event_index = len(selected_events)
+            if event_index == failure_count:
+                return selected_events
+            target_progress = progress_targets[event_index]
             partial_schedule = (
                 None
                 if not selected_events
                 else FailureSchedule(
-                    tuple(selected_events),
+                    selected_events,
                     selection_scope=(
                         "causal_partial_failure_oracle_runtime_resolved_gpu"
                     ),
@@ -11075,41 +13158,51 @@ def derive_failure_schedules(
                 if partial_schedule is None
                 else Scenario.GPU_FAILURE
             )
-            causal_oracles_list: list[StudyRunResult] = []
-            for profile_index, profile in enumerate(canonical_profiles):
-                profile_fingerprint = _failure_oracle_profile_fingerprint(profile)
-                try:
-                    result = run_study_cell(
-                        records,
-                        CellSpec(
-                            variant=ExperimentVariant(
-                                suite="failure_schedule_oracle",
-                                variant_id=f"profile-{profile_index}",
-                                profile=profile,
-                                parameters=parameters,
+            if inherited_oracles is None:
+                causal_oracles_list: list[StudyRunResult] = []
+                for profile_index, profile in enumerate(canonical_profiles):
+                    profile_fingerprint = _failure_oracle_profile_fingerprint(profile)
+                    try:
+                        result = run_study_cell(
+                            records,
+                            CellSpec(
+                                variant=ExperimentVariant(
+                                    suite="failure_schedule_oracle",
+                                    variant_id=f"profile-{profile_index}",
+                                    profile=profile,
+                                    parameters=parameters,
+                                ),
+                                context_bucket=bucket_name,
+                                scenario=scenario,
+                                seed=seed,
+                                repetition="A",
+                                failure_schedule=partial_schedule,
+                                workflow_concurrency=workflow_concurrency,
+                                workflow_admission_seed=workflow_admission_seed,
+                                peer_binding_seed=peer_binding_seed,
+                                oracle_fast_path=True,
                             ),
-                            context_bucket=bucket,
-                            scenario=scenario,
-                            seed=seed,
-                            repetition="A",
-                            failure_schedule=partial_schedule,
-                            workflow_concurrency=workflow_concurrency,
-                            oracle_fast_path=True,
-                        ),
-                    )
-                except Exception as error:
+                        )
+                    except Exception as error:
+                        raise ExperimentError(
+                            "failure schedule oracle failed "
+                            f"(bucket={bucket_name}, seed={seed}, "
+                            f"workflow_concurrency={workflow_concurrency}, "
+                            f"event_index={event_index}, "
+                            f"profile_index={profile_index}, "
+                            f"system_id={profile.system_id.value}, "
+                            f"eviction={profile.eviction.value}, "
+                            f"profile_fingerprint={profile_fingerprint}, "
+                            f"scenario={scenario.value}): {error}"
+                        ) from error
+                    causal_oracles_list.append(result)
+                causal_oracles = tuple(causal_oracles_list)
+            else:
+                if len(inherited_oracles) != len(canonical_profiles):
                     raise ExperimentError(
-                        "failure schedule oracle failed "
-                        f"(bucket={bucket}, seed={seed}, "
-                        f"workflow_concurrency={workflow_concurrency}, "
-                        f"event_index={event_index}, profile_index={profile_index}, "
-                        f"system_id={profile.system_id.value}, "
-                        f"eviction={profile.eviction.value}, "
-                        f"profile_fingerprint={profile_fingerprint}, "
-                        f"scenario={scenario.value}): {error}"
-                    ) from error
-                causal_oracles_list.append(result)
-            causal_oracles = tuple(causal_oracles_list)
+                        "failure oracle inherited an incomplete profile result set"
+                    )
+                causal_oracles = inherited_oracles
             details_by_oracle = tuple(
                 {str(item["span_id"]): item for item in result.span_details}
                 for result in causal_oracles
@@ -11187,7 +13280,7 @@ def derive_failure_schedules(
                 if (
                     (
                         (enforce_all_events_in_bucket or event_index == 0)
-                        and item["context_bucket"] != bucket
+                        and item["context_bucket"] != bucket_name
                     )
                     or span_id in selected_focus_ids
                 ):
@@ -11262,32 +13355,43 @@ def derive_failure_schedules(
                     )
                 )
             if not ranked:
-                raise ExperimentError(
-                    f"failure oracle has no causally safe logical span for event "
-                    f"{event_index} in bucket {bucket} seed {seed}; "
-                    f"rejections={dict(sorted(rejection_counts.items()))}"
-                )
-            _, focus, progresses, trigger_times = min(
-                ranked, key=lambda candidate: candidate[0]
-            )
-            focus_id = str(focus["span_id"])
-            reference_focus = details_by_oracle[0][focus_id]
-            gpu_id = reference_focus.get("gpu_id")
-            start_ns = reference_focus.get("compute_start_ns")
-            end_ns = reference_focus.get("completed_ns")
+                remember_failure(event_index, "logical", rejection_counts)
+                return None
+            remaining_event_count = failure_count - event_index
             if (
-                not isinstance(gpu_id, str)
-                or type(start_ns) is not int
-                or type(end_ns) is not int
-                or end_ns <= start_ns
+                (enforce_all_events_in_bucket or event_index > 0)
+                and len(ranked) < remaining_event_count
             ):
-                raise ExperimentError("failure oracle focus interval is malformed")
-            workflow_ends = workflow_ends_by_oracle[0]
-            selected_events.append(
-                FailureEventSchedule(
-                    failure_id=f"gpu-failure:{bucket}:seed-{seed}:event-{event_index}",
+                rejection_counts["insufficient_remaining_candidates"] += 1
+                remember_failure(event_index, "logical", rejection_counts)
+                return None
+            for _rank, focus, _progresses, _trigger_times in sorted(
+                ranked, key=lambda candidate: candidate[0]
+            ):
+                focus_id = str(focus["span_id"])
+                per_oracle = tuple(details[focus_id] for details in details_by_oracle)
+                gpu_ids = tuple(detail.get("gpu_id") for detail in per_oracle)
+                if len(set(gpu_ids)) != 1 or not isinstance(gpu_ids[0], str):
+                    rejection_counts["focus_route_differs"] += 1
+                    continue
+                gpu_id = cast(str, gpu_ids[0])
+                reference_focus = details_by_oracle[0][focus_id]
+                start_ns = reference_focus.get("compute_start_ns")
+                end_ns = reference_focus.get("completed_ns")
+                if (
+                    type(start_ns) is not int
+                    or type(end_ns) is not int
+                    or end_ns <= start_ns
+                ):
+                    rejection_counts["malformed_interval"] += 1
+                    continue
+                workflow_ends = workflow_ends_by_oracle[0]
+                trial_event = FailureEventSchedule(
+                    failure_id=(
+                        f"gpu-failure:{bucket_name}:seed-{seed}:event-{event_index}"
+                    ),
                     event_index=event_index,
-                    bucket=bucket,
+                    bucket=bucket_name,
                     seed=seed,
                     focus_span_id=focus_id,
                     target_gpu_id=gpu_id,
@@ -11306,20 +13410,176 @@ def derive_failure_schedules(
                     detection_delay_ns=parameters.failure_detection_ns,
                     trigger_progress_per_mille=parameters.failure_progress_per_mille,
                     gpu_recovery_time_ns=parameters.gpu_recovery_time_ns,
+                    physical_target_frozen=True,
                     selection_scope=(
-                        "strict_logical_focus_progress_and_context_bucket_"
-                        "runtime_resolved_gpu"
-                        if enforce_all_events_in_bucket
-                        else "shared_logical_focus_at_workload_target_runtime_resolved_gpu"
+                        "shared_natural_physical_gpu_exact_victim_partition_trial"
                     ),
                 )
+                trial_schedule = FailureSchedule(
+                    tuple((*selected_events, trial_event)),
+                    selection_scope=(
+                        "causal_recursive_shared_natural_physical_gpu_trial"
+                    ),
+                )
+                trial_contracts: list[FailureImpactContract] = []
+                trial_results: list[StudyRunResult] = []
+                trial_failed = False
+                for profile_index, profile in enumerate(canonical_profiles):
+                    try:
+                        trial_result = run_study_cell(
+                            records,
+                            CellSpec(
+                                variant=ExperimentVariant(
+                                    suite="failure_schedule_oracle",
+                                    variant_id=f"physical-profile-{profile_index}",
+                                    profile=profile,
+                                    parameters=parameters,
+                                ),
+                                context_bucket=bucket_name,
+                                scenario=Scenario.GPU_FAILURE,
+                                seed=seed,
+                                repetition="A",
+                                failure_schedule=trial_schedule,
+                                workflow_concurrency=workflow_concurrency,
+                                workflow_admission_seed=workflow_admission_seed,
+                                peer_binding_seed=peer_binding_seed,
+                                oracle_fast_path=True,
+                            ),
+                        )
+                    except ExperimentError as error:
+                        if "not naturally routed to its frozen physical target" in str(
+                            error
+                        ):
+                            rejection_counts["focus_route_changed_at_trigger"] += 1
+                            trial_failed = True
+                            break
+                        raise ExperimentError(
+                            "physical failure trial oracle failed "
+                            f"(bucket={bucket_name}, seed={seed}, "
+                            f"workflow_concurrency={workflow_concurrency}, "
+                            f"event_index={event_index}, profile_index={profile_index}, "
+                            f"focus_span_id={focus_id}, target_gpu_id={gpu_id}): {error}"
+                        ) from error
+                    except Exception as error:
+                        raise ExperimentError(
+                            "physical failure trial oracle failed "
+                            f"(bucket={bucket_name}, seed={seed}, "
+                            f"workflow_concurrency={workflow_concurrency}, "
+                            f"event_index={event_index}, profile_index={profile_index}, "
+                            f"focus_span_id={focus_id}, target_gpu_id={gpu_id}): {error}"
+                        ) from error
+                    actual_events = trial_result.representative.get("failure_events")
+                    if (
+                        not isinstance(actual_events, Sequence)
+                        or isinstance(actual_events, (str, bytes))
+                        or len(actual_events) != event_index + 1
+                        or not isinstance(actual_events[-1], Mapping)
+                    ):
+                        rejection_counts["physical_trial_evidence_missing"] += 1
+                        trial_failed = True
+                        break
+                    actual = cast(Mapping[str, Any], actual_events[-1])
+                    trial_contracts.append(
+                        FailureImpactContract(
+                            active_span_ids=tuple(
+                                sorted(
+                                    cast(
+                                        Sequence[str],
+                                        actual["impacted_active_span_ids"],
+                                    )
+                                )
+                            ),
+                            queued_span_ids=tuple(
+                                sorted(
+                                    cast(
+                                        Sequence[str],
+                                        actual["impacted_queued_span_ids"],
+                                    )
+                                )
+                            ),
+                            reroute_only_queued_span_ids=tuple(
+                                sorted(
+                                    cast(
+                                        Sequence[str],
+                                        actual.get(
+                                            "reroute_only_queued_span_ids",
+                                            (),
+                                        ),
+                                    )
+                                )
+                            ),
+                        )
+                    )
+                    trial_results.append(trial_result)
+                if trial_failed:
+                    continue
+                shared_contract = len(set(trial_contracts)) == 1
+                if (
+                    freeze_post_treatment_impact_contracts
+                    and require_shared_impact_contract
+                    and not shared_contract
+                ):
+                    rejection_counts["impact_contract_differs"] += 1
+                    continue
+                selected_trial = replace(
+                    trial_event,
+                    impact_contract=(
+                        trial_contracts[0]
+                        if freeze_post_treatment_impact_contracts and shared_contract
+                        else None
+                    ),
+                    profile_impact_contracts=(
+                        None
+                        if not freeze_post_treatment_impact_contracts or shared_contract
+                        else {
+                            _failure_oracle_profile_fingerprint(profile): contract
+                            for profile, contract in zip(
+                                canonical_profiles, trial_contracts, strict=True
+                            )
+                        }
+                    ),
+                    selection_scope=(
+                        "shared_natural_physical_gpu_post_treatment_victims_observed"
+                        if not freeze_post_treatment_impact_contracts
+                        else "shared_natural_physical_gpu_exact_victim_partition"
+                        if shared_contract
+                        else (
+                            "shared_natural_physical_gpu_profile_specific_exact_"
+                            "post_treatment_victim_partitions"
+                        )
+                    ),
+                )
+                completed = search(
+                    (*selected_events, selected_trial),
+                    tuple(trial_results),
+                )
+                if completed is not None:
+                    return completed
+            remember_failure(event_index, "physical", rejection_counts)
+            return None
+
+        selected_events = search(())
+        if selected_events is None:
+            if deepest_failure is None:
+                raise ExperimentError(
+                    f"failure oracle search failed in bucket {bucket} seed {seed}"
+                )
+            event_index, phase, rejection_counts = deepest_failure
+            if phase == "logical":
+                raise ExperimentError(
+                    f"failure oracle has no causally safe logical span for event "
+                    f"{event_index} in bucket {bucket} seed {seed}; "
+                    f"rejections={dict(sorted(rejection_counts.items()))}"
+                )
+            raise ExperimentError(
+                "failure oracle has no shared natural physical intervention "
+                f"for event {event_index} in bucket {bucket} seed {seed}; "
+                f"rejections={dict(sorted(rejection_counts.items()))}"
             )
         schedules[bucket] = FailureSchedule(
-            tuple(selected_events),
+            selected_events,
             selection_scope=(
-                "causal_recursive_strict_logical_context_severity_runtime_resolved_gpu"
-                if enforce_all_events_in_bucket
-                else "causal_recursive_logical_failures_runtime_resolved_gpu"
+                "causal_recursive_shared_natural_physical_gpu_exact_audited_impact"
             ),
         )
     return schedules
@@ -11332,9 +13592,13 @@ def derive_failure_schedule(
     seed: int,
     parameters: ModelParameters = DEFAULT_PARAMETERS,
     workflow_concurrency: int | None = None,
+    workflow_admission_seed: int | None = None,
+    peer_binding_seed: int = 0,
     failure_count: int = 2,
     compared_profiles: Sequence[SystemProfile] | None = None,
     enforce_all_events_in_bucket: bool = False,
+    require_shared_impact_contract: bool = False,
+    freeze_post_treatment_impact_contracts: bool = True,
 ) -> FailureSchedule:
     """Derive and cache one ordered failure plan for a bucket and profile set."""
 
@@ -11344,9 +13608,13 @@ def derive_failure_schedule(
         bucket,
         seed,
         workflow_concurrency,
+        workflow_admission_seed,
+        peer_binding_seed,
         failure_count,
         None if compared_profiles is None else tuple(compared_profiles),
         enforce_all_events_in_bucket,
+        require_shared_impact_contract,
+        freeze_post_treatment_impact_contracts,
     )
     schedules = _FAILURE_SCHEDULE_CACHE.get(key)
     if schedules is None:
@@ -11356,9 +13624,15 @@ def derive_failure_schedule(
             seed=seed,
             parameters=parameters,
             workflow_concurrency=workflow_concurrency,
+            workflow_admission_seed=workflow_admission_seed,
+            peer_binding_seed=peer_binding_seed,
             failure_count=failure_count,
             compared_profiles=compared_profiles,
             enforce_all_events_in_bucket=enforce_all_events_in_bucket,
+            require_shared_impact_contract=require_shared_impact_contract,
+            freeze_post_treatment_impact_contracts=(
+                freeze_post_treatment_impact_contracts
+            ),
         )
         _FAILURE_SCHEDULE_CACHE[key] = schedules
     try:
@@ -11376,11 +13650,12 @@ def project_failure_schedule_to_profile(
     workflow_concurrency: int | None = None,
     seed: int,
 ) -> FailureSchedule:
-    """Copy logical interventions without predicting profile-local routes.
+    """Bind one already-derived causal intervention plan to a profile.
 
-    The retained reference GPU and timestamp are provenance.  The measured
-    runtime resolves each event from its focus span's actual compute route, so
-    projection performs no no-failure or recursive partial-failure oracle run.
+    Physical targets remain unchanged. Generic-mode victim contracts remain
+    unchanged when present; paper-causal schedules intentionally omit them
+    because collateral victims are post-treatment outcomes.
+    Projection performs no no-failure or recursive partial-failure oracle run.
     ``records``, ``profile``, and ``workflow_concurrency`` remain in the public
     signature for runner compatibility.
     """
@@ -11398,16 +13673,10 @@ def project_failure_schedule_to_profile(
     ):
         raise ValueError("reference failure schedule parameters diverged")
     _ = records, profile, workflow_concurrency
-    selected = tuple(
-        replace(
-            event,
-            selection_scope="shared_logical_focus_runtime_resolved_physical_gpu",
-        )
-        for event in reference.events
-    )
+    selected = tuple(reference.events)
     return FailureSchedule(
         selected,
-        selection_scope="shared_logical_focus_runtime_resolved_physical_gpu",
+        selection_scope=reference.selection_scope,
     )
 
 
@@ -11468,12 +13737,42 @@ def ablation_variants(
 ) -> tuple[ExperimentVariant, ...]:
     full = SYSTEM_PROFILES[SystemId.AEGIS_UNIFIED]
     variants = (
-        ("full", full, False),
-        ("no_slack", replace(full, slack_weight=0), False),
-        ("no_reuse_value", replace(full, reuse_weight=0), False),
-        ("no_recovery_value", replace(full, recovery_weight=0), False),
-        ("two_managers", replace(full, unified_manager=False), False),
-        ("no_aimd", replace(full, aimd_enabled=False), False),
+        (
+            "full",
+            full,
+            False,
+            "full_algorithms_1_2_3",
+        ),
+        (
+            "no_slack",
+            replace(full, slack_weight=0),
+            False,
+            "paper_algorithm_1_ablation_disables_residual_dag_slack_signal",
+        ),
+        (
+            "no_reuse_value",
+            replace(full, reuse_weight=0),
+            False,
+            "diagnostic_reuse_value_term_ablation_not_a_whole_algorithm_ablation",
+        ),
+        (
+            "no_recovery_value",
+            replace(full, recovery_weight=0),
+            False,
+            "diagnostic_recovery_value_term_ablation_not_a_whole_algorithm_ablation",
+        ),
+        (
+            "two_managers",
+            replace(full, unified_manager=False),
+            False,
+            "diagnostic_unified_manager_ablation",
+        ),
+        (
+            "no_aimd",
+            replace(full, aimd_enabled=False),
+            False,
+            "paper_algorithm_3_ablation_disables_hbm_quota_aimd",
+        ),
         (
             "static_hbm_quota",
             replace(
@@ -11482,12 +13781,38 @@ def ablation_variants(
                 aimd_enabled=False,
             ),
             False,
+            "diagnostic_static_quota_control",
         ),
-        ("random_eviction", replace(full, eviction=EvictionKind.RANDOM_STABLE), False),
-        ("lru_eviction", replace(full, eviction=EvictionKind.LRU), False),
-        ("lfu_eviction", replace(full, eviction=EvictionKind.LFU), False),
-        ("no_anti_colocation", replace(full, anti_colocation=False), True),
-        ("no_cache_aware_routing", replace(full, cache_aware_routing=False), False),
+        (
+            "random_eviction",
+            replace(full, eviction=EvictionKind.RANDOM_STABLE),
+            False,
+            "diagnostic_random_retention_control",
+        ),
+        (
+            "lru_eviction",
+            replace(full, eviction=EvictionKind.LRU),
+            False,
+            "paper_algorithm_2_ablation_replaces_slack_landlord_with_lru",
+        ),
+        (
+            "lfu_eviction",
+            replace(full, eviction=EvictionKind.LFU),
+            False,
+            "diagnostic_lfu_retention_control",
+        ),
+        (
+            "no_anti_colocation",
+            replace(full, anti_colocation=False),
+            True,
+            "negative_control_disables_failure_domain_separation",
+        ),
+        (
+            "no_cache_aware_routing",
+            replace(full, cache_aware_routing=False),
+            False,
+            "diagnostic_cache_aware_routing_ablation",
+        ),
     )
     return tuple(
         ExperimentVariant(
@@ -11496,8 +13821,9 @@ def ablation_variants(
             profile=profile,
             parameters=parameters,
             negative_control=negative,
+            interpretation=interpretation,
         )
-        for variant_id, profile, negative in variants
+        for variant_id, profile, negative, interpretation in variants
     )
 
 
@@ -11704,16 +14030,24 @@ def _chunks_for_record(
         scope = block_scopes[block_start]
         block_end = min(len(raw_hashes), block_start + blocks_per_chunk)
         for index in range(block_start + 1, block_end):
-            if block_scopes[index] != scope:
+            if (block_scopes[index] != scope
+                    and parameters.runtime_semantics != "mooncake_prompt_v1"):
                 block_end = index
                 break
         hash_ids = raw_hashes[block_start:block_end]
         token_counts = block_token_counts[block_start:block_end]
         token_count = sum(token_counts)
-        global_chunk = scope == "global_system_template"
+        global_chunk = all(item == "global_system_template"
+                           for item in block_scopes[block_start:block_end])
         key = sha256_json(
             {
                 "schema": "moonkvsim.aegiskv.policy_chunk.v2",
+                **({"parent_prefix_key": result[-1].key if result else None,
+                    "model_revision": record.get("model_revision"),
+                    "kv_abi": "qwen3-8b-tp1-pp1-bf16"}
+                   if parameters.runtime_semantics == "shared_prefix_v3" else {}),
+                **({"request_cache_salt": str(record["span_id"])}
+                   if parameters.runtime_semantics == "mooncake_prompt_v1" else {}),
                 "workflow_id": None if global_chunk else workflow_id,
                 "source_block_start": block_start,
                 "source_hash_ids": hash_ids,
@@ -11744,7 +14078,9 @@ def _duration_after_prefix_reuse(
     metadata: NormalizedSpanMetadata, base_duration_ns: int, reused_tokens: int
 ) -> int:
     prompt = metadata.prompt_tokens
-    output_weighted = metadata.output_tokens * 8
+    # The prompt forward produces the first output token.  Only the remaining
+    # output positions require decode forwards in the continuous scheduler.
+    output_weighted = max(0, metadata.output_tokens - 1) * 8
     weighted_total = max(1, prompt + output_weighted)
     remaining = max(1, prompt - reused_tokens + output_weighted)
     return max(1, base_duration_ns * remaining // weighted_total)
@@ -11776,6 +14112,72 @@ def _recovery_source_intervals(
     if normal + peer + store + recompute != prompt_tokens:
         raise ExperimentError("recovery source intervals do not conserve prompt tokens")
     return normal, peer, store, recompute
+
+
+def _recovery_source_candidate_intervals(
+    prompt_tokens: int,
+    *,
+    normal_prefix_tokens: int,
+    peer_prefix_tokens: int,
+    store_prefix_tokens: int,
+    strategy: str,
+    normal_boundaries: set[int],
+    peer_boundaries: set[int],
+    store_boundaries: set[int],
+) -> tuple[tuple[_RecoverySourceInterval, ...], int, bool]:
+    """Build one complete fixed-E source assignment without boundary repair."""
+
+    if strategy not in {"PEER_FIRST_CONTROL", "STORE_FIRST"}:
+        raise ExperimentError(f"unknown recovery source strategy: {strategy}")
+    if prompt_tokens < 0 or min(
+        normal_prefix_tokens,
+        peer_prefix_tokens,
+        store_prefix_tokens,
+    ) < 0:
+        raise ExperimentError("recovery prefix token counts cannot be negative")
+    normal_end = min(normal_prefix_tokens, prompt_tokens)
+    peer_end = min(peer_prefix_tokens, prompt_tokens)
+    store_end = min(store_prefix_tokens, prompt_tokens)
+    effective_end = max(normal_end, peer_end, store_end)
+    intervals: list[_RecoverySourceInterval] = []
+
+    def append(source: str, start_token: int, end_token: int) -> None:
+        if end_token > start_token:
+            intervals.append(
+                _RecoverySourceInterval(
+                    source=source,
+                    start_token=start_token,
+                    end_token=end_token,
+                )
+            )
+
+    append("NORMAL_HBM_LOCAL", 0, normal_end)
+    cursor = normal_end
+    ordered = (
+        (("PEER_HBM", peer_end), ("STORE_DRAM", store_end))
+        if strategy == "PEER_FIRST_CONTROL"
+        else (("STORE_DRAM", store_end), ("PEER_HBM", peer_end))
+    )
+    for source, source_end in ordered:
+        assigned_end = min(effective_end, max(cursor, source_end))
+        append(source, cursor, assigned_end)
+        cursor = assigned_end
+    if cursor != effective_end:
+        raise ExperimentError("recovery candidate failed to cover fixed effective prefix")
+
+    boundaries_by_source = {
+        "NORMAL_HBM_LOCAL": normal_boundaries,
+        "PEER_HBM": peer_boundaries,
+        "STORE_DRAM": store_boundaries,
+    }
+    feasible = all(
+        interval.start_token in boundaries_by_source[interval.source]
+        and interval.end_token in boundaries_by_source[interval.source]
+        for interval in intervals
+    )
+    if sum(interval.token_count for interval in intervals) != effective_end:
+        raise ExperimentError("recovery candidate intervals do not conserve effective prefix")
+    return tuple(intervals), prompt_tokens - effective_end, feasible
 
 
 def _prefix_bytes_between(

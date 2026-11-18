@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net">
+  <diagram id="motivation-workflow" name="Four-branch workflow">
+    <mxGraphModel page="1" pageScale="1" pageWidth="254.39999999999998" pageHeight="158.39999999999998" background="#ffffff">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="canvas" value="" vertex="1" parent="1" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontFamily=Cantarell;fontSize=14.0;spacing=0;fillColor=#ffffff;strokeColor=none;pointerEvents=0;">
+          <mxGeometry x="0" y="0" width="254.39999999999998" height="158.39999999999998" as="geometry" />
+        </mxCell>
+        <mxCell id="main_before" value="A0" vertex="1" parent="1" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontFamily=Cantarell;fontSize=14.0;spacing=0;rounded=1;arcSize=12;fillColor=#F9E6E8;strokeColor=#B6404F;strokeWidth=1.4;fontColor=#9A2636;fontStyle=1;">
+          <mxGeometry x="2" y="47.87999999999998" width="35" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="main_after" value="A5" vertex="1" parent="1" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontFamily=Cantarell;fontSize=14.0;spacing=0;rounded=1;arcSize=12;fillColor=#F9E6E8;strokeColor=#B6404F;strokeWidth=1.4;fontColor=#9A2636;fontStyle=1;">
+          <mxGeometry x="217.4" y="47.87999999999998" width="35" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="fork_bus" value="" vertex="1" parent="1" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontFamily=Cantarell;fontSize=14.0;spacing=0;fillColor=#8293A0;strokeColor=none;">
+          <mxGeometry x="43" y="14.84" width="1.0" height="96.07999999999997" as="geometry" />
+        </mxCell>
+        <mxCell id="join_bus" value="" vertex="1" parent="1" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontFamily=Cantarell;fontSize=14.0;spacing=0;fillColor=#8293A0;strokeColor=none;">
+          <mxGeometry x="204.0" y="14.84" width="1.0" height="96.07999999999997" as="geometry" />
+        </mxCell>
+        <mxCell id="main_fork" edge="1" parent="1" source="main_before" target="fork_bus" style="html=0;rounded=0;endArrow=none;endFill=0;endSize=2.5;strokeColor=#8293A0;strokeWidth=1.0;dashed=0;dashPattern=3 3;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="join_main" edge="1" parent="1" source="join_bus" target="main_after" style="html=0;rounded=0;endArrow=open;endFill=0;endSize=2.5;strokeColor=#8293A0;strokeWidth=1.0;dashed=0;dashPattern=3 3;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="agent_a1" value="A1 60.4s" vertex="1" parent="1" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontFamily=Cantarell;fontSize=14.0;spacing=0;rounded=1;arcSize=12;fillColor=#EFF5FA;strokeColor=#66869C;strokeWidth=1.0;fontColor=#263A49;whiteSpace=nowrap;">
+          <mxGeometry x="50.0" y="3.84" width="61.31844503950157" height="22.0" as="geometry" />
+        </mxCell>
+        <mxCell id="fork_a1" edge="1" parent="1" source="fork_bus" target="agent_a1" style="html=0;rounded=0;endArrow=none;endFill=0;endSize=2.5;strokeColor=#8293A0;strokeWidth=1.0;dashed=0;dashPattern=3 3;exitX=1;exitY=0.0;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a1_join" edge="1" parent="1" source="agent_a1" target="join_bus" style="html=0;rounded=0;endArrow=none;endFill=0;endSize=2.5;strokeColor=#8293A0;strokeWidth=1.0;dashed=1;dashPattern=3 3;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.0;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="agent_a2" value="A2 151.6s" vertex="1" parent="1" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontFamily=Cantarell;fontSize=14.0;spacing=0;rounded=1;arcSize=12;fillColor=#F9E6E8;strokeColor=#B6404F;strokeWidth=1.4;fontColor=#9A2636;fontStyle=1;whiteSpace=nowrap;">
+          <mxGeometry x="50.006094263207984" y="35.86666666666666" width="153.99390573679202" height="22.0" as="geometry" />
+        </mxCell>
+        <mxCell id="fork_a2" edge="1" parent="1" source="fork_bus" target="agent_a2" style="html=0;rounded=0;endArrow=none;endFill=0;endSize=2.5;strokeColor=#8293A0;strokeWidth=1.0;dashed=0;dashPattern=3 3;exitX=1;exitY=0.3333333333333333;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a2_join" edge="1" parent="1" source="agent_a2" target="join_bus" style="html=0;rounded=0;endArrow=none;endFill=0;endSize=2.5;strokeColor=#B6404F;strokeWidth=1.4;dashed=0;dashPattern=3 3;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.3333333333333333;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="agent_a3" value="A3 132.4s" vertex="1" parent="1" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontFamily=Cantarell;fontSize=14.0;spacing=0;rounded=1;arcSize=12;fillColor=#EFF5FA;strokeColor=#66869C;strokeWidth=1.0;fontColor=#263A49;whiteSpace=nowrap;">
+          <mxGeometry x="50.114775290530304" y="67.89333333333332" width="134.4892163199597" height="22.0" as="geometry" />
+        </mxCell>
+        <mxCell id="fork_a3" edge="1" parent="1" source="fork_bus" target="agent_a3" style="html=0;rounded=0;endArrow=none;endFill=0;endSize=2.5;strokeColor=#8293A0;strokeWidth=1.0;dashed=0;dashPattern=3 3;exitX=1;exitY=0.6666666666666666;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a3_join" edge="1" parent="1" source="agent_a3" target="join_bus" style="html=0;rounded=0;endArrow=none;endFill=0;endSize=2.5;strokeColor=#8293A0;strokeWidth=1.0;dashed=1;dashPattern=3 3;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.6666666666666666;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="agent_a4" value="A4 129.4s" vertex="1" parent="1" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontFamily=Cantarell;fontSize=14.0;spacing=0;rounded=1;arcSize=12;fillColor=#EFF5FA;strokeColor=#66869C;strokeWidth=1.0;fontColor=#263A49;whiteSpace=nowrap;">
+          <mxGeometry x="50.27830468678358" y="99.91999999999997" width="131.46239892359776" height="22.0" as="geometry" />
+        </mxCell>
+        <mxCell id="fork_a4" edge="1" parent="1" source="fork_bus" target="agent_a4" style="html=0;rounded=0;endArrow=none;endFill=0;endSize=2.5;strokeColor=#8293A0;strokeWidth=1.0;dashed=0;dashPattern=3 3;exitX=1;exitY=1.0;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a4_join" edge="1" parent="1" source="agent_a4" target="join_bus" style="html=0;rounded=0;endArrow=none;endFill=0;endSize=2.5;strokeColor=#8293A0;strokeWidth=1.0;dashed=1;dashPattern=3 3;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=1.0;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_critical_key" value="" vertex="1" parent="1" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontFamily=Cantarell;fontSize=14.0;spacing=0;rounded=1;arcSize=12;fillColor=#F9E6E8;strokeColor=#B6404F;strokeWidth=1.4;fontColor=#9A2636;fontStyle=1;">
+          <mxGeometry x="26" y="143.62" width="14" height="12" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_critical_text" value="Critical path" vertex="1" parent="1" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontFamily=Cantarell;fontSize=14.0;spacing=0;fillColor=none;strokeColor=none;align=left;whiteSpace=nowrap;fontFamily=DejaVu Sans;fontSize=13.6666667;fontColor=#263A49;">
+          <mxGeometry x="46" y="142.62" width="91" height="14" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_slack_key" edge="1" parent="1" style="endArrow=none;startArrow=none;strokeColor=#8293A0;strokeWidth=1;dashed=1;dashPattern=3 3;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="147" y="149.62" as="sourcePoint" />
+            <mxPoint x="167" y="149.62" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="legend_slack_text" value="Join slack" vertex="1" parent="1" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontFamily=Cantarell;fontSize=14.0;spacing=0;fillColor=none;strokeColor=none;align=left;whiteSpace=nowrap;fontFamily=DejaVu Sans;fontSize=13.6666667;fontColor=#263A49;">
+          <mxGeometry x="174" y="142.62" width="78" height="14" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

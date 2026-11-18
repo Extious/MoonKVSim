@@ -171,7 +171,7 @@ git switch -c aegiskv v0.1.0-mooncake-baseline
 - 只有 model/KV ABI/layout/version/shard 完整且物理传输完成的连续前缀才可 `COMMITTED` 并参与恢复；其余后缀重算或 silent replay；
 - `HBMQuotaAIMD` 只改变 Peer-HBM quota；收缩时先撤销恢复资格再安全释放，不要求已有 DRAM 副本。
 
-第一项 M0 产物应是 `benchmark/AegisKV/docs/design/patent-contract.yaml`：逐条记录上述约束、专利章节/段落、代码 owner、测试 id 与当前状态。DOCX 本身是设计权威，YAML 只是可审计转录，不得另创语义。
+第一项 M0 产物应是 `benchmark/AegisKV/docs/patent/patent-contract.yaml`：逐条记录上述约束、专利章节/段落、代码 owner、测试 id 与当前状态。DOCX 本身是设计权威，YAML 只是可审计转录，不得另创语义。
 
 ### 4.2 `source-lock.json`
 
@@ -1481,12 +1481,14 @@ MoonKVSim/
 │       ├── README.md
 │       ├── docs/
 │       │   ├── patent/
-│       │   │   └── AegisKV专利交底书-final-version.docx
-│       │   ├── design/
-│       │   │   └── patent-contract.yaml
-│       │   ├── provenance/
+│       │   │   ├── AegisKV专利交底书-final-version.docx
+│       │   │   ├── patent-contract.yaml
+│       │   │   ├── runtime-clause-evidence.json
 │       │   │   ├── SOURCE_MANIFEST.json
-│       │   │   └── SHA256SUMS
+│       │   │   ├── SHA256SUMS
+│       │   │   ├── audit_patent_contract.py
+│       │   │   ├── audit_aegiskv_runtime_contract.py
+│       │   │   └── README.md
 │       │   └── experiment-protocol.md
 │       ├── paper/
 │       │   ├── main.tex

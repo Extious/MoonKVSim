@@ -1,0 +1,91 @@
+\subsection{Recovery Manager: Preassigned Takeover}
+\label{sec:parallel-recovery}
+\label{sec:recovery-manager}
+
+Recovery Manager (2) decides where each request will resume before
+failure occurs. When request $r$ arrives and the Router selects source
+DP rank $g_r$, the Manager records a target assignment $p_r\ne g_r$
+in control state outside the source's failure domain. The same $p_r$
+is both the retry destination and the DP rank that will hold any
+Peer-HBM backup of $r$. A simple mapping for $n\ge2$ DPs is
+$p_r=(g_r+1)\bmod n$; per-request assignments may distribute load across
+several targets. The assignment does not reserve HBM: the KV Master
+chooses whether to request Peer protection, and the target Adapter
+controls its capacity. A TP group restores compatible shards as one DP.
+
+\paragraph{Activate the recorded route after failure.}
+The Manager combines membership, device errors, and GPU progress
+reported by Adapters; a process heartbeat alone does not prove GPU
+progress. After confirming and isolating a failed source, it obtains
+request token prefixes, commit frontiers, model/layout IDs, and replica
+locations from surviving control state, then submits retries to their
+recorded targets. Available Peer replicas are therefore local to takeover.
+DRAM or recomputation supplies the remaining state. Control-state
+survival, fencing, failure-domain separation, and retry deduplication
+are runtime contracts. A failed target requires a new valid assignment;
+copies on the old target cannot be treated as local to the new target.
+
+\paragraph{Recover a dependency-closed frontier.}
+A surviving authority assigns a monotonically increasing source epoch;
+copies, directory commits, and output acknowledgements reject stale epochs.
+Before acknowledging a generated token, persist its request ID, position,
+token ID, and epoch in a surviving ordered log. Prompt and accepted tool
+inputs are likewise recoverable. KV may lag this log; recovery reconstructs
+the acknowledged suffix and suppresses duplicate delivery. External tool
+side effects require the orchestrator's own idempotency contract.
+
+Publish a checkpoint manifest only after its full dependency closure is
+committed: compatible model, weights and layout, all required layers and TP
+shards, sealed token intervals, selector state, and the matching token-log
+prefix. A frontier is the latest valid common manifest, not the maximum
+of independently updated object locations. Peer and DRAM may commit in
+either order; each manifest entry must resolve to a matching surviving
+replica. An incomplete new manifest leaves the older one authoritative;
+without one, replay from recoverable inputs. Recovery validates versions
+and closure again after fencing. These checks define the minimum contract;
+their concurrent implementation remains to be validated.
+
+\paragraph{Share resources without serializing retries.}
+Retries enter independently and advance on their own layer-readiness
+events. Slack determines protection, not a request-level completion
+barrier. The engine reserves a positive dispatch share for feasible recovery
+work while continuing foreground batching. Within that share, ready admitted
+retries receive round-robin service in bounded prefill chunks or decode steps;
+eligible waiting retries use oldest-first admission subject to physical space.
+Blocked layers yield rather than holding a request-level barrier. These are
+required scheduler interfaces, not a claim of support in an unmodified engine.
+Each retry moves through waiting-for-space, waiting-for-data, ready, and
+running states. Reserve its bounded activation/KV workspace and transfer
+buffers before admitting an execution chunk. The batch coordinator admits
+compatible ready work and gives every TP rank the same batch, layer, and
+collective order. A newly discovered miss parks that work only at a legal
+kernel boundary, retaining and charging its activation buffer; it can split
+from a batch only if the backend supports that split. Otherwise the whole
+batch waits and the profile charges the resulting interference. Readiness
+does not authorize arbitrary layer reordering or unmatched collectives.
+Memory reservations precede I/O leases; release queue/directory locks before
+waiting on a copy or collective, and reserve demand-transfer progress space.
+Preassignment reserves neither compute nor retry workspace. Profiles
+include target foreground batches, available KV/workspace, readmission
+queues, shared links and failure domains. If the target has no feasible
+working set, queue the retry or remap through the Manager with a new
+placement check; never assume that local backup alone permits execution.
+
+Transfers contend at every shared link and at target HBM. Normal-state
+backup traffic has a configured aggregate cap (default 20\% of link
+capacity). During recovery or contraction, configure positive service
+shares for demand fetch and required writeback while retaining a foreground
+share; active shares sum to at most one per bottleneck and unused service
+can be borrowed. Actual demand precedes speculative preloads within recovery.
+The 20\% traffic cap is not a 20\% bound on foreground latency or overhead.
+Byte-based deficit round robin across eligible requests and a bounded
+outstanding-transfer count prevent one long context from monopolizing
+the recovery share. Migration writeback receives its own progress share,
+so shrinking does not depend on all decode requests ending. Service switches
+at supported DMA/kernel boundaries, not at an assumed arbitrary instant.
+
+The same sharing policy and foreground/retry load must enter the cost
+profiles. With positive available service, finite contenders, and bounded
+transfer quanta, eligible work progresses; this is not a latency guarantee
+under overload. No retry must complete before another can begin merely
+because its placement priority was higher.

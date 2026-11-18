@@ -1,0 +1,205 @@
+{
+  "data": "/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/experiments/data/reuse-physical-qwen25-1m/blsc/results/1517015/measured.json",
+  "data_sha256": "1b1b1b1335bf20209b2eb3722c1b152a2f54b6447787c6beb6497efa23677d79",
+  "evidence": "physical_worker_microbenchmark",
+  "run_complete": true,
+  "contexts": [
+    8192,
+    65536
+  ],
+  "omitted_contexts": [],
+  "plotted_paths": [
+    "HBM",
+    "DRAM_no_overlap",
+    "FullPrefill"
+  ],
+  "retained_raw_paths_not_plotted": [
+    "DRAM_overlap"
+  ],
+  "width_inches": 2.24,
+  "height_inches": 2.25,
+  "error_bars": "minimum to maximum where timing repeats exceed one; not confidence intervals",
+  "metadata": {
+    "protocol": "sparse_prefill_kv_fill_one_token_v1",
+    "evidence": "physical_worker_microbenchmark",
+    "model": "Qwen/Qwen2.5-7B-Instruct-1M",
+    "revision": "e28526f7bb80e2a9c8af03b831a9af3812f18fba",
+    "framework": "sglang 0.5.10rc0",
+    "torch": "2.9.1+cu128",
+    "cuda": "12.8",
+    "gpu": "NVIDIA A100-PCIE-40GB",
+    "host": "paraai-n32-h-01-agent-23",
+    "job_id": "1517015",
+    "tp": 2,
+    "dtype": "BF16",
+    "batch": 1,
+    "contexts": [
+      8192,
+      65536
+    ],
+    "new_tokens": 1,
+    "chunk_tokens": 8192,
+    "attention": "Qwen1M MInference vertical/slash + DCA, including one-token EXTEND; dense at/below 32K",
+    "forward_mode": "EXTEND, including the final single new token",
+    "endpoint": "synchronized model-body forward; all C-token KV resident; excludes lm_head",
+    "history_tokens": "C-1, exact token slice including partial page",
+    "paths": [
+      "FullPrefill",
+      "HBM",
+      "DRAM_overlap",
+      "DRAM_no_overlap"
+    ],
+    "repeats_by_path": {
+      "FullPrefill": 1,
+      "HBM": 3,
+      "DRAM_overlap": 3,
+      "DRAM_no_overlap": 3
+    },
+    "inputs": 1,
+    "input_kind": "fixed synthetic repeated text; no independent workflows",
+    "hbm": "same sparse-generated prefix resident before timer; one final token",
+    "dram_no_overlap": "all-layer pinned H2D completes before one-token forward",
+    "dram_overlap": "layer-ordered H2D on dedicated stream, per-layer ready-event wait",
+    "loading_scope": "all historical KV; no compression or selective loading",
+    "timing": "synchronized wall time, maximum over TP ranks; CUDA event timeline on each rank",
+    "warmup": "operator checks and short forwards; original all-head full-reference at 64K; one reuse warmup per path/context",
+    "full_prefill_warmup_limit": "no duplicate full-length warmup at 256K or 1.01M",
+    "validation_limit": "paired sparse-state correctness is not dense equivalence or task-quality evaluation",
+    "script_sha256": "62c6279cb1dfb966b0b42ccfe6c5772832e144e0aad4f65a97f4070c211b15a6",
+    "framework_source_sha256": {
+      "srt/models/qwen2.py": "6519d72f2e158b78cbc5e6381636f8ce46f36c248b6bcc631ebffb101c440890",
+      "srt/layers/attention/dual_chunk_flashattention_backend.py": "86fc86a8b2544a22294a3449c39bab689760239326ddbb8be4a95c3d577f18b7",
+      "srt/model_executor/model_runner.py": "dd02497f8aec958cdc920caa2bb03359f4fb233218aaee9ea34ffa8abb3b3af0",
+      "srt/model_executor/forward_batch_info.py": "ee0e9d4916fcbcf71b056b0f90f2f2347e950060a7bef11d13d707a3cba64fe1"
+    },
+    "adapter_sha256": "3306c1fa9a58af0e29cbcb9fd1a46984d0a5a1f9eed4dd3debd84700f3ad4ac3",
+    "framework_git_revision": null,
+    "framework_package_version": "0.5.10rc0",
+    "activation_backend": "flashinfer.activation.silu_and_mul",
+    "activation_layers": 28,
+    "kernel_build": {
+      "passed": true,
+      "libraries": {
+        "flash-ops": {
+          "library": "/home/bingxing2/home/scx8q31/aegiskv_reuse_qwen25_1m_20260919/.venv/lib/python3.12/site-packages/sgl_kernel/flash_ops.abi3.so",
+          "library_sha256": "2145359fc076f9481bf57cad4874662c1caab8783f0060b3e75e77836318bf28",
+          "architectures": {
+            "sm_90a": 24,
+            "sm_80": 24
+          },
+          "source": "sm80-build/sources.json",
+          "build_customization": "sm80-build/build-customization.json",
+          "checked_at": 1789876717.6459656
+        }
+      },
+      "checked_at": 1789876800.9436436
+    },
+    "sparse_kernel_build": {
+      "cpu_build_only": true,
+      "cuda_initialized": false,
+      "library": "/home/bingxing2/home/scx8q31/aegiskv_reuse_qwen25_1m_20260919/setup/sparse-sm80/build/aegis_sparse_ops.so",
+      "library_sha256": "341107847765ec9105bd42715f54a9b4acc2aeddc05dc2f7317f39b010062cd6",
+      "wrapper": "/home/bingxing2/home/scx8q31/aegiskv_reuse_qwen25_1m_20260919/setup/sparse-sm80/sparse_wrapper.py",
+      "wrapper_sha256": "886d892ba08f65f7a320e0c212fd4120d0a6d22a2ae6aa9d843c30c5ea4898c0",
+      "source_sha256": {
+        "/home/bingxing2/home/scx8q31/aegiskv_reuse_qwen25_1m_20260919/setup/sparse-sm80/bindings.cpp": "61f99ab4604acea2b844dfe31b1500bc42abd099bdd7605c2af511ba3e77f02d",
+        "/home/bingxing2/home/scx8q31/aegiskv_reuse_qwen25_1m_20260919/setup/sm80-build/sglang/sgl-kernel/csrc/attention/vertical_slash_index.cu": "eb0e6cf3b48ead871cd662de53ae240c4a3da4bf07e9fe1db0e141ec08bffbed",
+        "/home/bingxing2/home/scx8q31/aegiskv_reuse_qwen25_1m_20260919/setup/sm80-build/flash-attention/csrc/flash_attn/flash_sparse_api.cpp": "2b3dec79e275f2444a815d124f76e2207f02dbbac4e36c1e0f593df53978bf5b",
+        "/home/bingxing2/home/scx8q31/aegiskv_reuse_qwen25_1m_20260919/setup/sm80-build/flash-attention/csrc/flash_attn/src/flash_fwd_sparse_hdim128_bf16_sm80.cu": "3bcbabe3a13bdbdacabd741c05120a467b349d2e61c856b8b5598483d32c0292",
+        "/home/bingxing2/home/scx8q31/aegiskv_reuse_qwen25_1m_20260919/setup/sm80-build/flash-attention/csrc/flash_attn/src/flash_fwd_sparse_hdim128_bf16_causal_sm80.cu": "fddd19624d0ab359e91f0422f89aa1ef95760d798fe48a94fff003cff96b0fff",
+        "/home/bingxing2/home/scx8q31/aegiskv_reuse_qwen25_1m_20260919/setup/sm80-build/flash-attention/csrc/flash_attn/src/flash_fwd_sparse_hdim128_fp16_sm80.cu": "0ba4f2040abadef40a1806f69717d3853e12154056e60ff1f6b1f95b10cb6e49",
+        "/home/bingxing2/home/scx8q31/aegiskv_reuse_qwen25_1m_20260919/setup/sm80-build/flash-attention/csrc/flash_attn/src/flash_fwd_sparse_hdim128_fp16_causal_sm80.cu": "6b43aca41e8a4835b96b998c8d5a6507932e858592834cf6339c385ffb17f43c"
+      },
+      "namespace": "aegis_sparse",
+      "architecture": "sm_80",
+      "head_dim": 128,
+      "dtypes": [
+        "BF16",
+        "FP16"
+      ],
+      "cuda_sources_modified": false,
+      "source_revisions": {
+        "sglang": {
+          "repository": "sgl-project/sglang",
+          "revision": "9b0c470a6a13bedc860c6836f5d07b6c2f62e61a",
+          "archive_sha256": "02b506e2df5fc3f56aee433c27f121ec1a94567f2b75185c38d5a2856e264482",
+          "url": "https://codeload.github.com/sgl-project/sglang/tar.gz/9b0c470a6a13bedc860c6836f5d07b6c2f62e61a"
+        },
+        "cutlass": {
+          "repository": "NVIDIA/cutlass",
+          "revision": "57e3cfb47a2d9e0d46eb6335c3dc411498efa198",
+          "archive_sha256": "09237099a70f80bff1dc8bb80c843a674bb4fdcb46e43cc6993e711c5ca89bb5",
+          "url": "https://codeload.github.com/NVIDIA/cutlass/tar.gz/57e3cfb47a2d9e0d46eb6335c3dc411498efa198"
+        },
+        "flash-attention": {
+          "repository": "sgl-project/sgl-attn",
+          "revision": "bcf72ccc6816b36a5fae2c5a3c027604629785e0",
+          "archive_sha256": "2110d8ca1ed9b330b9f99c1d4088be12a37e44152c39fdf90dfb6526f532ba96",
+          "url": "https://codeload.github.com/sgl-project/sgl-attn/tar.gz/bcf72ccc6816b36a5fae2c5a3c027604629785e0"
+        },
+        "flashinfer": {
+          "repository": "flashinfer-ai/flashinfer",
+          "revision": "bc29697ba20b7e6bdb728ded98f04788e16ee021",
+          "archive_sha256": "931dfd118f4b6de8c7d98702153c7c03840139170af21a07607693bd9749744d",
+          "url": "https://codeload.github.com/flashinfer-ai/flashinfer/tar.gz/bc29697ba20b7e6bdb728ded98f04788e16ee021"
+        },
+        "mscclpp": {
+          "repository": "microsoft/mscclpp",
+          "revision": "51eca89d20f0cfb3764ccd764338d7b22cd486a6",
+          "archive_sha256": "b064de701da5253e32f4031d16b01a61d78c369327d585ff7bfb521bbe742677",
+          "url": "https://codeload.github.com/microsoft/mscclpp/tar.gz/51eca89d20f0cfb3764ccd764338d7b22cd486a6"
+        },
+        "fmt": {
+          "repository": "fmtlib/fmt",
+          "revision": "553ec11ec06fbe0beebfbb45f9dc3c9eabd83d28",
+          "archive_sha256": "c314292789d28c3c3b420e75a7b2d1706f685f7fb63289128d46aeaea2c6be71",
+          "url": "https://codeload.github.com/fmtlib/fmt/tar.gz/553ec11ec06fbe0beebfbb45f9dc3c9eabd83d28"
+        },
+        "json": {
+          "repository": "nlohmann/json",
+          "revision": "v3.11.3",
+          "archive_sha256": "0d8ef5af7f9794e3263480193c491549b2ba6cc74bb018906202ada498a79406",
+          "url": "https://codeload.github.com/nlohmann/json/tar.gz/v3.11.3"
+        }
+      },
+      "build_seconds": 59.17652201652527,
+      "torch": "2.9.1+cu128"
+    },
+    "sparse_config": {
+      "repository": "https://github.com/microsoft/MInference",
+      "revision": "29ef1974fcb5a1440ccf92d7d7996900230fddcf",
+      "model": "Qwen/Qwen2.5-7B-Instruct-1M",
+      "files": {
+        "minference/configs/model2path.py": {
+          "url": "https://raw.githubusercontent.com/microsoft/MInference/29ef1974fcb5a1440ccf92d7d7996900230fddcf/minference/configs/model2path.py",
+          "sha256": "cc52cfd76e30dcc2c1d6c67cf3b2cddd07baaf4f37d92908bba5701ad11633c1",
+          "bytes": 3173
+        },
+        "minference/configs/Qwen2.5_7B_Instruct_1M.json": {
+          "url": "https://raw.githubusercontent.com/microsoft/MInference/29ef1974fcb5a1440ccf92d7d7996900230fddcf/minference/configs/Qwen2.5_7B_Instruct_1M.json",
+          "sha256": "97d96c888705ad76b48e6291fa97054cc05331d937a46ab66a9fffb91823990a",
+          "bytes": 47940
+        },
+        "LICENSE": {
+          "url": "https://raw.githubusercontent.com/microsoft/MInference/29ef1974fcb5a1440ccf92d7d7996900230fddcf/LICENSE",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+          "bytes": 1141
+        }
+      },
+      "retrieved_at": 1789904852.971943
+    },
+    "sparse_config_sha256": "97d96c888705ad76b48e6291fa97054cc05331d937a46ab66a9fffb91823990a",
+    "sparse_head_group": 4,
+    "sparse_min_queries": 1,
+    "sparse_context_threshold": 32768,
+    "sparse_gqa_schedule": "no materialized K/V repetition; one query batches all heads; prefix groups at most four query heads",
+    "short_query_attention": "MInference/DCA above 32K; grouped dense DCA at/below 32K",
+    "sparse_adapter_sha256": "c65ae62e4b67e2cbb33b43ec525d8cd96ec7df0747c2e5bde8861c2a0c354105",
+    "sparse_runtime_enabled": true
+  },
+  "exports_sha256": {
+    "pdf": "42c051409c54019f5ea8e15e1ccbe8a7d0dd8dcf8e482f8b23affa341a0eb2c5",
+    "png": "9efb0519eb0ae6952dc71acbdc122df998a738810f10d8397ebdd2bec1da4171",
+    "svg": "4ba47b3fc2491e33dc880f23ba250b6a694d18a006f2a564c63577d98a33c60d"
+  }
+}

@@ -1,0 +1,58 @@
+[
+  {
+    "path": "nvidia_open_deep_research_README.md",
+    "url": "https://raw.githubusercontent.com/NVIDIA/TensorRT-LLM/main/examples/scaffolding/contrib/open_deep_research/README.md",
+    "retrieved_utc": "2026-10-04",
+    "source_sha256": "c57cea00ce5ae49707647699375fe00fdc5d7930d8d3b1587d25877d46d8df54",
+    "source_bytes": 3379,
+    "saved_bytes": 3379,
+    "saved_sha256": "c57cea00ce5ae49707647699375fe00fdc5d7930d8d3b1587d25877d46d8df54"
+  },
+  {
+    "path": "nvidia_open_deep_research_runner.py",
+    "url": "https://raw.githubusercontent.com/NVIDIA/TensorRT-LLM/main/examples/scaffolding/contrib/open_deep_research/run_open_deep_research.py",
+    "retrieved_utc": "2026-10-04",
+    "source_sha256": "96de2cc57f7240bda6a0e8e4179a08f9a6dde9d2a06b22ca44f4dec1cf9f4988",
+    "source_bytes": 7417,
+    "saved_bytes": 7417,
+    "saved_sha256": "96de2cc57f7240bda6a0e8e4179a08f9a6dde9d2a06b22ca44f4dec1cf9f4988"
+  },
+  {
+    "path": "swebench_verified_task_sample.json",
+    "url": "https://datasets-server.huggingface.co/rows?dataset=princeton-nlp%2FSWE-bench_Verified&config=default&split=test&offset=0&length=1",
+    "retrieved_utc": "2026-10-04",
+    "source_sha256": "7c62220a467830a3a330dda51211ab4c1ba099124dffc8371fbec057933c47b8",
+    "source_bytes": 6005,
+    "transformation": "Retain input fields only; exclude patch, test_patch, FAIL_TO_PASS, PASS_TO_PASS, hints_text, and all solution fields.",
+    "saved_bytes": 1546,
+    "saved_sha256": "a193e6d998d35056e6c559da84eafa813cda786ce258304c9d82016167b00817"
+  },
+  {
+    "path": "deepresearch_repo_tree.json",
+    "url": "https://api.github.com/repos/Ayanami0730/deepresearch_bench/git/trees/main?recursive=1",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "path": "deepresearch_hf_rows.json",
+    "url": "https://datasets-server.huggingface.co/rows?dataset=Ayanami0730%2FDeepResearchBench&config=default&split=test&offset=0&length=2",
+    "error": "HTTP Error 401: Unauthorized"
+  },
+  {
+    "path": "deepresearch_paper_metadata.txt",
+    "url": "https://arxiv.org/html/2506.11763v1",
+    "retrieved_utc": "2026-10-04",
+    "source_bytes": 352491,
+    "source_sha256": "94e593e43e0d71816c3a27694365b7fec09a5ba75f23470b87135f3b98d13b38",
+    "saved_bytes": 352491,
+    "saved_sha256": "94e593e43e0d71816c3a27694365b7fec09a5ba75f23470b87135f3b98d13b38"
+  },
+  {
+    "path": "deepresearch_bench_queries.jsonl",
+    "url": "https://raw.githubusercontent.com/Ayanami0730/deep_research_bench/main/data/prompt_data/query.jsonl",
+    "retrieved_utc": "2026-10-04",
+    "source_bytes": 38080,
+    "source_sha256": "62b197a264a027fd4e2e795ff322a82dd6d566f5e350596ccc7572539ec987d1",
+    "saved_bytes": 38080,
+    "saved_sha256": "62b197a264a027fd4e2e795ff322a82dd6d566f5e350596ccc7572539ec987d1"
+  }
+]

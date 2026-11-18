@@ -1,0 +1,111 @@
+<mxfile host="Electron" modified="2026-08-31T00:00:00.000Z" agent="Codex" version="31.1.5" type="device">
+  <diagram id="engine-memory-layout" name="Engine Memory Layout">
+    <mxGraphModel dx="1700" dy="850" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="850" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="title" value="&lt;b&gt;Single-Node 8-GPU Memory Layout&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=26;fontColor=#17365D;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="1000" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="subtitle" value="8 x NVIDIA A100-40GB · PCIe-only GPU P2P · local Store DRAM · no RDMA or NVLink" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=13;fontColor=#5B6573;" vertex="1" parent="1">
+          <mxGeometry x="40" y="55" width="1200" height="25" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="node0" value="&lt;b&gt;node-inference-0 · single physical host&lt;/b&gt;" style="swimlane;startSize=38;horizontal=1;rounded=1;whiteSpace=wrap;html=1;fillColor=#F8FBFE;swimlaneFillColor=#D9EAF7;strokeColor=#1F4E78;strokeWidth=2;fontColor=#17365D;fontSize=15;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="30" y="85" width="1640" height="650" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="gpu0" value="&lt;b&gt;GPU 0 · DP 0&lt;/b&gt;" style="swimlane;startSize=28;horizontal=1;rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;swimlaneFillColor=#EAF2F8;strokeColor=#5B9BD5;strokeWidth=2;fontColor=#17365D;fontSize=12;fontStyle=1;" vertex="1" parent="node0">
+          <mxGeometry x="25" y="55" width="175" height="135" as="geometry"/>
+        </mxCell>
+        <mxCell id="hbm0" value="&lt;b&gt;HBM&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:18px&quot;&gt;40 GiB&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#BDD7EE;strokeColor=#2F75B5;fontColor=#17365D;fontSize=13;align=center;verticalAlign=middle;" vertex="1" parent="gpu0">
+          <mxGeometry x="10" y="40" width="155" height="78" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="gpu1" value="&lt;b&gt;GPU 1 · DP 1&lt;/b&gt;" style="swimlane;startSize=28;horizontal=1;rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;swimlaneFillColor=#EAF2F8;strokeColor=#5B9BD5;strokeWidth=2;fontColor=#17365D;fontSize=12;fontStyle=1;" vertex="1" parent="node0">
+          <mxGeometry x="225" y="55" width="175" height="135" as="geometry"/>
+        </mxCell>
+        <mxCell id="hbm1" value="&lt;b&gt;HBM&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:18px&quot;&gt;40 GiB&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#BDD7EE;strokeColor=#2F75B5;fontColor=#17365D;fontSize=13;align=center;verticalAlign=middle;" vertex="1" parent="gpu1">
+          <mxGeometry x="10" y="40" width="155" height="78" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="gpu2" value="&lt;b&gt;GPU 2 · DP 2&lt;/b&gt;" style="swimlane;startSize=28;horizontal=1;rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;swimlaneFillColor=#EAF2F8;strokeColor=#5B9BD5;strokeWidth=2;fontColor=#17365D;fontSize=12;fontStyle=1;" vertex="1" parent="node0">
+          <mxGeometry x="425" y="55" width="175" height="135" as="geometry"/>
+        </mxCell>
+        <mxCell id="hbm2" value="&lt;b&gt;HBM&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:18px&quot;&gt;40 GiB&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#BDD7EE;strokeColor=#2F75B5;fontColor=#17365D;fontSize=13;align=center;verticalAlign=middle;" vertex="1" parent="gpu2">
+          <mxGeometry x="10" y="40" width="155" height="78" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="gpu3" value="&lt;b&gt;GPU 3 · DP 3&lt;/b&gt;" style="swimlane;startSize=28;horizontal=1;rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;swimlaneFillColor=#EAF2F8;strokeColor=#5B9BD5;strokeWidth=2;fontColor=#17365D;fontSize=12;fontStyle=1;" vertex="1" parent="node0">
+          <mxGeometry x="625" y="55" width="175" height="135" as="geometry"/>
+        </mxCell>
+        <mxCell id="hbm3" value="&lt;b&gt;HBM&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:18px&quot;&gt;40 GiB&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#BDD7EE;strokeColor=#2F75B5;fontColor=#17365D;fontSize=13;align=center;verticalAlign=middle;" vertex="1" parent="gpu3">
+          <mxGeometry x="10" y="40" width="155" height="78" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="gpu4" value="&lt;b&gt;GPU 4 · DP 4&lt;/b&gt;" style="swimlane;startSize=28;horizontal=1;rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;swimlaneFillColor=#EAF2F8;strokeColor=#5B9BD5;strokeWidth=2;fontColor=#17365D;fontSize=12;fontStyle=1;" vertex="1" parent="node0">
+          <mxGeometry x="825" y="55" width="175" height="135" as="geometry"/>
+        </mxCell>
+        <mxCell id="hbm4" value="&lt;b&gt;HBM&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:18px&quot;&gt;40 GiB&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#BDD7EE;strokeColor=#2F75B5;fontColor=#17365D;fontSize=13;align=center;verticalAlign=middle;" vertex="1" parent="gpu4">
+          <mxGeometry x="10" y="40" width="155" height="78" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="gpu5" value="&lt;b&gt;GPU 5 · DP 5&lt;/b&gt;" style="swimlane;startSize=28;horizontal=1;rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;swimlaneFillColor=#EAF2F8;strokeColor=#5B9BD5;strokeWidth=2;fontColor=#17365D;fontSize=12;fontStyle=1;" vertex="1" parent="node0">
+          <mxGeometry x="1025" y="55" width="175" height="135" as="geometry"/>
+        </mxCell>
+        <mxCell id="hbm5" value="&lt;b&gt;HBM&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:18px&quot;&gt;40 GiB&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#BDD7EE;strokeColor=#2F75B5;fontColor=#17365D;fontSize=13;align=center;verticalAlign=middle;" vertex="1" parent="gpu5">
+          <mxGeometry x="10" y="40" width="155" height="78" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="gpu6" value="&lt;b&gt;GPU 6 · DP 6&lt;/b&gt;" style="swimlane;startSize=28;horizontal=1;rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;swimlaneFillColor=#EAF2F8;strokeColor=#5B9BD5;strokeWidth=2;fontColor=#17365D;fontSize=12;fontStyle=1;" vertex="1" parent="node0">
+          <mxGeometry x="1225" y="55" width="175" height="135" as="geometry"/>
+        </mxCell>
+        <mxCell id="hbm6" value="&lt;b&gt;HBM&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:18px&quot;&gt;40 GiB&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#BDD7EE;strokeColor=#2F75B5;fontColor=#17365D;fontSize=13;align=center;verticalAlign=middle;" vertex="1" parent="gpu6">
+          <mxGeometry x="10" y="40" width="155" height="78" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="gpu7" value="&lt;b&gt;GPU 7 · DP 7&lt;/b&gt;" style="swimlane;startSize=28;horizontal=1;rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;swimlaneFillColor=#EAF2F8;strokeColor=#5B9BD5;strokeWidth=2;fontColor=#17365D;fontSize=12;fontStyle=1;" vertex="1" parent="node0">
+          <mxGeometry x="1425" y="55" width="175" height="135" as="geometry"/>
+        </mxCell>
+        <mxCell id="hbm7" value="&lt;b&gt;HBM&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:18px&quot;&gt;40 GiB&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#BDD7EE;strokeColor=#2F75B5;fontColor=#17365D;fontSize=13;align=center;verticalAlign=middle;" vertex="1" parent="gpu7">
+          <mxGeometry x="10" y="40" width="155" height="78" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="fabric" value="&lt;b&gt;PCIe switch fabric · PCIe 4.0 ×16 per GPU · no NVLink&lt;/b&gt;" style="swimlane;startSize=32;horizontal=1;rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;swimlaneFillColor=#E4DFEC;strokeColor=#8064A2;strokeWidth=2;fontColor=#403152;fontSize=14;fontStyle=1;" vertex="1" parent="node0">
+          <mxGeometry x="25" y="230" width="1590" height="165" as="geometry"/>
+        </mxCell>
+        <mxCell id="peerLane" value="&lt;b&gt;GPU-to-GPU HBM P2P&lt;/b&gt;&lt;br&gt;31.5 GB/s per direction (theoretical) · 25 GB/s per direction (modeled effective)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E4DFEC;strokeColor=#8064A2;fontColor=#403152;fontSize=13;align=center;verticalAlign=middle;" vertex="1" parent="fabric">
+          <mxGeometry x="20" y="43" width="1550" height="47" as="geometry"/>
+        </mxCell>
+        <mxCell id="localStoreLane" value="&lt;b&gt;GPU HBM ↔ Local Store DRAM&lt;/b&gt; · PCIe 4.0 ×16 D2H · 31.5 GB/s theoretical · 25 GB/s modeled effective" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E2F0D9;strokeColor=#70AD47;fontColor=#375623;fontSize=13;align=center;verticalAlign=middle;" vertex="1" parent="fabric">
+          <mxGeometry x="20" y="100" width="1550" height="45" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="port0" value="" style="ellipse;html=1;aspect=fixed;fillColor=#8064A2;strokeColor=#5F497A;" vertex="1" parent="fabric"><mxGeometry x="105" y="0" width="14" height="14" as="geometry"/></mxCell>
+        <mxCell id="port1" value="" style="ellipse;html=1;aspect=fixed;fillColor=#8064A2;strokeColor=#5F497A;" vertex="1" parent="fabric"><mxGeometry x="305" y="0" width="14" height="14" as="geometry"/></mxCell>
+        <mxCell id="port2" value="" style="ellipse;html=1;aspect=fixed;fillColor=#8064A2;strokeColor=#5F497A;" vertex="1" parent="fabric"><mxGeometry x="505" y="0" width="14" height="14" as="geometry"/></mxCell>
+        <mxCell id="port3" value="" style="ellipse;html=1;aspect=fixed;fillColor=#8064A2;strokeColor=#5F497A;" vertex="1" parent="fabric"><mxGeometry x="705" y="0" width="14" height="14" as="geometry"/></mxCell>
+        <mxCell id="port4" value="" style="ellipse;html=1;aspect=fixed;fillColor=#8064A2;strokeColor=#5F497A;" vertex="1" parent="fabric"><mxGeometry x="905" y="0" width="14" height="14" as="geometry"/></mxCell>
+        <mxCell id="port5" value="" style="ellipse;html=1;aspect=fixed;fillColor=#8064A2;strokeColor=#5F497A;" vertex="1" parent="fabric"><mxGeometry x="1105" y="0" width="14" height="14" as="geometry"/></mxCell>
+        <mxCell id="port6" value="" style="ellipse;html=1;aspect=fixed;fillColor=#8064A2;strokeColor=#5F497A;" vertex="1" parent="fabric"><mxGeometry x="1305" y="0" width="14" height="14" as="geometry"/></mxCell>
+        <mxCell id="port7" value="" style="ellipse;html=1;aspect=fixed;fillColor=#8064A2;strokeColor=#5F497A;" vertex="1" parent="fabric"><mxGeometry x="1505" y="0" width="14" height="14" as="geometry"/></mxCell>
+
+        <mxCell id="storeDram" value="&lt;b&gt;Local Mooncake DRAM Pool&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:28px&quot;&gt;1 TB&lt;/font&gt;&lt;br&gt;&lt;br&gt;Committed KV replicas · final buffer in physical Host DRAM" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E2F0D9;strokeColor=#70AD47;strokeWidth=2;fontColor=#375623;fontSize=14;align=center;verticalAlign=middle;" vertex="1" parent="node0">
+          <mxGeometry x="320" y="455" width="1000" height="160" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="gpuEdge0" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;jettySize=auto;html=1;startArrow=none;endArrow=none;strokeColor=#8064A2;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="node0" source="hbm0" target="port0"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="gpuEdge1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;jettySize=auto;html=1;startArrow=none;endArrow=none;strokeColor=#8064A2;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="node0" source="hbm1" target="port1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="gpuEdge2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;jettySize=auto;html=1;startArrow=none;endArrow=none;strokeColor=#8064A2;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="node0" source="hbm2" target="port2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="gpuEdge3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;jettySize=auto;html=1;startArrow=none;endArrow=none;strokeColor=#8064A2;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="node0" source="hbm3" target="port3"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="gpuEdge4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;jettySize=auto;html=1;startArrow=none;endArrow=none;strokeColor=#8064A2;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="node0" source="hbm4" target="port4"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="gpuEdge5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;jettySize=auto;html=1;startArrow=none;endArrow=none;strokeColor=#8064A2;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="node0" source="hbm5" target="port5"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="gpuEdge6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;jettySize=auto;html=1;startArrow=none;endArrow=none;strokeColor=#8064A2;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="node0" source="hbm6" target="port6"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="gpuEdge7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;jettySize=auto;html=1;startArrow=none;endArrow=none;strokeColor=#8064A2;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="node0" source="hbm7" target="port7"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <mxCell id="storePath" value="Direct to final Store buffer" style="edgeStyle=orthogonalEdgeStyle;rounded=1;jettySize=auto;html=1;startArrow=block;startFill=1;endArrow=block;endFill=1;strokeColor=#70AD47;strokeWidth=3;fontColor=#375623;fontSize=12;fontStyle=1;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="node0" source="localStoreLane" target="storeDram"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

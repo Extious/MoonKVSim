@@ -1,0 +1,38 @@
+{
+  "AGENTS.md": {
+    "bytes": 44382,
+    "sha256": "958b43f4fa40555dbe07ee1148f1cd2d3de10d30148db4c747bef79fd077f013"
+  },
+  "paper/abstract.tex": {
+    "bytes": 1807,
+    "sha256": "9499fa180c091327b475ba6e1aa32e527bcfd867f97b6dfdec571138260f80fc"
+  },
+  "paper/background.tex": {
+    "bytes": 6265,
+    "sha256": "1fcbdf8b2ab382b5265c6d85c05b4f015a9087a2f6daeee7a0471815334ee2ce"
+  },
+  "paper/evaluation.tex": {
+    "bytes": 25599,
+    "sha256": "93c08958d7a537423c9d590c3c42773777d4b7c812f335815706bb846068ba7e"
+  },
+  "paper/main.tex": {
+    "bytes": 13884,
+    "sha256": "ed27a5d295e4360038862f6059bf56ceac1e79241682d077b4f3ef5b5b3d5bf0"
+  },
+  "paper/motivation_and_challenge.tex": {
+    "bytes": 25657,
+    "sha256": "36953ac199936e566169e5354070aad98ba21129453e092a77c846bd892ee846"
+  },
+  "paper/system_design.tex": {
+    "bytes": 26375,
+    "sha256": "dcf35463cd95c9553cea0627fe4a061df1b336ca13eeea67a7b79c770293d1a2"
+  },
+  "paper/paper_draft.md": {
+    "bytes": 81486,
+    "sha256": "fd1764d935637df39a1facd10b36e4b8cf96393a3119f5356ee55d014a6fbaeb"
+  },
+  "paper/main.pdf": {
+    "bytes": 928929,
+    "sha256": "80ee0f5a0d64b7791c72cf898dcd88b4fbb20ceed927216f7cb9683ef27dee02"
+  }
+}

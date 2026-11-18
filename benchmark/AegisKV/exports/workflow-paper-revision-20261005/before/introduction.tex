@@ -1,0 +1,51 @@
+\section{Introduction}
+\label{sec:introduction}
+
+Multi-agent applications express a task as a directed acyclic graph of model
+invocations. Each Agent can be called more than once, and later calls extend
+a history of instructions, model outputs, tool results, and messages from
+other Agents. A serving worker turns that history into a KV cache. When the
+worker fails, the cache is gone. If no copy survives, the replacement replica
+must prefill the retained history before it can emit the next token
+\cite{strati2024dejavu,cao2026lumen}. Section~\ref{sec:motivation} measures
+one extreme of that cost: at one million tokens, full reconstruction of
+Qwen2.5-7B takes 571.2\,s, while reusing the same KV state from HBM, host
+DRAM, or shared storage is ready in 1.3\,s, 2.7\,s, or 10.2\,s. The KV state
+itself occupies 57.9\,GB. Protecting every active Agent at that scale is not
+free.
+
+The cost is also uneven. A delay on a branch that still has workflow slack
+need not move the join, whereas the same delay on the critical branch does
+\cite{lin2024parrot}. Native sparse attention concentrates historical accesses
+on a subset of blocks \cite{jiang2024minference,huang2026nosav2}, which
+suggests that a recovery copy might keep only those blocks in the fastest
+memory. Finite peer memory then has to decide which copies stay. \system is
+built from these three observations. A Tracker estimates, at each invocation
+submission, how long remains until the Agent finishes, and turns that
+estimate into guarded slack. KV Master stores a complete DRAM checkpoint for
+Agents whose full reconstruction exceeds slack by more than a threshold, and
+it additionally places the Top-$K$ blocks of the first $L$ layers in peer
+HBM. An Adapter changes only the total HBM quota. The mechanisms are
+specified in Section~\ref{sec:design}. They are not, by themselves, evidence
+that the selection improves workflow completion.
+
+Captured NOSA, NSA, and MiniCPM forwards arrive online on the recorded
+BLSC A100-PCIe configuration. With no failure, \system finishes every
+workflow at the same time as a restart. One GPU failure during a
+24{,}576-token workflow shortens its retry, and every later workflow, by
+1{,}585.4\,ms. Workflows released before the failure are unchanged. The HBM
+blocks move completion by at most 0.217\,ms.
+
+The contributions are the design and the evidence from this evaluation.
+\begin{itemize}
+\item A recovery design that keeps complete peer-DRAM checkpoints for
+Agents whose estimated reconstruction exceeds slack. It also specifies a
+Top-$K{\times}L$ peer-HBM tier and a quota.
+\item An online evaluation on the recorded BLSC A100-PCIe configuration.
+With no failure, completion time matches a restart. One GPU failure during
+a 24{,}576-token workflow shortens that workflow and every later one by
+1{,}585.4\,ms, and the saving grows with prompt length.
+\item A result that the HBM blocks placed for the interrupted Agent move
+completion by at most 0.217\,ms beyond the DRAM checkpoint, and that
+$K{=}16$ covers 4--8\% of distinct blocks.
+\end{itemize}

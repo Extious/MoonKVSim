@@ -1,0 +1,788 @@
+{
+  "schema_version": 1,
+  "revision": "2026-09-23",
+  "title": "AegisKV current-design evaluation plan",
+  "status": "planned_not_executed",
+  "is_runner": false,
+  "authoritative_design": "../../paper/system_design.tex",
+  "documentation": [
+    "EXPERIMENT_MATRIX.md",
+    "PROTOCOL.md",
+    "DATA_CONTRACT.md",
+    "EVALUATION_LITERATURE_20260923.md"
+  ],
+  "implementation_status": {
+    "integrated_current_semantics_runner_verified": false,
+    "note": "Existing static/toy/older simulator evidence does not validate fixed slots, exclusive ownership and lazy lower-tier credit together."
+  },
+  "hardware": {
+    "inventory": null,
+    "gpus": null,
+    "hosts": null,
+    "storage_backend": null,
+    "fault_domain_verified": false,
+    "gpu_hours": null
+  },
+  "unresolved_before_execution": [
+    "implementation revision and design conformance",
+    "model weights/kernel/layout revisions",
+    "executable workload IDs/prompts/tools/DAGs",
+    "host and storage survival inventory",
+    "absolute capacities and available reserve",
+    "SLO, horizon and sustainable-load calibration",
+    "fixed L/K/Z and AIMD/CPU parameters",
+    "pilot duration and resource reservation",
+    "fault injector and raw-log validation"
+  ],
+  "design_contract": {
+    "managed_owner": "exclusive stable Peer/DRAM/storage owner; transient copies both charged",
+    "peer_rent": false,
+    "peer_eligibility": "zero guarded Slack",
+    "peer_quota": "fixed calibrated L/K per model/layout; total cap via guarded AIMD",
+    "lower_credit": "per-Agent, independent pools, actual-use-only renewal, paid rent retained",
+    "online_global_joint_search": false
+  },
+  "models": {
+    "M-D": {
+      "candidate": "Qwen3-8B",
+      "attention": "native dense",
+      "revision": null,
+      "supported": null
+    },
+    "M-S": {
+      "candidate": "MiniCPM4-8B-NSA",
+      "attention": "native sparse",
+      "revision": null,
+      "supported": null
+    }
+  },
+  "workload_families": {
+    "W1": {
+      "kind": "executable multi-agent coding",
+      "planned_distinct_workflows": 30,
+      "manifest": null
+    },
+    "W2": {
+      "kind": "FanOutQA",
+      "planned_distinct_workflows": 30,
+      "manifest": null
+    },
+    "W3": {
+      "kind": "controlled sequential/balanced/heterogeneous fork-join; ten each, with repeated calls/tool returns",
+      "planned_distinct_workflows": 30,
+      "manifest": null
+    }
+  },
+  "primary_policies": {
+    "H-LRU": "tuned hierarchical LRU, same safe execution/Adapter/Router and recency Peer slots; all-active eligibility, own eligible-backlog demand",
+    "Reuse": "normal next-use saved work/byte, same physical budgets/safety; all-active eligibility, own eligible-backlog demand",
+    "AegisKV": "current fixed-slot exclusive three-tier lazy-credit design",
+    "Recompute": "no added fault-safe KV; ordinary local reuse and accepted-token log"
+  },
+  "variant_defaults": {
+    "slack": true,
+    "shared_shares": true,
+    "reuse_term": true,
+    "fault_term": true,
+    "lower_policy": "renewable_credit",
+    "refresh": "lazy_low_keys_plus_rotation",
+    "renewal": true,
+    "pressure_aging": true,
+    "access_rank": "opportunity_normalized",
+    "peer_order": "slack",
+    "peer_eligibility": "zero_guarded_slack"
+  },
+  "variant_overrides": {
+    "AegisKV": {},
+    "no_slack": {
+      "slack": false
+    },
+    "no_shared_shares": {
+      "shared_shares": false
+    },
+    "no_slack_no_shared_shares": {
+      "slack": false,
+      "shared_shares": false
+    },
+    "no_reuse": {
+      "reuse_term": false
+    },
+    "no_fault": {
+      "fault_term": false
+    },
+    "direct_lazy": {
+      "lower_policy": "same_value_direct"
+    },
+    "direct_eager": {
+      "lower_policy": "same_value_direct",
+      "refresh": "capped_eager"
+    },
+    "credit_eager": {
+      "refresh": "capped_eager"
+    },
+    "no_renew": {
+      "renewal": false
+    },
+    "no_aging": {
+      "pressure_aging": false
+    },
+    "raw_counts": {
+      "access_rank": "raw_counts"
+    },
+    "serial": {
+      "restoration": "serial"
+    },
+    "raw_serial": {
+      "access_rank": "raw_counts",
+      "restoration": "serial"
+    },
+    "peer_fcfs": {
+      "peer_order": "fcfs",
+      "peer_eligibility": "all_active_requests"
+    },
+    "peer_recency": {
+      "peer_order": "recency",
+      "peer_eligibility": "all_active_requests"
+    }
+  },
+  "reference_variants": {
+    "All-DRAM": "resource-relaxed fit reference, not equal-budget competitor",
+    "ordinary_gds": "static object cost/size with ordinary GDS pressure aging",
+    "unlimited_eager": "eager refresh without matched work cap; cost reference",
+    "no_rotation": "low-key refresh only",
+    "access_recency": "recency within equal fixed K",
+    "peer_recovery_benefit": "request-benefit slot ordering, fixed quota",
+    "frozen_placement": "skip optional online replacement, keep required safe relief",
+    "duplicate_backing": "retain redundant lower copy; all bytes charged under equal total physical cap",
+    "adaptive_lk": "per-request adaptive quota reference under matched total cap/work budget",
+    "bounded_pair": "wider bounded candidate/victim reference",
+    "fixed_peer_cap": "fixed Peer authorization at common configured cap"
+  },
+  "fault_contract": {
+    "primary": "anchor workflow/Agent/segment/request at 80 percent frozen total-token progress; kill whole source replica",
+    "conditions": {
+      "F0": "healthy policy-specific mate",
+      "F1": "single common-worker failure"
+    },
+    "fixed_arrival_cohort": true,
+    "unreached_trigger": "keep in ledger and original cohort; no anchor substitution",
+    "actual_fault_manifests": null
+  },
+  "statistics": {
+    "top_level_unit": "independently launched paired campaign within comparison block",
+    "run_unit": "one policy and condition launch",
+    "nested_units": [
+      "workflow",
+      "request",
+      "layer/block/event"
+    ],
+    "initial_campaigns_per_block": 10,
+    "bootstrap_resamples": 10000,
+    "analysis_seed": 20260923,
+    "primary_contrast": "per-workflow own-policy F1-F0, then baseline-AegisKV, aggregate within campaign before bootstrap",
+    "completion": "common administrative horizon; completion fraction plus mean min(T,tau); never fill eventual latency",
+    "primary_policy_contrasts": [
+      "H-LRU minus AegisKV",
+      "Reuse minus AegisKV"
+    ],
+    "secondary_scans": "exploratory unless separately preregistered",
+    "physical_run_count": 0
+  },
+  "counts": {
+    "minimum": {
+      "cells": 68,
+      "comparison_blocks": 15,
+      "planned_paired_campaigns": 150,
+      "planned_run_slots": 1200,
+      "actual_runs": 0
+    },
+    "extended": {
+      "cells": 40,
+      "comparison_blocks": 16,
+      "planned_paired_campaigns": 160,
+      "planned_run_slots": 800,
+      "actual_runs": 0
+    },
+    "minimum_primary": {
+      "cells": 24,
+      "comparison_blocks": 6,
+      "planned_paired_campaigns": 60,
+      "planned_run_slots": 480,
+      "actual_runs": 0
+    },
+    "all_explicit_cells": {
+      "cells": 108,
+      "comparison_blocks": 31,
+      "planned_paired_campaigns": 310,
+      "planned_run_slots": 2000,
+      "actual_runs": 0
+    }
+  },
+  "cells": [
+    {"cell_id": "minimum.primary_M-D_W1.M-D.W1.H-LRU","suite": "minimum","comparison_block": "minimum.primary_M-D_W1","status": "planned","measurement_class": "physical_planned","model_id": "M-D","workload_family": "W1","policy_variant": "H-LRU","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ1","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.primary_M-D_W1.M-D.W1.Reuse","suite": "minimum","comparison_block": "minimum.primary_M-D_W1","status": "planned","measurement_class": "physical_planned","model_id": "M-D","workload_family": "W1","policy_variant": "Reuse","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ1","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.primary_M-D_W1.M-D.W1.AegisKV","suite": "minimum","comparison_block": "minimum.primary_M-D_W1","status": "planned","measurement_class": "physical_planned","model_id": "M-D","workload_family": "W1","policy_variant": "AegisKV","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ1","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.primary_M-D_W1.M-D.W1.Recompute","suite": "minimum","comparison_block": "minimum.primary_M-D_W1","status": "planned","measurement_class": "physical_planned","model_id": "M-D","workload_family": "W1","policy_variant": "Recompute","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ1","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.primary_M-D_W2.M-D.W2.H-LRU","suite": "minimum","comparison_block": "minimum.primary_M-D_W2","status": "planned","measurement_class": "physical_planned","model_id": "M-D","workload_family": "W2","policy_variant": "H-LRU","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ1","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.primary_M-D_W2.M-D.W2.Reuse","suite": "minimum","comparison_block": "minimum.primary_M-D_W2","status": "planned","measurement_class": "physical_planned","model_id": "M-D","workload_family": "W2","policy_variant": "Reuse","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ1","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.primary_M-D_W2.M-D.W2.AegisKV","suite": "minimum","comparison_block": "minimum.primary_M-D_W2","status": "planned","measurement_class": "physical_planned","model_id": "M-D","workload_family": "W2","policy_variant": "AegisKV","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ1","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.primary_M-D_W2.M-D.W2.Recompute","suite": "minimum","comparison_block": "minimum.primary_M-D_W2","status": "planned","measurement_class": "physical_planned","model_id": "M-D","workload_family": "W2","policy_variant": "Recompute","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ1","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.primary_M-D_W3.M-D.W3.H-LRU","suite": "minimum","comparison_block": "minimum.primary_M-D_W3","status": "planned","measurement_class": "physical_planned","model_id": "M-D","workload_family": "W3","policy_variant": "H-LRU","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ1","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.primary_M-D_W3.M-D.W3.Reuse","suite": "minimum","comparison_block": "minimum.primary_M-D_W3","status": "planned","measurement_class": "physical_planned","model_id": "M-D","workload_family": "W3","policy_variant": "Reuse","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ1","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.primary_M-D_W3.M-D.W3.AegisKV","suite": "minimum","comparison_block": "minimum.primary_M-D_W3","status": "planned","measurement_class": "physical_planned","model_id": "M-D","workload_family": "W3","policy_variant": "AegisKV","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ1","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.primary_M-D_W3.M-D.W3.Recompute","suite": "minimum","comparison_block": "minimum.primary_M-D_W3","status": "planned","measurement_class": "physical_planned","model_id": "M-D","workload_family": "W3","policy_variant": "Recompute","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ1","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.primary_M-S_W1.M-S.W1.H-LRU","suite": "minimum","comparison_block": "minimum.primary_M-S_W1","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W1","policy_variant": "H-LRU","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ1","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.primary_M-S_W1.M-S.W1.Reuse","suite": "minimum","comparison_block": "minimum.primary_M-S_W1","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W1","policy_variant": "Reuse","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ1","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.primary_M-S_W1.M-S.W1.AegisKV","suite": "minimum","comparison_block": "minimum.primary_M-S_W1","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W1","policy_variant": "AegisKV","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ1","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.primary_M-S_W1.M-S.W1.Recompute","suite": "minimum","comparison_block": "minimum.primary_M-S_W1","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W1","policy_variant": "Recompute","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ1","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.primary_M-S_W2.M-S.W2.H-LRU","suite": "minimum","comparison_block": "minimum.primary_M-S_W2","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W2","policy_variant": "H-LRU","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ1","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.primary_M-S_W2.M-S.W2.Reuse","suite": "minimum","comparison_block": "minimum.primary_M-S_W2","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W2","policy_variant": "Reuse","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ1","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.primary_M-S_W2.M-S.W2.AegisKV","suite": "minimum","comparison_block": "minimum.primary_M-S_W2","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W2","policy_variant": "AegisKV","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ1","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.primary_M-S_W2.M-S.W2.Recompute","suite": "minimum","comparison_block": "minimum.primary_M-S_W2","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W2","policy_variant": "Recompute","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ1","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.primary_M-S_W3.M-S.W3.H-LRU","suite": "minimum","comparison_block": "minimum.primary_M-S_W3","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "H-LRU","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ1","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.primary_M-S_W3.M-S.W3.Reuse","suite": "minimum","comparison_block": "minimum.primary_M-S_W3","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "Reuse","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ1","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.primary_M-S_W3.M-S.W3.AegisKV","suite": "minimum","comparison_block": "minimum.primary_M-S_W3","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "AegisKV","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ1","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.primary_M-S_W3.M-S.W3.Recompute","suite": "minimum","comparison_block": "minimum.primary_M-S_W3","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "Recompute","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ1","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.mechanism_stress.M-S.W3.AegisKV","suite": "minimum","comparison_block": "minimum.mechanism_stress","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "AegisKV","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"workload_profile": "frozen_mechanism_stress"},"research_questions": ["RQ4","RQ5","RQ6"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.mechanism_stress.M-S.W3.no_slack","suite": "minimum","comparison_block": "minimum.mechanism_stress","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "no_slack","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"workload_profile": "frozen_mechanism_stress"},"research_questions": ["RQ4","RQ5","RQ6"],"factor_levels": {"slack": false},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.mechanism_stress.M-S.W3.no_shared_shares","suite": "minimum","comparison_block": "minimum.mechanism_stress","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "no_shared_shares","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"workload_profile": "frozen_mechanism_stress"},"research_questions": ["RQ4","RQ5","RQ6"],"factor_levels": {"shared_shares": false},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.mechanism_stress.M-S.W3.no_slack_no_shared_shares","suite": "minimum","comparison_block": "minimum.mechanism_stress","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "no_slack_no_shared_shares","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"workload_profile": "frozen_mechanism_stress"},"research_questions": ["RQ4","RQ5","RQ6"],"factor_levels": {"slack": false,"shared_shares": false},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.mechanism_stress.M-S.W3.no_reuse","suite": "minimum","comparison_block": "minimum.mechanism_stress","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "no_reuse","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"workload_profile": "frozen_mechanism_stress"},"research_questions": ["RQ4","RQ5","RQ6"],"factor_levels": {"reuse_term": false},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.mechanism_stress.M-S.W3.no_fault","suite": "minimum","comparison_block": "minimum.mechanism_stress","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "no_fault","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"workload_profile": "frozen_mechanism_stress"},"research_questions": ["RQ4","RQ5","RQ6"],"factor_levels": {"fault_term": false},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.mechanism_stress.M-S.W3.direct_lazy","suite": "minimum","comparison_block": "minimum.mechanism_stress","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "direct_lazy","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"workload_profile": "frozen_mechanism_stress"},"research_questions": ["RQ4","RQ5","RQ6"],"factor_levels": {"lower_policy": "same_value_direct"},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.mechanism_stress.M-S.W3.direct_eager","suite": "minimum","comparison_block": "minimum.mechanism_stress","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "direct_eager","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"workload_profile": "frozen_mechanism_stress"},"research_questions": ["RQ4","RQ5","RQ6"],"factor_levels": {"lower_policy": "same_value_direct","refresh": "capped_eager"},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.mechanism_stress.M-S.W3.credit_eager","suite": "minimum","comparison_block": "minimum.mechanism_stress","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "credit_eager","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"workload_profile": "frozen_mechanism_stress"},"research_questions": ["RQ4","RQ5","RQ6"],"factor_levels": {"refresh": "capped_eager"},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.mechanism_stress.M-S.W3.no_renew","suite": "minimum","comparison_block": "minimum.mechanism_stress","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "no_renew","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"workload_profile": "frozen_mechanism_stress"},"research_questions": ["RQ4","RQ5","RQ6"],"factor_levels": {"renewal": false},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.mechanism_stress.M-S.W3.no_aging","suite": "minimum","comparison_block": "minimum.mechanism_stress","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "no_aging","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"workload_profile": "frozen_mechanism_stress"},"research_questions": ["RQ4","RQ5","RQ6"],"factor_levels": {"pressure_aging": false},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.mechanism_stress.M-S.W3.raw_counts","suite": "minimum","comparison_block": "minimum.mechanism_stress","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "raw_counts","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"workload_profile": "frozen_mechanism_stress"},"research_questions": ["RQ4","RQ5","RQ6"],"factor_levels": {"access_rank": "raw_counts"},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.mechanism_stress.M-S.W3.serial","suite": "minimum","comparison_block": "minimum.mechanism_stress","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "serial","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "serial","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"workload_profile": "frozen_mechanism_stress"},"research_questions": ["RQ4","RQ5","RQ6"],"factor_levels": {"restoration": "serial"},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.mechanism_stress.M-S.W3.raw_serial","suite": "minimum","comparison_block": "minimum.mechanism_stress","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "raw_serial","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "serial","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"workload_profile": "frozen_mechanism_stress"},"research_questions": ["RQ4","RQ5","RQ6"],"factor_levels": {"access_rank": "raw_counts","restoration": "serial"},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.mechanism_stress.M-S.W3.peer_fcfs","suite": "minimum","comparison_block": "minimum.mechanism_stress","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "peer_fcfs","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"workload_profile": "frozen_mechanism_stress"},"research_questions": ["RQ4","RQ5","RQ6"],"factor_levels": {"peer_order": "fcfs","peer_eligibility": "all_active_requests"},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.mechanism_stress.M-S.W3.peer_recency","suite": "minimum","comparison_block": "minimum.mechanism_stress","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "peer_recency","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"workload_profile": "frozen_mechanism_stress"},"research_questions": ["RQ4","RQ5","RQ6"],"factor_levels": {"peer_order": "recency","peer_eligibility": "all_active_requests"},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.peer_attribution.M-S.W3.peer_0_pipeline_0","suite": "minimum","comparison_block": "minimum.peer_attribution","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "peer_0_pipeline_0","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.0,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "serial","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "fixed_complete_snapshot","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"coverage_contract": "same_unique_checkpoint_and_native_demand"},"research_questions": ["RQ2"],"factor_levels": {"peer_enabled": false,"pipeline": false},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.peer_attribution.M-S.W3.peer_0_pipeline_1","suite": "minimum","comparison_block": "minimum.peer_attribution","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "peer_0_pipeline_1","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.0,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "fixed_complete_snapshot","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"coverage_contract": "same_unique_checkpoint_and_native_demand"},"research_questions": ["RQ2"],"factor_levels": {"peer_enabled": false,"pipeline": true},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.peer_attribution.M-S.W3.peer_1_pipeline_0","suite": "minimum","comparison_block": "minimum.peer_attribution","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "peer_1_pipeline_0","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "serial","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "fixed_complete_snapshot","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"coverage_contract": "same_unique_checkpoint_and_native_demand"},"research_questions": ["RQ2"],"factor_levels": {"peer_enabled": true,"pipeline": false},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.peer_attribution.M-S.W3.peer_1_pipeline_1","suite": "minimum","comparison_block": "minimum.peer_attribution","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "peer_1_pipeline_1","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "fixed_complete_snapshot","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"coverage_contract": "same_unique_checkpoint_and_native_demand"},"research_questions": ["RQ2"],"factor_levels": {"peer_enabled": true,"pipeline": true},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.router_factorial.M-S.W3.router_0_contention_0","suite": "minimum","comparison_block": "minimum.router_factorial","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "router_0_contention_0","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "isolated","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"router": "locality_only"},"research_questions": ["RQ2","RQ7"],"factor_levels": {"load_aware_router": false,"shared_contention": false},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.router_factorial.M-S.W3.router_0_contention_1","suite": "minimum","comparison_block": "minimum.router_factorial","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "router_0_contention_1","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"router": "locality_only"},"research_questions": ["RQ2","RQ7"],"factor_levels": {"load_aware_router": false,"shared_contention": true},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.router_factorial.M-S.W3.router_1_contention_0","suite": "minimum","comparison_block": "minimum.router_factorial","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "router_1_contention_0","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "isolated","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"router": "load_locality"},"research_questions": ["RQ2","RQ7"],"factor_levels": {"load_aware_router": true,"shared_contention": false},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.router_factorial.M-S.W3.router_1_contention_1","suite": "minimum","comparison_block": "minimum.router_factorial","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "router_1_contention_1","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"router": "load_locality"},"research_questions": ["RQ2","RQ7"],"factor_levels": {"load_aware_router": true,"shared_contention": true},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.healthy_M-D_0.3.M-D.W3.H-LRU","suite": "minimum","comparison_block": "minimum.healthy_M-D_0.3","status": "planned","measurement_class": "physical_planned","model_id": "M-D","workload_family": "W3","policy_variant": "H-LRU","conditions": ["F0"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.3,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ7"],"factor_levels": {},"run_slots": 10,"actual_runs": 0},
+    {"cell_id": "minimum.healthy_M-D_0.3.M-D.W3.Reuse","suite": "minimum","comparison_block": "minimum.healthy_M-D_0.3","status": "planned","measurement_class": "physical_planned","model_id": "M-D","workload_family": "W3","policy_variant": "Reuse","conditions": ["F0"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.3,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ7"],"factor_levels": {},"run_slots": 10,"actual_runs": 0},
+    {"cell_id": "minimum.healthy_M-D_0.3.M-D.W3.AegisKV","suite": "minimum","comparison_block": "minimum.healthy_M-D_0.3","status": "planned","measurement_class": "physical_planned","model_id": "M-D","workload_family": "W3","policy_variant": "AegisKV","conditions": ["F0"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.3,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ7"],"factor_levels": {},"run_slots": 10,"actual_runs": 0},
+    {"cell_id": "minimum.healthy_M-D_0.3.M-D.W3.Recompute","suite": "minimum","comparison_block": "minimum.healthy_M-D_0.3","status": "planned","measurement_class": "physical_planned","model_id": "M-D","workload_family": "W3","policy_variant": "Recompute","conditions": ["F0"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.3,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ7"],"factor_levels": {},"run_slots": 10,"actual_runs": 0},
+    {"cell_id": "minimum.healthy_M-D_0.85.M-D.W3.H-LRU","suite": "minimum","comparison_block": "minimum.healthy_M-D_0.85","status": "planned","measurement_class": "physical_planned","model_id": "M-D","workload_family": "W3","policy_variant": "H-LRU","conditions": ["F0"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.85,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ7"],"factor_levels": {},"run_slots": 10,"actual_runs": 0},
+    {"cell_id": "minimum.healthy_M-D_0.85.M-D.W3.Reuse","suite": "minimum","comparison_block": "minimum.healthy_M-D_0.85","status": "planned","measurement_class": "physical_planned","model_id": "M-D","workload_family": "W3","policy_variant": "Reuse","conditions": ["F0"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.85,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ7"],"factor_levels": {},"run_slots": 10,"actual_runs": 0},
+    {"cell_id": "minimum.healthy_M-D_0.85.M-D.W3.AegisKV","suite": "minimum","comparison_block": "minimum.healthy_M-D_0.85","status": "planned","measurement_class": "physical_planned","model_id": "M-D","workload_family": "W3","policy_variant": "AegisKV","conditions": ["F0"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.85,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ7"],"factor_levels": {},"run_slots": 10,"actual_runs": 0},
+    {"cell_id": "minimum.healthy_M-D_0.85.M-D.W3.Recompute","suite": "minimum","comparison_block": "minimum.healthy_M-D_0.85","status": "planned","measurement_class": "physical_planned","model_id": "M-D","workload_family": "W3","policy_variant": "Recompute","conditions": ["F0"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.85,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ7"],"factor_levels": {},"run_slots": 10,"actual_runs": 0},
+    {"cell_id": "minimum.healthy_M-S_0.3.M-S.W3.H-LRU","suite": "minimum","comparison_block": "minimum.healthy_M-S_0.3","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "H-LRU","conditions": ["F0"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.3,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ7"],"factor_levels": {},"run_slots": 10,"actual_runs": 0},
+    {"cell_id": "minimum.healthy_M-S_0.3.M-S.W3.Reuse","suite": "minimum","comparison_block": "minimum.healthy_M-S_0.3","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "Reuse","conditions": ["F0"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.3,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ7"],"factor_levels": {},"run_slots": 10,"actual_runs": 0},
+    {"cell_id": "minimum.healthy_M-S_0.3.M-S.W3.AegisKV","suite": "minimum","comparison_block": "minimum.healthy_M-S_0.3","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "AegisKV","conditions": ["F0"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.3,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ7"],"factor_levels": {},"run_slots": 10,"actual_runs": 0},
+    {"cell_id": "minimum.healthy_M-S_0.3.M-S.W3.Recompute","suite": "minimum","comparison_block": "minimum.healthy_M-S_0.3","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "Recompute","conditions": ["F0"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.3,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ7"],"factor_levels": {},"run_slots": 10,"actual_runs": 0},
+    {"cell_id": "minimum.healthy_M-S_0.85.M-S.W3.H-LRU","suite": "minimum","comparison_block": "minimum.healthy_M-S_0.85","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "H-LRU","conditions": ["F0"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.85,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ7"],"factor_levels": {},"run_slots": 10,"actual_runs": 0},
+    {"cell_id": "minimum.healthy_M-S_0.85.M-S.W3.Reuse","suite": "minimum","comparison_block": "minimum.healthy_M-S_0.85","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "Reuse","conditions": ["F0"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.85,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ7"],"factor_levels": {},"run_slots": 10,"actual_runs": 0},
+    {"cell_id": "minimum.healthy_M-S_0.85.M-S.W3.AegisKV","suite": "minimum","comparison_block": "minimum.healthy_M-S_0.85","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "AegisKV","conditions": ["F0"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.85,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ7"],"factor_levels": {},"run_slots": 10,"actual_runs": 0},
+    {"cell_id": "minimum.healthy_M-S_0.85.M-S.W3.Recompute","suite": "minimum","comparison_block": "minimum.healthy_M-S_0.85","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "Recompute","conditions": ["F0"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.85,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ7"],"factor_levels": {},"run_slots": 10,"actual_runs": 0},
+    {"cell_id": "minimum.pressure_peer_shrink_restore.M-S.W3.AegisKV","suite": "minimum","comparison_block": "minimum.pressure_peer_shrink_restore","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "AegisKV","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"pressure_profile": "peer_shrink_restore"},"research_questions": ["RQ5","RQ8"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.pressure_peer_shrink_restore.M-S.W3.fixed_peer_cap","suite": "minimum","comparison_block": "minimum.pressure_peer_shrink_restore","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "fixed_peer_cap","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "fixed","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"pressure_profile": "peer_shrink_restore"},"research_questions": ["RQ5","RQ8"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.pressure_dram_shrink_restore_full_storage.M-S.W3.AegisKV","suite": "minimum","comparison_block": "minimum.pressure_dram_shrink_restore_full_storage","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "AegisKV","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"pressure_profile": "dram_shrink_restore_full_storage"},"research_questions": ["RQ5","RQ8"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "minimum.pressure_dram_shrink_restore_full_storage.M-S.W3.fixed_peer_cap","suite": "minimum","comparison_block": "minimum.pressure_dram_shrink_restore_full_storage","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "fixed_peer_cap","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "fixed","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"pressure_profile": "dram_shrink_restore_full_storage"},"research_questions": ["RQ5","RQ8"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.sweep_peer_cap_ratio_0.0.M-S.W3.H-LRU","suite": "extended","comparison_block": "extended.sweep_peer_cap_ratio_0.0","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "H-LRU","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.0,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ3","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.sweep_peer_cap_ratio_0.0.M-S.W3.AegisKV","suite": "extended","comparison_block": "extended.sweep_peer_cap_ratio_0.0","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "AegisKV","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.0,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ3","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.sweep_peer_cap_ratio_0.05.M-S.W3.H-LRU","suite": "extended","comparison_block": "extended.sweep_peer_cap_ratio_0.05","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "H-LRU","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.05,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ3","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.sweep_peer_cap_ratio_0.05.M-S.W3.AegisKV","suite": "extended","comparison_block": "extended.sweep_peer_cap_ratio_0.05","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "AegisKV","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.05,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ3","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.sweep_peer_cap_ratio_0.2.M-S.W3.H-LRU","suite": "extended","comparison_block": "extended.sweep_peer_cap_ratio_0.2","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "H-LRU","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.2,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ3","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.sweep_peer_cap_ratio_0.2.M-S.W3.AegisKV","suite": "extended","comparison_block": "extended.sweep_peer_cap_ratio_0.2","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "AegisKV","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.2,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ3","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.sweep_dram_working_set_ratio_0.0.M-S.W3.H-LRU","suite": "extended","comparison_block": "extended.sweep_dram_working_set_ratio_0.0","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "H-LRU","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.0,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ3","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.sweep_dram_working_set_ratio_0.0.M-S.W3.AegisKV","suite": "extended","comparison_block": "extended.sweep_dram_working_set_ratio_0.0","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "AegisKV","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.0,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ3","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.sweep_dram_working_set_ratio_0.1.M-S.W3.H-LRU","suite": "extended","comparison_block": "extended.sweep_dram_working_set_ratio_0.1","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "H-LRU","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.1,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ3","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.sweep_dram_working_set_ratio_0.1.M-S.W3.AegisKV","suite": "extended","comparison_block": "extended.sweep_dram_working_set_ratio_0.1","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "AegisKV","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.1,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ3","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.sweep_dram_working_set_ratio_0.5.M-S.W3.H-LRU","suite": "extended","comparison_block": "extended.sweep_dram_working_set_ratio_0.5","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "H-LRU","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.5,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ3","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.sweep_dram_working_set_ratio_0.5.M-S.W3.AegisKV","suite": "extended","comparison_block": "extended.sweep_dram_working_set_ratio_0.5","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "AegisKV","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.5,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ3","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.sweep_dram_working_set_ratio_1.0.M-S.W3.H-LRU","suite": "extended","comparison_block": "extended.sweep_dram_working_set_ratio_1.0","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "H-LRU","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 1.0,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ3","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.sweep_dram_working_set_ratio_1.0.M-S.W3.AegisKV","suite": "extended","comparison_block": "extended.sweep_dram_working_set_ratio_1.0","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "AegisKV","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 1.0,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ3","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.sweep_storage_working_set_ratio_0.5.M-S.W3.H-LRU","suite": "extended","comparison_block": "extended.sweep_storage_working_set_ratio_0.5","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "H-LRU","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 0.5,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ3","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.sweep_storage_working_set_ratio_0.5.M-S.W3.AegisKV","suite": "extended","comparison_block": "extended.sweep_storage_working_set_ratio_0.5","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "AegisKV","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 0.5,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ3","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.sweep_storage_working_set_ratio_2.0.M-S.W3.H-LRU","suite": "extended","comparison_block": "extended.sweep_storage_working_set_ratio_2.0","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "H-LRU","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 2.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ3","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.sweep_storage_working_set_ratio_2.0.M-S.W3.AegisKV","suite": "extended","comparison_block": "extended.sweep_storage_working_set_ratio_2.0","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "AegisKV","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 2.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ3","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.sweep_baseline_load_ratio_0.3.M-S.W3.H-LRU","suite": "extended","comparison_block": "extended.sweep_baseline_load_ratio_0.3","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "H-LRU","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.3,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ3","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.sweep_baseline_load_ratio_0.3.M-S.W3.AegisKV","suite": "extended","comparison_block": "extended.sweep_baseline_load_ratio_0.3","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "AegisKV","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.3,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ3","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.sweep_baseline_load_ratio_0.85.M-S.W3.H-LRU","suite": "extended","comparison_block": "extended.sweep_baseline_load_ratio_0.85","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "H-LRU","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.85,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ3","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.sweep_baseline_load_ratio_0.85.M-S.W3.AegisKV","suite": "extended","comparison_block": "extended.sweep_baseline_load_ratio_0.85","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "AegisKV","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.85,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ3","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.sweep_logical_fault_progress_0.2.M-S.W3.H-LRU","suite": "extended","comparison_block": "extended.sweep_logical_fault_progress_0.2","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "H-LRU","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.2,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ3","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.sweep_logical_fault_progress_0.2.M-S.W3.AegisKV","suite": "extended","comparison_block": "extended.sweep_logical_fault_progress_0.2","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "AegisKV","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.2,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ3","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.sweep_logical_fault_progress_0.5.M-S.W3.H-LRU","suite": "extended","comparison_block": "extended.sweep_logical_fault_progress_0.5","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "H-LRU","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.5,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ3","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.sweep_logical_fault_progress_0.5.M-S.W3.AegisKV","suite": "extended","comparison_block": "extended.sweep_logical_fault_progress_0.5","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "AegisKV","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.5,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ3","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.sweep_logical_fault_progress_0.95.M-S.W3.H-LRU","suite": "extended","comparison_block": "extended.sweep_logical_fault_progress_0.95","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "H-LRU","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.95,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ3","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.sweep_logical_fault_progress_0.95.M-S.W3.AegisKV","suite": "extended","comparison_block": "extended.sweep_logical_fault_progress_0.95","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "AegisKV","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.95,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false},"research_questions": ["RQ3","RQ7"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.all_dram_reference.M-S.W3.AegisKV","suite": "extended","comparison_block": "extended.all_dram_reference","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "AegisKV","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.0,"dram_working_set_ratio": 1.0,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"reference_comparison": "resource_relaxed_dram_reference"},"research_questions": ["RQ3"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.all_dram_reference.M-S.W3.All-DRAM","suite": "extended","comparison_block": "extended.all_dram_reference","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "All-DRAM","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.0,"dram_working_set_ratio": 1.0,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"reference_comparison": "resource_relaxed_dram_reference"},"research_questions": ["RQ3"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.additional_mechanisms.M-S.W3.AegisKV","suite": "extended","comparison_block": "extended.additional_mechanisms","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "AegisKV","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"workload_profile": "frozen_mechanism_stress"},"research_questions": ["RQ4","RQ5","RQ6"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.additional_mechanisms.M-S.W3.ordinary_gds","suite": "extended","comparison_block": "extended.additional_mechanisms","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "ordinary_gds","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"workload_profile": "frozen_mechanism_stress"},"research_questions": ["RQ4","RQ5","RQ6"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.additional_mechanisms.M-S.W3.unlimited_eager","suite": "extended","comparison_block": "extended.additional_mechanisms","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "unlimited_eager","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"workload_profile": "frozen_mechanism_stress"},"research_questions": ["RQ4","RQ5","RQ6"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.additional_mechanisms.M-S.W3.no_rotation","suite": "extended","comparison_block": "extended.additional_mechanisms","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "no_rotation","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"workload_profile": "frozen_mechanism_stress"},"research_questions": ["RQ4","RQ5","RQ6"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.additional_mechanisms.M-S.W3.access_recency","suite": "extended","comparison_block": "extended.additional_mechanisms","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "access_recency","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"workload_profile": "frozen_mechanism_stress"},"research_questions": ["RQ4","RQ5","RQ6"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.additional_mechanisms.M-S.W3.peer_recovery_benefit","suite": "extended","comparison_block": "extended.additional_mechanisms","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "peer_recovery_benefit","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"workload_profile": "frozen_mechanism_stress"},"research_questions": ["RQ4","RQ5","RQ6"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.additional_mechanisms.M-S.W3.frozen_placement","suite": "extended","comparison_block": "extended.additional_mechanisms","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "frozen_placement","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"workload_profile": "frozen_mechanism_stress"},"research_questions": ["RQ4","RQ5","RQ6"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.additional_mechanisms.M-S.W3.duplicate_backing","suite": "extended","comparison_block": "extended.additional_mechanisms","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "duplicate_backing","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"workload_profile": "frozen_mechanism_stress"},"research_questions": ["RQ4","RQ5","RQ6"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.additional_mechanisms.M-S.W3.adaptive_lk","suite": "extended","comparison_block": "extended.additional_mechanisms","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "adaptive_lk","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"workload_profile": "frozen_mechanism_stress"},"research_questions": ["RQ4","RQ5","RQ6"],"factor_levels": {},"run_slots": 20,"actual_runs": 0},
+    {"cell_id": "extended.additional_mechanisms.M-S.W3.bounded_pair","suite": "extended","comparison_block": "extended.additional_mechanisms","status": "planned","measurement_class": "physical_planned","model_id": "M-S","workload_family": "W3","policy_variant": "bounded_pair","conditions": ["F0","F1"],"planned_campaigns": 10,"settings": {"peer_cap_ratio": 0.1,"dram_working_set_ratio": 0.25,"storage_working_set_ratio": 1.0,"baseline_load_ratio": 0.6,"logical_fault_progress": 0.8,"context_bucket": "supported_native_32k","topology_profile": "planned_dp2_tp1","storage_profile": "pilot_selected_verified_backend","restoration": "bounded_pipeline","contention": "shared","quota_control": "guarded_aimd","placement_preparation": "online","configured_L": null,"configured_K": null,"configured_Z": null,"absolute_budgets_frozen": false,"workload_profile": "frozen_mechanism_stress"},"research_questions": ["RQ4","RQ5","RQ6"],"factor_levels": {},"run_slots": 20,"actual_runs": 0}
+  ],
+  "factorial_blocks": [
+    {
+      "id": "slack_shared",
+      "block": "minimum.mechanism_stress",
+      "factors": [
+        "slack",
+        "shared_shares"
+      ],
+      "corners": {
+        "00": "no_slack_no_shared_shares",
+        "01": "no_slack",
+        "10": "no_shared_shares",
+        "11": "AegisKV"
+      }
+    },
+    {
+      "id": "demand_pipeline",
+      "block": "minimum.mechanism_stress",
+      "factors": [
+        "normalized_demand",
+        "pipeline"
+      ],
+      "corners": {
+        "00": "raw_serial",
+        "01": "raw_counts",
+        "10": "serial",
+        "11": "AegisKV"
+      }
+    },
+    {
+      "id": "credit_lazy",
+      "block": "minimum.mechanism_stress",
+      "factors": [
+        "credit",
+        "lazy"
+      ],
+      "corners": {
+        "00": "direct_eager",
+        "01": "direct_lazy",
+        "10": "credit_eager",
+        "11": "AegisKV"
+      }
+    },
+    {
+      "id": "router_contention",
+      "block": "minimum.router_factorial",
+      "factors": [
+        "load_aware_router",
+        "shared_contention"
+      ],
+      "corners": {
+        "00": "router_0_contention_0",
+        "01": "router_0_contention_1",
+        "10": "router_1_contention_0",
+        "11": "router_1_contention_1"
+      }
+    },
+    {
+      "id": "peer_pipeline",
+      "block": "minimum.peer_attribution",
+      "factors": [
+        "peer_enabled",
+        "pipeline"
+      ],
+      "corners": {
+        "00": "peer_0_pipeline_0",
+        "01": "peer_0_pipeline_1",
+        "10": "peer_1_pipeline_0",
+        "11": "peer_1_pipeline_1"
+      }
+    }
+  ],
+  "offline_tasks": [
+    {
+      "id": "correctness",
+      "status": "planned",
+      "unit": "distinct seeded protocol interleaving; not serving campaign",
+      "types": [
+        {
+          "id": "Q01",
+          "name": "reservation failure",
+          "planned_randomized_cases": 100,
+          "completed_cases": 0
+        },
+        {
+          "id": "Q02",
+          "name": "partial copy",
+          "planned_randomized_cases": 100,
+          "completed_cases": 0
+        },
+        {
+          "id": "Q03",
+          "name": "checksum, shard or selector state missing",
+          "planned_randomized_cases": 100,
+          "completed_cases": 0
+        },
+        {
+          "id": "Q04",
+          "name": "commit boundary",
+          "planned_randomized_cases": 100,
+          "completed_cases": 0
+        },
+        {
+          "id": "Q05",
+          "name": "redirect boundary",
+          "planned_randomized_cases": 100,
+          "completed_cases": 0
+        },
+        {
+          "id": "Q06",
+          "name": "reader/copy lease and drain",
+          "planned_randomized_cases": 100,
+          "completed_cases": 0
+        },
+        {
+          "id": "Q07",
+          "name": "stale epoch or duplicate callback",
+          "planned_randomized_cases": 100,
+          "completed_cases": 0
+        },
+        {
+          "id": "Q08",
+          "name": "accepted-token acknowledgement",
+          "planned_randomized_cases": 100,
+          "completed_cases": 0
+        },
+        {
+          "id": "Q09",
+          "name": "full DRAM cascade",
+          "planned_randomized_cases": 100,
+          "completed_cases": 0
+        },
+        {
+          "id": "Q10",
+          "name": "full storage and last-copy fallback",
+          "planned_randomized_cases": 100,
+          "completed_cases": 0
+        },
+        {
+          "id": "Q11",
+          "name": "Peer shrink and ties",
+          "planned_randomized_cases": 100,
+          "completed_cases": 0
+        },
+        {
+          "id": "Q12",
+          "name": "tool handoff and final short snapshot",
+          "planned_randomized_cases": 100,
+          "completed_cases": 0
+        },
+        {
+          "id": "Q13",
+          "name": "sole-owner loss and rebind",
+          "planned_randomized_cases": 100,
+          "completed_cases": 0
+        },
+        {
+          "id": "Q14",
+          "name": "duplicate actual use and shared shares",
+          "planned_randomized_cases": 100,
+          "completed_cases": 0
+        },
+        {
+          "id": "Q15",
+          "name": "paid-rent round trip",
+          "planned_randomized_cases": 100,
+          "completed_cases": 0
+        },
+        {
+          "id": "Q16",
+          "name": "fault after committed capacity handoff",
+          "planned_randomized_cases": 100,
+          "completed_cases": 0
+        }
+      ],
+      "planned_randomized_cases": 1600,
+      "small_state_exhaustive_enumeration": true
+    },
+    {
+      "id": "predictor",
+      "status": "planned",
+      "unit": "held-out workflow",
+      "split_manifest": null,
+      "label": "remaining residual segment seconds",
+      "comparisons": [
+        "GBDT",
+        "history",
+        "median",
+        "zero-slack fallback"
+      ],
+      "future_features_allowed": false
+    },
+    {
+      "id": "native_demand",
+      "status": "planned",
+      "unit": "native Query within held-out workflow/document",
+      "rankings": [
+        "normalized selected/visible",
+        "raw selected",
+        "recency",
+        "equal-byte offline oracle"
+      ],
+      "kernel_revision": null
+    },
+    {
+      "id": "calibrate_fixed_quotas",
+      "status": "planned",
+      "unit": "calibration workflow, disjoint from test",
+      "sequential_stages": {
+        "Z_tokens": [
+          64,
+          256,
+          1024
+        ],
+        "L_layers": [
+          1,
+          2,
+          4,
+          8,
+          16
+        ],
+        "K_fraction_of_visible_blocks": [
+          0.1,
+          0.25,
+          0.5,
+          1.0
+        ]
+      },
+      "constraints": "legal native model/layout/block alignment, HBM cap, measured normal cost; reduce infeasible points explicitly",
+      "selected_L_K_Z": null
+    },
+    {
+      "id": "small_oracle",
+      "status": "planned",
+      "unit": "complete small instance",
+      "checkpoint_groups": [
+        2,
+        4,
+        8
+      ],
+      "all_legal_assignments": true,
+      "physical_performance_claim": false
+    },
+    {
+      "id": "controller_scale",
+      "status": "planned",
+      "unit": "independent process benchmark and selected paired serving validation",
+      "dag_nodes": [
+        10,
+        100,
+        1000
+      ],
+      "live_groups": [
+        100,
+        1000,
+        10000
+      ],
+      "q_candidates": [
+        16,
+        64,
+        256
+      ],
+      "cartesian_product": false,
+      "CPU_budget": null
+    }
+  ],
+  "conditional_extensions": [
+    {
+      "id": "continuous_trace",
+      "status": "planned_after_trace_and_runner_gates",
+      "controls": [
+        "original timing",
+        "equal count/span even timing",
+        "group-size-preserving time shuffle",
+        "10/100/1000 clock compression"
+      ],
+      "mapping_manifest": null,
+      "preserve_down_up_and_repeat_faults": true,
+      "unresolved_modern_alerts_not_crashes": true
+    },
+    {
+      "id": "hardware_model_scale",
+      "status": "planned_after_support_and_inventory_gates",
+      "DP": [
+        2,
+        4,
+        8
+      ],
+      "TP": [
+        1,
+        2
+      ],
+      "simultaneous_failure_domains": [
+        1,
+        2,
+        4
+      ],
+      "context_tokens": [
+        32704,
+        131072,
+        524288,
+        1010000
+      ],
+      "cross_product": false,
+      "supported_cells": null
+    },
+    {
+      "id": "external_system",
+      "status": "planned_after_compatibility_audit",
+      "selected_artifact": null,
+      "all_listed_systems_required": false,
+      "candidate_scopes": [
+        "LUMEN load-aware recovery",
+        "DejaVu replication",
+        "GhostServe parity",
+        "TOPAS or KVFlow with matched backing"
+      ]
+    },
+    {
+      "id": "forecast_error",
+      "status": "planned_after_causal_label_validation",
+      "relative_error_magnitudes": [
+        0.1,
+        0.25,
+        0.5,
+        1.0
+      ],
+      "patterns": [
+        "independent",
+        "correlated",
+        "underprediction",
+        "overprediction",
+        "missing DAG edges",
+        "stale profile",
+        "workload/model shift"
+      ],
+      "cartesian_product": false
+    },
+    {
+      "id": "transfer_boundary",
+      "status": "planned_after_backend_calibration",
+      "requested_GiB_per_s": [
+        0.5,
+        1,
+        2,
+        4,
+        8,
+        12,
+        20
+      ],
+      "ready_retries": [
+        1,
+        2,
+        4,
+        8,
+        16
+      ],
+      "targets": [
+        1,
+        2,
+        4
+      ],
+      "cross_product": false,
+      "x_axis": "achieved bandwidth; above-hardware rates unsupported"
+    }
+  ],
+  "figure_contracts": [
+    {
+      "id": "planned-e2e",
+      "rq": "RQ1",
+      "status": "planned_no_data",
+      "visual": "family/model faceted paired effect with 95% CI; F0/F1 and completion companion",
+      "metrics": "WCT_s, fault_penalty_s, paired_difference_s, completion_fraction",
+      "sample_unit": "paired campaign; original arrival cohort",
+      "renderer_registered": false,
+      "output_file": null
+    },
+    {
+      "id": "planned-recovery",
+      "rq": "RQ2",
+      "status": "planned_no_data",
+      "visual": "causal critical-path intervals plus cohort penalty and queue timeline",
+      "metrics": "exposed_wait_ms, request_ready_ms, workflow_penalty_s, bytes",
+      "sample_unit": "paired campaign plus declared event trajectory",
+      "renderer_registered": false,
+      "output_file": null
+    },
+    {
+      "id": "planned-frontier",
+      "rq": "RQ3",
+      "status": "planned_no_data",
+      "visual": "one-factor curves with absolute budget/achieved-rate axes",
+      "metrics": "WCT_s, completion_fraction, GiB, achieved_GiB_per_s",
+      "sample_unit": "paired campaign at each resource point",
+      "renderer_registered": false,
+      "output_file": null
+    },
+    {
+      "id": "planned-ablations",
+      "rq": "RQ4",
+      "status": "planned_no_data",
+      "visual": "paired difference forest and factorial interaction plots",
+      "metrics": "fault_penalty_s, healthy_WCT_s, interaction_s",
+      "sample_unit": "paired campaign, all four corners",
+      "renderer_registered": false,
+      "output_file": null
+    },
+    {
+      "id": "planned-credit-cost",
+      "rq": "RQ5",
+      "status": "planned_no_data",
+      "visual": "WCT versus CPU tradeoff with migration/scan-age companion",
+      "metrics": "WCT_s, controller_CPU_ms, migrated_bytes, scan_age_s",
+      "sample_unit": "paired campaign; decisions nested within campaign",
+      "renderer_registered": false,
+      "output_file": null
+    },
+    {
+      "id": "planned-prediction",
+      "rq": "RQ6",
+      "status": "planned_no_data",
+      "visual": "signed error distributions, false-slack and future-demand coverage",
+      "metrics": "remaining_error_s, false_slack_fraction, native_demand_coverage_fraction",
+      "sample_unit": "held-out workflows, with document/workflow clusters",
+      "renderer_registered": false,
+      "output_file": null
+    },
+    {
+      "id": "planned-healthy-trace",
+      "rq": "RQ7",
+      "status": "planned_no_data",
+      "visual": "healthy SLO-goodput curves and per-calendar/system paired effects",
+      "metrics": "TTFT_ms, ITL_ms, WCT_s, SLO_goodput_per_s, restricted_cost_s",
+      "sample_unit": "paired campaign; calendar windows for trace extension",
+      "renderer_registered": false,
+      "output_file": null
+    },
+    {
+      "id": "planned-safety-scale",
+      "rq": "RQ8",
+      "status": "planned_no_data",
+      "visual": "physical occupancy/target timeline and controller latency curves",
+      "metrics": "GiB, decision_ms, stall_ms, correctness_pass_count",
+      "sample_unit": "declared trajectory; campaigns or distinct interleavings separately",
+      "renderer_registered": false,
+      "output_file": null
+    }
+  ],
+  "historical_evidence_policy": "retain original labels/raw values and negative outcomes; never promote static/toy/trace-driven curves to current-controller measured results",
+  "validation": {
+    "cell_ids_unique": true,
+    "factorial_corners_present": true,
+    "counts_recomputed": true,
+    "checked_as_plan_only": true,
+    "physical_runs_launched": 0
+  },
+  "parameter_resolution": "shared defaults -> named variant overrides -> cell factor_levels; execution fields also receive explicit factor overrides. Every cell is a separate planned comparison-block observation; repeated controls across blocks are intentional."
+}

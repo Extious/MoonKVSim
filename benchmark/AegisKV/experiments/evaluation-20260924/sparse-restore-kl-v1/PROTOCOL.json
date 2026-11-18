@@ -1,0 +1,39 @@
+{
+  "schema": "aegiskv.sparse-restore-kl.v1",
+  "status": "frozen_before_execution",
+  "models": [
+    "NOSA-8B",
+    "NSA-8B",
+    "MiniCPM4.1-8B"
+  ],
+  "documents": [
+    "10146",
+    "10321",
+    "10356"
+  ],
+  "checkpoint_tokens": 32000,
+  "future_queries": 256,
+  "bandwidth_GBps": 16,
+  "layer_compute_ns": [
+    0,
+    256000
+  ],
+  "K": [
+    4,
+    16,
+    64
+  ],
+  "L": [
+    1,
+    4,
+    8,
+    32
+  ],
+  "methods": [
+    "DRAM",
+    "Current",
+    "Recency",
+    "Oracle"
+  ],
+  "why": "K and L are the design parameters of the peer-HBM copy. 16 GB/s is the middle of the sealed 8/16/32 GB/s set. Compute 0 isolates the transfer; 256 us/layer is the third of the four sealed compute assumptions (0, 25.6, 256, 2560 us). Neither was chosen from this sweep's outcomes."
+}

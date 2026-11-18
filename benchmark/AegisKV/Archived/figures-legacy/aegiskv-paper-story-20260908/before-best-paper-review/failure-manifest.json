@@ -1,0 +1,366 @@
+{
+  "schema": "aegiskv.paper_story.failure.v1",
+  "figures": [
+    {
+      "name": "f1-q25-workflow-penalty",
+      "evidence": "modeled_exploration",
+      "note": "F1(system, workflow) - matched F0(system, workflow); 39/160 baseline workflows complete at reference trigger; signed, not truncated.",
+      "width_in": 7.0,
+      "height_in": 2.65,
+      "sources": [
+        "f1-q25",
+        "f0-natural"
+      ],
+      "files": {
+        "pdf": "12faac3aba6018163307b0e2ea143b07cf50b0de85b628771a2ddf37ab4ed1ca",
+        "svg": "0a6fb360bd7e00f0508d41b040bd9fcf2f8e135a6c957ff1fd87e4d892349c3a",
+        "png": "2dfc05af782e6f1ab405e86ed53670821d9ce03146e820b8e88aa5e616024089",
+        "csv": "c26852c38dc0620ebe52251a5a20d92aa0954c88d605a82129d68569658e1d2f"
+      }
+    },
+    {
+      "name": "f1-q50-workflow-penalty",
+      "evidence": "modeled_exploration",
+      "note": "F1(system, workflow) - matched F0(system, workflow); 79/160 baseline workflows complete at reference trigger; signed, not truncated.",
+      "width_in": 7.0,
+      "height_in": 2.65,
+      "sources": [
+        "f1-q50",
+        "f0-natural"
+      ],
+      "files": {
+        "pdf": "58de08a13c9b6b5322b32de86c3c17d45614eaae6f692a14b3828080f49596d7",
+        "svg": "422019df30492266571a931700505756b5186f8d42bf0463f9795991a3ab2c87",
+        "png": "9e1b834ce31380ded72e64fd2a606d7f64a565f3da5a91dd5321e5057b919492",
+        "csv": "e6dbabe1392a5baf6d94a909d631f69862b3ec9d01c68bd2ce1e7da5a3b2c715"
+      }
+    },
+    {
+      "name": "f1-q75-workflow-penalty",
+      "evidence": "modeled_exploration",
+      "note": "F1(system, workflow) - matched F0(system, workflow); 119/160 baseline workflows complete at reference trigger; signed, not truncated.",
+      "width_in": 7.0,
+      "height_in": 2.65,
+      "sources": [
+        "f1-q75",
+        "f0-natural"
+      ],
+      "files": {
+        "pdf": "a6153326f158412af5f8441f8be9ea1bcf052527cfe1e81e1475820de69e4d14",
+        "svg": "bc154b88ab8da0ac18e5cc13140255e9b495dfe63a15dd777d7048f5707517a1",
+        "png": "fa9776861a894b90f3371a06f14932eec77ba3a3bf03269d4c9fbf64dd7b5d99",
+        "csv": "37f3a2e3631eeb705a923c72bd66febf820633d96174392bb79b1e7eaf00af78"
+      }
+    },
+    {
+      "name": "failure-progress-p95-penalty",
+      "evidence": "modeled_exploration",
+      "note": "Percentile of 160 paired workflow deltas, not difference of WCT percentiles; one execution per point/system, not nine independent repeats.",
+      "width_in": 7.0,
+      "height_in": 2.65,
+      "sources": [
+        "f0-natural",
+        "f1-q25",
+        "f1-q50",
+        "f1-q75"
+      ],
+      "files": {
+        "pdf": "c3df6f998d7c0e2131d2e31b0fe102e396dc11b778f0c0b560bd50ced686d48e",
+        "svg": "5a3870128c258608f88f7c7fd031671d8b9f0d6ebe37d3f4df8c64bbdc70b20f",
+        "png": "0e0b09a893bc22836214b1288d92554af60bdd2969641f0e4fd351fbff074c35",
+        "csv": "f85a5fb9ef00e14b508c4e038368157f1cf85cd6dd2c562f4f057c55cad00dc3"
+      }
+    },
+    {
+      "name": "failure-focal-recovery-phases",
+      "evidence": "modeled_exploration",
+      "note": "One predeclared focal request per location; materialization includes reservation/setup/copy wait. Second phase includes suffix compute, scheduler wait and resume; phase boundaries from events, not recovery_ready-as-copy-complete.",
+      "width_in": 7.0,
+      "height_in": 3.8,
+      "sources": [
+        "f1-q25",
+        "f1-q50",
+        "f1-q75"
+      ],
+      "files": {
+        "pdf": "dc962e89a7ee53b34d94673ee444eb54670cdf394e7a1248fc9221d599ae0489",
+        "svg": "af49014ae16447413b553e25fa9b102ae6110d29d75b198fb985ed2cd5ac205f",
+        "png": "e9e103851505599efc430946355551c260cf53bba9d8feccd77bb12d68e16c3e",
+        "csv": "50474f927a741525584e3a064e2318822c51439a3a4f9dc19ca21f4398a562ac"
+      }
+    }
+  ],
+  "input_bindings": {
+    "output/paper-story-20260908/failure-data/f0-natural/mooncake.json": "b65b8af14cd4d469704d53b0ea6ea297bfc7d7b2a8bf4cc5d86717479ac18a2c",
+    "output/paper-story-20260908/failure-data/f0-natural/dram.json": "709c13957abaf7835d6d9a1b613b775fa3a90ad09590ebd9832089c8a29f7f21",
+    "output/paper-story-20260908/failure-data/f0-natural/aegis.json": "7a4a57703ad3798c1e0bcef13bdc325b7ba923b993a4027bb4f33a7b629d61b2",
+    "output/paper-story-20260908/failure-data/f1-q25/mooncake.json": "25842e0376289a3ca725665ccaaf90f4e53fb2145237ab584b398661c831e169",
+    "output/paper-story-20260908/failure-data/f1-q25/dram.json": "49b83bb15d87133feb25e6cf3c028ec84d0cca159228c7b9b8aa6c778a8cbdc7",
+    "output/paper-story-20260908/failure-data/f1-q25/aegis.json": "bd25e55afa91c9bb34f63ecbcb0d85d211e357d70fe40606d1a09fc19a1aafd2",
+    "output/paper-story-20260908/failure-data/f1-q50/mooncake.json": "ca214a391998c4839c42cd63917c69c943d2b65d17789a32f08779df343102b3",
+    "output/paper-story-20260908/failure-data/f1-q50/dram.json": "daa6ac8989ee56fe0a83eeb59abd8d6a58572ae2b1d3c1c33150dff215a074ea",
+    "output/paper-story-20260908/failure-data/f1-q50/aegis.json": "cd3de7ac7f02a3452f3011536fafcfcb5d323472ae7d93780045aca61e3fd88b",
+    "output/paper-story-20260908/failure-data/f1-q75/mooncake.json": "ea9bc4d6046091a1c3e0e11bed24e24382f244e60ccd85142b62d817318daa5c",
+    "output/paper-story-20260908/failure-data/f1-q75/dram.json": "5a047f389aa6736953043ab41404d15866e4d5091acbd0449f18b640fcf15803",
+    "output/paper-story-20260908/failure-data/f1-q75/aegis.json": "4b13c630fe5e10ef470b6a66bec24ec84a04b7e38e82596180b1335f57aed1d9",
+    "benchmark/AegisKV/experiments/scripts/paper/render_paper_story_failures.py": "4bafc10e2d7b77fbdc35a8123e97cbb83f1e00c4b461b38f4079e0c209b5ad14",
+    "benchmark/AegisKV/experiments/scripts/paper/render_paper_story.py": "cce38cae389d433dba957f1443b9b89cd2d86e5915d3dd98ee527cb752d728ce",
+    "benchmark/AegisKV/experiments/scripts/paper/figure_style.py": "743622d900aea4adc0d02a2510f6037a0042ab416243b8bd283c25dbe67f6488",
+    "benchmark/AegisKV/experiments/scripts/paper/three_system_data.py": "1a62186ee153a3431db3dbde9794a8336c470487b3d012e6f092012c4a9da729",
+    "output/paper-story-20260908/failure-campaign/PROTOCOL.json": "540a606e3a72a79817be3aea008f5c6afd7506d65c40f3635213e7b6b2651f31",
+    "output/paper-story-20260908/failure-campaign/STATUS.json": "a53c84fb4f12169164dd840ea2d8c138803d62b23a7b046b270e543488864050",
+    "output/paper-story-20260908/source-v7/MECHANISM_SOURCE_SNAPSHOT.json": "8382c497cb925816b55d86fd036eb6f5479d6c913cb20f014b9de68ec2aaf1ba"
+  },
+  "plans": [
+    {
+      "case": "f1-q25",
+      "nominal_progress_pct": 25,
+      "reference_progress_pct": 24.375,
+      "reference_completed_workflows": 39,
+      "focus_span_id": "fanoutqa:870881b3ef7e2866:d77f665477a428c6"
+    },
+    {
+      "case": "f1-q50",
+      "nominal_progress_pct": 50,
+      "reference_progress_pct": 49.375,
+      "reference_completed_workflows": 79,
+      "focus_span_id": "fanoutqa:d098623a8b75ec0a:865ae2836d56c582"
+    },
+    {
+      "case": "f1-q75",
+      "nominal_progress_pct": 75,
+      "reference_progress_pct": 74.375,
+      "reference_completed_workflows": 119,
+      "focus_span_id": "fanoutqa:5aa09932011c8fcd:9206296d762787e8"
+    }
+  ],
+  "summary": [
+    {
+      "case": "f1-q25",
+      "system": "mooncake",
+      "reference_progress_pct": 24.375,
+      "mean_wct_delta_s": 1.05495478009375,
+      "p95_wct_delta_s": 24.163175020499995,
+      "slower_workflows": 64,
+      "faster_workflows": 51,
+      "mean_wct_s": 40.1205097619375
+    },
+    {
+      "case": "f1-q25",
+      "system": "dram",
+      "reference_progress_pct": 24.375,
+      "mean_wct_delta_s": 1.8874633526624998,
+      "p95_wct_delta_s": 25.606415356049947,
+      "slower_workflows": 70,
+      "faster_workflows": 49,
+      "mean_wct_s": 40.953232392775
+    },
+    {
+      "case": "f1-q25",
+      "system": "aegis",
+      "reference_progress_pct": 24.375,
+      "mean_wct_delta_s": 1.6032567509312503,
+      "p95_wct_delta_s": 26.73341337439998,
+      "slower_workflows": 71,
+      "faster_workflows": 46,
+      "mean_wct_s": 40.66906382406874
+    },
+    {
+      "case": "f1-q50",
+      "system": "mooncake",
+      "reference_progress_pct": 49.375,
+      "mean_wct_delta_s": 1.4686792462062503,
+      "p95_wct_delta_s": 22.783279146999988,
+      "slower_workflows": 50,
+      "faster_workflows": 31,
+      "mean_wct_s": 40.53423422805
+    },
+    {
+      "case": "f1-q50",
+      "system": "dram",
+      "reference_progress_pct": 49.375,
+      "mean_wct_delta_s": 0.9455779647937496,
+      "p95_wct_delta_s": 20.261495004199993,
+      "slower_workflows": 46,
+      "faster_workflows": 35,
+      "mean_wct_s": 40.011347004906256
+    },
+    {
+      "case": "f1-q50",
+      "system": "aegis",
+      "reference_progress_pct": 49.375,
+      "mean_wct_delta_s": 0.9455709531187496,
+      "p95_wct_delta_s": 20.261419646399986,
+      "slower_workflows": 46,
+      "faster_workflows": 35,
+      "mean_wct_s": 40.011378026256246
+    },
+    {
+      "case": "f1-q75",
+      "system": "mooncake",
+      "reference_progress_pct": 74.375,
+      "mean_wct_delta_s": 0.7980338188437501,
+      "p95_wct_delta_s": 8.488586924149962,
+      "slower_workflows": 27,
+      "faster_workflows": 11,
+      "mean_wct_s": 39.8635888006875
+    },
+    {
+      "case": "f1-q75",
+      "system": "dram",
+      "reference_progress_pct": 74.375,
+      "mean_wct_delta_s": 0.7979831942624998,
+      "p95_wct_delta_s": 8.487304966249956,
+      "slower_workflows": 27,
+      "faster_workflows": 11,
+      "mean_wct_s": 39.863752234375
+    },
+    {
+      "case": "f1-q75",
+      "system": "aegis",
+      "reference_progress_pct": 74.375,
+      "mean_wct_delta_s": 0.7979741994875,
+      "p95_wct_delta_s": 8.487077193049963,
+      "slower_workflows": 27,
+      "faster_workflows": 11,
+      "mean_wct_s": 39.863781272625
+    }
+  ],
+  "phases": [
+    {
+      "case": "f1-q25",
+      "system": "mooncake",
+      "nominal_progress_pct": 25,
+      "reference_progress_pct": 24.375,
+      "prefix_materialization_s": 0.165994672,
+      "suffix_to_resume_s": 3.61914634,
+      "resume_delay_s": 3.785141012,
+      "restored_peer_tokens": 0,
+      "restored_store_tokens": 8256,
+      "recompute_tokens": 13925,
+      "impacted_active_requests": 2,
+      "actual_failure_ns": 108680930586,
+      "focus_span_id": "fanoutqa:870881b3ef7e2866:d77f665477a428c6"
+    },
+    {
+      "case": "f1-q25",
+      "system": "dram",
+      "nominal_progress_pct": 25,
+      "reference_progress_pct": 24.375,
+      "prefix_materialization_s": 0.002004975,
+      "suffix_to_resume_s": 4.611003519,
+      "resume_delay_s": 4.613008494,
+      "restored_peer_tokens": 0,
+      "restored_store_tokens": 64,
+      "recompute_tokens": 22117,
+      "impacted_active_requests": 2,
+      "actual_failure_ns": 108681632155,
+      "focus_span_id": "fanoutqa:870881b3ef7e2866:d77f665477a428c6"
+    },
+    {
+      "case": "f1-q25",
+      "system": "aegis",
+      "nominal_progress_pct": 25,
+      "reference_progress_pct": 24.375,
+      "prefix_materialization_s": 0.001627488,
+      "suffix_to_resume_s": 4.61129035,
+      "resume_delay_s": 4.612917838,
+      "restored_peer_tokens": 64,
+      "restored_store_tokens": 0,
+      "recompute_tokens": 22117,
+      "impacted_active_requests": 2,
+      "actual_failure_ns": 108681756807,
+      "focus_span_id": "fanoutqa:870881b3ef7e2866:d77f665477a428c6"
+    },
+    {
+      "case": "f1-q50",
+      "system": "mooncake",
+      "nominal_progress_pct": 50,
+      "reference_progress_pct": 49.375,
+      "prefix_materialization_s": 0.057173276,
+      "suffix_to_resume_s": 5.989708001,
+      "resume_delay_s": 6.046881277,
+      "restored_peer_tokens": 0,
+      "restored_store_tokens": 8256,
+      "recompute_tokens": 13550,
+      "impacted_active_requests": 2,
+      "actual_failure_ns": 212292339495,
+      "focus_span_id": "fanoutqa:d098623a8b75ec0a:865ae2836d56c582"
+    },
+    {
+      "case": "f1-q50",
+      "system": "dram",
+      "nominal_progress_pct": 50,
+      "reference_progress_pct": 49.375,
+      "prefix_materialization_s": 0.002004975,
+      "suffix_to_resume_s": 6.873653201,
+      "resume_delay_s": 6.875658176,
+      "restored_peer_tokens": 0,
+      "restored_store_tokens": 64,
+      "recompute_tokens": 21742,
+      "impacted_active_requests": 2,
+      "actual_failure_ns": 212293041064,
+      "focus_span_id": "fanoutqa:d098623a8b75ec0a:865ae2836d56c582"
+    },
+    {
+      "case": "f1-q50",
+      "system": "aegis",
+      "nominal_progress_pct": 50,
+      "reference_progress_pct": 49.375,
+      "prefix_materialization_s": 0.002004975,
+      "suffix_to_resume_s": 6.873641869,
+      "resume_delay_s": 6.875646844,
+      "restored_peer_tokens": 64,
+      "restored_store_tokens": 0,
+      "recompute_tokens": 21742,
+      "impacted_active_requests": 2,
+      "actual_failure_ns": 212293165716,
+      "focus_span_id": "fanoutqa:d098623a8b75ec0a:865ae2836d56c582"
+    },
+    {
+      "case": "f1-q75",
+      "system": "mooncake",
+      "nominal_progress_pct": 75,
+      "reference_progress_pct": 74.375,
+      "prefix_materialization_s": 0.049568383,
+      "suffix_to_resume_s": 1.026197812,
+      "resume_delay_s": 1.075766195,
+      "restored_peer_tokens": 0,
+      "restored_store_tokens": 8192,
+      "recompute_tokens": 9675,
+      "impacted_active_requests": 1,
+      "actual_failure_ns": 316724220702,
+      "focus_span_id": "fanoutqa:5aa09932011c8fcd:9206296d762787e8"
+    },
+    {
+      "case": "f1-q75",
+      "system": "dram",
+      "nominal_progress_pct": 75,
+      "reference_progress_pct": 74.375,
+      "prefix_materialization_s": 0.025409192,
+      "suffix_to_resume_s": 1.460648069,
+      "resume_delay_s": 1.486057261,
+      "restored_peer_tokens": 0,
+      "restored_store_tokens": 4096,
+      "recompute_tokens": 13771,
+      "impacted_active_requests": 1,
+      "actual_failure_ns": 316725878956,
+      "focus_span_id": "fanoutqa:5aa09932011c8fcd:9206296d762787e8"
+    },
+    {
+      "case": "f1-q75",
+      "system": "aegis",
+      "nominal_progress_pct": 75,
+      "reference_progress_pct": 74.375,
+      "prefix_materialization_s": 0.025409192,
+      "suffix_to_resume_s": 1.460648069,
+      "resume_delay_s": 1.486057261,
+      "restored_peer_tokens": 4096,
+      "restored_store_tokens": 0,
+      "recompute_tokens": 13771,
+      "impacted_active_requests": 1,
+      "actual_failure_ns": 316726173588,
+      "focus_span_id": "fanoutqa:5aa09932011c8fcd:9206296d762787e8"
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" version="31.1.5">
+  <diagram id="design-foreground-budget" name="design-foreground-budget">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageWidth="1200" pageHeight="440" background="#FFFFFF" math="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="canvas" value="" style="rounded=0;strokeWidth=1.7;strokeColor=#FFFFFF;fillColor=#FFFFFF;fontFamily=Cantarell;fontSize=26;fontColor=#FFFFFF;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="0" y="0" width="1200" height="440" />
+        </mxCell>
+        <mxCell id="event" value="Before allocation / copy / quota growth" style="rounded=0;strokeWidth=1.7;strokeColor=#243444;fillColor=#FFFFFF;fontFamily=Cantarell;fontSize=26;fontColor=#243444;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="0" y="0" width="1200" height="52" />
+        </mxCell>
+        <mxCell id="memory" value="Memory envelope&#10;Fixed + primary + next allocation&#10;Burst reserve + allocator margin" style="rounded=0;strokeWidth=1.7;strokeColor=#243444;fillColor=#F2F4F6;fontFamily=Cantarell;fontSize=26;fontColor=#243444;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="0" y="92" width="530" height="136" />
+        </mxCell>
+        <mxCell id="tokens" value="Transfer envelope&#10;Source + target + link tokens&#10;Bounded non-preemptible DMA" style="rounded=0;strokeWidth=1.7;strokeColor=#B86B00;fillColor=#FFF7EB;fontFamily=Cantarell;fontSize=26;fontColor=#B86B00;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="670" y="92" width="530" height="136" />
+        </mxCell>
+        <mxCell id="gate" value="Fresh QoS certificate + capacity + transfer permit" style="rounded=0;strokeWidth=1.7;strokeColor=#007D60;fillColor=#F2F8F5;fontFamily=Cantarell;fontSize=26;fontColor=#007D60;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="184" y="285" width="832" height="66" />
+        </mxCell>
+        <mxCell id="memory-gate" edge="1" parent="1" source="memory" target="gate" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeWidth=2.6;strokeColor=#59636F;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.15;entryY=0;exitPerimeter=1;entryPerimeter=1;jettySize=10;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="token-gate" edge="1" parent="1" source="tokens" target="gate" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeWidth=2.6;strokeColor=#59636F;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.85;entryY=0;exitPerimeter=1;entryPerimeter=1;jettySize=10;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="grow" value="Valid: admit / bounded growth" style="rounded=0;strokeWidth=1.7;strokeColor=#007D60;fillColor=#F2F8F5;fontFamily=Cantarell;fontSize=26;fontColor=#007D60;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="0" y="392" width="475" height="48" />
+        </mxCell>
+        <mxCell id="revoke" value="Invalid: revoke; await free ACK" style="rounded=0;strokeWidth=1.7;strokeColor=#B83C46;fillColor=#FCF1F2;fontFamily=Cantarell;fontSize=26;fontColor=#B83C46;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="575" y="392" width="625" height="48" />
+        </mxCell>
+        <mxCell id="valid" edge="1" parent="1" source="gate" target="grow" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeWidth=2.6;strokeColor=#007D60;endArrow=block;endFill=1;exitX=0.25;exitY=1;entryX=0.5;entryY=0;exitPerimeter=1;entryPerimeter=1;jettySize=10;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="invalid" edge="1" parent="1" source="gate" target="revoke" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeWidth=2.6;strokeColor=#B83C46;endArrow=block;endFill=1;exitX=0.75;exitY=1;entryX=0.5;entryY=0;exitPerimeter=1;entryPerimeter=1;jettySize=10;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

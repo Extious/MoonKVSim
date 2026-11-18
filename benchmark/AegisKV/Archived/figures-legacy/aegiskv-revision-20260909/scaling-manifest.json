@@ -1,0 +1,50 @@
+{
+  "figures": [
+    {
+      "name": "eval-concurrency-throughput",
+      "title": "并发扩展的完整批次完成速率",
+      "caption": "固定 160 个 Workflow、两轮重访和相同资源，改变最大活跃 Workflow 数，横轴为 log2 刻度。完成速率为 160 除以完整批次时长，包含填充与排空；不是 SLO goodput。每个系统每点一次冻结算法模拟，无重复置信区间。",
+      "caption_en": "Fixed 160-workflow, two-visit workload; concurrency uses a log2 axis. Completion rate is 160 divided by full batch duration, including fill and drain; it is not SLO goodput. Each system has one frozen-algorithm simulation per point; no replicate confidence intervals.",
+      "width_in": 3.3333333333333335,
+      "height_in": 2.95,
+      "evidence": "uncalibrated_frozen_algorithm_scaling_simulation",
+      "files": {
+        "pdf": "712f09608d57280da3fda6dc7eeb6bf2c58ec5e8d8f924d590c84f2ea4193410",
+        "svg": "15165c3f3666b8f3fb1f992aa0b5c1cb9c1e99c560c1b55a15b622feb4453943",
+        "png": "447509329c38f350305b0b51cee4e9252e789cf3528f722288425be5572793f4",
+        "csv": "ad9a8e84b5558f15e75806a18544d46ab761d7c11c7a9098440feaa4684f62fa"
+      }
+    },
+    {
+      "name": "eval-failure-rate-throughput",
+      "title": "固定时间窗口内的故障频率与完成速率",
+      "caption": "预定 480 s 窗口内注入 K=0/1/2/4 次故障，横轴为 K/480 s 的每集群小时换算。三系统使用相同外部时刻与 GPU，每次不可用 120 s；窗口内停机暴露分别为 0/120/240/420 GPU·s，末次修复越过窗口。纵轴为窗口内完成数/480 s。此范围为压力扫描；每点每系统一次模拟。",
+      "caption_en": "K=0,1,2,4 external GPU failures in a prespecified 480-s window, expressed per cluster-hour. Systems share times and GPU targets; each outage lasts 120 s. In-window downtime is 0,120,240,420 GPU-s; the final repair extends beyond the window. The ordinate counts workflows completed by 480 s divided by 480 s. One simulation per system and stress point.",
+      "width_in": 3.3333333333333335,
+      "height_in": 2.95,
+      "evidence": "uncalibrated_frozen_algorithm_scaling_simulation",
+      "files": {
+        "pdf": "878df48859475872bb6644e5961264b4205869ef3de1b78c351452cd7622f383",
+        "svg": "8c9d12458e59e0e27c91dafca0f0b7f2516e8d8e408fad5b9b64250440f68224",
+        "png": "04f8aab54e26753bb3c7dfd889dc91ac26a3fc8ae7cfa2480ef0487e3cf172b5",
+        "csv": "ecd545a1bbfea6bd31c1421e885a43fa2fa89dd4636a321171f1442efa27d5be"
+      }
+    }
+  ],
+  "inputs": {
+    "output/aegiskv-revision-20260909/scaling/points.json": "45f53b2c06d3bca02572f86459f447d6a0c994defca407d983d5938610f7cef2",
+    "output/aegiskv-revision-20260909/scaling-rate/points.json": "e35b51f0fef5210a7aaa27d4396e482427ade638a2081471dc6cedbffa3cd34d"
+  },
+  "generator_sha256": "f27df2be3d3590c85dedda9350cea524bc4ace0abaf96d45f921f9bdb7552d4d",
+  "statistical_unit": "one entire 160-workflow execution per system/configuration",
+  "visual_review": "PASS",
+  "reviewed_exports": {
+    "tmp/pdfs/revision-review/eval-concurrency-throughput.png": "f3c5d424fb77d28f10ba52f934177050a9b2f84ed22f7b613d5e87d0e6e1eb22",
+    "tmp/pdfs/revision-review/eval-failure-rate-throughput.png": "21b4e78e833477fcae73b888ada74191ee81fab2f6be2190b5ce1779781317dc"
+  },
+  "visual_checks": [
+    "Actual native PDF render and final Markdown image inspected.",
+    "Zero baseline, complete markers with 12 percent upper clearance, no clipped highest point.",
+    "All three system legends visible; no P95 primary plot."
+  ]
+}

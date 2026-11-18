@@ -2078,7 +2078,7 @@ def _budget_sensitivity(rows: Sequence[MatrixRow], spec: _FigureSpec) -> _Render
         and row.scenario == "gpu_failure"
         and row.repetition == "A"
         and (
-            row.variant_id.startswith("peer_budget_gib=")
+            row.variant_id.startswith("peer_hbm_alpha_percent=")
             or row.variant_id.startswith("store_budget_gib=")
         )
     ]
@@ -2092,9 +2092,9 @@ def _budget_sensitivity(rows: Sequence[MatrixRow], spec: _FigureSpec) -> _Render
     declared_seeds = sorted({row.seed for row in selected})
     dimensions: tuple[tuple[str, str, Callable[[MatrixRow], float]], ...] = (
         (
-            "Peer-HBM budget (GiB/GPU)",
-            "peer_budget_gib=",
-            lambda row: _parameter(row, "peer_budget_bytes_per_gpu") / 1024**3,
+            "Peer-HBM alpha",
+            "peer_hbm_alpha_percent=",
+            lambda row: _parameter(row, "peer_hbm_alpha"),
         ),
         (
             "Store DRAM budget (global GiB)",
@@ -2245,13 +2245,9 @@ def _scale_sensitivity(rows: Sequence[MatrixRow], spec: _FigureSpec) -> _Rendere
     ]
     if not selected:
         raise FigureInputError("F11 requires sensitivity-suite rows")
-    canvas = _Canvas(
-        spec.title,
-        "Separate bandwidth and control-delay axes; bucket color; seed jitter",
-    )
-    _bucket_legend(canvas)
-    declared_seeds = sorted({row.seed for row in selected})
-    dimensions: tuple[tuple[str, str, Callable[[MatrixRow], float]], ...] = (
+    dimension_candidates: tuple[
+        tuple[str, str, Callable[[MatrixRow], float]], ...
+    ] = (
         (
             "Store bandwidth (GB/s)",
             "store_bandwidth_gbps=",
@@ -2273,6 +2269,26 @@ def _scale_sensitivity(rows: Sequence[MatrixRow], spec: _FigureSpec) -> _Rendere
             lambda row: _parameter(row, "reroute_ns") / 1_000_000,
         ),
     )
+    dimensions: list[tuple[str, str, Callable[[MatrixRow], float]]] = []
+    for dimension in dimension_candidates:
+        prefix = dimension[1]
+        if any(row.variant_id.startswith(prefix) for row in selected):
+            dimensions.append(dimension)
+        elif prefix != "detection_delay_ms=":
+            raise FigureInputError(f"F11 lacks {prefix} sensitivity rows")
+    has_detection_sensitivity = any(
+        prefix == "detection_delay_ms=" for _label, prefix, _getter in dimensions
+    )
+    canvas = _Canvas(
+        spec.title,
+        (
+            "Separate bandwidth, detection, and reroute-delay axes; bucket color; seed jitter"
+            if has_detection_sensitivity
+            else "Separate bandwidth and reroute-delay axes; bucket color; seed jitter"
+        ),
+    )
+    _bucket_legend(canvas)
+    declared_seeds = sorted({row.seed for row in selected})
     metrics: tuple[tuple[str, Callable[[MatrixRow], float]], ...] = (
         (
             "goodput (tokens/s)",
@@ -2299,8 +2315,6 @@ def _scale_sensitivity(rows: Sequence[MatrixRow], spec: _FigureSpec) -> _Rendere
                 row.run_id,
             ),
         )
-        if not dimension_rows:
-            raise FigureInputError(f"F11 lacks {prefix} sensitivity rows")
         for metric_index, (metric_label, y_getter) in enumerate(metrics):
             left = panel_lefts[dimension_index]
             top = panel_tops[metric_index]
@@ -2387,11 +2401,16 @@ def _scale_sensitivity(rows: Sequence[MatrixRow], spec: _FigureSpec) -> _Rendere
                     fill=_COLORS[BUCKETS.index(row.context_bucket)],
                     parent=group,
                 )
+    axis_note = (
+        "store_peer_fabric_detection_and_reroute_use_separate_axes"
+        if has_detection_sensitivity
+        else "store_peer_fabric_and_reroute_use_separate_axes"
+    )
     return _RenderedFigure(
         canvas.serialize(),
         tuple(bindings),
         (
-            "store_peer_fabric_detection_and_reroute_use_separate_axes",
+            axis_note,
             "store_node_count_not_parameterized_in_canonical_E2_matrix",
             "one_at_a_time_sensitivity_repeat_A_across_all_declared_seeds",
             "bucket_is_color_encoded_and_seed_uses_deterministic_horizontal_jitter",

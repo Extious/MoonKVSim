@@ -1,0 +1,149 @@
+% English counterpart of draft/background_and_motivation.md.
+% Compile from paper/; see motivation-preview.tex for EuroSys 2027 settings.
+\section{Background and Motivation}
+\label{sec:background-motivation}
+
+Multi-agent applications complete a user task through interdependent LLM
+requests. After a worker failure, rebuilding lost key--value (KV) state can
+restore an individual request, but the user-visible penalty depends on when
+the entire workflow completes. Workflow dependencies and the cost of
+rebuilding long contexts motivate allocating limited KV protection resources
+to reduce workflow completion time (WCT).
+
+\input{sections/motivation-figures}
+
+\subsection{Workflows, Failures, and KV Recovery}
+\label{sec:motivation-background}
+
+\paragraph{Multi-agent workflows.}
+We represent a workflow as a directed acyclic graph $G=(V,E)$, whose nodes
+are LLM requests and whose edges are data dependencies. An agent branch may
+include multiple requests and tool calls; a successor runs only after its
+dependencies are satisfied. WCT spans the release of the first request to
+the completion of the last. For a given execution schedule, a request's
+\emph{slack} is the maximum delay to its completion that does not postpone
+workflow completion. Requests on a critical path have zero slack.
+
+\paragraph{Serving and failure model.}
+We consider a cluster of GPU workers with block-managed KV that can be
+replicated to other GPUs or a host DRAM pool, consistent with KV-centric
+architectures such as Mooncake~\cite{qin2025mooncake}. Our failure model is
+a fail-stop failure of one GPU or worker: its local KV becomes unavailable,
+while the control plane, backup DRAM, and other workers survive. Surviving
+workers with the same model already loaded take over affected requests.
+Whole-host failures, network partitions, and silent corruption are outside
+this failure model.
+
+\paragraph{Recovery paths and resource costs.}
+Without a usable copy, the system must rerun prefill to rebuild lost KV.
+A DRAM copy avoids reconstructing the saved prefix but must be transferred
+to a GPU before use; concurrent recoveries share transfer bandwidth.
+A copy already resident in the actual takeover GPU's HBM can be used
+directly, at the cost of HBM capacity that could serve foreground requests
+and replication traffic before failure. Backup placement therefore trades
+capacity and normal-service overhead against recovery speed.
+
+Prior systems reduce failure costs through KV streaming in
+D\'{e}j\`{a}Vu~\cite{strati2024dejavu}, erasure coding in
+GhostServe~\cite{jayakody2026ghostserve}, and load-aware checkpoint and
+recovery coordination in LUMEN~\cite{cao2026lumen}. Multi-agent
+applications add an allocation problem: saving the same recovery time for
+different requests can have different value to the user. Neither saved KV
+bytes nor avoided computation alone captures that difference.
+
+\subsection{Recovery Cost Is Not Workflow Delay}
+\label{sec:motivation-workflow}
+
+A join waits for its last required branch. Earlier branches can tolerate
+some delay, whereas delaying the branch that determines the join time
+postpones downstream work. To characterize branch timing differences, we
+analyze the public CC/Weka coding-agent
+traces~\cite{semianalysis2026cctraces}. Of 393 sessions, 124 workflows
+contain strictly overlapping subagent fan-outs: the latest branch start
+precedes the earliest branch finish. For each fan-out, we compute the
+longest minus the shortest branch duration; each workflow contributes its
+maximum such gap. Figure~\ref{fig:motivation}(\subref{fig:motivation-branch-gap}) shows a median of
+141\,s and a 90th percentile of 1,570\,s. These gaps establish substantial
+branch-duration heterogeneity. With unequal branch start times, however,
+a duration gap is neither join slack nor a direct measure of fault tolerance.
+
+Figure~\ref{fig:motivation}(\subref{fig:motivation-workflow}) shows a short
+five-branch fan-out, selected by minimizing the longest branch duration
+among strictly overlapping five-way fan-outs. The branches take
+40.6--59.1\,s; labels give completion times since workflow start.
+A5 determines the join at 111.9\,s. Each branch's slack is its time
+margin to this join.
+
+Figure~\ref{fig:motivation}(\subref{fig:motivation-recovery-exposure}) shows
+five independent counterfactuals at 76.0\,s after workflow start, each
+losing one branch's current prefix KV. Trace hash-block counts give
+prefix-length estimates of 57,984--95,744 tokens. We obtain recomputation
+time $T_i$ by log--log interpolation of the measured MiniCPM4-8B curve in
+Figure~\ref{fig:motivation-recompute} and derive branch slack $\sigma_i$
+offline from trace completion times. Holding other branches, downstream
+execution, and queueing unchanged, and counting only prefix recomputation,
+the WCT penalty is $\max(0,T_i-\sigma_i)$. Substituting these costs
+illustrates the effect of dependencies; it does not replay failures on the
+original serving model.
+
+A1 has the longest prefix and takes 15.4\,s to rebuild, but its 13.9\,s
+slack limits the WCT penalty to 1.6\,s. A5 has the shortest prefix and
+takes only 8.8\,s to rebuild, yet its zero slack exposes all of that time
+to WCT. A2's 22.8\,s slack absorbs its entire 10.0\,s rebuild. Thus, avoiding the most
+recomputation need not yield the largest WCT improvement. KV protection
+must account for delay tolerance within a workflow; online estimation and
+resource contention require the mechanisms and evaluation developed later.
+
+\subsection{Long Contexts Increase Rebuilding Cost}
+\label{sec:motivation-long-context}
+
+\input{sections/motivation-prefill-figure}
+
+Repeated agent interactions accumulate code, tool outputs, and other
+agents' intermediate results in the context. A worker failure can force
+this history through prefill again. Native sparse attention reduces
+attention computation and access, but still needs the historical KV
+required by subsequent execution; it does not eliminate state-loss costs.
+
+Figure~\ref{fig:motivation-recompute} reports full-prefill costs for
+8K--128K-token prefixes with no usable KV, where K~=~1,024. We run the
+native sparse prefill path of MiniCPM4-8B~\cite{minicpm4model} on one
+A100 80GB PCIe GPU with batch size one and BF16. Each point is the median
+of five timings on the same random-token input, including block selection
+and all KV writes. Measured latency grows from 1.05\,s at 8K to 22.3\,s
+at 128K. For context, AIConfigurator~\cite{nvidia2026aiconfigurator}
+0.9.0 HYBRID estimates at 128K are 34.6\,s for Qwen3-8B and 43.2\,s for
+Qwen3-30B-A3B. These dashed curves use A100-SXM kernel tables and a
+performance model; together with the PCIe measurements, they do not
+constitute a controlled comparison of models or attention mechanisms.
+
+Under these conditions, rebuilding a long context takes tens of seconds
+even with native sparse attention. Combined with
+Figure~\ref{fig:motivation}(\subref{fig:motivation-recovery-exposure}), this shows why both
+rebuilding cost and branch delay tolerance matter. Saving KV before
+failure can reduce repeated computation. The additional value of DRAM
+or peer HBM depends on transfer, computation, and contention during
+recovery and cannot be inferred from full-prefill latency alone.
+
+\subsection{Problem and Design Goals}
+\label{sec:motivation-goals}
+
+AegisKV asks: \emph{with limited backup capacity and replication and
+recovery bandwidth, which KV from which requests should receive what
+protection to reduce the workflow-level impact of failures?}
+Dependencies differentiate protection benefits, long contexts increase
+state-loss costs, and replication competes with foreground serving.
+
+This problem imposes five goals and constraints.
+\textbf{(R1)} Optimize recovery for WCT, accounting for dependency-induced
+delay tolerance.
+\textbf{(R2)} Allocate limited backup capacity across requests and their
+KV to reduce exposed recovery waiting.
+\textbf{(R3)} Support concurrent recovery and transfer--compute overlap
+without introducing request-level serialization for protection priority.
+\textbf{(R4)} Bound normal-service replication overhead and subordinate
+backup capacity and bandwidth use to foreground needs.
+\textbf{(R5)} Preserve model computation and KV recovery correctness using
+existing serving resources.
+The next section develops the evidence for mechanism choices and the
+corresponding placement and recovery design.

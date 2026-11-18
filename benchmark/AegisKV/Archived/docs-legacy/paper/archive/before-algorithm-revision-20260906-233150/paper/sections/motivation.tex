@@ -1,0 +1,76 @@
+\section{Background and Motivation}
+\label{sec:motivation}
+\subsection{Recovery work and workflow delay differ}
+A workflow is a DAG of requests, tools and control nodes. A join waits for
+every predecessor, so a recovery pause on one branch can be absorbed while
+another branch runs. Figure~\ref{fig:motivation} connects observed branch
+imbalance to this mechanism using the public CC/Weka trace~\cite{semianalysis2026cctraces}.
+We retain parser fan-outs whose branch intervals have nonempty common
+overlap, and take one maximum longest-minus-shortest duration gap per
+workflow. The 124 qualifying workflows have median and 90th-percentile gaps
+of 140.6 and 1,570.3 s. These are duration differences, not duration ratios or
+unbiased estimates of every branch's available Slack.
+
+\begin{figure*}[tp]
+\centering\includegraphics[width=\textwidth]{figures/motivation-real-cc.pdf}
+\caption{Observed imbalance and modeled recovery consequence.
+(a) One maximum strict-parallel duration gap per qualifying CC/Weka workflow.
+(b) The same five-branch trace example; solid bars are observed execution,
+dashed segments are time remaining until the reconstructed join. Parent edges
+are inferred from ordering and timestamps.
+(c) A separate fault on each branch at 349.5 s: modeled recomputation is split
+into absorbed and exposed delay; labels give exposed seconds. This frozen
+AIConfigurator counterfactual uses Qwen3-235B-A22B, A100-80GB, TP8/PP4/EP8;
+it is neither a measured failure nor the Qwen3-8B evaluation.}
+\Description{A workflow-level empirical CDF, a time-scaled five-branch
+execution diagram with join slack, and a stacked comparison of absorbed
+versus exposed modeled recovery delay.}
+\label{fig:motivation}
+\end{figure*}
+
+The example separates runtime length, join slack and recovery cost. A3 has
+52.4 s before the join and absorbs its modeled 46.6 s recomputation. A4 is
+critical and exposes all 35.9 s; A2 and A5 expose intermediate delays.
+The frozen counterfactual~\cite{nvidia2026aiconfigurator} substitutes a configured
+recomputation model for the trace's original model. Input lengths come from
+64-token hash-block counts, not exact retokenization. It assumes unchanged
+other branches and omits recovery contention; it illustrates a mechanism
+without estimating deployment speedup. The later simulation uses a separate,
+exact-token FanOutQA-derived workload.
+
+The local harm approximation $J_i=\pos{T_i-s_i}$ relates recovery time $T_i$
+to remaining Slack $s_i$. Queues, contention and simultaneous failures can
+change the critical branch. AegisKV therefore refreshes Slack during execution,
+and evaluation measures complete workflows.
+
+\subsection{KV protection consumes the resources it aims to save}
+For a model with $L$ attention layers, $h_{kv}$ KV heads, head dimension $d$
+and $b$ bytes per element, a token occupies $2Lh_{kv}db$ KV bytes before
+allocator rounding. Our Qwen3-8B layout uses 147,456 bytes per token: a
+4,096-token prompt chunk occupies 576 MiB, and an 86,016-token prompt roughly
+11.81 GiB. Figure~\ref{fig:motivation-cost} quantifies the footprint and separates it
+from measured pilot transfer rates. Two copies of a long prompt can exceed the memory left
+after weights and runtime reserves on a modeled 40 GiB GPU.
+
+HBM protection competes with primary KV; DRAM requires source-to-host and
+host-to-recovery copies. Both consume serving resources. The pilot restores
+HBM state yet runs slightly slower (Section~\ref{sec:physical}).
+
+\subsection{Requirements}
+Protection must value workflow harm avoided by recoverable prefixes. Each
+tier must remain independently useful, regardless of the other's residency.
+Physical state must govern replacement and recovery: pending copies are
+unusable, and committed backups retain storage while populating primary KV.
+
+\begin{figure*}[tp]
+\centering\includegraphics[width=\textwidth]{figures/aligned-motivation-cost.pdf}
+\caption{Capacity and service cost. (a) Analytical Qwen3-8B KV footprint
+and modeled post-weight/runtime HBM budget; these are not measured allocations.
+(b) Every physical RTX4090 calibration observation (circles) and its
+aggregate byte/time rate (diamonds); $n$ is the number of transfer samples.
+Host staging and software overhead are included. One recovery sample per
+path supports neither an uncertainty interval nor A100 calibration.}
+\Description{One- and two-copy KV footprints versus prompt length, alongside
+measured HBM and DRAM protection/recovery service rates in the physical pilot.}
+\label{fig:motivation-cost}
+\end{figure*}

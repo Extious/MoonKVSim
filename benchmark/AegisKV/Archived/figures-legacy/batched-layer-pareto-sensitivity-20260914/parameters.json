@@ -1,0 +1,80 @@
+{
+  "model": "Qwen3-8B",
+  "M": 32768,
+  "effective_compute_TFLOP_s_assumed": 100,
+  "batch_layers_and_initial_resident_layers": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36
+  ],
+  "reference": {
+    "H2D_GB_s": 25,
+    "replay_tokens": 512
+  },
+  "right_panel": {
+    "replay_tokens": 512,
+    "H2D_GB_s": [
+      12.5,
+      25,
+      50
+    ]
+  },
+  "bottom_panel": {
+    "H2D_GB_s": 25,
+    "replay_tokens": [
+      128,
+      256,
+      512,
+      1024,
+      2048
+    ]
+  },
+  "y_orientation": "Low values at top, high values at bottom; explicitly confirmed by user",
+  "y_scales": "All linear ms; range chosen separately for each panel",
+  "pareto_comparison_scope": "Within each fixed bandwidth/replay condition only",
+  "objectives": [
+    "minimize initial Peer HBM historical KV bytes",
+    "minimize exposed loading wait"
+  ],
+  "overlap_display": "The exactly identical 1024 and 2048 replay waiting curves share one labeled visual line; both are retained in the CSV",
+  "layout": "Reference upper left; bandwidth upper right; replay below both upper panels",
+  "cost_scope": "Initial HBM only; no bandwidth procurement cost, backup maintenance, foreground cost or lifecycle cost",
+  "schedule": "Next batch only, whole-batch ready, actual final partial batch, copied KV retained",
+  "evidence": "Analytical, not measured or calibrated",
+  "placed_width_mm": 178,
+  "unique_condition_count": 7,
+  "unique_candidate_count": 252
+}

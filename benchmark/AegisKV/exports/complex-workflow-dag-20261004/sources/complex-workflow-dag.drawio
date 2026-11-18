@@ -1,0 +1,361 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="complex-workflows-zh" name="Agent 依赖关系（中文）">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageWidth="1080" pageHeight="426" background="#FFFFFF">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="canvas" value="" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=FandolSong;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#FFFFFF;strokeColor=none;strokeWidth=1.2;spacing=0;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="1080" height="426" as="geometry" />
+        </mxCell>
+        <mxCell id="w1" value="" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=FandolSong;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;strokeWidth=1.2;spacing=0;container=1;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry x="10" y="8" width="520" height="410" as="geometry" />
+        </mxCell>
+        <mxCell id="w1-title" value="(a) 论文审阅报告" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=FandolSong;fontSize=27;fontColor=#243746;fontStyle=1;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;strokeWidth=1.2;spacing=0;" vertex="1" parent="w1">
+          <mxGeometry x="20" y="3" width="480" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="w1-A" value="A：方法主张" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=FandolSong;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.2;spacing=0;" vertex="1" parent="w1">
+          <mxGeometry x="12" y="60" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="w1-B" value="B：实验证据" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=FandolSong;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.2;spacing=0;" vertex="1" parent="w1">
+          <mxGeometry x="180" y="60" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="w1-C" value="C：适用条件" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=FandolSong;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.2;spacing=0;" vertex="1" parent="w1">
+          <mxGeometry x="348" y="60" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="w1-D" value="D：主张匹配" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=FandolSong;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.2;spacing=0;" vertex="1" parent="w1">
+          <mxGeometry x="12" y="156" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="w1-E" value="E：证据边界" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=FandolSong;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.2;spacing=0;" vertex="1" parent="w1">
+          <mxGeometry x="348" y="156" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="w1-F" value="F：论证草稿" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=FandolSong;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.2;spacing=0;" vertex="1" parent="w1">
+          <mxGeometry x="12" y="252" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="w1-G" value="G：评审修订" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=FandolSong;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.2;spacing=0;" vertex="1" parent="w1">
+          <mxGeometry x="180" y="348" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="w1-A-complete-to-D" value="" edge="1" parent="w1" source="w1-A" target="w1-D" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.5;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="w1-B-complete-to-D" value="" edge="1" parent="w1" source="w1-B" target="w1-D" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.25;exitY=1;exitPerimeter=0;entryX=0.85;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="220" y="138" />
+              <mxPoint x="148" y="138" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w1-B-complete-to-E" value="" edge="1" parent="w1" source="w1-B" target="w1-E" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.75;exitY=1;exitPerimeter=0;entryX=0.15;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="300" y="138" />
+              <mxPoint x="372" y="138" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w1-C-complete-to-E" value="" edge="1" parent="w1" source="w1-C" target="w1-E" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.5;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="w1-D-complete-to-F" value="" edge="1" parent="w1" source="w1-D" target="w1-F" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.5;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="w1-C-complete-to-F" value="" edge="1" parent="w1" source="w1-C" target="w1-F" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0.8;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="518" y="84" />
+              <mxPoint x="518" y="240" />
+              <mxPoint x="140" y="240" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w1-E-complete-to-G" value="" edge="1" parent="w1" source="w1-E" target="w1-G" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.85;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="428" y="330" />
+              <mxPoint x="316" y="330" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w1-F-complete-to-G" value="" edge="1" parent="w1" source="w1-F" target="w1-G" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.15;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="92" y="330" />
+              <mxPoint x="204" y="330" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w2" value="" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=FandolSong;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;strokeWidth=1.2;spacing=0;container=1;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry x="550" y="8" width="520" height="410" as="geometry" />
+        </mxCell>
+        <mxCell id="w2-title" value="(b) 多源新闻综合" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=FandolSong;fontSize=27;fontColor=#243746;fontStyle=1;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;strokeWidth=1.2;spacing=0;" vertex="1" parent="w2">
+          <mxGeometry x="20" y="3" width="480" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="w2-H" value="H：时间线" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=FandolSong;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.2;spacing=0;" vertex="1" parent="w2">
+          <mxGeometry x="12" y="60" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="w2-I" value="I：来源事实" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=FandolSong;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.2;spacing=0;" vertex="1" parent="w2">
+          <mxGeometry x="180" y="60" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="w2-J" value="J：背景条件" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=FandolSong;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.2;spacing=0;" vertex="1" parent="w2">
+          <mxGeometry x="348" y="60" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="w2-K" value="K：事件归并" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=FandolSong;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.2;spacing=0;" vertex="1" parent="w2">
+          <mxGeometry x="12" y="156" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="w2-L" value="L：背景梳理" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=FandolSong;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.2;spacing=0;" vertex="1" parent="w2">
+          <mxGeometry x="348" y="156" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="w2-M" value="M：报道草稿" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=FandolSong;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.2;spacing=0;" vertex="1" parent="w2">
+          <mxGeometry x="12" y="252" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="w2-N" value="N：证据核查" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=FandolSong;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.2;spacing=0;" vertex="1" parent="w2">
+          <mxGeometry x="348" y="252" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="w2-O" value="O：整合修订" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=FandolSong;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.2;spacing=0;" vertex="1" parent="w2">
+          <mxGeometry x="180" y="348" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="w2-H-complete-to-K" value="" edge="1" parent="w2" source="w2-H" target="w2-K" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.5;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="w2-I-complete-to-K" value="" edge="1" parent="w2" source="w2-I" target="w2-K" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.25;exitY=1;exitPerimeter=0;entryX=0.85;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="220" y="138" />
+              <mxPoint x="148" y="138" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w2-I-complete-to-L" value="" edge="1" parent="w2" source="w2-I" target="w2-L" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.75;exitY=1;exitPerimeter=0;entryX=0.15;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="300" y="138" />
+              <mxPoint x="372" y="138" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w2-J-complete-to-L" value="" edge="1" parent="w2" source="w2-J" target="w2-L" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.5;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="w2-K-complete-to-M" value="" edge="1" parent="w2" source="w2-K" target="w2-M" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.5;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="w2-J-complete-to-M" value="" edge="1" parent="w2" source="w2-J" target="w2-M" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0.8;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="518" y="84" />
+              <mxPoint x="518" y="240" />
+              <mxPoint x="140" y="240" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w2-K-complete-to-N" value="" edge="1" parent="w2" source="w2-K" target="w2-N" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.8;exitY=1;exitPerimeter=0;entryX=0.2;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="140" y="228" />
+              <mxPoint x="380" y="228" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w2-L-complete-to-N" value="" edge="1" parent="w2" source="w2-L" target="w2-N" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.5;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="w2-M-complete-to-O" value="" edge="1" parent="w2" source="w2-M" target="w2-O" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.15;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="92" y="330" />
+              <mxPoint x="204" y="330" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w2-N-complete-to-O" value="" edge="1" parent="w2" source="w2-N" target="w2-O" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.85;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="428" y="330" />
+              <mxPoint x="316" y="330" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="complex-workflows-en" name="Agent dependencies (paper)">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageWidth="1080" pageHeight="426" background="#FFFFFF">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="canvas" value="" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#FFFFFF;strokeColor=none;strokeWidth=1.2;spacing=0;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="1080" height="426" as="geometry" />
+        </mxCell>
+        <mxCell id="w1" value="" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;strokeWidth=1.2;spacing=0;container=1;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry x="10" y="8" width="520" height="410" as="geometry" />
+        </mxCell>
+        <mxCell id="w1-title" value="(a) Research review" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=27;fontColor=#243746;fontStyle=1;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;strokeWidth=1.2;spacing=0;" vertex="1" parent="w1">
+          <mxGeometry x="20" y="3" width="480" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="w1-A" value="A: Claims" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.2;spacing=0;" vertex="1" parent="w1">
+          <mxGeometry x="12" y="60" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="w1-B" value="B: Experiments" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.2;spacing=0;" vertex="1" parent="w1">
+          <mxGeometry x="180" y="60" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="w1-C" value="C: Scope" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.2;spacing=0;" vertex="1" parent="w1">
+          <mxGeometry x="348" y="60" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="w1-D" value="D: Alignment" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.2;spacing=0;" vertex="1" parent="w1">
+          <mxGeometry x="12" y="156" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="w1-E" value="E: Limits" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.2;spacing=0;" vertex="1" parent="w1">
+          <mxGeometry x="348" y="156" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="w1-F" value="F: Argument" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.2;spacing=0;" vertex="1" parent="w1">
+          <mxGeometry x="12" y="252" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="w1-G" value="G: Review" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.2;spacing=0;" vertex="1" parent="w1">
+          <mxGeometry x="180" y="348" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="w1-A-complete-to-D" value="" edge="1" parent="w1" source="w1-A" target="w1-D" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.5;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="w1-B-complete-to-D" value="" edge="1" parent="w1" source="w1-B" target="w1-D" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.25;exitY=1;exitPerimeter=0;entryX=0.85;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="220" y="138" />
+              <mxPoint x="148" y="138" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w1-B-complete-to-E" value="" edge="1" parent="w1" source="w1-B" target="w1-E" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.75;exitY=1;exitPerimeter=0;entryX=0.15;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="300" y="138" />
+              <mxPoint x="372" y="138" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w1-C-complete-to-E" value="" edge="1" parent="w1" source="w1-C" target="w1-E" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.5;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="w1-D-complete-to-F" value="" edge="1" parent="w1" source="w1-D" target="w1-F" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.5;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="w1-C-complete-to-F" value="" edge="1" parent="w1" source="w1-C" target="w1-F" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0.8;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="518" y="84" />
+              <mxPoint x="518" y="240" />
+              <mxPoint x="140" y="240" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w1-E-complete-to-G" value="" edge="1" parent="w1" source="w1-E" target="w1-G" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.85;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="428" y="330" />
+              <mxPoint x="316" y="330" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w1-F-complete-to-G" value="" edge="1" parent="w1" source="w1-F" target="w1-G" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.15;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="92" y="330" />
+              <mxPoint x="204" y="330" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w2" value="" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;strokeWidth=1.2;spacing=0;container=1;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry x="550" y="8" width="520" height="410" as="geometry" />
+        </mxCell>
+        <mxCell id="w2-title" value="(b) News synthesis" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=27;fontColor=#243746;fontStyle=1;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;strokeWidth=1.2;spacing=0;" vertex="1" parent="w2">
+          <mxGeometry x="20" y="3" width="480" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="w2-H" value="H: Timeline" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.2;spacing=0;" vertex="1" parent="w2">
+          <mxGeometry x="12" y="60" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="w2-I" value="I: Sources" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.2;spacing=0;" vertex="1" parent="w2">
+          <mxGeometry x="180" y="60" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="w2-J" value="J: Context" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.2;spacing=0;" vertex="1" parent="w2">
+          <mxGeometry x="348" y="60" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="w2-K" value="K: Events" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.2;spacing=0;" vertex="1" parent="w2">
+          <mxGeometry x="12" y="156" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="w2-L" value="L: Background" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.2;spacing=0;" vertex="1" parent="w2">
+          <mxGeometry x="348" y="156" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="w2-M" value="M: Draft" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.2;spacing=0;" vertex="1" parent="w2">
+          <mxGeometry x="12" y="252" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="w2-N" value="N: Evidence" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.2;spacing=0;" vertex="1" parent="w2">
+          <mxGeometry x="348" y="252" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="w2-O" value="O: Edit" style="rounded=1;arcSize=6;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#243746;fontStyle=0;align=center;verticalAlign=middle;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.2;spacing=0;" vertex="1" parent="w2">
+          <mxGeometry x="180" y="348" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="w2-H-complete-to-K" value="" edge="1" parent="w2" source="w2-H" target="w2-K" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.5;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="w2-I-complete-to-K" value="" edge="1" parent="w2" source="w2-I" target="w2-K" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.25;exitY=1;exitPerimeter=0;entryX=0.85;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="220" y="138" />
+              <mxPoint x="148" y="138" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w2-I-complete-to-L" value="" edge="1" parent="w2" source="w2-I" target="w2-L" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.75;exitY=1;exitPerimeter=0;entryX=0.15;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="300" y="138" />
+              <mxPoint x="372" y="138" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w2-J-complete-to-L" value="" edge="1" parent="w2" source="w2-J" target="w2-L" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.5;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="w2-K-complete-to-M" value="" edge="1" parent="w2" source="w2-K" target="w2-M" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.5;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="w2-J-complete-to-M" value="" edge="1" parent="w2" source="w2-J" target="w2-M" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0.8;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="518" y="84" />
+              <mxPoint x="518" y="240" />
+              <mxPoint x="140" y="240" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w2-K-complete-to-N" value="" edge="1" parent="w2" source="w2-K" target="w2-N" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.8;exitY=1;exitPerimeter=0;entryX=0.2;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="140" y="228" />
+              <mxPoint x="380" y="228" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w2-L-complete-to-N" value="" edge="1" parent="w2" source="w2-L" target="w2-N" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.5;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="w2-M-complete-to-O" value="" edge="1" parent="w2" source="w2-M" target="w2-O" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.15;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="92" y="330" />
+              <mxPoint x="204" y="330" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w2-N-complete-to-O" value="" edge="1" parent="w2" source="w2-N" target="w2-O" style="rounded=0;html=0;strokeColor=#243746;strokeWidth=1.6;endArrow=block;endSize=5;endFill=1;dashed=0;dashPattern=5 3;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.85;entryY=0;entryPerimeter=0;jumpStyle=arc;jumpSize=10;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="428" y="330" />
+              <mxPoint x="316" y="330" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,18 @@
+\begin{algorithm}[tp]
+\caption{\textsc{ForegroundBudget}: revocable HBM allowance (revision 3)}
+\label{alg:guarded-aimd}
+\begin{tabular}{@{}r@{\hspace{0.5em}}>{\raggedright\arraybackslash}p{\dimexpr\columnwidth-2.5em\relax}@{}}
+\multicolumn{2}{@{}l}{\textbf{BeforeReservation / Watchdog}$(p,o)$}\\
+1 & Exact epoch/sequence retry returns the old decision; stale or conflicting IDs reject.\\
+2 & Reconcile committed, copying and reclaiming bytes with physical inventory.\\
+3 & Compute $Q_{mem}$ after disjoint current/next primary, burst and allocator reserves.\\
+4 & Invalid samples/domain, expiry or foreground violation $\Rightarrow Q^*\gets0$; reset stable time.\\
+5 & Otherwise $Q^*\gets\min(Q_{mem},Q_{cert},D)$; $D$ includes useful residency and staging.\\
+6 & $Q^*<Q\Rightarrow Q\gets Q^*$ immediately; reset stable time.\\
+7 & Valid sustained headroom, demand and no reclaim debt $\Rightarrow Q\gets\min(Q^*,Q+v_{grow}\Delta t)$.\\
+8 & Publish $\alpha=Q/M_{registered}$ and expiring path/batch copy permits.\\
+9 & Pause unsafe copies, abort/revoke safe objects, and retry reclaim IDs until free ACK.\\
+10 & Foreground allocation requires actual physical feasibility, not a smaller published quota.\\
+11 & Each bounded DMA batch rechecks permits and atomically debits all shared path budgets.\\
+\end{tabular}
+\end{algorithm}

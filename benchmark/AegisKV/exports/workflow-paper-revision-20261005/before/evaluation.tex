@@ -1,0 +1,118 @@
+\section{Evaluation}
+\label{sec:evaluation}
+
+Eight workflows arrive online on the recorded BLSC engine. Each node has two
+A100-PCIe-40GB GPUs and serves one TP\,2 worker. Host-to-device copies use
+the pinned rate measured on that partition, 23.98\,GB/s. The peer is a second
+node of the same recorded type. Prefill is charged at 100\,$\mu$s per token
+and decode at 2\,ms per token. Each workflow is one Agent. Its reads are a
+captured sparse forward: NOSA-8B, NSA-8B, or MiniCPM4.1-8B on PG19 document
+10146, 10321, or 10356. Arrivals are spaced at 0.45 of one workflow's service
+time, so both workers stay busy. Restart keeps no checkpoint. DRAM-only keeps
+a complete peer-DRAM checkpoint. \system adds the Top-$K$ blocks of the first
+$L$ layers in peer HBM, with $L{=}4$, $K{=}16$, and a quota that starts at
+16\,MiB. Router places the retry on the other node, KV Master admits the
+checkpoint, and Adapter holds the quota.
+
+With the failure removed, DRAM-only and \system finish every workflow at the
+same time as Restart. The difference is 0\,ns on every healthy run in the
+matrix: four prompt lengths on NOSA-8B document 10146, the same 8{,}192-token
+arrival on NSA-8B and MiniCPM4.1-8B, and the other two NOSA documents.
+
+The failure removes the worker running wf04 at 65\% of its invocation.
+Figure~\ref{fig:eval-online} is the 24{,}576-token NOSA arrival. Workflows
+released before the failure match the healthy run. wf04 finishes in
+2{,}585.6\,ms with no failure, 4{,}102.9\,ms under \system, and
+5{,}688.3\,ms under Restart. From wf04 through wf07, \system stays
+1{,}585.4\,ms ahead of Restart. The queue before admission is 1{,}500.1\,ms
+for both. Service is 2{,}459.6\,ms under Restart and 874.2\,ms under
+\system. The checkpoint holds 15{,}872 of the 16{,}016 tokens already
+produced, and the retry rebuilds the other 144. Restart rebuilds all
+16{,}016. Router sends the retry from worker~1 to worker~0. The failed
+worker stays down, so the two curves keep rising together and the checkpoint
+remains a constant offset. DRAM-only lies within 0.217\,ms of \system on
+every paired workflow, so the figure draws one line for both. \system places
+64 HBM blocks. The quota is still 16\,MiB at the end of the run.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/eval-online-wct.pdf}
+  \caption{Completion time for eight 24{,}576-token NOSA-8B workflows.
+  The line marks the failure of wf04. DRAM-only finishes within 0.217\,ms
+  of \system.}
+  \label{fig:eval-online}
+  \Description{Workflow completion before and after one mid-run failure.}
+\end{figure}
+
+\begin{center}
+  \captionof{table}{Retry latency (ms) on NOSA-8B document 10146. Saved is
+  Restart minus \system, and it is also the completion-time gap from wf04
+  onward.}
+  \label{tab:eval-retry}
+  \Description{Retry latency of Restart and AegisKV at four prompt lengths.}
+  \begin{tabular}{@{}rrrr@{}}
+    \toprule
+    Prompt & Restart & \system & Saved \\
+    \midrule
+    2{,}048 & 468.9 & 340.9 & 128.0 \\
+    8{,}192 & 1{,}421.1 & 909.2 & 511.9 \\
+    16{,}384 & 2{,}690.9 & 1{,}642.1 & 1{,}048.8 \\
+    24{,}576 & 3{,}960.7 & 2{,}375.3 & 1{,}585.4 \\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+Figure~\ref{fig:eval-retry} and Table~\ref{tab:eval-retry} vary the prompt
+length on the same document and the same failure. The saving grows from
+128.0\,ms at 2{,}048 tokens to 1{,}585.4\,ms at 24{,}576 tokens. It tracks
+the prefill of the checkpointed prefix. The queue grows with the prompt as
+well, so retry latency falls by about two fifths rather than by the ratio of
+tokens rebuilt. At 8{,}192 tokens, NSA-8B and MiniCPM4.1-8B, and NOSA
+documents 10321 and 10356, all finish the retry within 6\,$\mu$s of the NOSA
+document 10146 run. The captured selection changes which 64 blocks sit in
+HBM. It does not move completion time beyond the 0.217\,ms DRAM gap.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/eval-retry-length.pdf}
+  \caption{Retry latency of wf04 against prompt length. One GPU failure at
+  65\% of the invocation. The vertical gap is the saving in
+  Table~\ref{tab:eval-retry}.}
+  \label{fig:eval-retry}
+  \Description{Retry latency of Restart and AegisKV at four prompt lengths.}
+\end{figure}
+
+The single failure is also what the recorded GPU faults imply for a run of
+this length. The InfiniteHBD trace covers 400 GPU servers and spans 345
+days \cite{shou2025infinitehbd}. It contains 158 GPU faults on 97 servers.
+The shortest GPU downtime is 267.8\,s and the median is 17.1\,h
+(Figure~\ref{fig:eval-faults}). The longest arrival here, the failed
+24{,}576-token run, ends 16.5\,s after the first release. Every recorded GPU
+repair outlasts that arrival, so a fault that hits a live worker leaves the
+worker down for the rest of the run. The trace is a pretraining-cluster log.
+It supplies the downtime, not a serving request mix.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/eval-fault-downtime.pdf}
+  \caption{GPU downtime in the InfiniteHBD trace. The line is the end of
+  the longest serving run, 16.5\,s.}
+  \label{fig:eval-faults}
+  \Description{Cumulative distribution of recorded GPU fault durations.}
+\end{figure}
+
+The HBM copy stays small because $K{=}16$ covers little of these traces.
+\label{sec:eval-native}
+On the first four layers of NOSA, NSA, and MiniCPM, the deployed selector
+hits 8.31\%, 4.20\%, and 4.06\% of distinct blocks. Recency matches the
+first two and reaches 4.13\% on MiniCPM
+(Figure~\ref{fig:eval-native-topk}).
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/eval-native-topk.pdf}
+  \caption{Distinct-block coverage on the three captured sparse models.
+  Points average three documents; whiskers are the document range.}
+  \label{fig:eval-native-topk}
+  \Description{Coverage of the deployed selector, recency, and a future-demand oracle.}
+\end{figure}

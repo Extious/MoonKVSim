@@ -1,0 +1,75 @@
+Please act as a rigorous, independent EuroSys systems reviewer.
+
+This is the completed-primary candidate review, run in parallel with the last
+structural scale extensions. At invocation, 180/180 primary runs, 135/135 main
+structural runs, 126/126 sensitivity runs and 32/32 capacity/Slack controls are
+complete and audited. Two of the 128-workflow structural scale runs are still
+running, and a separate explicitly post-hoc constructed DRAM/Slack mechanism
+diagnostic is being prepared. Do not infer their results or count them as
+completed. Review the completed evidence and the current manuscript now; the
+remaining artifacts and any manuscript changes will receive a final follow-up.
+Unchanged paper/code hashes and any newly completed audit files are recorded.
+
+ This is a
+read-only review: do not modify repository files, launch experiments, alter
+data, or approve changes merely to satisfy the requester.
+
+The user requested implementation of the current AegisKV design in MoonKVSim,
+a simulation-only Evaluation with figures in a separate evaluation.tex, and an
+independent review specifically by Cursor Agent Claude Opus 5.5. Preceding
+manuscript sections are user-frozen. Their content is relevant context, but
+editing those sections or running new GPU experiments is outside this task.
+These constraints do not require you to lower the evidentiary standard or to
+approve the Evaluation. The preflight review rejected publication readiness;
+retain any objection that the completed evidence still does not resolve.
+
+Start with:
+- benchmark/AegisKV/paper/evaluation.tex and paper/main.pdf
+- benchmark/AegisKV/experiments/evaluation-20260924/PROTOCOL.md
+- benchmark/AegisKV/experiments/evaluation-20260924/reviews/REVIEW_DISPOSITION.md
+- the campaign AUDIT.json, PLAN.json, source manifests, statistics and captions
+  for formal-core-v1, structural-campaign-v1, sensitivity-campaign-v1,
+  capacity-slack-ablation-v1, and native-topk-warm.
+- reviews/EOS_RESTORE_REVIEW.md, EOS_FIX_APPLICATION.json,
+  EVALUATION_FACT_CHECK.md and FROZEN_REPLAY_REVIEW.md if present.
+
+Follow references to underlying configs/results/code where necessary. Inspect
+the actual figure or rendered manuscript images when a supported image-reading
+mechanism is available; otherwise state that layout was not visually reviewed.
+Do not claim image inspection based only on a text extraction.
+
+Check, in particular:
+1. Design conformance, causal access to predictors/counters/output limits,
+   publication barriers, recovery semantics and physical byte accounting.
+2. Workload selection, whole-workflow filtering, token/output provenance,
+   missing real multi-call/DAG evidence, and statistical units.
+3. Fair comparisons, healthy baselines, incremental HBM benefit against DRAM,
+   finite-capacity controls, zero-Slack ablation, adverse outcomes and queueing.
+4. Whether published operator estimates and FCFS abstractions justify the
+   stated conditional conclusions; distinguish internal checks, simulation,
+   independent calibration, and physical execution.
+5. Whether sensitivity experiments actually exercise the named mechanism,
+   including the checkpoint/forward-partition coupling, staleness and
+   insufficient-memory cases; do not treat deterministic scenarios as trials.
+6. Whether native-selector coverage/history/tie rules/denominators are correct
+   and whether any logical footprint is misrepresented as runtime hits, copy
+   traffic or latency.
+7. Reproducibility, source versions, frozen-v1 versus post-EOS-repair controls,
+   completed versus planned/failed cells, and figure data provenance.
+8. Any remaining contradiction between Evaluation and the preceding design,
+   noting that the latter is frozen rather than silently assuming it is fixed.
+
+Return an explicit verdict: is this Evaluation, as this candidate stands and within its
+stated simulation-only scope, sufficiently rigorous and persuasive for a
+top-tier systems submission? "Not ready" is a valid outcome. Do not imply a
+guarantee of conference acceptance. List material blockers in priority order,
+with specific file/line or run evidence and the smallest justified remedy.
+Separate already-resolved preflight issues from remaining issues, and separate
+optional improvements from conditions necessary for your approval. Provide a
+brief claim-to-evidence assessment for WCT, HBM increment, selection, quota,
+prediction, healthy overhead, scalability and native demand coverage.
+
+Also consult reviews/PRIMARY_8B_ADVERSE.md, PRIMARY_EOS_BOUNDARY_CHECK.json,
+CONTINUOUS_BATCHING_GAP.md, and formal-core-v1/figures/INDEPENDENT_NUMERIC_AUDIT.md.
+Actual Evaluation page renders are under paper-preview/; say explicitly if
+your tool access does not permit visual inspection.

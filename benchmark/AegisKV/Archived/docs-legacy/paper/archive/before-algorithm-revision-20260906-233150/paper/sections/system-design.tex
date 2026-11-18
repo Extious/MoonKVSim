@@ -1,0 +1,161 @@
+\section{System Overview and Design}
+\label{sec:design}
+Figure~\ref{fig:system} separates Application prediction, Router execution
+ownership and Store-Master policy. Workers seal and copy primary KV; the
+standby holds backup and recovery allocations separately. Control messages
+carry metadata, while workers and Store exchange KV bytes.
+
+\begin{figure*}[tp]
+\centering\includegraphics[width=\textwidth]{figures/system-overview.pdf}
+\caption{AegisKV architecture. Solid blue and orange arrows are independent
+source-owned protection paths; dashed purple arrows carry control metadata.
+HBM and DRAM have separate reservations and acknowledgements. The Controller is inside the native Store Master. Backup HBM and recovery
+primary KV occupy distinct allocations. The Application
+uses GBDT in the prototype; simulation uses the explicitly stated ideal-duration
+CPM projection. The study excludes SSD.}
+\Description{Application events feed Slack prediction and tickets; a Router,
+Store Master and quota controller direct a source worker, a route-bound HBM
+backup target and an independent DRAM store.}
+\label{fig:system}
+\end{figure*}
+
+\subsection{Failure model and compatibility}
+AegisKV targets fail-stop loss of worker KV with a surviving Application,
+Router and Controller. Recovery requires a live replica matching model,
+KV ABI, dtype and parallel layout, with all shards for each logical chunk.
+The evaluated DP configurations use TP=PP=1; partitions, control-plane
+failure and cross-layout recovery are outside scope.
+
+Rendezvous hashing of request identity, seed, role and worker binds a primary
+and compatible anti-colocated standby. Standby failure rotates the backup;
+source failure fences and versions the route before activating that standby.
+Remote HBM cannot be relabeled as local recovery state.
+
+\subsection{Algorithm 1: causal residual-workflow Slack}
+On a request or tool return, the Application updates the observed execution
+summary and constructs the causally visible residual DAG to the next join.
+A GBDT predicts remaining duration for active agent nodes and full duration
+for known, unstarted nodes; structural nodes have zero weight. Standard
+forward and backward CPM compute earliest and latest starts. For active
+branch $i$, raw float is $s_i^{raw}=\pos{LS_i-ES_i}$; a calibrated margin
+$m$ gives the published signal $s_i=\pos{s_i^{raw}-m}$.
+Algorithm~\ref{alg:slack-update} gives the complete update.
+
+Unknown branches are excluded. Incomplete structure or missing predictions
+invalidate all active sibling tickets, setting Slack to zero. Calibration
+uses workflow-disjoint data. The Controller ages tickets as
+$s_i(t)=\pos{s_i-(t-t_i)}$ until replacement by a valid update.
+Predicted CPM float does not guarantee future Slack. Graph processing costs
+$O(|V|+|E|)$ with a fixed predictor.
+
+\input{sections/algorithm-slack-update}
+
+\subsection{Algorithm 2: independent tier-local admission}
+The worker seals 4,096-token prompt and 256-token decode chunks. Final prompt
+chunks may be shorter; open decode tails remain unprotected. Model/layout
+bytes determine allocation. Each sealed chunk independently enters admission
+for Router-bound HBM and direct Store DRAM.
+
+Let $f_i^r$ be request $i$'s committed prefix in tier $r$. The tier-local
+recovery estimate includes loading that prefix, recomputing the uncovered
+prompt and silently replaying unprotected output positions. It is capped
+by full recomputation. Define
+\begin{equation}
+J_i^r(t)=\pos{T_i^r(f_i^r,t)-s_i(t)}.
+\end{equation}
+For candidate $x$ and tentative victim set $Y$, the gain and joint loss are
+\begin{align}
+A_x &= \pos{J_i^r(\mathrm{before})-J_i^r(\mathrm{after}\ x)},\\
+D_Y &= \sum_{j\in\operatorname{req}(Y)}
+       \pos{J_j^r(\mathrm{after}\ Y)-J_j^r(\mathrm{before})}.
+\end{align}
+Loss is recomputed once per affected request from the resulting prefix;
+summing independent per-chunk deletion costs could double-count recovery.
+The other tier cannot mask $A_x$ or $D_Y$. Backup copy time is an actual
+runtime cost, not a speculative future destaging deduction from HBM gain.
+
+Each pool $r$ retains rent $L_r$ and one exposed, safely removable suffix tail
+per request. Chunk $c$ has key $H_c=L_r+A_c/b_c$ at commitment. Slack or
+frontier changes refresh exposed deletion-loss keys while preserving credit:
+$H_c\gets\max\{L_r,H_c+(D_c^{new}-D_c^{old})/b_c\}$. Hidden predecessors keep
+their saved keys until exposed. This avoids issuing fresh credit merely
+because rent advanced.
+
+Algorithm~\ref{alg:slack-landlord} selects tentative tails with keys strictly
+below $\Theta_x=L_r+A_x/b_x$, excluding the candidate's own request and unsafe
+or read-pinned data. It exposes predecessors only in suffix order, stopping
+when enough real bytes have been released. Admission requires the strict
+inequality $A_x>D_Y$; zero gain and ties bypass. A successful decision evicts
+$Y$, advances rent, reserves final destination space and starts an independent
+source copy. The two tiers may produce HBM-only, DRAM-only, both, or neither.
+No HBM-to-DRAM destaging operation exists.
+
+\input{sections/algorithm-slack-landlord}
+
+\subsection{Commit, replacement and request lifetime}
+Each admitted path starts PENDING and becomes COMMITTED only after all shards
+transfer under a valid route and layout. Failure aborts that path and releases
+its reservation. Figure~\ref{fig:commit} shows divergent frontiers when failure
+falls between the tiers' acknowledgements.
+
+The connector advances the logical ordinal after its enabled paths resolve.
+When one tier commits and the other bypasses, the latter seals its lagging
+prefix. All-bypass outcomes permit retrying the same frontier. Admission
+remains independent; neither tier requires the other's residency.
+
+\begin{figure*}[tp]
+\centering\includegraphics[width=\textwidth]{figures/commit-recovery.pdf}
+\caption{Commit visibility and physical recovery. (a) Source failure occurs
+after HBM commits chunk 1 and before DRAM acknowledges it. (b) HBM retains
+chunks 0--1; DRAM retains only chunk 0. C, X and dash denote committed, aborted
+and absent state. (c) Recovery copies the surviving HBM prefix into separately
+allocated primary KV and recomputes suffix 2. Event spacing is schematic;
+no duration or pressure-race guarantee is inferred.}
+\Description{A logical state timeline, per-tier committed-prefix arrays,
+and a backup-to-primary memory copy preceding suffix recomputation.}
+\label{fig:commit}
+\end{figure*}
+
+Replacement deliberately has a protection gap: victims disappear before the
+new copy commits. The policy does not stage both generations or restore
+victims after a transfer failure. Recovery therefore uses only the surviving
+committed prefix at the actual fault instant. When a request finishes,
+CompleteRequest drains pending paths before reclaiming both tiers' metadata,
+Store keys and HBM slots. Per-request cache salts isolate content ownership
+until shared physical reference counting is supported.
+
+\subsection{Algorithm 3: HBM quota and foreground pressure}
+For registered HBM capacity $M_p$, target $p$ receives quota
+$\lfloor\alpha_pM_p\rfloor$. This envelope is separate from the physical
+allocator's accounting for weights, primary KV and runtime memory. A pressure
+observation means insufficient primary headroom or an allocation/reclaim
+stall. Algorithm~\ref{alg:guarded-aimd} multiplies $\alpha_p$ by $\gamma$ on
+pressure and adds $\delta$ after $K$ stable windows, within configured bounds.
+
+The local enforcer blocks new protection when occupancy exceeds the quota,
+and reclaims safe HBM tails until capacity permits admission. HBM-only tails
+may be removed; a DRAM copy is not a prerequisite. The design requires a stable read source while materializing recovery.
+The simulator pins selected sources; the prototype uses local copy locking
+and recovery visibility leases, with a remaining pre-load pressure race
+(Section~\ref{sec:implementation}). AIMD selects no
+chunks and schedules no transfers. Transfer Engine retains ownership of copy
+queues and bandwidth. The control update costs $O(P)$ for $P$ targets.
+
+\input{sections/algorithm-guarded-aimd}
+
+\subsection{Recovery and invariants}
+The Controller orders ready recovery requests by increasing remaining Slack,
+then decreasing current recovery harm and request identity. The activated
+worker loads target-local HBM first and uses DRAM for the uncovered protected
+suffix. These copies populate separate primary KV buffers: local HBM is not
+free zero-copy activation. Before taking read leases, primary capacity may
+reclaim backup tails and expose DRAM or recomputation fallback. If other live
+primary allocations prevent admission, recovery waits on the bound worker.
+
+The executor recomputes the uncovered prompt, silently replays to the Router's
+committed output position, then resumes visible output. Pending data never
+contributes to restored tokens. Per-tier prefix continuity, version checks,
+capacity conservation and output fencing remain mandatory regardless of
+Slack, rent or quota. The design accepts reduced redundancy during
+replacement, and makes no global-optimum or competitive-ratio claim for the
+coupled multi-tier problem.

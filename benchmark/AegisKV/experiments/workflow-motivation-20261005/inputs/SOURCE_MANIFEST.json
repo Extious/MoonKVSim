@@ -1,0 +1,72 @@
+[
+  {
+    "path": "metadata/projects-commit.json",
+    "url": "https://api.github.com/repos/obsmd-projects/obsidian-projects/commits/HEAD",
+    "bytes": 5848,
+    "sha256": "891ae2a256d3686fc1e0eed170f60b725ce17d9152da02b0fc171c80746fd284",
+    "retrieved_utc": "2026-10-05T01:16:03.399952+00:00"
+  },
+  {
+    "path": "research/projects-README.md",
+    "url": "https://raw.githubusercontent.com/obsmd-projects/obsidian-projects/bb1484ef382f4ff55625b4c1762eef57dc480cd5/README.md",
+    "bytes": 9086,
+    "sha256": "b5a9d236400ae630cdfc8e1c62ab71aee92dfc4c0e3de0298336a212c16b35b7",
+    "retrieved_utc": "2026-10-05T01:16:03.953132+00:00"
+  },
+  {
+    "path": "metadata/db-folder-commit.json",
+    "url": "https://api.github.com/repos/RafaelGB/obsidian-db-folder/commits/HEAD",
+    "bytes": 28856,
+    "sha256": "dfe79d3c95fe2608d5e3a8e67815ba89071680b1e53eafc4601762b478174e2f",
+    "retrieved_utc": "2026-10-05T01:16:04.576234+00:00"
+  },
+  {
+    "path": "research/db-folder-README.md",
+    "url": "https://raw.githubusercontent.com/RafaelGB/obsidian-db-folder/f7038d1fe8f6e4237a7cd2e3f82a040826c73f07/README.md",
+    "bytes": 1723,
+    "sha256": "db133fd489e093958372b6d7c254b113377be4043565c7d370d9657bd55ce8c3",
+    "retrieved_utc": "2026-10-05T01:16:05.045243+00:00"
+  },
+  {
+    "path": "metadata/dataview-commit.json",
+    "url": "https://api.github.com/repos/blacksmithgu/obsidian-dataview/commits/HEAD",
+    "bytes": 4501,
+    "sha256": "8bd4fab11b6300eaf55f37b02bc079f3db517a6e41b315606f4296f76dc9218e",
+    "retrieved_utc": "2026-10-05T01:16:05.577882+00:00"
+  },
+  {
+    "path": "research/dataview-README.md",
+    "url": "https://raw.githubusercontent.com/blacksmithgu/obsidian-dataview/5ad0994ff384cbb797de382e7edff2388141b73a/README.md",
+    "bytes": 7828,
+    "sha256": "37759b39b5b2465d70710822593e3d6b8e16f2302f56b0fbc429ba6de1d85ecd",
+    "retrieved_utc": "2026-10-05T01:16:06.062354+00:00"
+  },
+  {
+    "path": "review/astropy/modeling/separable.py",
+    "url": "https://raw.githubusercontent.com/astropy/astropy/d16bfe05a744909de4b27f5875fe0d4ed41ce607/astropy/modeling/separable.py",
+    "bytes": 9878,
+    "sha256": "cac38fe9744203c720d50d6c88dcdcb0d93a7b2326fe89911e83640ad5676b0f",
+    "retrieved_utc": "2026-10-05T01:16:06.509744+00:00"
+  },
+  {
+    "path": "review/astropy/modeling/tests/test_separable.py",
+    "url": "https://raw.githubusercontent.com/astropy/astropy/d16bfe05a744909de4b27f5875fe0d4ed41ce607/astropy/modeling/tests/test_separable.py",
+    "bytes": 4799,
+    "sha256": "25e72c604c7c28afbb71afd4b5c65f8ab1f762e5f16fc96bab06b56a8cde83db",
+    "retrieved_utc": "2026-10-05T01:16:07.042302+00:00"
+  },
+  {
+    "path": "review/astropy/modeling/core.py",
+    "url": "https://raw.githubusercontent.com/astropy/astropy/d16bfe05a744909de4b27f5875fe0d4ed41ce607/astropy/modeling/core.py",
+    "bytes": 175823,
+    "sha256": "13615f0d5a58344aa0054b03669f5badc519443b3578ecd78868f3fef9f7cb1e",
+    "retrieved_utc": "2026-10-05T01:16:07.602976+00:00"
+  },
+  {
+    "path": "review/docs/modeling/compound-models.rst",
+    "url": "https://raw.githubusercontent.com/astropy/astropy/d16bfe05a744909de4b27f5875fe0d4ed41ce607/docs/modeling/compound-models.rst",
+    "bytes": 47278,
+    "sha256": "1518646338b75a22231ae4adf444bf37894136e4beee8553e68928c6cd96c133",
+    "retrieved_utc": "2026-10-05T01:16:08.093245+00:00"
+  }
+]

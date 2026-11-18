@@ -1,0 +1,72 @@
+--- before/motivation_and_challenge.tex
++++ paper/motivation_and_challenge.tex
+@@ -7,6 +7,11 @@
+ completion after a failure. Existing fault-tolerant serving and
+ workflow-aware KV management provide useful mechanisms, but their
+ objectives leave this joint decision unresolved.
++
++We measure the application-level outcome by \emph{workflow completion
++ time} (WCT), $\mathrm{WCT}_w=c_w-a_w$, where $a_w$ is workflow arrival
++ and $c_w$ is the time all required outputs become ready. This includes
++ model and tool execution, queueing, and dependency waiting.
+ 
+ \subsection{Limitations of Existing Approaches}
+ \label{sec:motivation-limitations}
+@@ -71,7 +76,7 @@
+ why workflow position matters. A2 finishes last, 151.6\,s after the fork,
+ whereas A1 finishes at 60.4\,s. If the following Main stage requires all
+ four outputs, A1 can absorb 91.2\,s of additional delay before postponing
+-the join, whereas any delay on A2 postpones it. This is an example from the Claude code traces~\cite{semianalysis2026cctraces}, which contains the workflows that are very similar to the architecture shown in part a of \ref{fig:agent-workflow-examples}. We call the additional
++the join, whereas any delay on A2 postpones it. This example comes from the Claude Code traces~\cite{semianalysis2026cctraces} and has the fork--join structure illustrated in Figure~\ref{fig:serving_model}. We call the additional
+ delay a branch can absorb without postponing the required output its
+ \emph{slack}. 
+ 
+@@ -121,9 +126,21 @@
+ the requests expected to read it next, and assume that the worker holding
+ it keeps running.
+ 
++\begin{figure}[t]
++  \centering
++  \includegraphics[width=\columnwidth]{figures/gpu-server-availability.pdf}
++  \caption{GPU-server availability reconstructed from InfiniteHBD's
++    production-training trace~\cite{shou2025infinitehbd}: 400 servers minus
++    those within recorded outage intervals. Records include GPU, network,
++    power/cooling, and software faults; unknown causes, tests,
++    troubleshooting, and changes are also retained. Overlapping intervals
++    per server are merged. Availability is measured at the node level.}
++  \label{fig:gpu-server-availability}
++\end{figure}
++
+ Yet failures are not rare, as Figure~\ref{fig:gpu-server-availability}
+-shows: 584 unavailability events hit 231 of 400 servers in about 349
+-days. When a server fails, the agent requests running on it are
++shows for a production training cluster: 584 recorded unavailability
++events affect 231 of 400 servers in about 349 days~\cite{shou2025infinitehbd}. When a server fails, the agent requests running on it are
+ interrupted together with their GPU-resident KV and any copies swapped
+ to that host's
+ memory~\cite{abhyankar2024infercept,pan2025kvflow,bian2025tokencake}.
+@@ -216,6 +233,24 @@
+ execution alone, refresh the estimate as agents advance, and derive
+ priorities that remain useful under prediction error and fall back
+ safely when the estimate is invalid.
++
++\begin{figure}[t]
++  \centering
++  \includegraphics[width=\columnwidth]{figures/recovery-cost.pdf}
++  \caption{Measured KV reconstruction and reuse costs for
++    Qwen2.5-7B-Instruct-1M on two A100 PCIe 40\,GB GPUs
++    (TP2, BF16, batch one), with sparse attention above 32K.
++    Full prefill starts from empty KV; reuse starts from $(C-1)$ cached
++    tokens and computes one. KV reconstruction time includes any
++    retrieval and computation until all $C$ tokens' KV is ready.}
++  \label{fig:motivation-recompute}
++  \Description{Four measured KV reconstruction-time curves for Qwen2.5-7B-Instruct-1M
++    from 8K to 1,010,000 tokens: blue circles for resident HBM reuse,
++    orange squares for DRAM reuse, purple diamonds for shared-storage
++    reuse, and red triangles for full prefill. Both axes are logarithmic.
++    At the longest context, the four paths take 1.305, 2.663, 10.156 and
++    571.21 seconds, respectively.}
++\end{figure}
+ 
+ \paragraph{Challenge 2: KV priority must combine reuse value with recovery benefit, then decide placement.}
+ Existing systems rank KV by one criterion: workflow-aware caching by the

@@ -1,0 +1,54 @@
+{
+  "evidence": "Offline analysis of existing native-model PG19 traces; no new forward, failure injection, or memory-traffic measurement",
+  "question": "Does a small per-layer subset of historical KV blocks account for many logical selection references?",
+  "history_tokens": 32768,
+  "block_tokens": 64,
+  "historical_blocks_per_layer": 512,
+  "object": "One request/layer/64-token block containing all physical KV heads; no head-level placement",
+  "windows": {
+    "256": [
+      32769,
+      33024
+    ],
+    "512": [
+      32769,
+      33280
+    ]
+  },
+  "window_dependence": "256 queries are nested in the same 512-query forward, not an independent run",
+  "query_block": "One count when any head/group selects the block for a query; merge heads within each query but retain repeats across queries",
+  "selector_event": "Sum native query/group selection occurrences for NOSA/MiniCPM4; query/head mask occurrences for Seer. This is not a common count of physical HBM reads across models",
+  "seer_semantics": "Native 64-query-block masks are counted with weight 64; there are no independent per-token gate decisions",
+  "ranking": "Each layer is sorted by its actual frequency in the SAME evaluated window, separately for each counting convention. Retrospective concentration, not future prediction",
+  "quota": "Equal K per layer, swept over every integer 0..512; x denominator includes all 512 historical blocks, including never-accessed blocks",
+  "mandatory_policy": "No forced sink/local reservations in pure concentration ranking; their native accesses remain counted",
+  "primary_aggregation": "At each K, normalize cumulative counts per document/layer; average all layers equally within each document, then average the three documents",
+  "secondary_aggregation": "Also retain event-weighted aggregation within each document before averaging documents",
+  "interval": "Document min/max over n=3 reused documents, not confidence intervals",
+  "books": [
+    "10146",
+    "10321",
+    "10356"
+  ],
+  "layers": {
+    "NOSA-3B": 32,
+    "MiniCPM4-8B": 32,
+    "SeerAttention-Qwen3-8B": 36
+  },
+  "captures": "Nine previously completed native forwards: three documents per model, one M32768/N512 capture per model/document",
+  "reported_budgets": {
+    "10": {
+      "K": 52,
+      "actual_fraction": 0.1015625
+    },
+    "20": {
+      "K": 103,
+      "actual_fraction": 0.201171875
+    },
+    "40": {
+      "K": 205,
+      "actual_fraction": 0.400390625
+    }
+  },
+  "limits": "No attention-mass, model-quality, online hit-rate, unique-demand-coverage, H2D-traffic, or recovery-latency claim. Three PG19 documents do not establish agentic-workload generality"
+}

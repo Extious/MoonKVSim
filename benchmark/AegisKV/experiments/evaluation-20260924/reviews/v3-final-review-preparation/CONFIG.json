@@ -1,0 +1,31 @@
+{
+  "evaluation_figures": {
+    "figures/eval-native-component.pdf": "benchmark/AegisKV/experiments/evaluation-20260924/reviews/native-transfer-figure-v1/native-transfer-differences.pdf",
+    "figures/eval-primary-wct.pdf": "benchmark/AegisKV/experiments/evaluation-20260924/walltime-primary-v3/figures/primary-target-wct.pdf",
+    "figures/eval-resource-sensitivity.pdf": "benchmark/AegisKV/experiments/evaluation-20260924/reviews/resource-markers-postreview/sensitivity-resources.pdf",
+    "figures/eval-structural-wct.pdf": "benchmark/AegisKV/experiments/evaluation-20260924/structural-campaign-v2-main/figures/structural-target-wct.pdf"
+  },
+  "front_matter_edit_permission": "pending",
+  "paper_export_review": "benchmark/AegisKV/experiments/evaluation-20260924/paper-preview/EXPORT_REVIEW.json",
+  "paper_visual_review": "benchmark/AegisKV/experiments/evaluation-20260924/paper-preview/VISUAL_REVIEW.json",
+  "pinned_sha256": {
+    "benchmark/AegisKV/experiments/evaluation-20260924/PRESERVED_MANUSCRIPT.json": "b7afab6068ff8756adf61a15a585061203e35096f294206d56fb2f07dbec6d59",
+    "benchmark/AegisKV/experiments/evaluation-20260924/low-dma-postreview-v1/PACKAGE_COMPLETE.json": "caf2df22bccb596c8753484f58dd2cbad67e9ce033e6f60f076fa98cae15395c",
+    "benchmark/AegisKV/experiments/evaluation-20260924/native-transfer-postreview-v2/DELIVERY.json": "94917e6157bda55e25e5ba95f3e9e31ca542a107a566d7a1cfd59460234d1cad",
+    "benchmark/AegisKV/experiments/evaluation-20260924/quota-pressure-postreview-v1/FINAL_AUDIT.json": "a095d6ea57f70cd52cb37f08e548eb93727df370a4c5a20699d4afeaf63113e0",
+    "benchmark/AegisKV/experiments/evaluation-20260924/reviews/native-transfer-figure-v1/SEAL.json": "9e2f54c6c1292194856245265bdc0f57323045fb31402a467ad533e705fc437f",
+    "benchmark/AegisKV/experiments/evaluation-20260924/reviews/native-transfer-paper-summary-v1/SEAL.json": "e700b25df99a37c956221178a4b57c5451b450c982b507f64bf890194ac1eaa7",
+    "benchmark/AegisKV/experiments/evaluation-20260924/reviews/resource-markers-postreview/SEAL.json": "748fbf4f75edfabcd214f8d9cad5dbc2176162ab66fc6c6b667f4c8f2e61d115",
+    "benchmark/AegisKV/experiments/evaluation-20260924/structural-campaign-v2-main/figures/EXPORT_METADATA.json": "b51879e2688495a1335b949429e1c312e47716e61c673926df3bcb5f53aa9a98",
+    "benchmark/AegisKV/experiments/evaluation-20260924/structural-campaign-v2-main/figures/FIGURE_REVIEW.json": "9e7110402e89c0b26c027a39995dba2cc39304a874a04a5814a8fde30150748f",
+    "benchmark/AegisKV/experiments/evaluation-20260924/walltime-primary-v3/MANIFEST.json": "0991836f07ee254b6378650fa1fcc910f7e0a500b3243b1966a5cf5cbb7c4afa",
+    "benchmark/AegisKV/experiments/evaluation-20260924/walltime-primary-v3/PAPER_POSTPROCESS_SEAL.json": "174c2a49e2653f2d82697ebbaae5b94f6d74e2c7dc363494b9de45375555cf9c",
+    "benchmark/AegisKV/experiments/evaluation-20260924/walltime-primary-v3/PLAN.json": "b355ad6f8e8b02dcbae1eed8195ff34c0c3afa00445855d0dae7119096f104d4",
+    "benchmark/AegisKV/experiments/evaluation-20260924/walltime-primary-v3/PRIORS.json": "774af0492f1ab67a37241e95c6b1c1c9e3263590e14310db742de58891a0c83a",
+    "benchmark/AegisKV/experiments/evaluation-20260924/walltime-primary-v3/PROTOCOL_SEAL.json": "ab60ac33ac63813d8f5e68dc82f2b75f73ae3bc0ec45d65e211a56f686680760",
+    "benchmark/AegisKV/experiments/evaluation-20260924/walltime-primary-v3/execution-amendment-16workers/AMENDMENT.json": "a17e1ab7ab42be2fb8523728bc7d05e2548cffaca56f257cce1cf21d4ed9edbe",
+    "benchmark/AegisKV/experiments/evaluation-20260924/walltime-primary-v3/execution-amendment-16workers/STOPPED_STATE.json": "1ebf7eb6d7d3d7c583be9aab0aa720528b1890b3e9bcfaaefd6d1bc3f8122835"
+  },
+  "primary_visual_review": "benchmark/AegisKV/experiments/evaluation-20260924/walltime-primary-v3/figures/VISUAL_REVIEW.json",
+  "schema": "aegiskv-v3-external-review-gate.v1"
+}

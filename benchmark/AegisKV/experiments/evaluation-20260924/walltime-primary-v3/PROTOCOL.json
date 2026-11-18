@@ -1,0 +1,25 @@
+{
+  "capture": "actual Context at submission; observation sidecar outside predictor features; wrapper delegates once to unchanged serialized model",
+  "evidence_boundary": "modeled FCFS/batch1, unchanged AIC HYBRID durations; regressor is lightweight hashed text, not validated semantic encoder; healthy accuracy does not validate failure-conditioned residual duration",
+  "execution_order": "six none/F0 jobs first in original relative order, then other174 in original relative order; isolated DES per condition",
+  "extra_validation_runs": 1,
+  "fixed": "62WF identities/order/releases/full token sequences/output caps; five failure identities and logical80%; five policies; L/K/hardware/profile/all config except guard; same core source",
+  "frozen_utc": "2026-09-23T20:58:21.978479+00:00",
+  "heldout_use": "descriptive errors only; no fitting, guard recalibration, hyperparameter choice or condition selection from62WF outcomes",
+  "intervention": [
+    "final train12 hashed-text WalltimePredictor",
+    "train12 role wall-time priors",
+    "train-only LOOWF guarded-CPM calibration"
+  ],
+  "labels": "healthy same-Agent final completion minus each submission, paired only after runtime completion, including queue",
+  "max_workers": 2,
+  "original_campaign": "/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/experiments/evaluation-20260924/formal-core-v2-corrected",
+  "original_manifest_sha256": "ec6d14716667a11f0af1235558c9c517e31c9bde7b0e94b97ef3085843163eea",
+  "planned_runs": 180,
+  "schema": "aegiskv.walltime-primary-protocol.v3",
+  "statistics": "fixed5 fault identities; paired raw deltas retained including adverse values; 62WF outcomes within a run share queues",
+  "training_campaign": "/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/experiments/evaluation-20260924/reviews/walltime-predictor-training-v1",
+  "training_models_complete_sha256": "a0280da0c4308e2b26d34a20c4f1cc4fedc28eb01ff0bc5af695bf049b384665",
+  "transparency": "compare observed against base runtime at same inputs/model; exact summary and decompressed event/flow bytes; validation is not an additional sample",
+  "transparency_case": "Qwen3-8B-load0.65-none-F0"
+}

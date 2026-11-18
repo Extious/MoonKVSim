@@ -17,6 +17,15 @@ traces/raw/**
 traces/normalized/**
 !traces/normalized/.gitkeep
 benchmark/**/results/**
-!benchmark/AegisKV/experiments/results/
-!benchmark/AegisKV/experiments/results/**
+!benchmark/AegisKV/Archived/simulation-qwen3-8b/results/
+!benchmark/AegisKV/Archived/simulation-qwen3-8b/results/**
 benchmarks/results/**
+
+# AegisKV native-sparse measurement runtime: venv, model checkpoints, HF/triton/uv caches,
+# kernel builds (~55 GB, re-creatable from the scripts in experiments/native-sparse/).
+benchmark/AegisKV/experiments/native-sparse/runtime-*/
+benchmark/AegisKV/paper/figures/.drawio-tmp/
+benchmark/AegisKV/paper/build/
+# Multi-GB archived simulation outputs kept on disk for reference only.
+benchmark/AegisKV/Archived/simulation-qwen3-8b/paper-simulation-8b/
+benchmark/AegisKV/Archived/simulation-qwen3-8b/audits/

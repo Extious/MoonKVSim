@@ -1,0 +1,18 @@
+\begin{figure*}[tp]
+\centering
+\includegraphics[width=\textwidth]{figures/no-failure-cost.pdf}
+\caption{Failure-free protection cost across five shared admission seeds.
+(a) Mean paired workflow completion difference, AegisKV minus Store-only,
+for all workflows, the initial 16, and the remaining 144.
+(b) Relative makespan and goodput change. Circles show seeds; squares and
+whiskers show the paired seed mean and 95\% Student-$t$ interval ($df=4$).
+(c) Submitted bytes by policy and destination tier; hatched portions are
+warmup submissions, and crosses mark aborted bytes; nonzero aborted GiB
+are labeled explicitly.
+(d) Additional submitted bytes divided by Store-only's makespan versus the
+later cohort's mean completion difference. Labels are seed IDs; no regression
+or causal effect of traffic is inferred.}
+\Description{Four panels showing paired completion differences, whole-run
+changes, tier-specific protection traffic, and its association with completion.}
+\label{fig:no-failure}
+\end{figure*}

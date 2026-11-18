@@ -1,0 +1,28 @@
+% Independent single-column Figure 2; native width 3.34 inches.
+% Static estimates only. Reproduce via experiments/data/reuse-aiconfigurator-multifamily-a100/.
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/motivation-row/motivation-recompute.pdf}
+  \caption{Estimated recovery latency by history placement.
+    Color denotes the recovery path; line style and marker denote
+    Qwen3-4B, Llama-3.1-8B, and Qwen3-14B on shared axes.
+    A100-SXM, BF16, batch one, TP one; K~=~1,024. All paths include
+    the same known 64-token tail. HBM holds the entire history;
+    DRAM adds serialized H2D at an assumed 32\,GB/s, without overlap.
+    All curves use AIConfigurator HYBRID and a transfer model, not
+    physical recovery measurements. Loading, detection, queueing,
+    pre-failure replication, and software takeover overheads are excluded.
+    Beyond-config context lengths are performance shapes, not accuracy
+    validation.}
+  \label{fig:motivation-recompute}
+  \Description{One plot compares nine estimated recovery curves on shared
+    logarithmic context-length and latency axes. Blue, orange, and red
+    encode HBM reuse, DRAM reuse, and empty-cache reconstruction.
+    Circles with solid lines, squares with dashed lines, and triangles
+    with dash-dot lines encode Qwen3-4B, Llama-3.1-8B, and Qwen3-14B,
+    respectively.
+    All paths rebuild the same known 64-token tail.
+    At 128K history tokens, the three models span 35 to 59 milliseconds
+    for HBM, 572 to 730 milliseconds for DRAM, and 31.4 to 49.6 seconds
+    for Recompute. DRAM transfer bandwidth is assumed, not measured.}
+\end{figure}

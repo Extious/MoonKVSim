@@ -1,0 +1,40 @@
+% Compiled by sections/03-system-design-v2.tex.
+% Design-SHA256: 0fdfd097a536ab73cd9f7eb12099eb6f5b9c068a061da30af57a8e6798caacac
+\begin{algorithm}[t]
+\caption{\textsc{SlackLandlord}}
+\label{alg:slack-landlord}
+\begin{tabular}{@{}r@{\hspace{0.5em}}>{\raggedright\arraybackslash}p{\dimexpr\columnwidth-2.5em\relax}@{}}
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{\columnwidth}@{}}{\textit{Symbols.} $c$: sealed logical chunk; $x=(c,r)$: a candidate for physical pool $r$; $i=\operatorname{req}(c)$.}\\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{\columnwidth}@{}}{$L_r$: pool rent; $Q_r$: min-heap exposing at most one safe tail per request; $Y$: tentative evictions; $\bot$: none.}\\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{\columnwidth}@{}}{\textbf{SlackLandlord}$(c,t)$}\\
+1 & $x_H\gets\operatorname{BuildHbm}(c)$; $x_D\gets\operatorname{BuildDirectDram}(c)$.\\
+2 & $h\gets\operatorname{TryAdmit}(x_H,t)$.\\
+3 & $d\gets\operatorname{TryAdmit}(x_D,t)$.\\
+4 & $\operatorname{StartAcceptedSourceCopies}(h,d)$.\\
+5 & $\operatorname{return}\ \operatorname{ResidencyOutcome}(h,d)$.\\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{\columnwidth}@{}}{\textbf{TryAdmit}$(x=(c,r),t)$}\\
+6 & $A\gets\operatorname{Gain}(x,t)$; $\Theta\gets L_r+A/b_c$; $Y\gets\varnothing$; $Q\gets\operatorname{View}(Q_r)$.\\
+7 & $f\gets\operatorname{Free}(r)$.\\
+8 & \textbf{while} $f<b_c$ \textbf{do}\\
+9 & $\quad(y,H_y)\gets\operatorname{MinTail}(Q,Y,i,t)$.\\
+10 & $\quad$\textbf{if} $(y=\bot)\lor(H_y\ge\Theta)$ \textbf{then} \textbf{return} \textsc{Bypass}.\\
+11 & $\quad Y\gets Y\cup\{y\}$; $f\gets f+b_y$.\\
+12 & $\quad z\gets\operatorname{PrevTail}(y,Y)$; $z\ne\bot\Rightarrow Q.\operatorname{insert}(z,\operatorname{RefreshKey}(z,Y,t))$.\\
+13 & \textbf{end while}\\
+14 & $D\gets\operatorname{Loss}(Y,t)$; $A\le D\Rightarrow\operatorname{return}\ \textsc{Bypass}$.\\
+15 & $\operatorname{Evict}(Y)$; $Y\ne\varnothing\Rightarrow L_r\gets\max\{L_r,\max_{y\in Y}H_y\}$.\\
+16 & $\operatorname{Allocate}(c,r,b_c)$; $\operatorname{state}(c)\gets\textsc{Pending}$.\\
+17 & $\operatorname{owner}(x)\gets\operatorname{SourceWorker}(c)$.\\
+18 & $\operatorname{return}\ \operatorname{TierDecision}(r)$.\\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{\columnwidth}@{}}{\textbf{MinTail}$(Q,Y,i,t)$}\\
+19 & \textbf{while} $Q\ne\varnothing$ \textbf{do}\\
+20 & $\quad(y,H_y)\gets Q.\operatorname{min}()$.\\
+21 & $\quad$\textbf{if} $\operatorname{Stale}(y,Y,t)$ \textbf{then} $Q.\operatorname{update}(y,\operatorname{RefreshKey}(y,Y,t))$; \textbf{continue}.\\
+22 & $\quad Q.\operatorname{pop}()$; $\operatorname{req}(y)\ne i\Rightarrow\operatorname{return}\ (y,H_y)$.\\
+23 & \textbf{end while}; $\operatorname{return}\ (\bot,\infty)$.\\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{\columnwidth}@{}}{\textbf{OnCopyDone}$(x=(c,r),t')$}\\
+24 & \textbf{if} $\operatorname{AllAck}(c)\land\operatorname{Valid}(c)$ \textbf{then}\\
+25 & $\quad H_c\gets L_r+\operatorname{Gain}(x,t')/b_c$; $\operatorname{state}(c)\gets\textsc{Committed}$; $Q_r.\operatorname{insert}(c,H_c)$; \textbf{return}.\\
+26 & $\operatorname{state}(c)\gets\textsc{Aborted}$; $\operatorname{Free}(c)$.\\
+\end{tabular}
+\end{algorithm}

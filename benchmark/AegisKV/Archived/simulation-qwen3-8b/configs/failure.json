@@ -1,0 +1,7 @@
+{
+  "schema": "moonkvsim.aegiskv.failure.v5",
+  "type": "GPU_FAILURE",
+  "failure_count": 2,
+  "injection_progress_percent": 60,
+  "gpu_recovery_time_minutes": 2
+}

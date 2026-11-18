@@ -1,0 +1,246 @@
+{
+  "status": "COMPLETE_DECISION_FLOWS_DESIGN_NOT_DEPLOYED",
+  "date": "2026-09-08",
+  "rent_semantics": "request-authorized Agent subleases; proportional physical rent on eligible tails only; internal balances paused",
+  "production_algorithm_code_changed": false,
+  "patent_docx_changed": false,
+  "notation": {
+    "authority": "benchmark/AegisKV/docs/patent/AegisKV专利交底书-final-version.docx",
+    "paragraphs_zero_based": [
+      90,
+      91,
+      125
+    ],
+    "decision_object": "one physical chunk x",
+    "reused": [
+      "s_a",
+      "T_a",
+      "W_{a,x}",
+      "P_{a,x}",
+      "G_x",
+      "Credit_x",
+      "H_x",
+      "L",
+      "b_x",
+      "f",
+      "Y",
+      "D_Y",
+      "Q"
+    ],
+    "extensions": [
+      "reuse/recompute: user recovery cost notation",
+      "W_a,x: nonduplicated Agent WCT share; P_a,x=W_a,x/b_x",
+      "G_x: one aggregation for admission, distinct from remaining Credit",
+      "T^(i): ordered shared-agent recovery vectors"
+    ],
+    "legend_position": "before flow inputs",
+    "candidate_bundles_removed": true
+  },
+  "appearance": "black strokes and text on white; no semantic color encoding",
+  "manual_edits_incorporated": "Manual 88112af84cd5 source archived; page 1 preserved; simplified prefix wording retained; recovery uses the full backup prefix and decision steps are compacted.",
+  "lazy_refresh_semantics": "Agent request updates one input record; safe tail access or pre-rent inspection settles pending rounds once; internal/pinned blocks defer; unchanged versions skip WCT work; all Q checked before a single L advance.",
+  "formulas": "Recovery time, fixed-order joint WCT shares, per-Agent priority, piecewise lease refresh and proportional physical rent are connected flow steps; free-space zero-gain gate retained.",
+  "rent_key_review": {
+    "path": "benchmark/AegisKV/docs/algorithm-2/RENT_KEY_REVIEW.md",
+    "sha256": "b0be489c42a793e0d15e7661296cce7adbac7dea6ff36746b5f15adbdf29caa9"
+  },
+  "baseline": {
+    "path": "benchmark/AegisKV/docs/patent/AegisKV专利交底书-final-version.docx",
+    "sha256": "d80de557e63edfc0d77a860a262470bf3dca666340724e9a6bfe7f34a507ecb9"
+  },
+  "design_sources": {
+    "benchmark/AegisKV/docs/algorithm-2/README.md": "18ba1c681d1e0db1fcdc6e090f5368e5613f5050de09a50926cb8148cc60fa65",
+    "benchmark/AegisKV/docs/algorithm-2/AGENT_LEASE_DESIGN.md": "409edf70844a8cb415e330b70ba691928fac1ce1b1281b148322f41594bc547b",
+    "benchmark/AegisKV/docs/algorithm-2/agent_lease_slacklandlord.py": "e79fa8d86d89c5c31dfca7758dd68716e1ad7c286958f621d7c1aa1ad0197db2",
+    "benchmark/AegisKV/docs/algorithm-2/reference.py": "fe8c76b1704664363f246344d6ef68fe51150d1f9018c10dc9cc435de3c33a65"
+  },
+  "user_reference": {
+    "path": "benchmark/AegisKV/docs/drawio/slacklandlord-patent-revised/references/user-edited-19ff14bc521a.drawio",
+    "sha256": "19ff14bc521af4466e5b2018e354527f7d600fe031290a93e782a246dad8dd45"
+  },
+  "previous_diagram": {
+    "path": "/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/docs/drawio/slacklandlord-patent-revised/references/before-compact-reuse-88112af84cd5-algorithm-2-patent-revised.drawio",
+    "sha256": "88112af84cd5fdec50f2affcbbd1f2ac097ef6947bc05474423f57442d3ad099"
+  },
+  "style_reference": {
+    "path": "benchmark/AegisKV/docs/drawio/algorithm-3-guarded-aimd/algorithm-3-guarded-aimd.drawio",
+    "sha256": "f9122c59c70ef0e4f56ae668a8b4fdf70b57117597ef5e50d30ca5263505273c"
+  },
+  "pages": {
+    "agents": {
+      "cells": 64,
+      "edges": 14,
+      "formula_nodes": [
+        "scope"
+      ],
+      "page_size": [
+        2400,
+        1930
+      ]
+    },
+    "flow": {
+      "cells": 92,
+      "edges": 27,
+      "page_size": [
+        3820,
+        4360
+      ],
+      "formula_nodes": [
+        "sla-flow-symbols-0",
+        "sla-flow-symbols-1",
+        "sla-flow-symbols-2",
+        "sla-flow-symbols-3",
+        "sla-flow-symbols-4",
+        "sla-flow-symbols-5",
+        "sla-flow-recovery",
+        "sla-flow-benefits",
+        "sla-flow-init",
+        "sla-flow-fits",
+        "sla-flow-admission-rule",
+        "sla-flow-commit",
+        "sla-flow-has-tail",
+        "sla-flow-refresh-credit",
+        "sla-flow-debit",
+        "sla-flow-loss",
+        "sla-flow-trim",
+        "sla-flow-layout-card"
+      ]
+    },
+    "cache-hit": {
+      "cells": 70,
+      "edges": 18,
+      "page_size": [
+        3350,
+        3820
+      ],
+      "formula_nodes": [
+        "sla-cache-hit-symbols-0",
+        "sla-cache-hit-symbols-1",
+        "sla-cache-hit-symbols-2",
+        "sla-cache-hit-symbols-3",
+        "sla-cache-hit-symbols-4",
+        "sla-cache-hit-symbols-5",
+        "sla-cache-hit-recovery",
+        "sla-cache-hit-benefits",
+        "sla-cache-hit-renew",
+        "sla-cache-hit-commit",
+        "sla-cache-hit-layout-card"
+      ]
+    }
+  },
+  "mathjax": true,
+  "generator_sha256": "da983ff78c1c6dcc2b7a9ace069e2c010205d8bbe55931971f7fe7dec9d79671",
+  "output_sha256": {
+    "algorithm-2-patent-revised.drawio": "d7c331d85f330c02e54fcc880c1fbbdf3d8311a329366b9ea49083a50a4f9ddb",
+    "algorithm-2-patent-revised.drawio.pdf": "729921c206e28763b8e56cea7f6eb612bbabca77c58aa1f7eda240d997656eb2",
+    "algorithm-2-patent-revised-agents.drawio.png": "2c05c99a39bdb4538961aecef8e067c78557caa8f16cb6cd9e18d5cff845c8b7",
+    "algorithm-2-patent-revised-flow.drawio.png": "c69c7b42a6b9ccfaadac9b21e9430664bbe4cab4badbcbaa43311ed5daf6a3dc",
+    "algorithm-2-patent-revised-cache-hit.drawio.png": "1630aed91b9edd90f17a4af1fc4319d3a098d5a17cee7467cf38c06451032e0d",
+    "algorithm-2-patent-revised.drawio.png": "c69c7b42a6b9ccfaadac9b21e9430664bbe4cab4badbcbaa43311ed5daf6a3dc",
+    "algorithm-2-patent-revised-agents.drawio.pdf": "3bd7b959b15841363cbeae54e7778c9e49abbdc4690374b094cc6030a85e562d",
+    "algorithm-2-patent-revised-flow.drawio.pdf": "4f211f40258c474f585db2f1570208d2b288a6be84955e66d4790818e27594c5",
+    "algorithm-2-patent-revised-cache-hit.drawio.pdf": "bd17de28ec9737a16dd303ebaf544a0db5ec5bf516c6c016192bc1c9e9b381ba",
+    "algorithm-2-admission.drawio": "68c1fed06fc6a48279c6d2e44e67fa02b6c065c1226a4557505901f41a0140ba",
+    "algorithm-2-admission.drawio.png": "aa48255bdfb436596bb13462144cd254e927bbdb9719ad993eb71bea72407a36",
+    "algorithm-2-admission.drawio.pdf": "5c3dd286251225a63056fb3d5873d6e06e9abdd1ec16f6063a4ceaeb25c196c0",
+    "algorithm-2-cache-hit.drawio": "a82b16d14f52ab902e935082e1914cf3350f136588be1397947047abe147f297",
+    "algorithm-2-cache-hit.drawio.png": "5bb9217bdb040a4afff6b87258beeae107aeb1b632f8e830e7e862d469e50ae6",
+    "algorithm-2-cache-hit.drawio.pdf": "518dbf4ed1182db73be3270df2acbef53ffae2d7889eca2f5558fa7924b49ef9"
+  },
+  "export_checks": {
+    "pdf_pages": 3,
+    "pdf_embedded_source": "PASS",
+    "png_embedded_cells_match_source": "PASS",
+    "pdf_text_bounds": "PASS",
+    "mathjax_without_literal_tex": "PASS",
+    "standalone_sources_embedded": "PASS"
+  },
+  "visual_review": {
+    "status": "PASS",
+    "source_sha256": "d7c331d85f330c02e54fcc880c1fbbdf3d8311a329366b9ea49083a50a4f9ddb",
+    "reviewed": "Native full-page PNGs for both compact diagrams, actual final PDF crops of recovery, joint benefit allocation, rental update and hit renewal.",
+    "scope": "Standalone diagram geometry. Formulas render and fit; no observed box or label overlap; page 1 preserved."
+  },
+  "generator_components_sha256": {
+    "build_diagram.py": "a16df8e1106794f731694ebdf41e404968855ddf2213c7a237242f0a58f21888",
+    "build_decision_flows.py": "da983ff78c1c6dcc2b7a9ace069e2c010205d8bbe55931971f7fe7dec9d79671",
+    "rental_flow.py": "db4dfe4e3343b8d40d94f9854f7df6a332b3fe3c41b9a054f7e11d689aef3c59"
+  },
+  "supporting_files_sha256": {
+    "README.md": "80f0fea4ab3568bb126c25a761456f88899c8a52301ee63ccfe327f5cdb641ac",
+    "verify_decision_flows.py": "9b1af4b098770e40607ce1ad71c3cfd89021f229b63b13aaf690393c3f62e243",
+    "DESIGN_CHECKS.json": "1b7df71088b3ec8f7f8f5f83d66ec92a034e785c32be9fca5bb92032846322b6",
+    "verify_compatibility.cjs": "7f6b102fe66b7f27f016b7a645959070e697e6c7f860850bdbb56402438351cc",
+    "COMPATIBILITY.json": "e621962ae4f695e75c10715d60bd3b3b198109d9bc683149942b9b81b480717d"
+  },
+  "policy_validation": {
+    "path": "DESIGN_CHECKS.json",
+    "sha256": "1b7df71088b3ec8f7f8f5f83d66ec92a034e785c32be9fca5bb92032846322b6",
+    "scope": "Compact connected decision diagrams, eight existing CPU accounting checks, and illustrative full-prefix recovery under the user-stated reuse-faster assumption; not runtime integration.",
+    "production_code_changed": false
+  },
+  "generator_mode": "Current builder preserves page 1 and guards later manual edits; legacy builder is export-only.",
+  "decision_flow_revision": {
+    "new_chunk": "24 execution nodes; full-prefix recovery, combined WCT attribution and priority, complete Q refresh before rent, guarded admission and publication.",
+    "cache_hit": "15 execution nodes; register references, defer internal/pinned blocks, skip unchanged inputs, refresh and atomically publish sublease balances.",
+    "symbol": "Q only",
+    "scope": "native design diagrams; no production or CPU policy changes",
+    "side_panels": "KV record and physical layout only; connected branches are executable steps"
+  },
+  "prior_revisions": {
+    "admission_revision": {
+      "free_space": "Y empty and G_x >= 0",
+      "replacement": "Y nonempty and G_x > D_Y",
+      "scope": "diagram only; existing CPU reference retains the earlier strict guard",
+      "manual_baseline": "benchmark/AegisKV/docs/drawio/slacklandlord-patent-revised/references/user-edited-before-zero-gain-61b56c4166a6.drawio",
+      "manual_layout": "upper flow and parked explanatory panels preserved; lower selected flow rearranged",
+      "excerpt": "algorithm-2-admission.drawio"
+    },
+    "queue_notation_revision": {
+      "symbol": "Q",
+      "meaning": "eligible tail priority queue for the current decision",
+      "Qr_introduced": false,
+      "changed_cells": {
+        "algorithm-2-patent-revised.drawio": 6,
+        "algorithm-2-admission.drawio": 4
+      },
+      "baseline": "benchmark/AegisKV/docs/drawio/slacklandlord-patent-revised/references/before-queue-q-204fde65466e.drawio"
+    },
+    "concise_wording_revision": {
+      "baseline": "references/before-concise-recovery-756296760592-algorithm-2-patent-revised.drawio",
+      "scope": "Only six labels changed; no geometry, connection or policy change.",
+      "user_constraint": "Retain existing symbols, no n_a; remove recurrence expansion and special-case prose from recovery boxes."
+    }
+  },
+  "active_generator": "build_decision_flows.py",
+  "recovery_scope_review": {
+    "no_independent_n_a": true,
+    "new_chunk": "For the producing Agent at generation, x is the observed endpoint and recompute(k_a+1)=0.",
+    "existing_chunk": "Existing tails, cache hits and post-copy credit use the current known suffix, never an unknown future length.",
+    "shared_references": "Read the observed recovery-cost curve for each Agent; construct ordered recovery vectors before WCT evaluation and attribution.",
+    "credit_commit": "Renewal balances and settled rounds are staged together, then atomically published after input and rent-ledger version validation.",
+    "expression": "T_a(k) = reuse(k) + recompute(k); use the full available prefix, then recompute the remaining known KV.",
+    "model_assumption": "User specified reuse is faster than recomputation; no search over shorter reused prefixes."
+  },
+  "compact_revision": {
+    "manual_baseline": "references/before-compact-reuse-88112af84cd5-algorithm-2-patent-revised.drawio",
+    "preserved_manual_wording": "前缀均已准入？",
+    "flow": {
+      "old_execution_nodes": 42,
+      "new_execution_nodes": 24,
+      "old_height": 7970,
+      "new_height": 4360,
+      "height_reduction_fraction": 0.4529485570890841
+    },
+    "cache_hit": {
+      "old_execution_nodes": 22,
+      "new_execution_nodes": 15,
+      "old_height": 5960,
+      "new_height": 3820,
+      "height_reduction_fraction": 0.35906040268456374
+    },
+    "page_widths_unchanged": true,
+    "recovery_search_removed": true,
+    "formula_scope": "Shared WCT attribution, per-Agent credit, lazy renewal, proportional physical rent, gate and deletion-loss formulas remain on connected paths."
+  }
+}

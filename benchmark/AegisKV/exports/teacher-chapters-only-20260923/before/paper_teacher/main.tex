@@ -1,0 +1,254 @@
+% Three-tier research draft. Evaluation separates measurements, traces and models.
+% Compile this directory independently with pdfLaTeX and BibTeX.
+\documentclass[sigplan,10pt,anonymous,nonacm]{acmart}
+\setkeys{acmart.cls}{balance=false}
+\usepackage{subcaption}
+\usepackage{tabularx}
+\usepackage{placeins}
+\usepackage{xspace}
+\newcommand{\system}{AegisKV\xspace}
+\setcopyright{none}
+\settopmatter{printacmref=false,printccs=false,printfolios=true}
+\acmConference[EuroSys '27]{European Conference on Computer Systems}
+ {April 19--23, 2027}{Rabat, Morocco}
+\acmYear{2027}
+\acmDOI{}
+\acmISBN{}
+\title{AegisKV: Workflow-Aware KV Checkpointing\texorpdfstring{\\}{ }Across HBM, DRAM, and Shared Storage}
+\setlength{\emergencystretch}{1.5em}
+\renewcommand{\bibfont}{\normalfont\normalsize}
+\newcounter{designalgorithm}
+\captionsetup[subfigure]{font=normalsize,labelfont=normalfont,textfont=normalfont}
+\AtBeginDocument{\typeout{AEGISKV-GEOMETRY: width=\the\textwidth;
+ height=\the\textheight; columnsep=\the\columnsep; baseline=\the\baselineskip}}
+\begin{document}
+\fancypagestyle{aegispreview}{\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+ \renewcommand{\footrulewidth}{0pt}\fancyfoot[C]{\normalsize\thepage}}
+\pagestyle{aegispreview}
+\input{abstract}
+\maketitle
+\thispagestyle{aegispreview}
+\raggedbottom
+
+\section{Introduction}
+\label{sec:introduction}
+
+A multi-agent application completes when its required results are ready:
+a tested patch, a report, or an answer assembled from parallel searches.
+An LLM request's value therefore depends on its workflow position. A
+critical-branch delay postpones completion; another branch may absorb it
+before a join. Application-aware serving exploits this structure during
+normal execution~\cite{lin2024parrot,pan2025kvflow,ni2026topas}. Failures
+raise a further question: which histories should remain quickly
+recoverable when one worker interrupts several requests together?
+
+Long contexts make that choice expensive. Agents accumulate reasoning,
+code, and tool results; losing their GPU-resident KV can require substantial
+reconstruction. Checkpointing avoids that work~\cite{strati2024dejavu,jayakody2026ghostserve},
+and load-aware recovery distributes interrupted requests~\cite{cao2026lumen}.
+Hierarchical caches provide DRAM and storage capacity~\cite{qin2025mooncake,xie2026strata},
+but keeping every history in the faster tier is costly.
+
+Recency and recovery latency alone do not determine placement. A long,
+recent history may belong to a branch that tolerates storage access,
+while a smaller history lies on the critical path. High slack does not
+justify deleting reusable history: subsequent normal calls may repeatedly
+reconstruct it. Common-worker failures also couple requests through the
+DAG and shared recovery resources. Accelerating only one of two delayed
+branches may leave their join unchanged. Finally, demotion is asynchronous:
+freeing DRAM before its storage replacement commits invalidates protection.
+
+AegisKV manages checkpoints across Peer HBM, shared DRAM and shared storage.
+Its Tracker estimates remaining workflow time; the Master combines
+normal reuse, guarded slack and causal block demand. The three managed
+tiers hold exclusive objects whose union covers a committed checkpoint.
+Calibrated layer, block and checkpoint quotas are fixed per compatible
+model/layout. Greedy Peer admission protects zero-slack requests, while
+lower-tier renewable credit uses bounded lazy refresh. The Router binds
+a compatible takeover DP; the Adapter changes total Peer capacity, and
+the Connector executes transfers and reports their outcome. Versioned
+manifests, reservations and reader leases preserve recovery validity
+during migration, pressure relief and explicit fallback.
+
+Our proposed contributions are workflow- and access-aware protection
+priorities; a bounded three-tier controller with safe ownership
+transitions; and a matched evaluation protocol grounded in physical
+path measurements, held-out trace diagnostics and analytical controls.
+The available evidence exposes gains and ties in a historical allocation
+model, modest average prediction gains, and queue-tail and rental
+regressions. It constrains the design without validating the current
+controller. The central empirical hypothesis is that workflow-aware
+protection improves finite-resource allocation after accounting for
+healthy-service and migration costs.
+
+\input{background}
+\input{motivation}
+\input{system_design}
+
+\input{evaluation}
+
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Fault-tolerant LLM serving.}
+D\'ej\`aVu streams and replicates KV~\cite{strati2024dejavu}; GhostServe
+protects it with host-memory erasure-coded parity~\cite{jayakody2026ghostserve}.
+RaidServe addresses TP resilience and imbalance through cyclic placement,
+hybrid attention and recovery routing~\cite{xu2026raidserve}. LUMEN
+coordinates checkpoints, request redistribution and capacity restoration
+under reduced load~\cite{cao2026lumen}. Placement comparisons must use the same strong recovery scheduler.
+
+\paragraph{Hierarchical context caching.}
+Mooncake pools KV and schedules around locality~\cite{qin2025mooncake};
+its SSD offload spills state under memory pressure~\cite{mooncake2026ssdoffload}.
+CachedAttention uses hierarchical caching, layer-wise preload and
+asynchronous saving~\cite{gao2024cachedattention}. Strata addresses
+fragmented I/O, delay hits and cache-aware scheduling~\cite{xie2026strata}.
+HCache restores intermediate activations while balancing I/O and
+computation~\cite{gao2025hcache}. Our proposed distinction is common-failure workflow value
+with safe demotion and explicit final-copy fallback.
+
+\paragraph{Workflow-aware serving and prediction.}
+Parrot optimizes application-level execution~\cite{lin2024parrot}; KVFlow
+uses future invocation distance for prefix eviction~\cite{pan2025kvflow}.
+Pythia and Cortex exploit workflow semantics~\cite{yu2026pythia,pagonas2025cortex}.
+TOPAS schedules retention and execution using remaining paths, reuse and
+movement cost~\cite{ni2026topas}; adding a critical-path score to caching
+is thus insufficient novelty. The intended distinction is recovery after
+a common worker failure with stale checkpoints and finite-tier transitions.
+Heddle predicts trajectories~\cite{zhang2026heddle}, which does not establish
+AegisKV's remaining-wall-time accuracy.
+
+\paragraph{Placement mechanisms.}
+Critical-path analysis~\cite{kelley1959cpm} and cost/size-based caching~\cite{young2002landlord}
+provide building blocks. AegisKV's values depend on the DAG, shared queues,
+and object locations, so Landlord's competitive bound does not transfer. The
+planned small-instance feasible oracle will quantify approximation loss. AegisKV
+uses lower-tier renewable credit with lazy refresh and factorized request/block
+priority, alongside fixed-quota Peer admission. Independent ablations against
+direct revaluation must establish the benefit of rent, actual-use renewal
+and value refresh, alongside sparse ranking and overlap, under matched
+resource and control-work budgets.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+AegisKV combines normal reuse, workflow urgency and block demand to manage
+finite Peer HBM, DRAM and shared storage. Exclusive ownership distributes
+complete checkpoints across these tiers; fixed-quota hot sets accelerate
+recovery. The online controller combines lazy lower-tier credit with greedy
+Peer admission, distinguishing migration from final-copy deletion and
+preserving committed coverage through each transition. Analytical
+scenarios identify potential benefits and limits. A historical trace-driven
+recovery model shows that average improvements can coexist with tail
+regressions; isolated rental diagnostics reveal costs that require fresh
+validation. These
+prior model results do not validate the exclusive three-tier controller. The detailed
+protocol and single-column figures support the physical correctness and performance
+experiments still needed to establish system-level gains.
+
+\paragraph{AI assistance.}
+Generative AI assisted drafting, experiment planning, and artifact code;
+authors retain responsibility for verification.
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{references}
+
+% BEGIN MOTIVATION MEASUREMENT APPENDIX
+\appendix
+\section{Motivation Measurement Protocol}
+\label{sec:motivation-protocol}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/context_recovery.pdf}
+  \caption{Measured KV reconstruction and reuse costs for
+    Qwen2.5-7B-Instruct-1M on two A100 PCIe 40\,GB GPUs
+    (TP2, BF16, batch one), with sparse attention above 32K.
+    Full prefill starts from empty KV; reuse starts from $(C-1)$ cached
+    tokens and computes one. KV reconstruction time includes any
+    retrieval and computation until all $C$ tokens' KV is ready.}
+  \label{fig:context_recovery}
+  \Description{Four measured KV reconstruction-time curves for Qwen2.5-7B-Instruct-1M
+    from 8K to 1,010,000 tokens: blue circles for resident HBM reuse,
+    orange squares for DRAM reuse, purple diamonds for shared-storage
+    reuse, and red triangles for full prefill. Both axes are logarithmic.
+    At the longest context, the four paths take 1.305, 2.663, 10.156 and
+    571.21 seconds, respectively.}
+\end{figure}
+
+\paragraph{Scope and configuration.}
+Figures~\ref{fig:context_recovery} and
+\ref{fig:agent_value}(b) use the same pinned
+Qwen2.5-7B-Instruct-1M weights, SGLang 0.5.10rc0, PyTorch 2.9.1/CUDA 12.8,
+TP2, BF16 weights/KV, and batch one on two A100 PCIe 40\,GB GPUs.
+They use separate allocations of the same GPU type, with one fixed
+repeated synthetic text tokenized by the model tokenizer. The traces
+supply workflow positions and length proxies, not benchmark prompts.
+Our adapter uses the pinned MInference vertical/slash configuration and
+DCA position handling, with sparse attention above 32,768 tokens,
+including the final one-token EXTEND. The SM80 sparse-kernel build and
+model/attention sources are archived with hashes. GQA K/V are shared;
+prefix execution groups at most two query heads, and a single query
+batches all heads. These are instrumented worker measurements, rather
+than throughput measurements of an unmodified serving frontend.
+
+\paragraph{Common endpoint.}
+For $C=M+1$, full prefill computes $M$ tokens from empty KV in chunks of
+at most 8,192, then executes one token separately. Reuse consumes exactly
+the same sparse-generated $M$-token state, including partial pages, and
+executes that final token. Synchronized wall time is reduced by maximum
+across the TP ranks and ends at model-body completion with all $C$ tokens'
+KV resident, before the output vocabulary projection. Model loading,
+backup creation, and correctness checks are outside the timer. Detection,
+rerouting, serving-queue delay and an injected failure are absent.
+
+\paragraph{Restore paths.}
+HBM begins with resident KV. DRAM copies all historical layers from
+pinned host buffers before computation. Shared storage opens, reads and
+closes per-rank KV files on the compute node's DPC shared filesystem,
+then performs the same H2D copy and computation. These stages do not
+overlap; there is no compression or selective loading. The 1,010,000-token
+case restores 57,917,382,656 logical history bytes across both ranks;
+files additionally contain recorded alignment padding. Direct I/O and
+page-residency checks exclude Linux file-page hits, but DPC server and
+internal caches are uncontrolled. The curve is a shared-storage path
+measurement, not cold-device latency or an identified SSD measurement.
+KV files are removed after measurement.
+
+\paragraph{Timing samples.}
+Figure~\ref{fig:context_recovery} uses one
+allocation for 8,192, 65,536, 262,144 and 1,010,000 tokens. HBM/DRAM have
+one warmup and three timings per length; full prefill and shared storage
+have one timing each. Short forwards and operator checks precede timing;
+64K also runs a complete original all-head sparse reference. There is
+no extra complete-prefill warmup at 256K/1.01M or storage-read warmup.
+Consequently, these full-prefill/storage points describe individual
+runs, not stable latency distributions.
+Figure~\ref{fig:agent_value}(b) uses two allocations at
+$C=100{,}865$, $105{,}921$, $108{,}865$ and $113{,}665$, with one complete
+warmup and three full-prefill timings at each length. The initial allocation completed three lengths; the last length was
+resumed after an early termination signal. Its incomplete timings are
+retained in the artifact but excluded as a whole. The figure reports
+medians and min--max ranges. Repetitions are timing samples of the same input,
+not independent workflows or confidence intervals. Original timings and
+all samples are retained in the artifact.
+
+\paragraph{Validation and workflow mapping.}
+Complete-history hashes, final hidden states, all-layer new KV and greedy
+outputs are checked across reconstruction/reuse paths. Repeated full
+prefills additionally check output agreement, and CUDA-event timelines
+check serialized copies. These checks validate matched sparse-state
+execution, not equivalence to dense attention or long-context task quality.
+For Figure~\ref{fig:agent_value}(b), the four history lengths
+are the active requests' trace hash-block counts multiplied by 64.
+They are size proxies, not exact original-model token counts or observed
+KV frontiers at failure. The example was selected for four parallel
+branches and a gap near 100\,s; it is not its workflow's maximum-gap group.
+Each counterfactual separately inserts a measured full-prefill duration
+as an additional branch pause at 29.5\,s after the fork. The all-branch
+join, other execution and queues stay fixed. Thus only reconstruction
+cost is measured: the plotted WCT increment is a conditional calculation,
+not observed fault recovery in the Claude Code workflow.
+% END MOTIVATION MEASUREMENT APPENDIX
+\end{document}

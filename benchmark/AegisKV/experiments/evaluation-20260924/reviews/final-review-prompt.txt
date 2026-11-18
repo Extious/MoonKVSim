@@ -1,0 +1,89 @@
+Continue your independent EuroSys review of AegisKV. This is a read-only follow-up
+in the same review session. Do not modify files, launch simulations, run fresh
+GPU experiments, or approve merely to satisfy the requester. Your candidate
+verdict was NOT READY; preserve unresolved objections and state any remaining
+contradiction with the design. A qualified scope statement does not by itself
+repair an unsupported central claim.
+
+The user asked for current-design implementation in MoonKVSim and a complete,
+simulation-only Evaluation in a separate evaluation.tex, followed by review
+specifically using Cursor Claude Opus 5.5. Preceding manuscript sections remain
+user-frozen. Judge both evidence rigor and whether the evidence persuasively
+evaluates the claimed system; do not lower the standard due to those constraints.
+
+The candidate package you reviewed has been replaced by SAME-INPUT reruns after
+two runtime fixes, plus corrected accounting/presentation. The 483 current
+simulations all share version
+checkpoint-decay-hysteresis-incremental-g-20260924-eosfix1-causal-domain1-queued-history1.
+Historical v1 numeric findings must not be substituted for corrected v2 results.
+The offline native selector records are unaffected by recovery code.
+
+Start with:
+- benchmark/AegisKV/paper/evaluation.tex and paper/main.pdf
+- benchmark/AegisKV/experiments/evaluation-20260924/reviews/FINAL_PACKAGE_READY.json
+- reviews/REVIEW_DISPOSITION.md, PROTOCOL.md, LITERATURE_AND_DESIGN.md
+- reviews/PROPOSED_CLAIM_CORRECTIONS.md contains UNAPPLIED proposals only;
+  do not treat them as repairs to the delivered frozen Design.
+- docs/DESIGN_IMPLEMENTATION_COVERAGE.md and docs/current-design-simulation.md
+  under benchmark/AegisKV/
+- paper-preview/EXPORT_REVIEW.json, VISUAL_REVIEW.json and actual page-*-color.png
+  and page-*-gray.png. Use supported image tools to inspect actual figures/pages;
+  if unavailable, explicitly state no visual inspection. Do not infer visual
+  inspection from text extraction.
+
+All paths below are under benchmark/AegisKV/experiments/evaluation-20260924/:
+- formal-core-v2-corrected: 180 runs; AUDIT.json, STATISTICS.json, endpoints/
+  per-identity.csv, stratified-summary.csv and figures. Target workflow WCT and
+  interrupted-Agent first-new-token latency are separate from all-workflow means.
+- structural-campaign-v2-main: 135 runs; TRACE_MECHANISM_AUDIT.json, figures/wct-endpoint-
+  comparisons.csv, PAPER_NUMBERS_V2.md and the seed-level evidence linked there.
+- sensitivity-campaign-v2-corrected: 126 runs; AUDIT and numeric/figure reports.
+- capacity-slack-ablation-v2-corrected: 32 runs; completed null controls retained.
+- slack-mechanism-posthoc-v2-corrected: 10 post-hoc constructed runs with frozen
+  assumptions, plus separate transparent-observer validations. Read PROTOCOL.md,
+  PAIRED_RESULTS.json and reviews/POSTHOC_SLACK_V2_INDEPENDENT_REVIEW.md.
+- native-topk-warm: original full-history native-selector diagnostic, and
+  reviews/native-topk-operating-point/RESULTS.md for K=16 and K=64 distinct/event
+  denominators, same-budget recency and future-demand oracle.
+- reviews/v1-v2-comparison/: matched input/config/active-victim and F0 checks.
+- reviews/CAUSAL_DOMAIN_APPLICATION.json, QUEUED_HISTORY_APPLICATION.json,
+  DESIGN_CONFORMANCE_SPOTCHECK.md and PROSPECTIVE_METADATA_APPLICATION.json.
+
+Concrete candidate issues to recheck against current evidence:
+1. Recovery selects over the entire causal query domain before splitting
+   checkpoint-resident and locally recomputed KV. Queued compatible continuation
+   histories keep committed checkpoint leases, and displaced fresh requests wake
+   their own destination after detection. Active interrupted recoveries and
+   queued-history restoration remain distinct. There are 74 runtime regressions.
+2. Target and Agent recovery endpoints are explicit. Check sink/non-sink,
+   adverse cases, all-workflow effects and permanent capacity loss separately.
+   Do not assume only the directly faulted workflow can change completion.
+3. O1 traffic and fallback denominators, target checkpoint capacity feasibility,
+   null capacity/Slack results, and the post-hoc tight/loose mechanism diagnostic
+   are distinguished. The post-hoc diagnostic is not natural-trace validation.
+4. Native K=16 and K=64 event/distinct coverage and baseline denominators are
+   explicit. Dense WCT uses partial LK residency, not the no-wait first-L-layer
+   premise. Saved-byte/B terms are not global WCT bounds under routing changes.
+5. Healthy DMA costs and any break-even use the SAME target or cohort objective.
+   The fixed one-failure Bernoulli mixture is not a measured failure-rate model.
+   Static-HBM/quota null results and absent continuous-batch pressure are explicit.
+6. Prediction is a service proxy, not whole-Agent wall time; non-crossing
+   prediction/TTL/lambda controls do not prove accuracy/robustness. Z=64 also
+   changes compute partition. Constructed multi-call evidence remains separate
+   from filtered gold-output, single-call FanOutQA.
+7. Historical 128-workflow CPU/RSS and pre-freeze linear-cost copy-lag examples
+   must remain labeled historical. No v1 evidence becomes corrected runtime
+   evidence merely because its accounting audit passed.
+8. Check current numerical/caption/source consistency, full completion versus
+   plans, provenance, actual plot readability, preceding-source preservation,
+   and correspondence to your earlier necessary remedies.
+
+Return an explicit verdict: Is this Evaluation, as delivered within its
+simulation-only scope, sufficiently rigorous AND persuasive for a top-tier
+systems submission? NOT READY is a valid result. Do not imply conference
+acceptance. Distinguish resolved concerns, remaining material blockers and
+optional improvements. For each blocker cite current file/run/line evidence and
+the smallest justified remedy, distinguishing implementation correction,
+additional simulation, claim narrowing, and changes requiring future physical
+evidence. Provide a compact claim-to-evidence assessment for WCT, Slack, HBM,
+selection, quota, prediction, healthy overhead, scalability and native demand.

@@ -1,0 +1,33 @@
+\begin{abstract}
+Multi-agent applications accumulate reusable context while executing
+interdependent LLM requests. A worker failure can lose this state and delay
+several branches at once, yet protecting every context in fast memory is
+expensive. We propose AegisKV, a workflow-aware manager for KV checkpoints
+across Peer HBM, shared DRAM and shared storage. A complete checkpoint
+spans the three tiers, with one managed owner per object: selected layers
+and hot blocks reside on a preassigned takeover DP, and lower tiers
+retain the rest. AegisKV combines normal reuse with the workflow cost
+of recovery, allocating request value to reusable prefixes and evaluating
+requests affected by a common failure together. Sparse demand and layer
+overlap guide Peer acceleration; renewable credit manages DRAM and storage.
+Actual reuse renews per-Agent credit, while value updates and tier moves
+preserve paid rent. Complete placement plans pass a current workflow-cost
+check under bounded decision work and a migration threshold.
+Versioned transitions preserve recovery validity during migration and
+explicit fallback. A per-DP AIMD Adapter limits Peer capacity while the Master
+chooses per-request layer depth and hot blocks without changing native
+attention semantics. We connect trace-derived
+workflow observations and existing reconstruction microbenchmarks to a
+reproducible analytical study and a complete experimental protocol.
+In 36 declared Peer-disabled scenarios, the placement model improves on
+LRU in 17 and ties in 19. Matched analytical schedules illustrate Peer's
+incremental overlap benefit; neither model measures a three-tier system. Historical outage timing drives a separate recovery-load model in which
+a lower mean coexists with worse tail latency. Mechanism ablations expose
+interactions between layer placement and overlap, and a negative result
+for an earlier rental screen. Bounded repairs reduce that model's gap
+but do not establish the new controller's performance. The study
+identifies when contention, prediction error, and commit
+lag limit the benefit. End-to-end fault injection and normal
+service measurements remain necessary to establish the proposed system's
+performance.
+\end{abstract}

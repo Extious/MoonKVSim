@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="Electron" agent="Codex" version="31.1.5" type="device">
+  <diagram id="shared-cache-concrete" name="Mooncake 共享缓存控制面与数据面">
+    <mxGraphModel dx="2420" dy="2050" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2420" pageHeight="2050" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="title" value="Mooncake Shared KV Cache × vLLM × SGLang" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=28;fontStyle=1;fontColor=#172B4D;fontFamily=Noto Sans CJK SC;" vertex="1" parent="1">
+          <mxGeometry x="300" y="16" width="1820" height="44" as="geometry"/>
+        </mxCell>
+        <mxCell id="subtitle" value="请求路由与 KV 索引 · 对象元数据 · 注册内存 · 实际 K/V 张量传输 · 分布式 Store Segment" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fontColor=#5E6C84;fontFamily=Noto Sans CJK SC;" vertex="1" parent="1">
+          <mxGeometry x="300" y="60" width="1820" height="28" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="cluster" value="SERVING CLUSTER · 推理与存储集群" style="swimlane;startSize=38;horizontal=1;rounded=1;arcSize=10;container=1;collapsible=0;recursiveResize=0;fillColor=#F1F3F5;swimlaneFillColor=#FFFFFF;strokeColor=#A5ADBA;strokeWidth=1.5;fontSize=15;fontStyle=1;fontColor=#42526E;fontFamily=Noto Sans CJK SC;" vertex="1" parent="1">
+          <mxGeometry x="30" y="95" width="2360" height="1890" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="control" value="CONTROL PLANE · 请求路由、KV 索引、对象分配与端点元数据" style="swimlane;startSize=40;horizontal=1;rounded=1;arcSize=12;container=1;collapsible=0;recursiveResize=0;fillColor=#E8F1FB;swimlaneFillColor=#FAFCFF;strokeColor=#5B8DB8;strokeWidth=1.5;fontSize=15;fontStyle=1;fontColor=#274C77;fontFamily=Noto Sans CJK SC;" vertex="1" parent="cluster">
+          <mxGeometry x="40" y="50" width="2280" height="620" as="geometry"/>
+        </mxCell>
+        <mxCell id="ctrl_v_app" value="&lt;b&gt;vLLM Scheduler / Connector&lt;/b&gt;&lt;br&gt;block hash · external hit tokens&lt;br&gt;&lt;font color=&quot;#274C77&quot;&gt;PoolKey：model / cache_prefix / group / ranks&lt;/font&gt;" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#EDF4FC;strokeColor=#5B8DB8;strokeWidth=1.7;fontSize=12;fontColor=#274C77;fontFamily=Noto Sans CJK SC;" vertex="1" parent="control">
+          <mxGeometry x="30" y="70" width="300" height="105" as="geometry"/>
+        </mxCell>
+        <mxCell id="ctrl_v_client" value="&lt;b&gt;vLLM Store Client · control path&lt;/b&gt;&lt;br&gt;batch_is_exist&lt;br&gt;Put / Get object metadata&lt;br&gt;&lt;font color=&quot;#8A6116&quot;&gt;same client as data plane below&lt;/font&gt;" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#FFF4DF;strokeColor=#D69E2E;strokeWidth=1.7;fontSize=12;fontColor=#6B4A10;fontFamily=Noto Sans CJK SC;" vertex="1" parent="control">
+          <mxGeometry x="380" y="70" width="330" height="105" as="geometry"/>
+        </mxCell>
+        <mxCell id="master" value="&lt;b&gt;Mooncake Master&lt;/b&gt;&lt;br&gt;object allocation / eviction / lifecycle&lt;br&gt;key → replica descriptors&lt;br&gt;&lt;font color=&quot;#8A6116&quot;&gt;segment_name + offset + length + state&lt;/font&gt;" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#FFF6D8;strokeColor=#C9A227;strokeWidth=1.8;fontSize=13;fontColor=#5B4710;fontFamily=Noto Sans CJK SC;" vertex="1" parent="control">
+          <mxGeometry x="970" y="60" width="340" height="125" as="geometry"/>
+        </mxCell>
+        <mxCell id="ctrl_s_client" value="&lt;b&gt;SGLang Store Client · control path&lt;/b&gt;&lt;br&gt;batch_is_exist&lt;br&gt;Put / Get page metadata&lt;br&gt;&lt;font color=&quot;#8A6116&quot;&gt;same client as data plane below&lt;/font&gt;" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#FFF4DF;strokeColor=#D69E2E;strokeWidth=1.7;fontSize=12;fontColor=#6B4A10;fontFamily=Noto Sans CJK SC;" vertex="1" parent="control">
+          <mxGeometry x="1570" y="70" width="330" height="105" as="geometry"/>
+        </mxCell>
+        <mxCell id="ctrl_s_app" value="&lt;b&gt;SGLang HiRadix / HiCache&lt;/b&gt;&lt;br&gt;L1 / L2 / L3 hit decision&lt;br&gt;&lt;font color=&quot;#276749&quot;&gt;page key：served_model_name / extra_backend_tag&lt;/font&gt;" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#ECF8F1;strokeColor=#4B9B70;strokeWidth=1.7;fontSize=12;fontColor=#276749;fontFamily=Noto Sans CJK SC;" vertex="1" parent="control">
+          <mxGeometry x="1950" y="70" width="300" height="105" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="mount_msg" value="&lt;b&gt;Store Node A / B → Master：MountSegment&lt;/b&gt;&lt;br&gt;segment_name · registered base address · global_segment_size&lt;br&gt;&lt;font color=&quot;#5E6C84&quot;&gt;Master 只登记和分配 offset，不持有这段 DRAM&lt;/font&gt;" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#FFFDF4;strokeColor=#C9A227;strokeWidth=1.3;dashed=1;dashPattern=5 4;fontSize=11;fontColor=#6B5714;fontFamily=Noto Sans CJK SC;" vertex="1" parent="control">
+          <mxGeometry x="790" y="225" width="700" height="72" as="geometry"/>
+        </mxCell>
+        <mxCell id="te_metadata" value="&lt;b&gt;TransferEngine endpoint metadata（P2P handshake / HTTP / etcd）&lt;/b&gt;&lt;br&gt;请求端与 Store 端发布或解析：local_hostname · segment descriptor · rkey / NIC · transport capability；openSegment 后才能直接读写目标内存" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#F2ECFA;strokeColor=#8B6BB1;strokeWidth=1.5;fontSize=11;fontColor=#4A375C;fontFamily=Noto Sans CJK SC;" vertex="1" parent="control">
+          <mxGeometry x="540" y="325" width="1200" height="68" as="geometry"/>
+        </mxCell>
+        <mxCell id="kv_event_sources" value="&lt;b&gt;KV Event publishers&lt;/b&gt;&lt;br&gt;vLLM · SGLang · optional mooncake_master&lt;br&gt;&lt;font color=&quot;#0E5A6B&quot;&gt;BlockStored / BlockRemoved / Store object events&lt;/font&gt;" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#E6FCFF;strokeColor=#0E7490;strokeWidth=1.6;fontSize=11;fontColor=#0E5A6B;fontFamily=Noto Sans CJK SC;" vertex="1" parent="control">
+          <mxGeometry x="40" y="425" width="380" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="conductor" value="&lt;b&gt;Mooncake Conductor · KV indexer&lt;/b&gt;&lt;br&gt;prefix-hit index across tiers / instances / DP ranks&lt;br&gt;returns longest_matched · tiers · DP[]&lt;br&gt;&lt;font color=&quot;#0E5A6B&quot;&gt;不承载 K/V 字节；不直接执行最终调度&lt;/font&gt;" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#DFF7FA;strokeColor=#0E7490;strokeWidth=1.9;fontSize=11;fontColor=#0E5A6B;fontFamily=Noto Sans CJK SC;" vertex="1" parent="control">
+          <mxGeometry x="500" y="415" width="460" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="request_router" value="&lt;b&gt;Gateway / Request Router&lt;/b&gt;&lt;br&gt;POST /query(tokens | seq_hashes)&lt;br&gt;&lt;font color=&quot;#274C77&quot;&gt;组合 cache hit、负载与 SLO 策略&lt;/font&gt;" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#2B6CB0;strokeWidth=1.8;fontSize=12;fontColor=#274C77;fontFamily=Noto Sans CJK SC;" vertex="1" parent="control">
+          <mxGeometry x="1050" y="425" width="400" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="routing_target" value="&lt;b&gt;Selected serving target&lt;/b&gt;&lt;br&gt;instance_id + dp_rank&lt;br&gt;&lt;font color=&quot;#274C77&quot;&gt;vLLM / SGLang API engine endpoint&lt;/font&gt;" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#EDF4FC;strokeColor=#5B8DB8;strokeWidth=1.7;fontSize=12;fontColor=#274C77;fontFamily=Noto Sans CJK SC;" vertex="1" parent="control">
+          <mxGeometry x="1530" y="425" width="710" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="control_note" value="&lt;b&gt;控制面不承载实际 K/V 张量&lt;/b&gt;　PUT：PutStart → ReplicaInfo[] → PutEnd　·　GET / exists：query key → complete replica descriptor" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#B8C7D9;strokeWidth=1.1;dashed=1;dashPattern=4 4;fontSize=11;fontColor=#42526E;fontFamily=Noto Sans CJK SC;" vertex="1" parent="control">
+          <mxGeometry x="330" y="565" width="1620" height="36" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="data" value="DATA PLANE · 注册缓冲区与具体 Store 节点之间的直接数据传输" style="swimlane;startSize=40;horizontal=1;rounded=1;arcSize=12;container=1;collapsible=0;recursiveResize=0;fillColor=#FFF7DC;swimlaneFillColor=#FFFEFB;strokeColor=#C9A227;strokeWidth=1.5;fontSize=15;fontStyle=1;fontColor=#6B5714;fontFamily=Noto Sans CJK SC;" vertex="1" parent="cluster">
+          <mxGeometry x="40" y="700" width="2280" height="1030" as="geometry"/>
+        </mxCell>
+        <mxCell id="data_note" value="&lt;b&gt;下面展示一次具体 placement 示例&lt;/b&gt;：vLLM object → Segment A，SGLang page → Segment B；实际由 Master 按容量、策略和副本数选择任意已挂载 Segment" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#FFF9E8;strokeColor=#D6B648;strokeWidth=1.2;fontSize=11;fontColor=#6B5714;fontFamily=Noto Sans CJK SC;" vertex="1" parent="data">
+          <mxGeometry x="210" y="55" width="1860" height="52" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="v_node" value="vLLM REQUESTER NODE · MooncakeStoreConnector" style="swimlane;startSize=38;horizontal=1;rounded=1;arcSize=12;container=1;collapsible=0;recursiveResize=0;fillColor=#EDF4FC;swimlaneFillColor=#FCFDFF;strokeColor=#5B8DB8;strokeWidth=1.5;fontSize=14;fontStyle=1;fontColor=#274C77;fontFamily=Noto Sans CJK SC;" vertex="1" parent="data">
+          <mxGeometry x="30" y="135" width="650" height="680" as="geometry"/>
+        </mxCell>
+        <mxCell id="v_policy" value="&lt;b&gt;Save / Load decision&lt;/b&gt;&lt;br&gt;完整 block / prefix hash · dedup with batch_is_exist&lt;br&gt;&lt;font color=&quot;#5E6C84&quot;&gt;只有被策略选中的 KV block 才写入 Store&lt;/font&gt;" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#F4F7FB;strokeColor=#9DB7D3;strokeWidth=1.2;dashed=1;dashPattern=4 4;fontSize=11;fontColor=#42526E;fontFamily=Noto Sans CJK SC;" vertex="1" parent="v_node">
+          <mxGeometry x="40" y="70" width="570" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="v_gpu" value="&lt;b&gt;GPU KV Cache&lt;/b&gt;&lt;br&gt;HBM / paged KV blocks&lt;br&gt;Key + Value tensors&lt;br&gt;&lt;font color=&quot;#8A3D3D&quot;&gt;source / destination GPU address&lt;/font&gt;" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#FDECEC;strokeColor=#D95C5C;strokeWidth=1.8;fontSize=12;fontColor=#6F2C2C;fontFamily=Noto Sans CJK SC;" vertex="1" parent="v_node">
+          <mxGeometry x="35" y="215" width="250" height="140" as="geometry"/>
+        </mxCell>
+        <mxCell id="v_client_data" value="&lt;b&gt;Store Client + TransferEngine&lt;/b&gt;&lt;br&gt;register_buffer(GPU ptr)&lt;br&gt;batch_put_from_multi_buffers&lt;br&gt;batch_get_into_multi_buffers&lt;br&gt;&lt;font color=&quot;#A52A2A&quot;&gt;submits direct WRITE / READ&lt;/font&gt;" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#FFF4DF;strokeColor=#D69E2E;strokeWidth=1.8;fontSize=11;fontColor=#6B4A10;fontFamily=Noto Sans CJK SC;" vertex="1" parent="v_node">
+          <mxGeometry x="360" y="215" width="250" height="140" as="geometry"/>
+        </mxCell>
+        <mxCell id="v_path_note" value="&lt;b&gt;vLLM 具体数据路径&lt;/b&gt;&lt;br&gt;WRITE：注册的 GPU ptr → Master 分配的 Segment + offset&lt;br&gt;READ：Segment + offset → 已分配的 GPU KV block&lt;br&gt;&lt;font color=&quot;#A52A2A&quot;&gt;GPUDirect RDMA 可用时，不要求先经过本机 Host DRAM&lt;/font&gt;" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#9DB7D3;strokeWidth=1.2;fontSize=11;fontColor=#42526E;fontFamily=Noto Sans CJK SC;" vertex="1" parent="v_node">
+          <mxGeometry x="40" y="420" width="570" height="150" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="store_pool" value="MOONCAKE STORE · 逻辑全局共享池的物理组成" style="swimlane;startSize=38;horizontal=1;rounded=1;arcSize=12;container=1;collapsible=0;recursiveResize=0;fillColor=#FFF6D8;swimlaneFillColor=#FFFDF5;strokeColor=#C9A227;strokeWidth=1.5;fontSize=14;fontStyle=1;fontColor=#6B5714;fontFamily=Noto Sans CJK SC;" vertex="1" parent="data">
+          <mxGeometry x="745" y="135" width="790" height="680" as="geometry"/>
+        </mxCell>
+        <mxCell id="pool_note" value="&lt;b&gt;逻辑容量 = Σ global_segment_size&lt;/b&gt;&lt;br&gt;不是跨机器连续地址，也不是共享内存协议；每个 Segment 都是某个 Store 进程真实分配并注册的一段内存" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#FFF9E8;strokeColor=#D6B648;strokeWidth=1.2;fontSize=11;fontColor=#6B5714;fontFamily=Noto Sans CJK SC;" vertex="1" parent="store_pool">
+          <mxGeometry x="45" y="55" width="700" height="85" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="store_a" value="STORE NODE A · storage process A" style="swimlane;startSize=34;horizontal=1;rounded=1;arcSize=10;container=1;collapsible=0;recursiveResize=0;fillColor=#FFF4C2;swimlaneFillColor=#FFFEF8;strokeColor=#C9A227;strokeWidth=1.4;fontSize=12;fontStyle=1;fontColor=#6B5714;fontFamily=Noto Sans CJK SC;" vertex="1" parent="store_pool">
+          <mxGeometry x="40" y="175" width="710" height="180" as="geometry"/>
+        </mxCell>
+        <mxCell id="endpoint_a" value="&lt;b&gt;Store-side Client + TE&lt;/b&gt;&lt;br&gt;segment_name = storage-a&lt;br&gt;endpoint / rkey / NIC&lt;br&gt;&lt;font color=&quot;#A52A2A&quot;&gt;receives direct transfer&lt;/font&gt;" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#FBE9E9;strokeColor=#C94040;strokeWidth=1.6;fontSize=10;fontColor=#7F1D1D;fontFamily=Noto Sans CJK SC;" vertex="1" parent="store_a">
+          <mxGeometry x="20" y="55" width="185" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="seg_a" value="&lt;b&gt;Global Segment A&lt;/b&gt;&lt;br&gt;real Host DRAM on Store Node A&lt;br&gt;registerLocalMemory(base, global_segment_size)&lt;br&gt;&lt;font color=&quot;#8A6116&quot;&gt;object bytes live at base + allocated offset&lt;/font&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;fillColor=#FFF4C2;strokeColor=#C9A227;strokeWidth=1.8;fontSize=11;fontColor=#5B4710;fontFamily=Noto Sans CJK SC;" vertex="1" parent="store_a">
+          <mxGeometry x="245" y="50" width="420" height="120" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="store_b" value="STORE NODE B · storage process B" style="swimlane;startSize=34;horizontal=1;rounded=1;arcSize=10;container=1;collapsible=0;recursiveResize=0;fillColor=#FFF4C2;swimlaneFillColor=#FFFEF8;strokeColor=#C9A227;strokeWidth=1.4;fontSize=12;fontStyle=1;fontColor=#6B5714;fontFamily=Noto Sans CJK SC;" vertex="1" parent="store_pool">
+          <mxGeometry x="40" y="395" width="710" height="180" as="geometry"/>
+        </mxCell>
+        <mxCell id="seg_b" value="&lt;b&gt;Global Segment B&lt;/b&gt;&lt;br&gt;real Host DRAM on Store Node B&lt;br&gt;registerLocalMemory(base, global_segment_size)&lt;br&gt;&lt;font color=&quot;#8A6116&quot;&gt;object bytes live at base + allocated offset&lt;/font&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;fillColor=#FFF4C2;strokeColor=#C9A227;strokeWidth=1.8;fontSize=11;fontColor=#5B4710;fontFamily=Noto Sans CJK SC;" vertex="1" parent="store_b">
+          <mxGeometry x="45" y="50" width="420" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="endpoint_b" value="&lt;b&gt;Store-side Client + TE&lt;/b&gt;&lt;br&gt;segment_name = storage-b&lt;br&gt;endpoint / rkey / NIC&lt;br&gt;&lt;font color=&quot;#A52A2A&quot;&gt;receives direct transfer&lt;/font&gt;" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#FBE9E9;strokeColor=#C94040;strokeWidth=1.6;fontSize=10;fontColor=#7F1D1D;fontFamily=Noto Sans CJK SC;" vertex="1" parent="store_b">
+          <mxGeometry x="505" y="55" width="185" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="pool_footer" value="Master 保存 key → replica descriptors；K/V 字节始终位于这些 Segment 中　·　可选：每个 Store Node 再将冷对象异步下沉到本地 SSD / NVMe" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#F7F2FC;strokeColor=#8B6BB1;strokeWidth=1.1;fontSize=10;fontColor=#5B496A;fontFamily=Noto Sans CJK SC;" vertex="1" parent="store_pool">
+          <mxGeometry x="55" y="610" width="680" height="45" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="s_node" value="SGLANG REQUESTER NODE · HiCache + Mooncake L3" style="swimlane;startSize=38;horizontal=1;rounded=1;arcSize=12;container=1;collapsible=0;recursiveResize=0;fillColor=#ECF8F1;swimlaneFillColor=#FCFEFD;strokeColor=#4B9B70;strokeWidth=1.5;fontSize=14;fontStyle=1;fontColor=#276749;fontFamily=Noto Sans CJK SC;" vertex="1" parent="data">
+          <mxGeometry x="1600" y="135" width="650" height="680" as="geometry"/>
+        </mxCell>
+        <mxCell id="s_policy" value="&lt;b&gt;HiCache match / write-back policy&lt;/b&gt;&lt;br&gt;L1 → L2 → L3 lookup · write_through / selective / write_back&lt;br&gt;&lt;font color=&quot;#5E6C84&quot;&gt;Mooncake L3 以 page object 共享 KV&lt;/font&gt;" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#F4F9F6;strokeColor=#8FC7A9;strokeWidth=1.2;dashed=1;dashPattern=4 4;fontSize=11;fontColor=#42526E;fontFamily=Noto Sans CJK SC;" vertex="1" parent="s_node">
+          <mxGeometry x="40" y="70" width="570" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="s_path_note" value="&lt;b&gt;SGLang 具体数据路径&lt;/b&gt;&lt;br&gt;WRITE-BACK：GPU L1 → 本机 HostKVCache L2 → Mooncake Segment&lt;br&gt;PREFETCH：Mooncake Segment → HostKVCache L2 → GPU L1&lt;br&gt;&lt;font color=&quot;#276749&quot;&gt;Mooncake 注册并直接使用 HostKVCache raw pointer&lt;/font&gt;" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#8FC7A9;strokeWidth=1.2;fontSize=11;fontColor=#42526E;fontFamily=Noto Sans CJK SC;" vertex="1" parent="s_node">
+          <mxGeometry x="40" y="210" width="570" height="145" as="geometry"/>
+        </mxCell>
+        <mxCell id="s_client_data" value="&lt;b&gt;MooncakeStore Backend&lt;/b&gt;&lt;br&gt;Store Client + TE&lt;br&gt;batch_put_from[_multi]&lt;br&gt;batch_get_into[_multi]&lt;br&gt;&lt;font color=&quot;#A52A2A&quot;&gt;Host ptr WRITE / READ&lt;/font&gt;" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#FFF4DF;strokeColor=#D69E2E;strokeWidth=1.8;fontSize=10;fontColor=#6B4A10;fontFamily=Noto Sans CJK SC;" vertex="1" parent="s_node">
+          <mxGeometry x="20" y="435" width="175" height="140" as="geometry"/>
+        </mxCell>
+        <mxCell id="s_host" value="&lt;b&gt;L2 · HostKVCache&lt;/b&gt;&lt;br&gt;private local Host DRAM&lt;br&gt;page-first / direct layout&lt;br&gt;&lt;font color=&quot;#276749&quot;&gt;registered raw pointer&lt;/font&gt;" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#EAF7F0;strokeColor=#4B9B70;strokeWidth=1.8;fontSize=11;fontColor=#276749;fontFamily=Noto Sans CJK SC;" vertex="1" parent="s_node">
+          <mxGeometry x="235" y="435" width="180" height="140" as="geometry"/>
+        </mxCell>
+        <mxCell id="s_gpu" value="&lt;b&gt;L1 · GPU HBM&lt;/b&gt;&lt;br&gt;active KV pages&lt;br&gt;layer-first compute layout" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#FDECEC;strokeColor=#D95C5C;strokeWidth=1.8;fontSize=11;fontColor=#6F2C2C;fontFamily=Noto Sans CJK SC;" vertex="1" parent="s_node">
+          <mxGeometry x="455" y="435" width="165" height="140" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="put_flow" value="&lt;b&gt;一次 PUT 的完整顺序&lt;/b&gt;&lt;br&gt;① 框架生成 object key + registered buffer addresses　② Client → Master：PutStart(key, size, replica config)　③ Master → Client：ReplicaInfo[]　④ TE 直接 WRITE 到各 Segment + offset　⑤ Client → Master：PutEnd，状态变为 COMPLETE" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#EDF4FC;strokeColor=#5B8DB8;strokeWidth=1.3;fontSize=10;fontColor=#274C77;fontFamily=Noto Sans CJK SC;" vertex="1" parent="data">
+          <mxGeometry x="80" y="850" width="1040" height="105" as="geometry"/>
+        </mxCell>
+        <mxCell id="get_flow" value="&lt;b&gt;一次 GET / PREFETCH 的完整顺序&lt;/b&gt;&lt;br&gt;① Client 查询 key / exists　② Master 返回 COMPLETE replica descriptor　③ TE 从某个可用 Segment + offset 直接 READ 到已注册目标 Buffer　④ vLLM 直接使用 GPU block；SGLang 再把 Host L2 page 提升到 GPU L1" style="rounded=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=#ECF8F1;strokeColor=#4B9B70;strokeWidth=1.3;fontSize=10;fontColor=#276749;fontFamily=Noto Sans CJK SC;" vertex="1" parent="data">
+          <mxGeometry x="1160" y="850" width="1040" height="105" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="legend" value="&lt;b&gt;Legend&lt;/b&gt;　&lt;font color=&quot;#0E7490&quot;&gt;┄ KV Events / Conductor query&lt;/font&gt;　&lt;font color=&quot;#5B8DB8&quot;&gt;┄ Master RPC / object metadata&lt;/font&gt;　&lt;font color=&quot;#8B6BB1&quot;&gt;┄ TE endpoint metadata&lt;/font&gt;　&lt;font color=&quot;#4B9B70&quot;&gt;━ GPU ↔ Host memory path&lt;/font&gt;　&lt;font color=&quot;#D69E2E&quot;&gt;━ registered pointer / Store API&lt;/font&gt;　&lt;font color=&quot;#C94040&quot;&gt;━ actual K/V tensor WRITE / READ&lt;/font&gt;" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D5DAE0;strokeWidth=1;fontSize=10;fontColor=#42526E;fontFamily=Noto Sans CJK SC;" vertex="1" parent="cluster">
+          <mxGeometry x="80" y="1760" width="2200" height="55" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e_v_app_client" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#5B8DB8;strokeWidth=1.8;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" source="ctrl_v_app" target="ctrl_v_client" parent="control">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_v_master" value="PUT / GET / exists　⇄　ReplicaInfo[]" style="edgeStyle=orthogonalEdgeStyle;rounded=1;jettySize=auto;html=1;startArrow=open;startFill=0;endArrow=open;endFill=0;dashed=1;dashPattern=7 5;strokeColor=#5B8DB8;strokeWidth=1.8;fontSize=10;fontColor=#274C77;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" source="ctrl_v_client" target="master" parent="control">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_s_app_client" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#4B9B70;strokeWidth=1.8;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" source="ctrl_s_app" target="ctrl_s_client" parent="control">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_s_master" value="ReplicaInfo[]　⇄　PUT / GET / exists" style="edgeStyle=orthogonalEdgeStyle;rounded=1;jettySize=auto;html=1;startArrow=open;startFill=0;endArrow=open;endFill=0;dashed=1;dashPattern=7 5;strokeColor=#5B8DB8;strokeWidth=1.8;fontSize=10;fontColor=#274C77;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" source="ctrl_s_client" target="master" parent="control">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_mount_master" value="MountSegment" style="edgeStyle=orthogonalEdgeStyle;rounded=1;jettySize=auto;html=1;endArrow=open;endFill=0;dashed=1;dashPattern=5 4;strokeColor=#5B8DB8;strokeWidth=1.6;fontSize=10;fontColor=#274C77;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" edge="1" source="mount_msg" target="master" parent="control">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_events_conductor" value="events" style="edgeStyle=orthogonalEdgeStyle;rounded=1;jettySize=auto;html=1;endArrow=block;endFill=1;dashed=1;dashPattern=6 4;strokeColor=#0E7490;strokeWidth=1.8;fontSize=9;fontColor=#0E5A6B;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" source="kv_event_sources" target="conductor" parent="control">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_conductor_router" value="query / result" style="edgeStyle=orthogonalEdgeStyle;rounded=1;jettySize=auto;html=1;startArrow=open;startFill=0;endArrow=open;endFill=0;strokeColor=#0E7490;strokeWidth=1.8;fontSize=9;fontColor=#0E5A6B;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" source="conductor" target="request_router" parent="control">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_router_target" value="HTTP request" style="edgeStyle=orthogonalEdgeStyle;rounded=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#2B6CB0;strokeWidth=2;fontSize=9;fontColor=#274C77;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" source="request_router" target="routing_target" parent="control">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e_v_gpu_client" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;jettySize=auto;html=1;startArrow=block;startFill=1;endArrow=block;endFill=1;strokeColor=#D69E2E;strokeWidth=2.1;fontSize=10;fontColor=#8A6116;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" source="v_gpu" target="v_client_data" parent="v_node">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_v_direct" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;jettySize=auto;html=1;startArrow=block;startFill=1;endArrow=block;endFill=1;strokeColor=#C94040;strokeWidth=3;fontSize=10;fontStyle=1;fontColor=#A52A2A;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" source="v_client_data" target="endpoint_a" parent="data">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_a_memory" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;jettySize=auto;html=1;startArrow=block;startFill=1;endArrow=block;endFill=1;strokeColor=#C94040;strokeWidth=2.5;fontSize=9;fontColor=#A52A2A;labelBackgroundColor=#FFFDF5;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" source="endpoint_a" target="seg_a" parent="store_a">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e_s_gpu_host" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;jettySize=auto;html=1;startArrow=block;startFill=1;endArrow=block;endFill=1;strokeColor=#4B9B70;strokeWidth=2.2;fontSize=9;fontColor=#276749;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" source="s_gpu" target="s_host" parent="s_node">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_s_host_client" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;jettySize=auto;html=1;startArrow=block;startFill=1;endArrow=block;endFill=1;strokeColor=#D69E2E;strokeWidth=2.1;fontSize=9;fontColor=#8A6116;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" source="s_client_data" target="s_host" parent="s_node">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_s_direct" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;jettySize=auto;html=1;startArrow=block;startFill=1;endArrow=block;endFill=1;strokeColor=#C94040;strokeWidth=3;fontSize=10;fontStyle=1;fontColor=#A52A2A;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" source="s_client_data" target="endpoint_b" parent="data">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_b_memory" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;jettySize=auto;html=1;startArrow=block;startFill=1;endArrow=block;endFill=1;strokeColor=#C94040;strokeWidth=2.5;fontSize=9;fontColor=#A52A2A;labelBackgroundColor=#FFFDF5;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" source="endpoint_b" target="seg_b" parent="store_b">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,569 @@
+\section{System Design}
+\label{sec:design}
+
+\system selects which Agents' histories deserve protection (O1),
+which KV regions within those histories should be retained (O2), and
+how much HBM replication may occupy as foreground demand changes (O3). 
+Figure~\ref{fig:system-overview} shows our four cooperating components.
+\emph{Tracker} estimates remaining workflow work and recovery urgency.
+\emph{Router} chooses execution workers and replica destinations.
+\emph{KV Master} selects Agent histories and KV regions, evaluates
+candidate placements, and manages replica retention and reclamation.
+\emph{Adapter} adjusts the HBM replication budget to foreground demand. Rank-local
+Connectors execute transfers and report completion to KV Master.
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/system-overview.pdf}
+ \caption{\system: Four-component architecture. Each workflow node is one
+ invocation. Letters identify Agents and digits give invocation
+ ordinals. A and D are different Agents; B and C are each invoked twice.
+ Each host contains one TP=2 DP worker. Each rank's HBM holds execution
+ and replica regions. Rank-matched Connectors copy KV between hosts;
+ each host's DRAM connects to its own Connectors. Blue paths carry
+ KV; dashed paths carry control.}
+ \label{fig:system-overview}
+\end{figure}
+
+
+\subsection{Tracker}
+\label{sec:tracker}
+
+% 中文：一个 Agent 通过多步完成其任务，每步对应一次模型调用。Tracker 按调用粒度
+% 记录执行和历史使用关系，按 Agent 剩余工作的粒度估计其对工作流完成时间的影响。
+An Agent completes its assigned task through a sequence of steps, each
+corresponding to one model invocation. Tracker records execution and
+history use at invocation granularity, and estimates remaining Agent
+work to determine workflow urgency.
+
+% 中文：本文考虑 Agent 任务 DAG 预先已知且固定的工作流。Agent 集合及依赖关系已知，
+% 但每个 Agent 内部的调用次数和完成时间未知。
+We target workflows with a fixed Agent-task DAG known before execution.
+Agent identities and dependencies are fixed, while each Agent's
+invocation count and completion time are unknown.
+
+\subsubsection{Remaining-Time Prediction}
+\label{sec:tracker-prediction}
+
+% 中文：以 (w,a,r) 标识工作流 w 中 Agent a 的第 r 次调用，当依赖满足后，workflow runtime 将这次 invocation 提交给 serving 系统调度执行。
+% 后续调用可以复用兼容前缀的已选择 KV；调用结束不等于历史失效，直到 Agent 结束。
+Tracker identifies invocation $r$ of Agent $a$ in workflow $w$ as
+$v=(w,a,r)$. Once its dependencies are satisfied, the workflow runtime
+submits the invocation to the serving system for scheduling. Successive
+invocations of the same Agent may reuse selected KV for a compatible
+history prefix. Completing an invocation does not end the Agent's
+history; Tracker tracks that history until the Agent finishes its task.
+
+% 中文：每次调用提交时，Tracker 根据本次调用的信息预测 Agent 距离完成任务还需多久。
+% 一次调用只预测一次，下一次调用到来时再更新，直到 Agent 结束。
+At each invocation submission, Tracker predicts how long the Agent will
+take to finish its task using the invocation's input and the Agent's
+observed history. Each invocation triggers one prediction, which is
+updated at each subsequent invocation until the Agent finishes its task.
+
+% 中文：将预测建模为基于上下文的回归问题。文本编码器提取任务描述、本次新增输入
+% 和近期已接受输出的语义表示，再与提交时已知的模型、角色、输入长度、已完成调用
+% 次数、历史调用的长度和耗时，以及 Agent 已运行时间结合。
+% 回归器直接预测 Agent 的剩余完成时间，供后续工作流 Slack 计算使用。
+We formulate this prediction as context-conditioned regression. A text
+encoder represents the Agent's task description, newly appended input,
+and recent accepted outputs. A regressor combines this semantic
+representation with features available at submission: the model and
+Agent role, input length, completed-call count, previous calls' lengths
+and timings, and elapsed Agent time. It directly predicts Agent $a$'s
+remaining completion time, $\widehat R_{a,r}$, for workflow slack
+computation.
+
+% 中文：训练样本将每次调用提交时的特征与该次提交到 Agent 任务结束的实际时间配对。
+Training examples pair these submission-time features with the observed
+duration from submission of invocation $r$ to completion of Agent $a$'s
+task.
+
+% 中文：尚未启动的 Agent 使用同模型、同角色历史任务的时长先验 D。
+% 首次调用提交时，以该先验初始化剩余时间估计 R，并记录提交时间 tau。
+% 每次调用触发的预测返回后，以新预测替换 R，tau 始终取该预测对应的调用提交时间。
+For an unstarted Agent, Tracker uses a duration prior $\bar D_a$ from
+historical tasks with the same model and role. Its first invocation
+submission initializes $\widehat R_a$ to this prior and $\tau_a$ to the
+submission time. Each prediction $\widehat R_{a,r}$ replaces
+$\widehat R_a$ when available, with $\tau_a$ set to invocation $r$'s
+submission time.
+
+\subsubsection{Slack Computation}
+\label{sec:tracker-slack}
+
+% 中文：注册工作流时，runtime 从固定编排图导出所有 Agent 任务的工作流 ID、Agent ID
+% 和前驱 Agent ID 列表；边 a→b 表示 b 等待 a 完成任务后才能开始。
+% runtime 报告任务完成事件，Tracker 移除已完成节点，得到剩余 DAG。
+% 该 DAG 每个节点是一个尚未完成的 Agent 任务，其内部可以有多次 invocation。
+At workflow registration, the runtime exports each Agent task's workflow
+ID, Agent ID, and predecessor Agent IDs from the fixed orchestration graph.
+An edge $a\to b$ means that $b$ waits for Agent $a$ to finish its task.
+The runtime reports task completion, allowing Tracker to remove finished
+tasks and maintain the residual DAG $G_t=(A_t,E_t)$. Each node in this
+graph is one unfinished Agent task, which may contain multiple invocations.
+
+% 中文：算法以剩余 Agent DAG、时长先验、已启动 Agent 的最新估计及提交时间、误差裕量为输入。
+% 未启动 Agent 保留完整时长先验；已启动 Agent 的估计换算到当前时刻。
+% 正向计算最早完成时间，反向计算最晚完成时间。
+% 后向遍历以预测的工作流完成时间为终点；每个 Agent 的剩余工作只计算一次。
+% pred 和 succ 分别表示剩余前驱与后继；g 是经校准的 Slack 高估误差裕量。
+Algorithm~\ref{alg:slack-estimation} computes guarded Agent slack using
+forward and backward critical-path passes~\cite{kelley1959cpm}.
+Unstarted Agents retain their full duration priors, while estimates for
+started Agents are adjusted to the current time $t$. The algorithm counts
+each Agent's remaining work once and uses the predicted workflow finish
+$T$ as the backward-pass endpoint. The two passes compute earliest and
+latest finishes, $EF_a$ and $LF_a$. Here $\operatorname{pred}(a)$ and
+$\operatorname{succ}(a)$ denote residual predecessors and successors,
+and $g_a$ is a calibrated upper quantile of slack overestimation.
+
+% 中文：所需时长估计缺失、过期或无效时，整个工作流暂不授予正 Slack。
+% 正向遍历：EF = 本节点剩余时间 + 最晚完成的前驱；后向遍历：
+% LF = 后继最晚开始时间的最小值，汇点从 T 开始回推。
+% 最终 Slack 为 max(0, LF - EF - g)；两次遍历的复杂度均为 O(|A_t|+|E_t|)。
+\par\medskip\noindent\begin{minipage}{\columnwidth}
+\raggedright
+\refstepcounter{designalgorithm}\label{alg:slack-estimation}
+\textbf{Algorithm \thedesignalgorithm: Compute Agent slack}
+\par\smallskip
+\begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
+\toprule
+ & \textbf{Input:} $G_t=(A_t,E_t)$; Agent states; priors $\bar D_a$;
+ estimates $(\widehat R_a,\tau_a)$; guards $g_a$; time $t$ \\
+ & \textbf{Output:} guarded slack $\boldsymbol{s}=\{s_a:a\in A_t\}$ \\
+\midrule
+1 & $s_a\gets0,\quad \forall a\in A_t$ \\
+2 & \textbf{for} $a\in A_t$ \textbf{do} \\
+3 & \quad \textbf{if} $a$ is unstarted \textbf{then} $d_a\gets\bar D_a$ \\
+4 & \quad \textbf{else} $d_a\gets\widehat R_a-(t-\tau_a)$ \\
+5 & \textbf{if} any required estimate is missing or invalid, or
+ any $d_a\le0$, \textbf{then return} $\boldsymbol{s}$ \\
+6 & $\pi\gets\textsc{TopologicalOrder}(G_t)$ \\
+7 & \textbf{for} $a$ in $\pi$ \textbf{do} \\
+8 & \quad $EF_a\gets d_a+
+ \max\bigl(\{0\}\cup\{EF_p:p\in\operatorname{pred}(a)\}\bigr)$ \\
+9 & $T\gets\max\bigl(\{0\}\cup\{EF_a:a\in A_t\}\bigr)$ \\
+10 & \textbf{for} $a$ in reverse $\pi$ \textbf{do} \\
+11 & \quad $LF_a\gets
+ \min\bigl(\{T\}\cup\{LF_b-d_b:b\in\operatorname{succ}(a)\}\bigr)$ \\
+12 & \quad $s_a\gets\max\{0,LF_a-EF_a-g_a\}$ \\
+13 & \textbf{return} $\boldsymbol{s}$ \\
+\bottomrule
+\end{tabularx}
+\end{minipage}\par\medskip
+
+% 中文：调用继承所属 Agent 的 Slack。
+Invocation $v=(w,a,r)$ inherits its Agent's slack, $s_v=s_a$.
+
+% 中文：预测和 Slack 更新在 Controller 中异步执行，调用调度和 token 生成无需等待。
+Prediction and slack updates run asynchronously in the controller, so
+invocation dispatch and token generation do not wait for them.
+
+\subsection{Router and Connector}
+\label{sec:router}
+
+% 中文：Router 根据队列负载和前缀 KV 的位置调度调用，与此同时 Router 还会决定如果 Failure 发生时，该 Agent 调用 retry 到哪个DP Replica
+% 这一选择也决定了如果要备份该调用对应的 KV，备份在哪里。
+% retry 目标位于执行节点的受保护故障域之外，选择时考虑负载、可用内存和复制路径竞争。
+Router schedules invocations based on queue load and prefix locality.
+It also selects a retry DP replica for each Agent invocation in case of
+failure. If the invocation's KV is selected for backup, it is placed at
+this retry target. The target lies outside the execution worker's
+protected failure domain and is chosen based on load, available memory,
+and copy-path contention.
+
+% 中文：在该目标上，主机内存（Peer DRAM）保存受保护 Agent 的完整 KV 检查点；GPU 内存
+% （Peer HBM）额外保存 KV Master 从其前 L 层中选出的 KV 块。容量不足时，Router 将缺口
+% 返回 KV Master。
+At this target, host memory (\emph{Peer DRAM}) holds a protected Agent's
+complete KV checkpoint, and GPU memory (\emph{Peer HBM}) additionally
+holds the KV blocks that KV Master selects from its first $L$ layers.
+If a placement does not fit, Router returns the capacity shortfall to
+KV Master.
+
+% 中文：各 TP rank 的 Connector 执行 KV 复制并向 KV Master 报告完成状态。
+% 故障后 Router 使旧执行失效，并将调用重定向到 retry 目标；Engine 直接复用目标
+% HBM 中的 KV，Connector 将 DRAM 中的 KV 搬入 GPU。目标成为执行节点后，
+% Router 为后续备份重新选择 Peer。
+Rank-local Connectors execute KV copies and report completion to KV
+Master. After a failure, Router fences the old execution and redirects
+the invocation to the retry target. The engine reuses resident Peer HBM
+KV, while Connectors move DRAM-resident KV into GPU memory.
+If that target becomes the execution worker, Router selects a new peer
+for subsequent backups.
+
+% 中文：上述路由与传输机制处理已选状态；接下来由 KV Master 决定保护哪些
+% Agent 历史，以及保留其中哪些 KV 区域。
+These routing and transfer mechanisms operate on selected state.
+KV Master determines which Agent histories and which KV regions to
+protect, as described next.
+
+\subsection{KV Master}
+\label{sec:master}
+
+% 中文：KV Master 决定每个 retry 目标为哪些 Agent 保存什么。遵循 O1 和 O2，它在两个层次上
+% 做决定：在 Agent 之间，只为 Slack 掩盖不了重试延迟的 Agent 在 Peer DRAM 中保存完整的
+% KV 检查点；在受保护的 Agent 内部，再把前 L 层的 Top-K 块放入 Peer HBM。两个层次
+% 把覆盖与速度分开：DRAM 检查点保证恢复不必重建完整历史，HBM 副本只可能缩短恢复时间，可以随时
+% 丢弃。这些块是否“很少”、能否覆盖大部分访问，由 Evaluation 测量，这里不假定。
+KV Master decides what each retry target holds, and for which Agents.
+Following O1 and O2, it decides at two levels. Across Agents, it keeps a
+complete KV checkpoint in Peer DRAM only for Agents whose retry delay
+their slack cannot absorb. Within a protected Agent, it also places in
+Peer HBM the Top-$K$ blocks of the first $L$ layers. The two
+levels separate coverage from speed: the DRAM checkpoint ensures that
+recovery never reconstructs the full history, while HBM copies only
+shorten recovery and can be dropped at any time. We first describe how
+Master selects Agents, then how it selects KV within a protected Agent,
+and finally how it manages replicas and recovers.
+
+\subsubsection{Agent Selection}
+\label{sec:agent-protection}
+
+% 中文：令 T_a 为通过完整重建（即对 Agent a 的历史做 Prefill）重试其被中断调用的延迟，
+% Master 根据离线测得的 Prefill 延迟与历史长度的关系估计 T_a。将 R_i = T_a 和 Tracker 的
+% Slack σ_i = s_a 代入式 (1)，得到 Slack 无法掩盖的重试延迟 E_a。
+Let $T_a$ be the delay of retrying Agent $a$'s interrupted invocation by
+full reconstruction, i.e., by prefilling its history. Master estimates
+$T_a$ from an offline profile of prefill latency versus history length.
+Applying Equation~\ref{eq:isolated_penalty} with $R_i=T_a$ and Tracker's
+guarded slack $\sigma_i=s_a$ gives the retry delay that slack cannot hide,
+\begin{equation}
+ E_a=\bigl[T_a-s_a\bigr]^+.
+ \label{eq:exposed-delay}
+\end{equation}
+
+% 中文：当 E_a > λ 时，Master 保护 a，即在 Peer DRAM 中保存其完整 KV 检查点。λ 是每次
+% 故障可容忍的工作流延迟：未受保护的 Agent 重建时最多给工作流增加 λ；λ = 0 时，重建时间
+% 超过 Slack 的 Agent 都受保护。若 Peer DRAM 放不下所有超过 λ 的 Agent，Master 按 E_a
+% 从大到小接纳。T_a 随历史增长，s_a 随工作流推进变化，因此 Master 在调用边界和 Tracker
+% 更新 Slack 时重新判断；降到 λ 以下的 Agent 释放其检查点。
+Master protects $a$, i.e., keeps a complete KV checkpoint of $a$ in Peer
+DRAM, when $E_a>\lambda$. The threshold $\lambda$ is the workflow delay
+that the operator tolerates per failure: reconstructing an unprotected
+Agent adds at most $\lambda$ to its workflow, and $\lambda=0$ protects
+every Agent whose reconstruction exceeds its slack. If Peer DRAM cannot
+hold every Agent above $\lambda$, Master admits them in decreasing $E_a$.
+Both terms change during execution, as $T_a$ grows with the history and
+$s_a$ changes as the workflow advances. Master therefore re-evaluates the
+rule at invocation boundaries and whenever Tracker updates a slack, and an
+Agent that falls below $\lambda$ releases its checkpoint.
+
+% 中文：图 X(a) 将该规则用于图 2(b) 中的 Agent。A1 的重建落在 Slack 内；取 λ = 17 s 时，
+% A2 和 A4 获得 DRAM 检查点，而 A3 的 16.3 s 不超过 λ，失败后重建。
+Figure~\ref{fig:master-selection}(a) applies this rule to the Agents of
+Figure~\ref{fig:agent_value}(b). A1's reconstruction fits within its
+slack. With $\lambda=17$\,s, A2 and A4 receive DRAM checkpoints, whereas
+A3's 16.3\,s does not exceed $\lambda$, so A3 is reconstructed if it fails.
+
+\paragraph{DRAM checkpoints.}
+\label{sec:master-checkpoint}
+% 中文：受保护 Agent 的检查点按固定的 Z 个 token 推进，本文取 Z = 256，即 4 个 64-token
+% 块。每新接受 Z 个 token，Connector 将这一 chunk 所有层的 KV 复制到 Peer DRAM；所有分片
+% 到达后，Master 发布新的检查点位置。故障后，retry 目标恢复检查点，并重建其后至多 Z 个已接受
+% token 的 KV，与 checkpoint-and-replay 恢复一致。Z 在正常执行开销与恢复工作之间折中：Z 越小，
+% 传输越碎、发布越频繁；Z 越大，需要重建的尾部越长。Z = 256 时，重建只是一次很短的 Prefill，
+% 而每个 token 的 KV 只以大块传输复制一次。
+A protected Agent's checkpoint advances in fixed chunks of $Z$ tokens; we
+use $Z=256$, i.e., four 64-token blocks. Once $Z$ new tokens are
+accepted, Connectors copy the chunk's KV for all layers to Peer DRAM, and
+Master publishes the new checkpoint position after all shards arrive.
+After a failure, the retry target restores the checkpoint and rebuilds
+the KV of the at most $Z$ accepted tokens after it, as in
+checkpoint-and-replay recovery~\cite{strati2024dejavu,cao2026lumen}. $Z$
+trades normal-execution cost against recovery work. A smaller $Z$ splits
+copies into smaller transfers and publishes more often, whereas a larger
+$Z$ lengthens the rebuilt tail. With $Z=256$, the rebuild is one short
+prefill, and each token's KV is copied once, in a large transfer.
+
+% 中文（图示）：(a) 使用图 2(b) 的未掩盖延迟；(b) 的访问计数与块布局为示意。
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/master-selection.pdf}
+ \caption{Selection by KV Master. (a) Retry delays not hidden by slack for
+ the Agents of Figure~\ref{fig:agent_value}(b); with $\lambda=17$\,s, A2
+ and A4 receive complete DRAM checkpoints. (b) Access counts of one
+ protected Agent's blocks. Every checkpointed block is in DRAM; with $K=2$
+ and $L=2$ (dashed line), the two most counted blocks of L1 and L2 are also
+ in HBM, and the tail of at most $Z$ tokens is rebuilt during recovery.}
+ \label{fig:master-selection}
+ \Description{Top: horizontal bars of unhidden retry delay for Agents A1
+ to A4, with 0, 32.6, 16.3 and 18.0 seconds, and a dashed threshold line
+ at 17 seconds; A2 and A4 exceed it. Bottom: a grid of access counts for
+ layers L1 to L4 and blocks B0 to B5 with a hatched tail column. In L1 the
+ counts 9 and 7 of B0 and B3, and in L2 the counts 8 and 6 of B1 and B3,
+ are highlighted as HBM blocks; a dashed line below L2 marks depth L.}
+\end{figure}
+
+\subsubsection{KV Selection}
+\label{sec:region-selection}
+
+% 中文：DRAM 检查点使受保护的 Agent 不必完整重建，但从 DRAM 恢复仍可能让调用等待传输。
+% 从 DRAM 恢复可以与重建重叠：重建逐层进行，GPU 计算前面的层时，Connector 可以
+% 传输后面层的 KV（恢复流水线，按层序）。但仍有两部分传输暴露：第 1 层之前没有计算可以掩盖其传输；
+% 当一层 KV 的传输慢于一层的重建时，等待逐层累积。Master 把受保护 Agent 前 L 层中每层的
+% Top-K 块同时放入 Peer HBM，以消除这两部分等待。这需要回答三个问题：选哪些块、保存多少层、
+% 以及 HBM 放不下时优先保护哪些 Agent。
+A DRAM checkpoint spares a protected Agent full reconstruction, but its
+recovery may still wait for DRAM transfers. Restoring from DRAM overlaps
+with the rebuild. The rebuild proceeds layer by layer, so Connectors load a later layer's KV while the GPU computes
+earlier layers (Figure~\ref{fig:recovery-pipeline}). Two parts of the transfer
+nonetheless remain exposed. No computation precedes layer~1 to hide its
+transfer, and when a layer's KV loads more slowly than a layer rebuilds,
+waiting accumulates across layers. Master removes both by placing in Peer
+HBM the Top-$K$ blocks of each of the first $L$ layers of a protected
+Agent. This raises three questions: which blocks to place, how many layers
+to cover, and which Agents to favor when HBM is short.
+
+\paragraph{Top-$K$ blocks.}
+% 中文：O2 表明稀疏注意力的读取集中在少数块上，Master 因此按访问次数选块。稀疏注意力在每层
+% 为每个 query token 原生地选出要读取的 KV 块。引擎为第 ℓ 层的每个块 b 维护计数 c_{ℓ,b}：
+% 一个 query 在任一 head 上选中 b 即计一次，与动机中访问集中度图的统计口径一致。每层计数最大的 K 个块
+% 构成该层的 Top-K 集合。K 按模型固定，由离线测得的访问集中度确定。图 5(b) 中，K = 2、
+% L = 2，L1 的 B0、B3 和 L2 的 B1、B3 同时放入 HBM，其余已检查点的块只在 DRAM 中。
+O2 shows that sparse attention concentrates its reads on a few blocks, so
+Master selects blocks by their access counts. At each layer, sparse
+attention natively selects the KV blocks that each query token reads. The
+engine keeps a count $c_{\ell,b}$ for each block $b$ of layer $\ell$ and
+increments it once for each query that selects $b$ in any head, as in
+Figure~\ref{fig:kv_value}. The $K$ blocks with the largest counts form
+layer $\ell$'s Top-$K$ set. $K$ is fixed per model, from its access
+concentration measured offline. In Figure~\ref{fig:master-selection}(b),
+$K=2$ and $L=2$, so B0 and B3 of L1 and B1 and B3 of L2 are also in HBM,
+while the other checkpointed blocks are only in DRAM.
+
+\paragraph{Updating Top-$K$ sets.}
+% 中文：Top-K 集合随检查点更新，而不是逐 token 更新。逐 token 的工作只有计数：注意力 kernel
+% 为一个 query 选完块后，引擎对被选块的计数器做一次 scatter-add；这些索引本来就存在，操作在
+% GPU 上完成，不需要与主机同步。每个检查点（即每 Z 个 token）Master 读取计数，乘以衰减因子
+% β（0 < β < 1）使近期访问占主导，然后对前 L 层重新排序，新 chunk 的块也参与排序。为避免计数
+% 相近的块来回替换，一个块只有在计数超过集合中最小成员的 (1 + ε) 倍时才进入 Top-K。进入的块
+% 由 peer 从自己的 DRAM 复制到 HBM，不经过网络；离开的块在正在进行的读取结束后释放。所有层的
+% 计数随检查点一起保存，后续层只在恢复需要时才排序。由于更新跟随检查点，HBM 中的块总在 DRAM
+% 检查点中。
+Master updates the Top-$K$ sets once per checkpoint rather than per
+token. Per-token work is limited to counting: after the attention kernel
+selects blocks for a query, the engine increments the counters of the
+selected blocks with one scatter-add over indices that already exist, on
+the GPU and without host synchronization. At each checkpoint, i.e., every
+$Z$ tokens, Master reads the counts, multiplies them by a decay factor
+$0<\beta<1$ so that recent accesses dominate, and re-ranks each of the
+first $L$ layers together with the blocks of the new chunk. To keep blocks
+with similar counts from alternating, a block enters a Top-$K$ set only if
+its count exceeds that of the set's smallest member by a factor $1+\epsilon$.
+The peer copies entering blocks from its own DRAM to its HBM, without
+crossing the network, and releases leaving blocks once their active reads
+finish. The counts of all layers are saved with the checkpoint, so later
+layers are ranked only when a recovery needs them. Because updates follow
+checkpoints, every HBM block is also in the DRAM checkpoint.
+
+\paragraph{Layer-ordered recovery with misses.}
+% 中文：恢复时，引擎逐层重建尾部至多 Z 个 token，稀疏注意力照常为尾部 token 选块。选块读取
+% 的块级元数据（如压缩键）很小，属于检查点的一部分，前 L 层的元数据与 Top-K 块一起放在 HBM
+% 中。对后续层，Connector 按层序先传元数据和 Top-K 块，再传其余 KV。选中的块若已在 GPU 中
+% 即为命中；否则为缺失（miss），Connector 立即从 DRAM 召回，优先于按层序的传输。Kernel 在
+% 缺失块传输期间先计算命中块上的注意力，再按 log-sum-exp 合并两部分结果，因此该层只等待
+% 缺失块。尾部至多 Z 个 token。缺失多少取决于 Top-K 覆盖了多少访问，这由 Evaluation 测量，
+% 而不是在这里假定“缺失很少”；缺失块只有在所在层开始时才可知，无法预取。
+During recovery, the engine rebuilds the tail of at most $Z$ tokens layer
+by layer, and sparse attention selects blocks for the tail tokens as
+usual. The block metadata that selection reads, such as compressed keys,
+is small; it is part of the checkpoint, and HBM holds it for the first $L$
+layers together with their Top-$K$ blocks. For later layers, Connectors
+load the metadata and Top-$K$ blocks first in layer order and the rest of
+the KV afterwards. A selected block already in GPU memory is a hit. Any
+other selected block is a miss, which Connectors fetch from DRAM
+immediately, ahead of the layer-ordered stream. The kernel computes
+attention over the hits while the misses load and merges the two partial
+results by their log-sum-exp, so the layer waits only for its misses.
+The tail spans at most $Z$ tokens. How many selected blocks miss depends on
+Top-$K$ coverage, which Section~\ref{sec:eval-native} measures rather than
+assumes. Misses become known only when their layer starts and therefore
+cannot be prefetched.
+
+% 中文：图 X 示意这一过程。(a) 先从 DRAM 传完全部 KV 再重建，整个传输都暴露，但此后没有
+% 缺失。(b) 按层序先传 Top-K 块，传输与重建重叠；但每层开始时召回的缺失块插到流的前面，推迟
+% 后续层的 Top-K 块，当 Top-K 块与缺失块的传输慢于重建时，每层都要等待。(c) L1–L4 的 Top-K
+% 块在 HBM 中，重建立即开始；缺失块在命中块的计算期间到达，后续 Top-K 块也在需要之前到达，
+% 不再等待；其余 KV 在调用就绪后继续传输。
+Figure~\ref{fig:recovery-pipeline} illustrates this process. Loading the
+whole KV from DRAM before the rebuild exposes the entire transfer but
+leaves no misses (a). Loading Top-$K$ blocks first in layer order overlaps
+the transfer with the rebuild (b). The misses of each layer, however, are
+fetched when the layer starts and delay the Top-$K$ blocks of later
+layers, so every layer waits when Top-$K$ blocks and misses load more
+slowly than a layer rebuilds. With the Top-$K$ blocks of L1--L4 in HBM,
+the rebuild starts at once, each layer's misses arrive while it computes
+on hits, and later Top-$K$ blocks arrive before they are needed, so no
+layer waits (c). The rest of the KV continues to load after the
+invocation is ready.
+
+% 中文（图示）：示意图，不对应特定模型或实测：8 层，时间以一层重建时间为单位；Top-K 块占
+% 每层 KV 的一半，传输需 1.2 个单位，每层缺失块的召回需 0.3 个单位，即带宽低于 B*。
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/recovery-pipeline.pdf}
+ \caption{Illustrative recovery of one protected Agent with eight layers. Each
+ dark segment rebuilds one layer for the tail of at most $Z$ tokens. Top-$K$
+ blocks are half of each layer's KV; together with the misses fetched when
+ each layer starts, they load more slowly than a layer rebuilds. (a) The
+ whole KV loads from DRAM before the rebuild. (b) Top-$K$ blocks load first
+ in layer order. (c) The Top-$K$ blocks of L1--L4 are in HBM. The rest of
+ the KV loads after the Top-$K$ blocks.}
+ \label{fig:recovery-pipeline}
+ \Description{Three two-lane timelines, H2D above GPU. (a) The GPU waits
+ while all KV loads, then rebuilds eight layers. (b) Top-K blocks load
+ layer by layer, a short miss fetch is inserted whenever a layer starts,
+ and every layer waits before it rebuilds; the rest of the KV loads
+ afterwards. (c) With the first four layers' Top-K blocks in HBM, the eight
+ layers rebuild without waiting while Top-K blocks and miss fetches
+ interleave on H2D.}
+\end{figure}
+
+\paragraph{Depth $L$.}
+% 中文：设模型有 N 层，r 为一层尾部重建的时间，h 为在有效 H2D 带宽 B 下传输一层 Top-K 块与
+% 缺失块的时间；B* 为 h = r 时的带宽。前 L 层在 HBM 中时，第 ℓ > L 层最早在 (ℓ−1)r 开始，
+% 其 Top-K 块在 (ℓ−L)h 到达。任何层都不等待当且仅当对所有 ℓ ≤ N 都有 (ℓ−L)h ≤ (ℓ−1)r，
+% 即式 (3)。这里把缺失块近似计入每层的传输量。第 1 层之前没有计算可以掩盖传输，因此 L ≥ 1。
+Let the model have $N$ layers, let $r$ be the time to rebuild one layer
+for the tail, and let $h$ be the time to load one layer's Top-$K$ blocks
+and misses at effective host-to-device bandwidth $B$; $B^*$ is the
+bandwidth at which $h=r$. With the first $L$ layers in HBM, layer
+$\ell>L$ can start at $(\ell-1)r$, and its Top-$K$ blocks arrive by
+$(\ell-L)h$. No layer waits if $(\ell-L)h\le(\ell-1)r$ for every
+$\ell\le N$. Since nothing hides layer~1's transfer, this gives
+\begin{equation}
+ L=\max\Bigl\{1,\;\Bigl\lceil N-(N-1)\,\frac{B}{B^*}\Bigr\rceil\Bigr\},
+ \label{eq:depth}
+\end{equation}
+where misses are counted as part of each layer's load.
+
+% 中文：图 Y 绘出式 (3)。带宽不低于 B* 时 L = 1；低于 B* 时 L 随带宽下降线性增大。B 是单个
+% 恢复实际获得的带宽：传输很少能打满链路，并发恢复还会共享链路，因此 B 低于链路峰值，需要在
+% 预期的并发恢复下离线测量。部署据此为每个模型设定 L。
+Figure~\ref{fig:depth-bandwidth} plots Equation~\ref{eq:depth}. At or
+above $B^*$, $L=1$. Below $B^*$, $L$ grows linearly as the bandwidth
+drops, and without HBM the waiting grows quickly. $B$ is the bandwidth
+that one recovery actually obtains. Transfers rarely saturate the link,
+and concurrent recoveries share it, so $B$ lies below the link's peak and
+is measured offline under the expected concurrent recoveries. The
+deployment sets $L$ for each model from this profile.
+
+% 中文（图示）：示意图，32 层，与图 X 采用相同的规则。
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/depth-bandwidth.pdf}
+ \caption{Illustrative depth $L$ versus effective host-to-device bandwidth
+ for a 32-layer model. Bandwidth is normalized to $B^*$, at which a layer's
+ Top-$K$ blocks and misses load in one layer's rebuild time. (a) Smallest
+ $L$ for which no layer waits (Equation~\ref{eq:depth}). (b) Waiting
+ without HBM, in layer rebuild times. Below $B^*$ (dashed), loads fall
+ behind the rebuild and $L$ grows as the bandwidth drops.}
+ \label{fig:depth-bandwidth}
+ \Description{Two stacked panels over bandwidth from 0 to 2 times B-star.
+ (a) Depth L falls in steps from 31 near zero bandwidth to 1 at B-star and
+ stays 1 above. (b) On a logarithmic scale, waiting without HBM falls from
+ several hundred layer rebuild times near zero bandwidth to one at B-star,
+ then declines slowly.}
+\end{figure}
+
+\paragraph{HBM admission.}
+% 中文：同一模型的每个受保护 Agent 占用相同的 HBM：L·K 个块加上这些层的元数据。令 T_a^D 和
+% T_a^H 分别为仅从 DRAM 恢复和有 HBM 副本时的重试延迟，HBM 副本为工作流减少的延迟为 G_a。
+% Master 按 G_a 从大到小把受保护 Agent 接纳到 Adapter 给出的配额中，并跳过 G_a = 0 的
+% Agent，即 DRAM 恢复已被 Slack 掩盖的 Agent。由于各 Agent 占用相同，这一顺序在配额内减少的
+% 延迟最多。放不下的 Agent 保留 DRAM 检查点，Master 将其报告给 Adapter，作为增大配额的信号。
+Every protected Agent of a model occupies the same HBM: $L\cdot K$ blocks
+plus the metadata of these layers. Let $T^{D}_a$ and $T^{H}_a$ be $a$'s
+retry delays when recovering from DRAM alone and with its HBM copy. The
+HBM copy removes
+\begin{equation}
+ G_a=\bigl[T^{D}_a-s_a\bigr]^+-\bigl[T^{H}_a-s_a\bigr]^+
+ \label{eq:hbm-gain}
+\end{equation}
+of workflow delay. Master admits protected Agents to Adapter's HBM quota
+in decreasing $G_a$ and skips Agents with $G_a=0$, whose recovery from
+DRAM already fits within their slack. Because all copies have the same
+size, this order removes the most delay within the quota. Agents that do
+not fit keep their DRAM checkpoint, and Master reports them to Adapter as
+its signal for growing the quota (Section~\ref{sec:capacity}).
+
+\subsubsection{Replica Management and Recovery}
+\label{sec:master-online}
+\label{sec:execution}
+
+% 中文：副本的生命周期跟随 Agent 而不是调用。同一 Agent 的后续调用扩展同一前缀，因此副本跨
+% 调用有效；Agent 完成任务或降到 λ 以下时，Master 释放其副本。复制是异步的：副本目录记录每个
+% 块的层、token 区间、TP 分片和位置，所有分片到达后才发布检查点或 HBM 副本。
+Replicas follow Agents rather than invocations. Later invocations of an
+Agent extend the same prefix, so its replicas remain valid across
+invocations, and Master releases them when the Agent finishes its task or
+falls below $\lambda$. Because copies are asynchronous, a replica manifest
+records each block's layer, token range, TP shards, and location, and
+publishes a checkpoint or HBM copy only after all its shards arrive.
+
+% 中文：故障后，Router 屏蔽旧执行并将被中断的调用重定向到 retry 目标。目标从副本目录中找到
+% 最近发布的检查点，引擎直接使用 HBM 中的块和元数据，Connector 按上述方式从 DRAM 加载其余
+% KV 和缺失块，引擎逐层重建检查点之后的尾部，然后继续生成。DRAM 检查点是完整的，因此 HBM
+% 副本只影响恢复时间，不影响正确性；未发布的复制在恢复中被忽略。
+After a failure, Router fences the old execution and redirects the
+interrupted invocation to its retry target. The target looks up the
+latest published checkpoint in the manifest. The engine uses the HBM
+blocks and metadata in place, Connectors load the remaining KV and misses
+from DRAM as described above, and the engine rebuilds the tail layer by
+layer before resuming generation. Because the DRAM checkpoint is complete,
+HBM copies affect recovery time but never correctness, and recovery
+ignores unpublished copies.
+
+% 中文：正常执行的开销与 token 数成比例的部分只有计数。未受保护的 Agent 没有开销；受保护的
+% Agent 每个 token 只做计数器自增。每个检查点，Connector 复制一个 Z-token chunk 到 Peer
+% DRAM，Master 对 L 层重新排序，peer 在本地把至多 L·K 个进入 Top-K 的块从 DRAM 复制到
+% HBM；上述滞后条件使这一复制只针对计数明显变化的块。
+Normal execution pays little, and mostly once per $Z$ tokens.
+Unprotected Agents incur no cost. A protected Agent adds only counter
+increments per token. Per checkpoint, Connectors copy one $Z$-token chunk
+to Peer DRAM, Master re-ranks $L$ layers, and the peer locally copies at
+most $L\cdot K$ entering blocks from its DRAM to its HBM; the hysteresis
+restricts these copies to blocks whose counts change substantially.
+
+\subsection{Adapter}
+\label{sec:capacity}
+
+% 中文：O3 表明前台服务可让出的 HBM 随负载变化。Adapter 为每个接管 rank k 维护 HBM 副本
+% 配额 B_k，KV Master 只在该配额内接纳 Agent（每个 Agent 占 L·K 个块）。配额受上限 C_k
+% 约束：B^pool_k 为扣除权重和固定分配后的显存，B^serve_k 为服务高水位与执行预留，
+% B^reserve_k 为增长与 workspace 余量，B^cap_k 为管理员设定的上限。
+O3 shows that the HBM that foreground serving can spare changes with
+load. Adapter maintains an HBM replica quota $B_k$ for each takeover rank
+$k$, and KV Master admits Agents, each occupying $L\cdot K$ blocks, only
+within it. The quota is bounded by
+\begin{equation}
+ C_k=\max\{0,\min(B^{\rm cap}_k,
+ B^{\rm pool}_k-B^{\rm serve}_k-B^{\rm reserve}_k)\},
+ \label{eq:ceiling}
+\end{equation}
+where $B^{\rm pool}_k$ is the memory left after weights and fixed
+allocations, $B^{\rm serve}_k$ covers the serving high watermark and
+execution reservations, $B^{\rm reserve}_k$ keeps headroom for growth and
+workspace, and $B^{\rm cap}_k$ is an operator limit.
+
+% 中文：Adapter 以 AIMD 调整 B_k。分配卡顿、预留被侵占或因显存不足的准入等待出现时，
+% B_k 乘以 γ < 1；连续 m 个窗口稳定且 Master 报告有 Agent 因 HBM 不足未被接纳时，B_k
+% 增加 Δ，并截断到 C_k。深度 L 与 K 不随配额变化，配额只改变可放入 HBM 的 Agent 数量。
+Adapter adjusts $B_k$ by additive increase and multiplicative
+decrease~\cite{chiu1989aimd}. Allocation stalls, reserve violations, or
+admission waits caused by memory multiply $B_k$ by $\gamma<1$. After $m$
+stable windows, Adapter adds $\Delta$ if Master reports protected Agents
+deferred for HBM capacity, and clips the result to $C_k$. $L$ and $K$ stay
+fixed, so the quota changes only how many Agents HBM holds.
+
+% 中文：配额缩小时，Master 停止新的 HBM 接纳，并按 G_a 从小到大释放 Agent
+% 的 HBM 副本，等其读取结束后回收。DRAM 检查点是完整的，因此无需迁移数据，这些 Agent
+% 只是改为从 DRAM 恢复。前台准入按实际占用而非配额判断，释放完成前不会超额分配。
+When the quota shrinks, Master stops new HBM admissions and releases the
+HBM copies of Agents in increasing $G_a$ once their readers
+drain. Because their DRAM checkpoints are complete, no data moves, and
+these Agents recover from DRAM instead. Foreground admission follows
+actual occupancy rather than the quota, so memory is not overcommitted
+before the release completes.

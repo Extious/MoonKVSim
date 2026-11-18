@@ -1,0 +1,271 @@
+\section{AegisKV Design}
+\label{sec:design}
+
+AegisKV manages reusable checkpoints in a finite shared DRAM pool and a
+larger storage tier. Storage may be remote SSD or a shared filesystem;
+its failure domain and performance must be specified separately. GPUs
+retain their normal execution KV and workspace. There is no dedicated
+Peer-HBM protection region. The design below is an implementable contract;
+Section~\ref{sec:evaluation} distinguishes its analytical evaluation from
+implementation evidence.
+
+\subsection{Design Insights}
+\label{sec:design-insights}
+
+\paragraph{Recovery value depends on dependencies.}
+A faster restore matters only to the extent that it advances a required
+workflow result. Figure~\ref{fig:motivation-recovery-exposure} illustrates
+this distinction for independent branch failures. A common worker failure
+can interrupt several branches simultaneously. Their penalties cannot be
+added: if two critical branches each incur 10\,s, reducing only one to
+2\,s leaves their join 10\,s late. Placement must therefore evaluate the
+branches affected by the same failure together.
+
+\paragraph{Demotion and deletion have different costs.}
+Moving a valid checkpoint from DRAM to storage usually adds I/O; deleting
+its last surviving copy can require reconstruction. These operations
+need separate values and safety checks. A large-slack agent can use
+storage for recovery and still reuse its history in the next interaction.
+Slack is not a reason to prohibit ordinary caching.
+
+\paragraph{A desired placement is not recoverable state.}
+Copies take time and compete with serving. A checkpoint becomes usable
+only after all required objects and metadata commit. Likewise, memory is
+reclaimed only after a replacement location is committed and old readers
+drain. The controller must optimize the state it can actually achieve,
+including the period when both copies consume capacity.
+
+\subsection{System Overview}
+\label{sec:system-overview}
+
+The orchestrator supplies workflow IDs, dependencies, accepted inputs, and
+execution progress (Figure~\ref{fig:system-overview}). The Tracker estimates
+remaining durations and slack. The Router combines locality with load for
+normal dispatch and selects a compatible surviving replica at failure
+time. The KV Master values candidate changes to DRAM and storage residency.
+Adapters expose sealed KV, resource pressure, and recovery progress;
+Connectors execute transfers. A surviving directory records immutable
+object identities, replica generations, and checkpoint manifests.
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/storage-overview.pdf}
+ \caption{AegisKV with shared DRAM and a capacity tier. Both DPs retain
+ ordinary execution HBM. The Router may choose either compatible surviving
+ DP; recovery reads resolve through the shared directory. Demotion commits
+ the storage copy before releasing DRAM. Storage is outside the protected
+ compute failure domain. Arrows show logical paths, not measured rates.}
+ \label{fig:system-overview}
+ \Description{A workflow supplies a Tracker and KV Master. A Router and
+ surviving directory connect two inference replicas to shared DRAM and
+ SSD or shared storage. There is no Peer-HBM backup region.}
+\end{figure}
+
+Objects are sealed token blocks containing one layer's complete local KV
+shard. Identity includes model and weight revision, tokenizer/prefix hash,
+position convention, layer, TP shard, numerical format, and token interval.
+A \emph{checkpoint group} is a legal collection of these objects and
+model-specific auxiliary state. Placement can move individual objects,
+but valuation accounts for their recovery dependencies. Shared physical
+objects consume bytes once, while their value includes all affected owners.
+Dense and sparse models use the same interface; a sparse adapter must also
+capture selector state. Placement never changes attention selections.
+
+\subsection{Workflow Tracker: Remaining Time and Slack}
+\label{sec:workflow-protection}
+
+The residual DAG contains unfinished execution segments. Fork/join
+boundaries split a parent so child execution is not counted again as
+parent waiting. A GBDT predicts each segment's remaining duration from
+role/model, elapsed time, known prompt length, and completed calls and
+tools. Entry predictions mask fields unavailable before launch.
+The target is remaining time directly, not total time minus elapsed time.
+Train/test splits separate complete workflows and time periods.
+
+For estimated durations $d_a$, critical-path analysis~\cite{kelley1959cpm}
+computes earliest finish $E_a=d_a+\max_{b\in P(a)}E_b$, horizon
+$T=\max_a E_a$, latest finish $F_a=\min_{b\in S(a)}(F_b-d_b)$, and
+slack $\sigma_a=\max(0,F_a-E_a)$. Empty predecessor maxima are zero;
+sinks have $F_a=T$. A request inherits its segment's margin. Multiple
+requests do not each receive an independent copy of that margin.
+
+The Tracker refreshes on arrivals, completions, DAG changes, and policy
+windows, in $O(|V|+|E|)$ time after prediction. An undeclared future branch,
+missing request mapping, or invalid estimate disables dependency-based
+priority for that workflow. The fallback uses request recovery costs and
+normal reuse, with zero slack. New DAG information invalidates the previous
+snapshot. Published trajectory prediction~\cite{zhang2026heddle} motivates
+using execution context; it does not establish wall-clock accuracy here.
+
+\subsection{Recovery-aware Router}
+\label{sec:recovery-router}
+
+Normal dispatch checks compatible prefixes and foreground load, retaining
+Agent affinity when useful. A protection decision does not invalidate an
+existing ordinary cache entry. On a confirmed fail-stop event, the Router
+fences the old worker, obtains its surviving request log and manifests,
+and chooses a healthy, layout-compatible target with feasible execution
+space. Shared backing removes the requirement to bind retries to a
+particular Peer location. Targets can still become overloaded; both the
+profile and evaluation must include readmission and background service.
+
+Before acknowledging an output token, a surviving ordered log stores its
+request ID, position, token ID, and source epoch. Prompt and accepted tool
+inputs are also recoverable. Retries reconstruct the acknowledged suffix,
+suppress duplicate delivery, and reject stale epochs. Exactly-once tool
+side effects remain the orchestrator's responsibility. Model reload is
+excluded when a compatible replica already survives; it is included when
+that assumption does not hold. A GPU-process kill tests a different
+failure domain from loss of a host and its local storage.
+
+\subsection{KV Master: Online Retention and Demotion}
+\label{sec:kv-master}
+
+\subsubsection{Valuing a placement change}
+\label{sec:placement-value}
+Let $P$ describe committed locations and outstanding reservations, and
+$e$ a possible episode within a fixed horizon $H$. Episodes include
+normal next-use events and failures of named source domains. A domain
+failure identifies \emph{all} its interrupted requests. The profile
+returns additional segment delays $\delta(P,e)$, including checkpoint lag,
+restore/reconstruction, target queues, and contended transfers. A max-plus
+DAG pass evaluates workflow completion $T_w(P,e)$ using these delays.
+For one isolated interrupted segment this reduces to
+$\max(0,R_r(P,e)-\sigma_r)$; it is not generally the sum of such terms.
+
+For a candidate $P'$ the controller minimizes the change
+\begin{equation}
+ \Delta J(P'\mid P)=A(P',P)+
+ \sum_e p_e\sum_w\bigl[T_w(P',e)-T_w(P,e)\bigr].
+ \label{eq:value}
+\end{equation}
+$A$ is the foreground delay caused by the \emph{transition}, including
+writes and temporary occupancy; episode costs describe service after
+that transition and exclude those same costs. All terms are seconds;
+$p_e$ are probabilities or explicitly declared expected episode counts,
+never raw failure rates. For a first-failure model, domain rates
+$\lambda_f$ give $p_f=(\lambda_f/\Lambda)(1-e^{-\Lambda H})$ with
+$\Lambda=\sum_f\lambda_f$. Multiple-failure episodes require an extended
+model. Normal-use probabilities come from past Agent activations;
+no future prompt or completion is visible to the controller.
+
+Compare DRAM demotion against the actual surviving storage copy, including
+writeback if absent. Compare storage deletion against the remaining valid
+checkpoint or reconstruction. A group's marginal value is recomputed
+against the current preview after each choice, including every owner of
+a shared object. It is not copied into every block's score. Equal local
+slack values can conceal a common-failure join, and the objective remains
+non-additive. The greedy procedure below has no optimality or competitive
+ratio guarantee.
+
+\subsubsection{Selecting a bounded online plan}
+\label{sec:placement-plan}
+Newly sealed state is offered to the shared cache regardless of slack,
+subject to byte and queue limits. This is an attempt, not an unlimited
+storage promise. Existing compatible copies are reused first. A configured
+block-aligned interval $Z$ triggers review as KV grows; arrivals, tool
+handoffs, significant DAG/load changes, and capacity pressure also trigger
+reviews. A review may keep every location unchanged.
+
+A snapshot supplies legal retain, promote, demote, and discard operations.
+To relieve DRAM pressure, repeatedly choose the feasible demotion with
+smallest predicted increase in $J$ per byte actually releasable, breaking
+ties by stable object ID. Revalue the remaining candidates after each
+choice. Compare a proposed admission or promotion against this complete
+victim plan, including its write cost. Accept an optional change only if
+its upper cost bound is below the keep plan's lower bound by a configured
+hysteresis margin. Required capacity relief can proceed without a positive
+performance benefit, but still obeys safety constraints.
+
+Storage pressure uses a separate victim set and value: only unowned
+checkpoints, superseded versions, or explicitly withdrawn protection
+claims can lose their last replica. With no safe victim, reject/coalesce
+new writes, preserve the last valid frontier, and expose the longer replay
+tail. A tool handoff releases an execution reference but does not erase
+the cache or automatically withdraw a checkpoint claim. Active requests
+can be demoted to storage; physical I/O leases, not permanent DRAM pins,
+protect ongoing readers.
+
+\begin{figure}[t]
+ \raggedright
+ \refstepcounter{designalgorithm}\label{alg:placement}
+ \textbf{Algorithm \thedesignalgorithm: Bounded online tier management}
+ \par\smallskip
+ \begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
+ \toprule
+ 1 & Snapshot DAG, epochs, locations, leases, and byte ledgers \\
+ 2 & Reuse committed objects; offer newly sealed dependencies \\
+ 3 & Form legal candidates within the configured work budget \\
+ 4 & While a preview exceeds a tier's capacity: \\
+ 5 & \quad Select least-cost legal relief per releasable byte \\
+ 6 & \quad Update the preview; revalue affected candidates \\
+ 7 & Compare keep with the complete admission/migration plan \\
+ 8 & Reject unsupported or unprofitable optional changes \\
+ 9 & Recheck versions and reserve destination/transfer space \\
+ 10 & Enqueue copies; retain old authoritative locations \\
+ 11 & On completion: validate, commit, redirect, drain, release \\
+ 12 & Publish actual coverage; retry after relevant state changes \\
+ \bottomrule
+ \end{tabularx}
+ \caption*{A preview does not free memory or advance a checkpoint.}
+ \Description{An online controller compares complete legal migration plans,
+ reserves resources, and releases old copies only after safe commitment.}
+\end{figure}
+
+Profiles are keyed by model/layout, bytes, tail length, topology, target
+load, and I/O scheduler. Each records support ranges, uncertainty, expiry,
+and whether rates are measured or assumed. Missing or stale profiles
+freeze discretionary promotions and use bounded LRU demotion with the
+same safety rules. The prototype must measure candidate-work budgets,
+profile-query overhead, and the resulting regret; unbounded exhaustive
+search is only a small-instance evaluation oracle.
+
+\subsubsection{Committing a checkpoint}
+\label{sec:checkpoint}
+Copies progress through pending, committed, and retiring generations.
+Publication requires all required layers, TP shards, token intervals,
+selector state, and a matching surviving token-log prefix. The authoritative
+frontier is the latest dependency-complete manifest, not the largest
+position seen in any individual copy. An incomplete new manifest leaves
+the old one usable. Immutable objects can be shared across manifests.
+
+DRAM demotion follows copy--verify--commit--redirect--drain--free. Storage
+commit means the backend's documented completion/persistence guarantee;
+a buffered write return is insufficient when the claimed failure model
+requires durable media. Readers lease a specific location generation.
+A failed copy keeps the old location, releases its failed reservation,
+and triggers replanning. Duplicate completions and obsolete epochs cannot
+publish a new frontier. Last-copy deletion cannot silently preserve the
+old claim of recoverability.
+
+\subsection{Adapter and Connector: Safe Concurrent Execution}
+\label{sec:kv-runtime}
+
+Each tier accounts for committed bytes, reservations, retiring buffers,
+and metadata. Recovery also reserves bounded GPU workspace and staging
+buffers before admission. A lower DRAM target can temporarily be below
+physical occupancy while safe demotion drains; it cannot be used as an
+instantaneous free-space report. Exhausted storage or transfer queues
+cause bounded rejection/backpressure, not hidden allocation.
+
+Connectors maintain separate foreground, demand-restore, and writeback
+queues. Positive minimum service shares preserve progress for restore
+and required demotion; unused service is borrowable. Background backup
+has a configured bandwidth cap. A bandwidth share is not a bound on
+foreground latency. Byte-based deficit round robin and bounded transfer
+quanta prevent one long context from monopolizing a path. Normal reads
+and all policies use the same scheduler in controlled comparisons.
+
+The engine consumes chunks at supported kernel boundaries. Layer-wise
+prefetch can overlap remaining replay computation, but historical
+recomputation already avoided by reuse provides no overlap window.
+Missing inputs stall the dependent work, not every retry. TP ranks retain
+matched batch and collective order. Dense or native sparse attention
+executes unchanged; batched replay requires demonstrated equivalence to
+the original state evolution, otherwise the runtime replays token by token.
+
+These rules give three invariants: pending state is never read as committed;
+every published dependency resolves to a surviving compatible generation;
+and a physical buffer is never reused with outstanding leases. They
+establish a protocol argument, not a claim that concurrency bugs, model
+parity, or fault-recovery performance have already been validated.

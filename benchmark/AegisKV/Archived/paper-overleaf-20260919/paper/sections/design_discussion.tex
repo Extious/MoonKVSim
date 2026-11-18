@@ -1,0 +1,23 @@
+\paragraph{Scope and validation.}
+\label{sec:design-discussion}
+Sparse integration needs native selection indices, recoverable selector
+state and all attention branches, physical-block mapping, and the directory/
+lease interface above. Poor predictions can use exact demand fetch or
+full-layer loading; dense attention uses the full historical set.
+Standalone requests use zero slack. Prefill failures require profiles for
+the lost chunk, not a universal 64-token tail.
+
+The present evidence consists of native selection traces, attributed
+prediction results, and a single-request pipeline model using measured
+forward latency and assumed transfer bandwidth. It does
+not validate the depth-score profiles, failure-risk calibration, checkpoint
+sensitivity, active hot-set migration, concurrent retry fairness, or
+foreground interference. End-to-end tests must include recovery during
+demotion, stale-location races, DRAM exhaustion, copy backlogs, and shared
+bandwidth pressure. The specified interfaces and fallbacks make those
+claims testable; they do not establish performance or a completed implementation.
+Validation must also replay common source failures through the dependency
+DAG, compare the local policy with feasible small-DAG allocations, and
+report regret, including zero or negative Peer benefit. Native selector
+traces and the measured batched forward do not by themselves validate
+recovery equivalence to token-wise decoding.

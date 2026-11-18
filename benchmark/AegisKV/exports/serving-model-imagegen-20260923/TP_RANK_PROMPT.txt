@@ -1,0 +1,34 @@
+Edit the supplied AegisKV Background diagram. The user's specific correction is that each tensor-parallel rank's KV state must be visible, not only an aggregate cache per worker.
+
+Preserve the complete upper Workflow runtime, both DAGs and ALL their exact dependencies, accepted histories, dispatch labels B2/E1 and C1/F1, consistent blue/purple agent identity, and the connected dashed return path from BOTH workers to Accepted histories. Preserve the broad 4:3 layout and restrained research-paper style. You may compact whitespace and the upper headers slightly to give the worker interiors more room. Do not make a narrow tall image.
+
+CHANGE THE TWO WORKER INTERIORS AS FOLLOWS.
+Both workers are illustrative TP=2 model replicas. In each worker replace its single aggregate KV-cache panel with exactly TWO side-by-side rank compartments. Keep one outer worker boundary around BOTH ranks.
+- Worker 0 title: "Worker 0". Short subtitle: "One replica, TP=2". Inside it, "Rank 0" and "Rank 1".
+- Worker 1 title: "Worker 1". Same short subtitle: "One replica, TP=2". Inside it, "Rank 0" and "Rank 1".
+No rank is a separate model replica or separate worker.
+
+Each rank MUST visibly contain local KV for BOTH agents assigned to its worker:
+- Worker 0 Rank 0: B and E.
+- Worker 0 Rank 1: B and E.
+- Worker 1 Rank 0: C and F.
+- Worker 1 Rank 1: C and F.
+Do NOT assign B to only one rank and E to the other. Do NOT route one inference request exclusively to a single TP rank.
+
+Inside each rank, use the small heading "Local KV shards". Then TWO clear agent groups with a directly labeled agent identity.
+Within EACH agent group show a compact pair of aligned token-block strips:
+upper strip labeled "K", lower strip labeled "V".
+These are the rank-local key and value tensor shards, not full duplicated KV caches. The parent rank specifies ownership; the exact model/head dimensions are deliberately omitted.
+Keep the strips simple: about four or five rectangular token blocks each, no numerical block or head indices, no layer matrices, no weights or block tables.
+
+B'S MULTI-TURN DETAIL
+In BOTH Worker 0 ranks, B's K and V strips have a blue historical-prefix region followed by an amber appended region on the RIGHT. The prefix/suffix boundary occurs at the SAME token position in both ranks and in K and V.
+Use one compact shared legend below the two Worker 0 ranks: blue swatch "Reuse", amber swatch "Append", short note "B1 to B2".
+B's rank-local shards share the same token progress but carry that rank's tensor portion. The diagram must not suggest that rank 0 holds only old tokens while rank 1 holds only new tokens.
+E's K/V strips are purple in BOTH ranks; C's are blue and F's purple in BOTH Worker 1 ranks. Other agents do not need extra growth annotations.
+
+TYPOGRAPHY AND ROUTING
+Rank labels, agent labels, K/V labels and shard ownership are the important new details; keep them crisp, readable and uncrowded. Reduce oversized headings and spare whitespace if needed. Use flat pale fills, white background, thin dark borders and regular serif type with selective bold section headings.
+The solid incoming request arrow terminates on the outer worker boundary: all ranks collaborate on the same worker requests. Both dashed output connectors still start on their respective OUTER worker boundaries and join the common external return collector. No new worker-to-worker links and no arbitrary rank-to-rank KV-copy arrows.
+
+Preserve all required workflow and request text. Do not add a global title, caption paragraphs, failure crosses, storage tiers or AegisKV policy modules. This is an illustrative serving model showing rank-local sharded KV; exact KV head ownership, model-specific replication and physical sizes are out of scope.

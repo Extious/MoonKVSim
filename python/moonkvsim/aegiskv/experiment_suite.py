@@ -42,12 +42,15 @@ from moonkvsim.aegiskv.experiment_workload import (
     CONTEXT_BUCKETS,
     load_experiment_records,
 )
+from moonkvsim.aegiskv.fanoutqa import load_frozen_fanoutqa_records
+from moonkvsim.aegiskv.odr import load_frozen_odr_records
 from moonkvsim.common.hash import sha256_json
 
 SuiteSelection = Literal["core", "all"]
 
 SCHEMA_VERSION: Final = "moonkvsim.aegiskv.e2_matrix_suite.v1"
 DEFAULT_SEEDS: Final = (0, 1, 2)
+DEFAULT_FAILURE_COUNT: Final = 2
 REPETITIONS: Final = ("A", "B")
 CONTEXT_BUCKET_NAMES: Final = tuple(bucket.name for bucket in CONTEXT_BUCKETS)
 SCENARIOS: Final = (Scenario.NO_FAILURE, Scenario.GPU_FAILURE)
@@ -88,12 +91,11 @@ EXPECTED_VARIANT_IDS: Final[dict[str, tuple[str, ...]]] = {
     "sensitivity": tuple(
         f"{dimension}={value}"
         for dimension, values in (
-            ("peer_budget_gib", (4, 8, 12)),
+            ("peer_hbm_alpha_percent", (0, 20, 50)),
             ("store_budget_gib", (32, 64, 128)),
             ("store_bandwidth_gbps", (12, 25, 50)),
             ("peer_fabric_bandwidth_gbps", (50, 100, 200)),
             ("failure_progress_percent", (10, 50, 90)),
-            ("detection_delay_ms", (1, 5, 20)),
             ("reroute_delay_ms", (0, 1, 5)),
             ("policy_chunk_tokens", (256, 1_024, 4_096)),
         )
@@ -103,8 +105,8 @@ EXPECTED_VARIANT_IDS: Final[dict[str, tuple[str, ...]]] = {
 DEFAULT_EXPECTED_ROWS: Final = {
     "core": 420,
     "ablation": 720,
-    "sensitivity": 1_440,
-    "all": 2_580,
+    "sensitivity": 1_260,
+    "all": 2_400,
 }
 NO_FAILURE_SCHEDULE_FINGERPRINT: Final = sha256_json(
     {"scenario": Scenario.NO_FAILURE.value, "failure_schedule": None}
@@ -155,6 +157,7 @@ class WorkloadBinding:
     semantic_fingerprint: str
     manifest_sha256: str
     manifest_schema: str
+    workload_kind: str = "legacy_weka"
 
     def __post_init__(self) -> None:
         for name, value in (
@@ -166,6 +169,12 @@ class WorkloadBinding:
                 raise ValueError(f"workload {name} must be lowercase 64-hex")
         if not self.declared_path or not self.manifest_schema or self.record_count <= 0:
             raise ValueError("workload binding fields must be non-empty and positive")
+        if self.workload_kind not in {
+            "legacy_weka",
+            "odr_complete_tasks",
+            "fanoutqa_complete_tasks",
+        }:
+            raise ValueError("workload kind is unsupported")
 
     @property
     def fingerprint(self) -> str:
@@ -179,23 +188,30 @@ class WorkloadBinding:
             "semantic_fingerprint": self.semantic_fingerprint,
             "manifest_sha256": self.manifest_sha256,
             "manifest_schema": self.manifest_schema,
+            "workload_kind": self.workload_kind,
         }
 
 
 @dataclass(frozen=True, slots=True)
 class _ScheduleTask:
     parameters_fingerprint: str
+    variant_fingerprint: str
     variant: ExperimentVariant
     context_bucket: str
     seed: int
+    workflow_concurrency: int | None = None
+    failure_count: int = DEFAULT_FAILURE_COUNT
 
     @property
     def key(self) -> str:
         return sha256_json(
             {
                 "parameters_fingerprint": self.parameters_fingerprint,
+                "variant_fingerprint": self.variant_fingerprint,
                 "context_bucket": self.context_bucket,
                 "seed": self.seed,
+                "workflow_concurrency": self.workflow_concurrency,
+                "failure_count": self.failure_count,
             }
         )
 
@@ -204,8 +220,11 @@ class _ScheduleTask:
 class _FrozenSchedule:
     key: str
     parameters_fingerprint: str
+    variant_fingerprint: str
     context_bucket: str
     seed: int
+    workflow_concurrency: int | None
+    failure_count: int
     schedule: FailureSchedule
 
     @property
@@ -213,7 +232,10 @@ class _FrozenSchedule:
         return sha256_json(
             {
                 "parameters_fingerprint": self.parameters_fingerprint,
+                "variant_fingerprint": self.variant_fingerprint,
                 "failure_schedule_fingerprint": self.schedule.fingerprint,
+                "workflow_concurrency": self.workflow_concurrency,
+                "failure_count": self.failure_count,
             }
         )
 
@@ -229,6 +251,7 @@ class _PairTask:
     implementation: ImplementationBinding
     workload: WorkloadBinding
     protocol_fingerprint: str
+    workflow_concurrency: int | None = None
     capture_representative: bool = False
 
 
@@ -278,6 +301,8 @@ def _read_json_object(path: Path) -> dict[str, Any]:
 def load_frozen_workload(
     workload_path: Path,
     manifest_path: Path,
+    *,
+    retain_exact_token_ids: bool = False,
 ) -> tuple[list[dict[str, Any]], WorkloadBinding, dict[str, Any]]:
     """Load the committed workload and fail closed on any provenance drift."""
 
@@ -313,18 +338,54 @@ def load_frozen_workload(
     )
     if any(selection.get(field) is not True for field in required_true):
         raise ExperimentSuiteError("frozen workload permits mutation or synthesis")
+    selection_kind = selection.get("kind")
     bucket_counts = audit.get("context_bucket_counts")
+    minimum_bucket_count = (
+        0 if selection_kind == "complete_fanoutqa_tasks_after_whole_task_guard" else 1
+    )
     if not isinstance(bucket_counts, dict) or any(
-        type(bucket_counts.get(bucket)) is not int or int(bucket_counts[bucket]) <= 0
+        type(bucket_counts.get(bucket)) is not int
+        or int(bucket_counts[bucket]) < minimum_bucket_count
         for bucket in CONTEXT_BUCKET_NAMES
     ):
-        raise ExperimentSuiteError("frozen workload does not cover every context bucket")
+        raise ExperimentSuiteError("frozen workload context-bucket audit is invalid")
 
     workload_sha256 = _sha256_file(workload_path)
     declared_sha256 = artifact.get("sha256")
     if declared_sha256 != workload_sha256:
         raise ExperimentSuiteError("frozen workload SHA-256 differs from its manifest")
-    records = load_experiment_records(workload_path)
+    if selection_kind == "complete_odr_tasks_after_whole_task_guard":
+        selected_workflow_ids = selection.get("selected_workflow_ids")
+        if not isinstance(selected_workflow_ids, list) or not all(
+            isinstance(item, str) and item for item in selected_workflow_ids
+        ):
+            raise ExperimentSuiteError("ODR manifest lacks selected workflow IDs")
+        records = load_frozen_odr_records(
+            workload_path,
+            expected_workflow_ids=selected_workflow_ids,
+        )
+        workload_kind = "odr_complete_tasks"
+    elif selection_kind == "complete_fanoutqa_tasks_after_whole_task_guard":
+        selected_workflow_ids = selection.get("selected_workflow_ids")
+        normalizer = manifest.get("normalizer")
+        if not isinstance(selected_workflow_ids, list) or not all(
+            isinstance(item, str) and item for item in selected_workflow_ids
+        ):
+            raise ExperimentSuiteError("FanOutQA manifest lacks selected workflow IDs")
+        if not isinstance(normalizer, dict) or not isinstance(
+            normalizer.get("tokenizer_fingerprint"), str
+        ):
+            raise ExperimentSuiteError("FanOutQA manifest lacks tokenizer identity")
+        records = load_frozen_fanoutqa_records(
+            workload_path,
+            expected_workflow_ids=selected_workflow_ids,
+            tokenizer_fingerprint=str(normalizer["tokenizer_fingerprint"]),
+            retain_token_ids=retain_exact_token_ids,
+        )
+        workload_kind = "fanoutqa_complete_tasks"
+    else:
+        records = load_experiment_records(workload_path)
+        workload_kind = "legacy_weka"
     record_count = artifact.get("record_count")
     if type(record_count) is not int or record_count != len(records):
         raise ExperimentSuiteError("frozen workload record count differs from its manifest")
@@ -341,6 +402,7 @@ def load_frozen_workload(
         semantic_fingerprint=semantic_fingerprint,
         manifest_sha256=_sha256_file(manifest_path),
         manifest_schema=str(manifest["schema"]),
+        workload_kind=workload_kind,
     )
     return records, binding, manifest
 
@@ -399,14 +461,24 @@ def normalize_seeds(seeds: Sequence[int]) -> tuple[int, ...]:
     return tuple(sorted(seeds))
 
 
-def build_protocol(selection: SuiteSelection, seeds: Sequence[int]) -> dict[str, Any]:
+def build_protocol(
+    selection: SuiteSelection,
+    seeds: Sequence[int],
+    *,
+    workflow_concurrency: int | None = None,
+    failure_count: int = DEFAULT_FAILURE_COUNT,
+) -> dict[str, Any]:
     """Materialize the explicit matrix protocol and its expected cross products."""
 
     canonical_seeds = normalize_seeds(seeds)
+    if type(failure_count) is not int or failure_count <= 0:
+        raise ExperimentSuiteError("failure_count must be a positive integer")
     catalog: dict[str, Any] = {}
     for suite_name in ("core", "ablation", "sensitivity"):
         variant_ids = EXPECTED_VARIANT_IDS[suite_name]
-        default_pairs = len(variant_ids) * len(CONTEXT_BUCKET_NAMES) * len(SCENARIOS) * 3
+        default_pairs = (
+            len(variant_ids) * len(CONTEXT_BUCKET_NAMES) * len(SCENARIOS) * len(DEFAULT_SEEDS)
+        )
         default_rows = default_pairs * len(REPETITIONS)
         catalog[suite_name] = {
             "variant_ids": list(variant_ids),
@@ -450,6 +522,7 @@ def build_protocol(selection: SuiteSelection, seeds: Sequence[int]) -> dict[str,
         "suite_catalog": catalog,
         "default_contract": {
             "seeds": list(DEFAULT_SEEDS),
+            "failure_count_per_failure_cell": DEFAULT_FAILURE_COUNT,
             "core_expected_rows": DEFAULT_EXPECTED_ROWS["core"],
             "ablation_expected_rows": DEFAULT_EXPECTED_ROWS["ablation"],
             "sensitivity_expected_rows": DEFAULT_EXPECTED_ROWS["sensitivity"],
@@ -468,6 +541,8 @@ def build_protocol(selection: SuiteSelection, seeds: Sequence[int]) -> dict[str,
             "silent_fallback_allowed": False,
             "fresh_global_des_per_repetition": True,
             "required_pair_hashes": ["payload_sha256", "journal_sha256"],
+            "workflow_concurrency": workflow_concurrency,
+            "failure_count_per_failure_cell": failure_count,
         },
     }
     protocol["fingerprint"] = sha256_json(protocol)
@@ -479,14 +554,23 @@ def _parameter_fingerprint(variant: ExperimentVariant) -> str:
 
 
 def _schedule_tasks(
-    variants: Sequence[ExperimentVariant], seeds: Sequence[int]
+    variants: Sequence[ExperimentVariant],
+    seeds: Sequence[int],
+    *,
+    workflow_concurrency: int | None,
+    failure_count: int,
 ) -> tuple[_ScheduleTask, ...]:
-    representative_by_parameters: dict[str, ExperimentVariant] = {}
-    for variant in variants:
-        representative_by_parameters.setdefault(_parameter_fingerprint(variant), variant)
     return tuple(
-        _ScheduleTask(parameter_fp, representative, bucket, seed)
-        for parameter_fp, representative in sorted(representative_by_parameters.items())
+        _ScheduleTask(
+            _parameter_fingerprint(variant),
+            variant.fingerprint,
+            variant,
+            bucket,
+            seed,
+            workflow_concurrency,
+            failure_count,
+        )
+        for variant in sorted(variants, key=lambda item: (item.suite, item.variant_id))
         for seed in seeds
         for bucket in CONTEXT_BUCKET_NAMES
     )
@@ -495,31 +579,51 @@ def _schedule_tasks(
 def _derive_one_schedule(
     records: Sequence[Mapping[str, Any]], task: _ScheduleTask
 ) -> _FrozenSchedule:
-    schedule = derive_failure_schedule(
-        records,
-        bucket=task.context_bucket,
-        seed=task.seed,
-        parameters=task.variant.parameters,
-    )
-    if schedule.bucket != task.context_bucket or schedule.seed != task.seed:
-        raise ExperimentSuiteError("derived failure schedule lost its bucket or seed binding")
+    schedule_kwargs: dict[str, Any] = {
+        "bucket": task.context_bucket,
+        "seed": task.seed,
+        "parameters": task.variant.parameters,
+    }
+    if task.workflow_concurrency is not None:
+        schedule_kwargs["workflow_concurrency"] = task.workflow_concurrency
+    schedule_kwargs["failure_count"] = task.failure_count
+    schedule_kwargs["compared_profiles"] = (task.variant.profile,)
+    schedule = derive_failure_schedule(records, **schedule_kwargs)
+    if (
+        schedule.bucket != task.context_bucket
+        or schedule.seed != task.seed
+        or len(schedule.events) != task.failure_count
+    ):
+        raise ExperimentSuiteError(
+            "derived failure schedule lost its bucket, seed, or event-count binding"
+        )
     return _FrozenSchedule(
         key=task.key,
         parameters_fingerprint=task.parameters_fingerprint,
+        variant_fingerprint=task.variant_fingerprint,
         context_bucket=task.context_bucket,
         seed=task.seed,
+        workflow_concurrency=task.workflow_concurrency,
+        failure_count=task.failure_count,
         schedule=schedule,
     )
 
 
 def _worker_initialize(
-    workload_path: str, expected_sha256: str, expected_record_count: int
+    workload_path: str,
+    expected_sha256: str,
+    expected_record_count: int,
+    workload_kind: str,
 ) -> None:
     global _WORKER_RECORDS
     path = Path(workload_path)
     if _sha256_file(path) != expected_sha256:
         raise ExperimentSuiteError("worker observed frozen workload content drift")
-    records = load_experiment_records(path)
+    records = (
+        load_frozen_odr_records(path)
+        if workload_kind == "odr_complete_tasks"
+        else load_experiment_records(path)
+    )
     if len(records) != expected_record_count:
         raise ExperimentSuiteError("worker observed frozen workload record-count drift")
     _WORKER_RECORDS = records
@@ -595,6 +699,7 @@ def _row_for(
         if spec.failure_schedule is None
         else spec.failure_schedule.fingerprint
     )
+    failure_count = 0 if spec.failure_schedule is None else len(spec.failure_schedule.events)
     matched_input = {
         "implementation_fingerprint": task.implementation.fingerprint,
         "workload_fingerprint": task.workload.fingerprint,
@@ -604,6 +709,8 @@ def _row_for(
         "context_bucket": spec.context_bucket,
         "scenario": spec.scenario.value,
         "seed": spec.seed,
+        "failure_count": failure_count,
+        "workflow_concurrency": spec.workflow_concurrency,
         "failure_schedule_fingerprint": schedule_fingerprint,
         "failure_binding_fingerprint": task.failure_binding_fingerprint,
     }
@@ -625,6 +732,7 @@ def _row_for(
         "context_bucket": spec.context_bucket,
         "scenario": spec.scenario.value,
         "seed": spec.seed,
+        "failure_count": failure_count,
         "repetition": spec.repetition,
         "fresh_global_des_instance": True,
         "evidence": EVIDENCE_BOUNDARY,
@@ -655,6 +763,7 @@ def _execute_pair(records: Sequence[Mapping[str, Any]], task: _PairTask) -> Pair
             seed=task.seed,
             repetition=repetition,
             failure_schedule=task.failure_schedule,
+            workflow_concurrency=task.workflow_concurrency,
         )
         result = run_study_cell(records, spec)
         _validate_result(result, spec)
@@ -761,6 +870,7 @@ def _freeze_schedules(
                 worker_workload_path.as_posix(),
                 workload.sha256,
                 workload.record_count,
+                workload.workload_kind,
             ),
         ) as executor:
             frozen = list(
@@ -784,6 +894,8 @@ def _pair_tasks(
     implementation: ImplementationBinding,
     workload: WorkloadBinding,
     protocol_fingerprint: str,
+    workflow_concurrency: int | None,
+    failure_count: int,
 ) -> tuple[_PairTask, ...]:
     first_seed = min(seeds)
     tasks: list[_PairTask] = []
@@ -798,15 +910,19 @@ def _pair_tasks(
                         schedule_key = sha256_json(
                             {
                                 "parameters_fingerprint": parameter_fp,
+                                "variant_fingerprint": variant.fingerprint,
                                 "context_bucket": bucket,
                                 "seed": seed,
+                                "workflow_concurrency": workflow_concurrency,
+                                "failure_count": failure_count,
                             }
                         )
                         frozen = schedules.get(schedule_key)
                         if frozen is None:
                             raise ExperimentSuiteError(
-                                f"missing frozen failure schedule for {variant.variant_id}/"
-                                f"{bucket}/seed-{seed}"
+                                f"missing frozen failure schedule for "
+                                f"{variant.variant_id}/{bucket}/seed-{seed}/"
+                                f"failure-count-{failure_count}"
                             )
                         schedule = frozen.schedule
                         failure_binding = frozen.binding_fingerprint
@@ -828,6 +944,7 @@ def _pair_tasks(
                             implementation=implementation,
                             workload=workload,
                             protocol_fingerprint=protocol_fingerprint,
+                            workflow_concurrency=workflow_concurrency,
                             capture_representative=capture,
                         )
                     )
@@ -853,25 +970,30 @@ def _run_pairs(
             worker_workload_path.as_posix(),
             workload.sha256,
             workload.record_count,
+            workload.workload_kind,
         ),
     ) as executor:
         return list(executor.map(_worker_execute_pair, tasks, chunksize=1))
 
 
-def _expected_run_ids(variants: Sequence[ExperimentVariant], seeds: Sequence[int]) -> set[str]:
-    return {
-        CellSpec(variant, bucket, scenario, seed, repetition, None).run_id
-        if scenario is Scenario.NO_FAILURE
-        else (
-            f"{variant.suite}:{variant.variant_id}:{bucket}:"
-            f"{scenario.value}:seed-{seed}:repeat-{repetition}"
-        )
-        for variant in variants
-        for bucket in CONTEXT_BUCKET_NAMES
-        for scenario in SCENARIOS
-        for seed in seeds
-        for repetition in REPETITIONS
-    }
+def _expected_run_ids(
+    variants: Sequence[ExperimentVariant],
+    seeds: Sequence[int],
+) -> set[str]:
+    result: set[str] = set()
+    for variant in variants:
+        for bucket in CONTEXT_BUCKET_NAMES:
+            for seed in seeds:
+                for repetition in REPETITIONS:
+                    result.add(
+                        f"{variant.suite}:{variant.variant_id}:{bucket}:"
+                        f"{Scenario.NO_FAILURE.value}:seed-{seed}:repeat-{repetition}"
+                    )
+                    result.add(
+                        f"{variant.suite}:{variant.variant_id}:{bucket}:"
+                        f"{Scenario.GPU_FAILURE.value}:seed-{seed}:repeat-{repetition}"
+                    )
+    return result
 
 
 def _completeness(
@@ -882,7 +1004,10 @@ def _completeness(
     protocol: Mapping[str, Any],
 ) -> dict[str, Any]:
     actual_ids = [str(row["run_id"]) for row in rows]
-    expected_ids = _expected_run_ids(variants, seeds)
+    expected_ids = _expected_run_ids(
+        variants,
+        seeds,
+    )
     actual_set = set(actual_ids)
     duplicate_ids = sorted(run_id for run_id in actual_set if actual_ids.count(run_id) != 1)
     missing = sorted(expected_ids - actual_set)
@@ -924,25 +1049,19 @@ def _schedule_documents(
     schedules: Mapping[str, _FrozenSchedule], variants: Sequence[ExperimentVariant]
 ) -> list[dict[str, Any]]:
     users: dict[str, list[dict[str, str]]] = defaultdict(list)
-    for variant in variants:
-        parameter_fp = _parameter_fingerprint(variant)
-        for bucket in CONTEXT_BUCKET_NAMES:
-            for seed in sorted({item.seed for item in schedules.values()}):
-                key = sha256_json(
+    for key, frozen in schedules.items():
+        for variant in variants:
+            if (
+                _parameter_fingerprint(variant) == frozen.parameters_fingerprint
+                and variant.fingerprint == frozen.variant_fingerprint
+            ):
+                users[key].append(
                     {
-                        "parameters_fingerprint": parameter_fp,
-                        "context_bucket": bucket,
-                        "seed": seed,
+                        "suite": variant.suite,
+                        "variant_id": variant.variant_id,
+                        "variant_fingerprint": variant.fingerprint,
                     }
                 )
-                if key in schedules:
-                    users[key].append(
-                        {
-                            "suite": variant.suite,
-                            "variant_id": variant.variant_id,
-                            "variant_fingerprint": variant.fingerprint,
-                        }
-                    )
     documents: list[dict[str, Any]] = []
     for key, frozen in sorted(schedules.items()):
         documents.append(
@@ -951,10 +1070,13 @@ def _schedule_documents(
                 "status": "PASS",
                 "schedule_key": key,
                 "parameters_fingerprint": frozen.parameters_fingerprint,
+                "variant_fingerprint": frozen.variant_fingerprint,
                 "failure_schedule_fingerprint": frozen.schedule.fingerprint,
                 "failure_binding_fingerprint": frozen.binding_fingerprint,
                 "context_bucket": frozen.context_bucket,
                 "seed": frozen.seed,
+                "failure_count": frozen.failure_count,
+                "workflow_concurrency": frozen.workflow_concurrency,
                 "schedule": frozen.schedule.to_dict(),
                 "used_by_variants": sorted(
                     users[key], key=lambda item: (item["suite"], item["variant_id"])
@@ -1002,13 +1124,16 @@ def _publish(
         config_snapshot: dict[str, Any] | None = None
         if config_snapshot_dir is not None:
             config_names = ("requests.json", "failure.json", "engine.json")
+            allowed_source_names = {*config_names, "requests.md", "engine", "failure"}
             if config_snapshot_dir.is_symlink() or not config_snapshot_dir.is_dir():
                 raise ExperimentSuiteError("config snapshot source must be a regular directory")
             actual_config_names = {path.name for path in config_snapshot_dir.iterdir()}
-            if actual_config_names != set(config_names):
+            missing_json = not set(config_names).issubset(actual_config_names)
+            unexpected_entry = not actual_config_names.issubset(allowed_source_names)
+            if missing_json or unexpected_entry:
                 raise ExperimentSuiteError(
-                    "config snapshot source must contain exactly requests.json, "
-                    "failure.json, and engine.json"
+                    "config snapshot source must contain the three JSON layers and may also "
+                    "contain audited config documentation"
                 )
             snapshot_dir = staging / "configs"
             snapshot_dir.mkdir()
@@ -1095,6 +1220,8 @@ def run_e2_matrix(
     worker_workload_path: Path | None = None,
     parameters: ModelParameters = DEFAULT_PARAMETERS,
     config_snapshot_dir: Path | None = None,
+    workflow_concurrency: int | None = None,
+    failure_count: int = DEFAULT_FAILURE_COUNT,
 ) -> dict[str, Any]:
     """Execute, audit, and atomically publish an explicit GlobalDES E2 matrix."""
 
@@ -1102,11 +1229,27 @@ def run_e2_matrix(
         raise ExperimentSuiteError(f"existing output target is forbidden: {output_dir}")
     if type(jobs) is not int or jobs <= 0:
         raise ExperimentSuiteError("jobs must be a positive integer")
+    if workflow_concurrency is not None and (
+        type(workflow_concurrency) is not int or workflow_concurrency <= 0
+    ):
+        raise ExperimentSuiteError("workflow_concurrency must be a positive integer or null")
+    if type(failure_count) is not int or failure_count <= 0:
+        raise ExperimentSuiteError("failure_count must be a positive integer")
     canonical_seeds = normalize_seeds(seeds)
     variants = selected_variants(selection, parameters=parameters)
-    protocol = build_protocol(selection, canonical_seeds)
+    protocol = build_protocol(
+        selection,
+        canonical_seeds,
+        workflow_concurrency=workflow_concurrency,
+        failure_count=failure_count,
+    )
     protocol_fingerprint = str(protocol["fingerprint"])
-    schedule_tasks = _schedule_tasks(variants, canonical_seeds)
+    schedule_tasks = _schedule_tasks(
+        variants,
+        canonical_seeds,
+        workflow_concurrency=workflow_concurrency,
+        failure_count=failure_count,
+    )
     schedules = _freeze_schedules(
         records,
         schedule_tasks,
@@ -1121,6 +1264,8 @@ def run_e2_matrix(
         implementation=implementation,
         workload=workload,
         protocol_fingerprint=protocol_fingerprint,
+        workflow_concurrency=workflow_concurrency,
+        failure_count=failure_count,
     )
     executions = _run_pairs(
         records,
@@ -1144,7 +1289,13 @@ def run_e2_matrix(
         raise ExperimentSuiteError(
             f"expected exactly one representative run, found {len(representatives)}"
         )
-    completeness = _completeness(rows, pair_audits, variants, canonical_seeds, protocol)
+    completeness = _completeness(
+        rows,
+        pair_audits,
+        variants,
+        canonical_seeds,
+        protocol,
+    )
     statistics = build_statistics(
         rows,
         seeds=canonical_seeds,
@@ -1206,18 +1357,20 @@ def run_explicit_e2_matrix(
     jobs: int = 1,
     worker_workload_path: Path | None = None,
     config_snapshot_dir: Path | None = None,
+    failure_count: int = DEFAULT_FAILURE_COUNT,
 ) -> dict[str, Any]:
     """Publish a versioned focused matrix without mutating the v1 suite catalog.
 
-    Focused sweeps share one logical failure schedule per bucket/seed across all
-    candidate parameters.  The schedule is request-progress based, so each
-    candidate resolves its own absolute virtual timestamp on its fresh DES.
+    Focused sweeps share workload-position targets and request-progress rules,
+    while each variant freezes its own naturally routed focus spans and GPUs.
     """
 
     if output_dir.exists():
         raise ExperimentSuiteError(f"existing output target is forbidden: {output_dir}")
     if type(jobs) is not int or jobs <= 0:
         raise ExperimentSuiteError("jobs must be a positive integer")
+    if type(failure_count) is not int or failure_count <= 0:
+        raise ExperimentSuiteError("failure_count must be a positive integer")
     if not protocol_id or not representative_variant_id:
         raise ExperimentSuiteError("focused protocol identifiers must be non-empty")
     canonical_seeds = normalize_seeds(seeds)
@@ -1233,10 +1386,7 @@ def run_explicit_e2_matrix(
         raise ExperimentSuiteError("focused representative variant is absent")
 
     expected_pairs = (
-        len(canonical_variants)
-        * len(CONTEXT_BUCKET_NAMES)
-        * len(SCENARIOS)
-        * len(canonical_seeds)
+        len(canonical_variants) * len(CONTEXT_BUCKET_NAMES) * len(SCENARIOS) * len(canonical_seeds)
     )
     protocol: dict[str, Any] = {
         "schema": f"{SCHEMA_VERSION}.focused_protocol",
@@ -1248,13 +1398,14 @@ def run_explicit_e2_matrix(
         "physical_or_slurm_path": False,
         "failure_types": ["GPU_FAILURE"],
         "failure_schedule_contract": (
-            "same_focus_span_target_gpu_and_request_progress_per_bucket_seed"
+            "variant_local_focus_bindings_at_shared_even_workload_targets"
         ),
         "execution": {
             "variant_ids": [item.variant_id for item in canonical_variants],
             "context_buckets": list(CONTEXT_BUCKET_NAMES),
             "scenarios": [item.value for item in SCENARIOS],
             "seeds": list(canonical_seeds),
+            "failure_count_per_failure_cell": failure_count,
             "repetitions": list(REPETITIONS),
             "expected_pair_count": expected_pairs,
             "expected_row_count": expected_pairs * len(REPETITIONS),
@@ -1265,10 +1416,16 @@ def run_explicit_e2_matrix(
     protocol["fingerprint"] = sha256_json(protocol)
     protocol_fingerprint = str(protocol["fingerprint"])
 
-    schedule_variant = canonical_variants[0]
-    schedule_parameter_fp = _parameter_fingerprint(schedule_variant)
     schedule_tasks = tuple(
-        _ScheduleTask(schedule_parameter_fp, schedule_variant, bucket, seed)
+        _ScheduleTask(
+            _parameter_fingerprint(variant),
+            variant.fingerprint,
+            variant,
+            bucket,
+            seed,
+            failure_count=failure_count,
+        )
+        for variant in canonical_variants
         for seed in canonical_seeds
         for bucket in CONTEXT_BUCKET_NAMES
     )
@@ -1279,10 +1436,13 @@ def run_explicit_e2_matrix(
         worker_workload_path=worker_workload_path,
         workload=workload,
     )
-    schedules_by_bucket_seed = {
-        (item.context_bucket, item.seed): item for item in frozen_schedules.values()
+    schedules_by_variant_bucket_seed = {
+        (item.variant_fingerprint, item.context_bucket, item.seed): item
+        for item in frozen_schedules.values()
     }
-    if len(schedules_by_bucket_seed) != len(CONTEXT_BUCKET_NAMES) * len(canonical_seeds):
+    if len(schedules_by_variant_bucket_seed) != (
+        len(canonical_variants) * len(CONTEXT_BUCKET_NAMES) * len(canonical_seeds)
+    ):
         raise ExperimentSuiteError("focused failure schedule coverage is incomplete")
 
     pair_tasks: list[_PairTask] = []
@@ -1294,13 +1454,16 @@ def run_explicit_e2_matrix(
                     schedule: FailureSchedule | None = None
                     failure_binding = NO_FAILURE_SCHEDULE_FINGERPRINT
                     if scenario is Scenario.GPU_FAILURE:
-                        frozen = schedules_by_bucket_seed[(bucket, seed)]
+                        frozen = schedules_by_variant_bucket_seed[
+                            (variant.fingerprint, bucket, seed)
+                        ]
                         schedule = frozen.schedule
                         failure_binding = sha256_json(
                             {
                                 "protocol_fingerprint": protocol_fingerprint,
+                                "variant_fingerprint": variant.fingerprint,
                                 "failure_schedule_fingerprint": schedule.fingerprint,
-                                "shared_across_variant_parameters": True,
+                                "shared_across_variant_parameters": False,
                             }
                         )
                     pair_tasks.append(
@@ -1338,9 +1501,7 @@ def run_explicit_e2_matrix(
         key=lambda audit: str(audit["pair_id"]),
     )
     representatives = [
-        execution.representative
-        for execution in executions
-        if execution.representative is not None
+        execution.representative for execution in executions if execution.representative is not None
     ]
     if len(representatives) != 1:
         raise ExperimentSuiteError(
@@ -1359,13 +1520,19 @@ def run_explicit_e2_matrix(
         evidence=EVIDENCE_BOUNDARY,
     )
     schedule_documents = []
-    for (bucket, seed), frozen in sorted(schedules_by_bucket_seed.items()):
+    for (variant_fingerprint, bucket, seed), frozen in sorted(
+        schedules_by_variant_bucket_seed.items()
+    ):
         binding = sha256_json(
             {
                 "protocol_fingerprint": protocol_fingerprint,
+                "variant_fingerprint": variant_fingerprint,
                 "failure_schedule_fingerprint": frozen.schedule.fingerprint,
-                "shared_across_variant_parameters": True,
+                "shared_across_variant_parameters": False,
             }
+        )
+        variant = next(
+            item for item in canonical_variants if item.fingerprint == variant_fingerprint
         )
         schedule_documents.append(
             {
@@ -1373,9 +1540,11 @@ def run_explicit_e2_matrix(
                 "status": "PASS",
                 "context_bucket": bucket,
                 "seed": seed,
+                "variant_fingerprint": variant_fingerprint,
+                "failure_count": failure_count,
                 "failure_schedule_fingerprint": frozen.schedule.fingerprint,
                 "failure_binding_fingerprint": binding,
-                "shared_across_variant_parameters": True,
+                "shared_across_variant_parameters": False,
                 "schedule": frozen.schedule.to_dict(),
                 "used_by_variants": [
                     {
@@ -1383,7 +1552,6 @@ def run_explicit_e2_matrix(
                         "variant_id": variant.variant_id,
                         "variant_fingerprint": variant.fingerprint,
                     }
-                    for variant in canonical_variants
                 ],
                 "evidence": EVIDENCE_BOUNDARY,
             }

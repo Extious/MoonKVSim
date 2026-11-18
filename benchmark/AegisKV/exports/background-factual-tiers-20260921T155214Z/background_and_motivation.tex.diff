@@ -1,0 +1,17 @@
+--- before/background_and_motivation.tex
++++ background_and_motivation.tex
+@@ -134,14 +134,6 @@
+ HBM offers fast access but has high capacity cost and competes with
+ foreground inference for GPU memory. DRAM and storage-backed shared
+ services can provide cheaper capacity, with additional retrieval latency.
+-
+-The benefit of paying for a faster tier depends on how much it advances
+-workflow completion. A cheaper tier can still avoid full reconstruction,
+-and its extra retrieval delay may be absorbed before a workflow join.
+-KV backup should therefore seek the greatest reduction in recovery-induced
+-WCT for a given storage budget: retain state in lower-cost tiers when
+-they provide sufficient recovery benefit, and reserve expensive capacity
+-for state whose faster recovery yields a larger workflow benefit.
+ 
+ \paragraph{Existing mechanisms.}
+ Existing systems address different parts of this problem.

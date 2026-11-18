@@ -1,0 +1,82 @@
+\subsection{Insights and Design Implications}
+\label{sec:design-insights}
+
+Three premises motivate the design (Figure~\ref{fig:design-insights}).
+Their evidence supports different levels of confidence.
+
+\begin{figure*}[t]
+  \centering
+  \captionsetup[subfigure]{font=normalsize,labelfont=normalfont,
+    textfont=normalfont,justification=centering,singlelinecheck=false,skip=3pt}
+  \begin{subfigure}[t]{0.32\textwidth}
+    \vspace{0pt}
+    \includegraphics[width=\linewidth]{figures/agent-runtime-relatedwork/runtime-panel.pdf}
+    \caption{Runtime prediction}
+    \label{fig:insight-agent-time}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.32\textwidth}
+    \vspace{0pt}
+    \includegraphics[width=\linewidth]{figures/design-insights/sparse-attention-survey.pdf}
+    \caption{Sparse attention adoption}
+    \label{fig:insight-sparse-adoption}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.32\textwidth}
+    \vspace{0pt}
+    \includegraphics[width=\linewidth]{figures/design-insights/retry-kv-prediction.pdf}
+    \caption{Retry KV prediction}
+    \label{fig:insight-retry-kv}
+  \end{subfigure}
+  \caption{Design evidence. (a) Runtime WAPE reported by
+    Wang et al.~\cite{wang2026runtimecandidate}, Table 1, using 2,798 measured
+    Qwen3 deployment configurations. Graph denotes their Predictor.
+    WAPE is summed absolute error divided by summed measured runtime.
+    These are configuration-conditioned cost estimates, not AegisKV
+    measurements of whole-agent remaining time.
+    (b) Selected releases and
+    native context: 1 MiniCPM4, 2 MiniCPM4.1, 3 DeepSeek-V3.2-Exp,
+    4 DeepSeek-V3.2, 5 GLM-5, 6 MiniCPM-SALA, 7 DeepSeek-V4 preview,
+    8 MiniMax-M3, 9 GLM-5.2, 10 LongCat-Flash-Lite-Sparse.
+    Dates follow announcements/model cards. Gray steps trace the sample
+    maximum; markers denote top-$k$ units in sparse branches.
+    (c) Three native PG19 captures/model: 32K history; queries
+    32,257--32,768 predict distinct historical KV for 32,769--32,832.
+    Both policies include mandatory blocks in the 40\% budget.
+    Bars/whiskers are document means/ranges, not fault-recovery runs.}
+  \label{fig:design-insights}
+  \Description{Three side-by-side panels show prior-work conditional runtime
+    prediction errors, a primary-source survey of sparse model releases,
+    and held-out retry KV coverage. Past-frequency ranking improves
+    coverage substantially for NOSA and only modestly for MiniCPM4.}
+\end{figure*}
+
+\paragraph{Insight 1: execution structure supports timing estimates.}
+Recurring roles and task stages expose useful predictive inputs.
+Pythia profiles roles and workflow structure~\cite{yu2026pythia};
+for known model, request, and device configurations, Wang et al.
+report runtime WAPE of 7.25\%, versus 11.05\% for GBDT
+(Figure~\ref{fig:design-insights}(\subref{fig:insight-agent-time}))~\cite{wang2026runtimecandidate}.
+This motivates estimating stage costs and updating completion times as
+execution progresses. Whole-agent remaining time additionally depends on
+future rounds, tools, and serving delays; its accuracy requires separate
+validation. The Tracker therefore separates estimation from DAG slack
+propagation and conservatively handles unknown successors.
+
+\paragraph{Insight 2: sparse attention changes the recovery objects.}
+Long-context models use sparse mechanisms including InfLLMv2,
+DSA, or compressed/hybrid attention~\cite{minicpm4model,
+openbmb2025minicpm41,deepseek2025v32exp,deepseek2025v32model,
+zai2026glm5model,openbmb2026sala,deepseek2026v4model,minimax2026m3,
+zai2026glm52,longcat2026sparse}.
+Figure~\ref{fig:design-insights}(\subref{fig:insight-sparse-adoption})
+establishes release examples, not deployment share.
+The Planner therefore consumes actual layer/block selections and
+model-specific recovery state instead of valuing all KV bytes equally.
+
+\paragraph{Insight 3: past selections predict part of retry demand.}
+At equal byte budgets, historical frequency covers 79.2\%, 77.8\%, and
+53.6\% of distinct needed KV for NOSA-1B, NOSA-3B, and MiniCPM4,
+versus 59.7\%, 59.7\%, and 50.9\% for recency
+(Figure~\ref{fig:design-insights}(\subref{fig:insight-retry-kv})). The gain is
+model-dependent and incomplete. These held-out book-text suffixes
+motivate advance placement with exact demand fetches for misses;
+they do not establish performance on agentic failure retries.

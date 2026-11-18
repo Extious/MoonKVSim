@@ -1,0 +1,126 @@
+\subsubsection{Online admission, direct revaluation, and eviction}
+\label{sec:placement-plan}
+
+\paragraph{Compare current plans, not historical credits.}
+The Master re-evaluates placement at the events described in
+Section~\ref{sec:system-overview}. Each decision uses one versioned snapshot
+of the DAG, demand summaries, committed copies, queues, leases, and byte
+ledgers. A cached estimate is reusable only while these dependencies are
+unchanged. There is no rent level, accumulated credit, or renewal rule.
+Tool waiting alone neither deletes history nor pins a particular tier;
+normal reuse and failure exposure both remain in Equation~\ref{eq:value}.
+
+Direct revaluation is a design choice, not a claim of optimal search.
+The isolated comparison in Section~\ref{sec:eval-rental} retains the
+rejected rental alternative: historical credit screening increased
+modeled miss-plus-movement cost without reducing replacement-value checks.
+That additive example does not validate the complete DAG controller or
+measure its CPU cost. The runtime therefore bounds candidate and victim
+evaluations and reports both decision work and resulting placement regret.
+
+\paragraph{Construct a feasible replacement.}
+Each candidate is a legal promotion or newly sealed checkpoint group,
+including the dependencies needed to advertise its new frontier. The
+safe victim set $Q$ excludes replicas with outstanding physical read
+leases or copy dependencies. Demotion needs a committed lower copy or a
+feasible copy-and-commit schedule; last-copy deletion needs an explicit
+valid fallback. Logical ownership by a running request does not
+permanently pin a physical location. Shared bytes are charged once, while
+the plan's effects on all owners are evaluated together.
+
+For each candidate, the Master constructs a private victim plan. It scans
+a bounded, rotating set of eligible groups in the affected tier, ordered
+by immutable object ID from a persistent cursor. Starting from the current
+placement, it computes each feasible removal's additional cost through
+Equation~\ref{eq:value} per byte released in that tier. It appends the
+least-loss removal, breaking ties by fewer moved bytes and then object ID,
+and re-evaluates subsequent removals against the changed tentative plan.
+This continues until sufficient room exists for the incoming group and
+its transfer workspace, or the configured work budget is exhausted.
+The cursor resumes at the next eligible ID on later decisions; a bounded
+scan can miss better victims and supplies no global optimality guarantee.
+
+A DRAM demotion that lacks storage space first constructs a lower-tier
+relief plan by the same rule, with storage deletion as the final tier.
+It includes those victims, fallback changes, and copy dependencies in
+the same plan. It never assumes an infinite lower tier. A tentative
+removal is eligible only if its transition can be scheduled within the
+physical and reserved byte limits; incoming copies wait for real release.
+If no such plan fits the work budget, this candidate is skipped. The
+ratio only constructs the victim set: the final score is the complete
+candidate-plus-victim cost, not the sum of independent block scores.
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/placement-competition.pdf}
+ \caption{Direct replacement comparison in a constructed additive
+ example with equal-size groups and cost units of seconds. Promoting x
+ saves 6; demoting y or z costs 2 or 5; either transition costs 1.
+ Thus the complete changes are $1+2-6=-3$ and $1+5-6=0$.
+ A leased replica is excluded even if its removal cost is lower.
+ With a margin below 3, the first plan is eligible for reservation;
+ physical release still waits for commit and reader drainage. General
+ common-failure plans use the joint DAG, not this additive shortcut.}
+ \label{fig:placement-competition}
+ \Description{Current values compare two complete candidate and victim
+ plans; a leased object is excluded and only a profitable safe plan proceeds.}
+\end{figure}
+
+\paragraph{Choose and apply one plan.}
+Among the fully evaluated plans, the Master selects the smallest
+$\Delta J$, breaking ties by fewer moved bytes and stable object IDs.
+An optional plan must improve predicted cost by more than the configured
+uncertainty allowance plus migration hysteresis. These allowances are
+heuristic guards unless separately calibrated; they are not statistical
+confidence bounds. Rejected plans change neither placement nor capacity.
+Before acceptance, the Master rechecks snapshot versions and reserves
+the immediately executable destinations and transfer workspace. It queues
+dependent actions in copy--commit--redirect--drain--release order and
+starts incoming copies only when their space is physically available.
+Later completions trigger a new snapshot; tentative plans from an older
+placement are not reused as if nothing had changed.
+
+Required capacity relief has no incoming bidder. The same current-loss
+rule constructs a safe relief plan until the target is met, re-evaluating
+after each tentative removal. It may accept a positive cost to satisfy
+the capacity constraint. Storage deletion considers unowned or superseded
+state first. Further relief may withdraw an active checkpoint claim,
+but must first publish a complete older manifest or a prompt-and-token-log
+fallback that does not depend on the deleted object. All owners' costs
+enter the plan, and old-generation readers must drain before deletion.
+If no executable plan exists within the budget, new admission pauses;
+the old frontier remains valid and a later event resumes the search.
+
+\par\medskip\noindent\begin{minipage}{\columnwidth}
+\raggedright
+ \refstepcounter{designalgorithm}\label{alg:placement}
+ \textbf{Algorithm \thedesignalgorithm: Direct placement revaluation}
+ \par\smallskip
+ \begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
+ \toprule
+ 1 & On a review event, snapshot versions, copies, queues and byte ledgers \\
+ 2 & Refresh causal demand and affected placement values; reuse existing objects \\
+ 3 & If capacity must shrink, construct a safe current-loss relief plan \\
+ 4 & Otherwise, form bounded legal sparse/layer candidates; best $\leftarrow$ none \\
+ 5 & For each candidate within the work budget: \\
+ 6 & \quad Construct safe victims by re-evaluated loss per released byte \\
+ 7 & \quad Include lower-tier victims and fallback changes; skip if infeasible \\
+ 8 & \quad Evaluate the complete plan with Equation~\ref{eq:value} \\
+ 9 & \quad Keep the lowest-cost plan that clears uncertainty and hysteresis \\
+ 10 & If no plan qualifies, retain placement; on pressure, pause new admission \\
+ 11 & Recheck versions; on mismatch, reschedule from a fresh snapshot \\
+ 12 & Reserve executable space and enqueue dependent transitions \\
+ 13 & On completion/failure, reconcile actual state and trigger a fresh review \\
+ \bottomrule
+ \end{tabularx}
+ \par\smallskip\noindent\textit{Predicted release is not free memory; a plan is not a committed copy.}
+ \end{minipage}\par\medskip
+
+Profiles carry model/layout, size, tail, topology, queue load, support
+range, uncertainty, and expiry. Missing or stale profiles freeze optional
+promotions and use bounded LRU for required relief under the same safety
+protocol. Candidate construction, each victim comparison, transfer
+profiling, and complete DAG passes count against the work budget; report
+their counts, decision latency, and the loss from bounded search. The
+isolated model's replacement checks are not measurements of these costs.
+

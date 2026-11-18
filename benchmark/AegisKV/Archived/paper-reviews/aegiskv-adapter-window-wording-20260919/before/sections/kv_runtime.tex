@@ -1,0 +1,148 @@
+\subsection{Adapter: Windowed Protection Control}
+\label{sec:kv-runtime}
+\label{sec:capacity-allocation}
+
+The Adapter (4) adjusts protection to failure risk and foreground
+memory demand. Every 5\,s, it publishes a checkpoint interval $Z$ in
+generated tokens, a target Peer depth $L$, and a total Peer budget $B_p$
+for each target DP. The Controller coordinates Adapter reports so all
+requests of the same deployed model use the same $Z$ and $L$, including
+new arrivals. These settings remain fixed within the window; physical
+allocation still checks current free space. The KV Master makes request
+and block decisions under these settings, while Connectors move bytes.
+
+\paragraph{Adjust checkpoint frequency to failure risk.}
+Failure risk comes from a smoothed history of failures per unit of
+device operating time in the relevant failure domain. A configured
+prior is used when observations are insufficient; a fault-free 5\,s
+window does not imply zero risk. Higher risk favors shorter checkpoint
+intervals, balancing normal-operation overhead against lost work, as in
+classical checkpointing~\cite{daly2006checkpoint}. Here, $Z$ advances by
+one level in a configured, block-aligned list. The Adapter shortens $Z$
+above an upper risk threshold only when copy backlog, commit lag, and
+foreground interference stay within configured guards. Below a lower
+threshold it lengthens $Z$; otherwise it retains the current value.
+At either end of the allowed list, it stays at that bound. Thresholds,
+copy guards, candidate depths, and switching margins are deployment settings.
+Incremental asynchronous copying requires its own calibration, rather
+than directly applying a blocking-checkpoint formula.
+
+$Z$ triggers a Master decision, not a completed replica. The Master
+offers sealed state after prefill and revisits an active request after
+each additional $Z$ generated tokens. Publishing a new interval does
+not reset that request's progress counter. The actual replay tail is
+the known token prefix beyond the last valid committed checkpoint;
+copy queuing can make it longer than $Z$. Tier R need not checkpoint.
+The Adapter therefore records commit lag as well as decision frequency.
+
+\paragraph{Reserve memory for foreground inference.}
+For each DP, the next budget is the managed KV pool minus estimated
+foreground KV demand and admission headroom, clamped between zero and
+half of that pool. The pool excludes weights and fixed runtime state,
+but includes existing Peer copies. Thus $B_p$ is a total target, not
+newly available space. Rising foreground memory demand reduces this
+target; sustained relief permits expansion. KV watermarks and
+memory-related admission stalls inform demand, rather than GPU compute
+utilization alone.
+
+\paragraph{Choose one depth for the next window.}
+A shorter interval usually leaves less tail computation to overlap
+DRAM loading, making additional Peer layers useful. A longer interval
+can reach diminishing returns at a smaller depth. These are tendencies:
+failures can occur anywhere between checkpoints, and larger $L$ may
+leave fewer requests protected under the same budget.
+
+The Adapter compares a small configured set of depths, including zero
+and the current $L$ (Algorithm~\ref{alg:adapter}). Its recovery table
+covers checkpoint intervals, context lengths, copy bandwidth, replay
+costs, and concurrency. Entries average over time-sampled checkpoint
+phases from backup/replay profiles at each interval, including commit
+lag. This assumes failure risk is independent of checkpoint phase,
+rather than a failure at exactly $Z$ tokens. Recent workload statistics
+select and weight the entries.
+For a candidate depth, a preview of the Master's admission policy
+accounts for shared objects, referenced copies, pending transfers, and
+the next-window copy limit; it credits only expected committed coverage.
+The score adds predicted foreground delay from memory displacement and
+backup work to recovery delay not absorbed by request slack, weighted
+by each source's failure probability in the next window. This sum of request delays is a
+selection heuristic, not an additive estimate of workflow makespan.
+The lowest score wins, with smaller depths breaking ties. A change
+requires an improvement beyond the configured uncertainty margin,
+compared with keeping the current depth under the new interval and budgets;
+missing profiles retain the current depth. This avoids deriving a
+separate $L$ for every request or assuming that higher risk always
+permits a larger depth.
+
+\begin{figure}[t]
+  \raggedright
+  \refstepcounter{designalgorithm}\label{alg:adapter}
+  \noindent\textbf{Algorithm \thedesignalgorithm: Update protection every 5\,s}
+  \par\smallskip
+  \noindent Input: current settings, risk and load reports, recovery table.
+  Output: next-window $Z$, common $L$, and budgets $B_p$.
+  \par\smallskip
+  \begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
+    \toprule
+    1 & Snapshot live requests, references, and copy progress \\
+    2 & Estimate failure risk from the longer-term history \\
+    3 & \textbf{for each} target DP $p$: \\
+    4 & \quad$B_p\gets$ KV pool $-$ foreground demand $-$ headroom \\
+    5 & \quad Clamp $B_p$ to $[0,\ \text{half of KV pool}]$ \\
+    6 & $Z_{\mathrm{next}}\gets Z$; $L_{\mathrm{next}}\gets L$ \\
+    7 & \textbf{if} risk is high and copy/foreground guards allow: \\
+    8 & \quad$Z_{\mathrm{next}}\gets$ next smaller allowed interval \\
+    9 & \textbf{else if} risk is low: \\
+    10 & \quad$Z_{\mathrm{next}}\gets$ next larger allowed interval \\
+    11 & \textbf{if} profiles cover $Z_{\mathrm{next}}$ and current load: \\
+    12 & \quad\textbf{for each} candidate depth, including $0$ and $L$: \\
+    13 & \qquad Preview admissions and committed coverage \\
+    14 & \qquad Score $\gets$ estimated foreground delay \\
+    15 & \qquad Add risk-weighted recovery delay beyond slack \\
+    16 & \quad Pick minimum score; break ties by smaller depth \\
+    17 & \quad \textbf{if} materially better: $L_{\mathrm{next}}\gets$ chosen depth \\
+    18 & Publish $Z_{\mathrm{next}},L_{\mathrm{next}},\{B_p\}$ for the next window \\
+    19 & Pause excess admission; reclaim only safe copies \\
+    \bottomrule
+  \end{tabularx}
+  \Description{The Adapter reserves foreground memory, adjusts the
+    checkpoint interval using failure risk and copy guards, evaluates
+    common layer depths, and publishes one set of window settings.
+    Reclamation preserves active references and committed recovery state.}
+\end{figure}
+
+\input{sections/capacity_allocation}
+
+\paragraph{Commit and recover by actual readiness.}
+Peer and fault-independent DRAM paths commit separately, after transfer
+completion and model/layout/shard validation. Low-priority copying is
+rate-limited (default 20\% of link capacity), with target HBM bandwidth
+also accounted for. Recovery reads committed objects, preloads hot
+blocks in layer order, and gives newly revealed misses priority over
+speculative copies. Selector state arrives before selection; each layer
+waits for all required inputs. Actual DMA granularity can limit copy
+preemption. Tier R rebuilds history. Placement changes neither selector
+outputs nor known replay tokens and adds no attention approximation;
+compatible weights, layout, and operators reconstruct the same logical
+KV state, without promising identical future stochastic samples across
+floating-point schedules.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/design-single/design-layer-pipeline.pdf}
+  \caption{Modeled recovery pipelines: MiniCPM4-8B, 32 layers, 32K
+    history, 64-token known tail; $C=2.87$\,ms/layer (measured) and
+    $D=5.37$\,ms at an assumed 6.25\,GB/s. In (d), 147\,MiB of Peer
+    residency removes preload wait. Totals end at tail-KV reconstruction.
+    The homogeneous, preemptible-copy model excludes detection,
+    queuing, and interference.}
+  \label{fig:design-pipeline}
+  \Description{Four timelines compare token-block transfer, full-layer
+    pipelining, hot preloads with demand fetch, and Peer-resident hot sets.}
+\end{figure}
+
+Figure~\ref{fig:design-pipeline} illustrates the depth tradeoff at one
+fixed tail length: layer pipelining, hot preloads, and seven resident
+hot sets reduce exposed wait from 172 to 83, 44, and 20\,ms.
+This calibrated example does not validate the adaptive controller or
+make seven layers appropriate for every checkpoint interval.

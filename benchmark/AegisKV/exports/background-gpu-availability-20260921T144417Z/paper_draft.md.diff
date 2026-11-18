@@ -1,0 +1,543 @@
+--- before/paper_draft.md
++++ paper_draft.md
+@@ -12,7 +12,7 @@
+ 
+ 当多 Agent 应用的必要结果就绪时，应用才算完成：结果可能是经过测试的代码补丁、一份报告，或由并行搜索汇总而成的答案。因此，一个 LLM 请求的价值取决于它在工作流中的位置。关键分支上的延迟会推迟完成时间，另一个分支则可能在汇合前吸收这段延迟。面向应用的服务系统已在正常执行中利用这种结构[[17]](#ref-17)、[[22]](#ref-22)、[[27]](#ref-27)。故障提出了进一步的问题：当一个 worker 故障同时中断多个请求时，哪些历史应当保持快速可恢复？
+ 
+-长上下文使这一选择的成本变得高昂。Agent 会积累推理、代码和工具结果；丢失其驻留在 GPU 上的 KV 后，可能需要大量重建工作。Checkpoint 可以避免这些工作[[14]](#ref-14)、[[32]](#ref-32)，负载感知的恢复机制则将中断请求分配到不同位置[[4]](#ref-4)。分层缓存提供 DRAM 和存储容量[[28]](#ref-28)、[[34]](#ref-34)，但将每段历史都保留在较快层中的成本很高。
++长上下文使这一选择的成本变得高昂。Agent 会积累推理、代码和工具结果；丢失其驻留在 GPU 上的 KV 后，可能需要大量重建工作。Checkpoint 可以避免这些工作[[14]](#ref-14)、[[33]](#ref-33)，负载感知的恢复机制则将中断请求分配到不同位置[[4]](#ref-4)。分层缓存提供 DRAM 和存储容量[[28]](#ref-28)、[[35]](#ref-35)，但将每段历史都保留在较快层中的成本很高。
+ 
+ 仅凭最近访问情况和恢复延迟无法决定放置。一段较长且最近使用过的历史，可能属于能够容忍存储访问延迟的分支，而较短的历史却可能位于关键路径上。较大的 slack 不能成为删除可复用历史的充分理由：后续正常调用可能反复重建该历史。同一 worker 的故障还会通过 DAG 和共享恢复资源耦合多个请求。只加速两个延迟分支中的一个，可能不会改变其汇合时间。最后，降级迁移是异步的：在存储层替代副本提交之前释放 DRAM，会使保护失效。
+ 
+@@ -30,7 +30,7 @@
+ 
+ **多 Agent 执行。**
+ 
+-多 Agent 应用将用户任务划分给若干相互交换中间结果的 Agent。每个 Agent 维护自己的对话，通过 LLM 请求和工具调用推进任务：模型生成响应或工具调用，返回结果成为后续请求的输入[[33]](#ref-33)。*请求*是一次模型调用；一个 *Agent* 可以发起多个请求以完成其任务；*工作流*则通过串行依赖、并行分支和汇合点连接这些任务。应用负责编排工作流，服务引擎执行其中的模型请求。
++多 Agent 应用将用户任务划分给若干相互交换中间结果的 Agent。每个 Agent 维护自己的对话，通过 LLM 请求和工具调用推进任务：模型生成响应或工具调用，返回结果成为后续请求的输入[[34]](#ref-34)。*请求*是一次模型调用；一个 *Agent* 可以发起多个请求以完成其任务；*工作流*则通过串行依赖、并行分支和汇合点连接这些任务。应用负责编排工作流，服务引擎执行其中的模型请求。
+ 
+ [图 1](#fig-agent-workflow-examples)展示了这种结构。在代码生成中，主 Agent 将 CSV 导出功能分派给 API、UI、测试编写和文档 Agent。各分支并行执行，交替进行模型请求与文件读取、编辑或检查。主 Agent 随后集成修改并运行测试。在深度研究中，牵头 Agent 分派技术、成本、安全和供应调查，再将收集的证据综合为报告[[1]](#ref-1)。各分支需要的请求次数和工具调用次数可能不同。因此，一个模型请求完成后，其所属 Agent 和整个工作流都可能仍未完成。
+ 
+@@ -46,21 +46,29 @@
+ 
+ **多 Agent 工作流中的 KV 复用。**
+ 
+-在*预填充*（Prefill）阶段，LLM 处理输入 token，并计算逐层 key 和 value（KV）；*解码*（Decode）随输出 token 的生成继续扩展这些状态。在模型与位置语义兼容时，具有相同 token 前缀的请求可以复用此前缀的 KV，只计算剩余后缀[[41]](#ref-41)。
+-
+-多 Agent 工作流同时存在 Agent 内部和 Agent 之间的复用。同一 Agent 的后续请求通常将模型输出和工具结果追加到已有对话中，因此可以复用此前轮次的 KV[[11]](#ref-11)。不同 Agent 的分支则可以继承共同提示，再追加各自的任务。例如，[图 1](#fig-agent-workflow-examples)中的 API、UI 和测试 Agent 可以复用公共项目说明与代码仓库上下文的 KV，前提是这些内容构成相同的起始 token 序列。复用仅限于匹配的前缀；不同的角色提示或上下文修改可能缩短这一前缀[[41]](#ref-41)。
++在*预填充*（Prefill）阶段，LLM 处理输入 token，并计算逐层 key 和 value（KV）；*解码*（Decode）随输出 token 的生成继续扩展这些状态。在模型与位置语义兼容时，具有相同 token 前缀的请求可以复用此前缀的 KV，只计算剩余后缀[[42]](#ref-42)。
++
++多 Agent 工作流同时存在 Agent 内部和 Agent 之间的复用。同一 Agent 的后续请求通常将模型输出和工具结果追加到已有对话中，因此可以复用此前轮次的 KV[[11]](#ref-11)。不同 Agent 的分支则可以继承共同提示，再追加各自的任务。例如，[图 1](#fig-agent-workflow-examples)中的 API、UI 和测试 Agent 可以复用公共项目说明与代码仓库上下文的 KV，前提是这些内容构成相同的起始 token 序列。复用仅限于匹配的前缀；不同的角色提示或上下文修改可能缩短这一前缀[[42]](#ref-42)。
+ 
+ 因此，保留的 KV 既可以服务于同一 Agent 的后续轮次，也可以服务于其他 Agent 的请求，包括工具调用或依赖等待结束后的请求。KV 是模型计算产生的张量，与应用保存的 token ID 不同。在常规逐 token 布局中，其大小随上下文长度、层数和 KV-head 维度增长。因此，保留长历史的 KV 可能比保存其文本或 token ID 占用多得多的内存。
+ 
+ **故障与 KV 重建。**
+ 
+-故障是大规模 LLM 服务部署中反复出现的问题：硬件故障和软件崩溃可能中断 worker，并使其 GPU 中的 KV 不可用[[4]](#ref-4)、[[14]](#ref-14)。将中断请求重定向到已经加载模型的 worker，并不能恢复这些状态。即使应用保留了对话的 token，模型仍需要先重建缺失的 KV，才能继续生成。没有可用 KV 副本时，恢复需要重新处理保留的历史[[32]](#ref-32)。
++故障是大规模 LLM 服务部署中反复出现的问题：硬件故障和软件崩溃可能中断 worker，并使其 GPU 中的 KV 不可用[[4]](#ref-4)、[[14]](#ref-14)。将中断请求重定向到已经加载模型的 worker，并不能恢复这些状态。即使应用保留了对话的 token，模型仍需要先重建缺失的 KV，才能继续生成。没有可用 KV 副本时，恢复需要重新处理保留的历史[[33]](#ref-33)。
+ 
+ 对于经过多轮请求积累长上下文的 Agent，这一重建代价尤其突出[[14]](#ref-14)。代码 Agent 会保留源文件、修改记录和测试输出；研究 Agent 会积累检索文档、中间结论和工具结果。因此，执行后期的故障可能要求重建整个累积历史的 KV，而不只是处理最新的用户输入。在多 Agent 工作流中，一个 worker 故障还可能同时中断多个部署在其上的 Agent，使存活 worker 在处理正常流量的同时重建多份历史[[4]](#ref-4)。重建会延迟受影响分支，并可能推迟下游的代码集成或报告综合，增加工作流完成时间。
+ 
++[图 2](#fig-gpu-server-availability)通过公开的 InfiniteHBD 训练集群 trace 展示生产基础设施中的故障情况[[32]](#ref-32)。约 349 天内的 584 条故障记录涉及 400 台 GPU 服务器中的 231 台。根据记录的故障区间重建可用服务器数量，其最低值为 365 台。这些记录描述基础设施不可用情况，并不测量 KV 重建或服务延迟。
++
++<a id="fig-gpu-server-availability"></a>
++
++![图 2](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/gpu-server-availability.png)
++
++**图 2：** 根据 InfiniteHBD 生产训练集群 trace 重建的 GPU 服务器可用数量[[32]](#ref-32)：以 400 台减去处于记录故障区间内的服务器数。同一服务器的重叠区间合并，保留全部记录类别，包括测试和变更。此处的可用性是节点级概念，不表示空闲 GPU 容量或端到端服务可用性。
++
+ **跨存储层级保留 KV。**
+ 
+-*KV checkpoint* 保存已经计算完成的前缀。如果该副本在故障后仍然可用，恢复端就可以取回它，只重算剩余尾部[[14]](#ref-14)、[[32]](#ref-32)。
++*KV checkpoint* 保存已经计算完成的前缀。如果该副本在故障后仍然可用，恢复端就可以取回它，只重算剩余尾部[[14]](#ref-14)、[[33]](#ref-33)。
+ 
+ 分层缓存通过主机 DRAM 以及本地或共享存储扩展 GPU HBM，使更多历史得以保留[[11]](#ref-11)、[[28]](#ref-28)。共享存储（如共享文件系统）使保留的 KV 可以被多个 serving worker 访问。在请求重新分配或故障接管后，兼容的 worker 可以取回这些状态，前提是数据和存储服务在故障后仍然可用。“共享”描述的是访问范围，并不限定 SSD 等特定存储介质。
+ 
+@@ -68,7 +76,7 @@
+ 
+ **已有机制。**
+ 
+-分层缓存减少跨轮次重复前缀计算[[11]](#ref-11)、[[28]](#ref-28)；KV streaming 和 checkpoint 减少故障后的重建[[14]](#ref-14)、[[32]](#ref-32)。Parrot 暴露应用依赖以支持服务优化，KVFlow 则根据即将执行的 Agent 步骤指导淘汰与预取[[17]](#ref-17)、[[27]](#ref-27)。LUMEN 结合 worker 负载协调 checkpoint 放置和恢复路由[[4]](#ref-4)。这些能力构成了面向工作流的恢复基础。分配有限保护资源还需要处理决策依据的两项局限。
++分层缓存减少跨轮次重复前缀计算[[11]](#ref-11)、[[28]](#ref-28)；KV streaming 和 checkpoint 减少故障后的重建[[14]](#ref-14)、[[33]](#ref-33)。Parrot 暴露应用依赖以支持服务优化，KVFlow 则根据即将执行的 Agent 步骤指导淘汰与预取[[17]](#ref-17)、[[27]](#ref-27)。LUMEN 结合 worker 负载协调 checkpoint 放置和恢复路由[[4]](#ref-4)。这些能力构成了面向工作流的恢复基础。分配有限保护资源还需要处理决策依据的两项局限。
+ 
+ **局限 1：请求级优先级不能完整表达工作流收益。**
+ 
+@@ -80,27 +88,27 @@
+ 
+ <a id="fig-motivation"></a>
+ 
+-**图 2**
++**图 3**
+ 
+ <a id="fig-motivation-workflow"></a>
+ 
+-![图 2(a)：四分支工作流](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/workflow.png)
++![图 3(a)：四分支工作流](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/workflow.png)
+ 
+ **(a) 四分支工作流**
+ 
+ <a id="fig-motivation-branch-gap"></a>
+ 
+-![图 2(b)：各工作流的最大差值](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/workflow-gaps.png)
++![图 3(b)：各工作流的最大差值](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/workflow-gaps.png)
+ 
+ **(b) 各工作流的最大差值**
+ 
+ <a id="fig-motivation-recompute"></a>
+ 
+-![图 2(c)：上下文与 Prefill 成本](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/recovery-cost.png)
++![图 3(c)：上下文与 Prefill 成本](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/recovery-cost.png)
+ 
+ **(c) 上下文与 Prefill 成本**
+ 
+-**图 2：** 工作流结构与可复用 KV 状态的成本。(a) 四个来自 trace 的分支，以及示意性的 Main 阶段 A0/A5。条形保留真实时序；虚线尾部假定所有分支均需汇合。(b) 各工作流最大分支时长差的 ECDF：121 个工作流，fan-in 根据时序推断；这些差值不是故障时刻的 slack。(c) 在两张 A100 PCIe 40 GB GPU 上实测 Qwen2.5-7B-Instruct-1M 的 Prefill（TP2、BF16、batch 为 1），超过 32K 后使用稀疏注意力。复用从 $(C-1)$ 个缓存 token 开始，再计算一个 token；DRAM／共享存储的 I/O 与计算串行。HBM／DRAM：三次计时的中位数与 min–max；共享存储／完整 Prefill：每个长度计时一次。协议见[附录 A](#sec-motivation-protocol)。K = 1,024；M = 1,000,000。
++**图 3：** 工作流结构与可复用 KV 状态的成本。(a) 四个来自 trace 的分支，以及示意性的 Main 阶段 A0/A5。条形保留真实时序；虚线尾部假定所有分支均需汇合。(b) 各工作流最大分支时长差的 ECDF：121 个工作流，fan-in 根据时序推断；这些差值不是故障时刻的 slack。(c) 在两张 A100 PCIe 40 GB GPU 上实测 Qwen2.5-7B-Instruct-1M 的 Prefill（TP2、BF16、batch 为 1），超过 32K 后使用稀疏注意力。复用从 $(C-1)$ 个缓存 token 开始，再计算一个 token；DRAM／共享存储的 I/O 与计算串行。HBM／DRAM：三次计时的中位数与 min–max；共享存储／完整 Prefill：每个长度计时一次。协议见[附录 A](#sec-motivation-protocol)。K = 1,024；M = 1,000,000。
+ 
+ ### 2.2　动机与挑战
+ 
+@@ -110,21 +118,21 @@
+ 
+ <a id="sec-motivation-workflow"></a>
+ 
+-[图 2(a)](#fig-motivation-workflow)展示四个来自 trace 的分支。A2 最晚完成，在 fork 后 151.6 s 结束；A1 在 60.4 s 结束。若后续 Main 阶段需要全部四个输出，A1 可以吸收 91.2 s 的额外延迟而不推迟汇合，A2 上的任何延迟则都会推迟汇合。我们把一个分支在不推迟必要输出的情况下能够吸收的额外延迟称为 *slack*。
+-
+-公开的 SemiAnalysis CC/Weka trace 包含 393 个经过筛选的 Claude Code session[[31]](#ref-31)。我们保留执行有重叠、所有分支均已完成、且最后一个分支结束后存在 Main 请求的 subagent 组；期间允许 Main 活动。这一时序 fan-in 代理保留了 121 个工作流中的 286 个组。对每组计算最长与最短分支的时长差，再取各工作流的最大差值。[图 2(b)](#fig-motivation-branch-gap)的中位数为 138 s，90 分位数为 1,173 s。这些统计显示，保留的工作流内部存在较大的时长差异。Trace 没有记录显式结果消费边，因此这些统计既不能验证所有分支均需汇合，也不能测量故障时刻的 slack。四分支示例是一个符合条件的组，不能代表工作流最大差值的典型水平。
++[图 3(a)](#fig-motivation-workflow)展示四个来自 trace 的分支。A2 最晚完成，在 fork 后 151.6 s 结束；A1 在 60.4 s 结束。若后续 Main 阶段需要全部四个输出，A1 可以吸收 91.2 s 的额外延迟而不推迟汇合，A2 上的任何延迟则都会推迟汇合。我们把一个分支在不推迟必要输出的情况下能够吸收的额外延迟称为 *slack*。
++
++公开的 SemiAnalysis CC/Weka trace 包含 393 个经过筛选的 Claude Code session[[31]](#ref-31)。我们保留执行有重叠、所有分支均已完成、且最后一个分支结束后存在 Main 请求的 subagent 组；期间允许 Main 活动。这一时序 fan-in 代理保留了 121 个工作流中的 286 个组。对每组计算最长与最短分支的时长差，再取各工作流的最大差值。[图 3(b)](#fig-motivation-branch-gap)的中位数为 138 s，90 分位数为 1,173 s。这些统计显示，保留的工作流内部存在较大的时长差异。Trace 没有记录显式结果消费边，因此这些统计既不能验证所有分支均需汇合，也不能测量故障时刻的 slack。四分支示例是一个符合条件的组，不能代表工作流最大差值的典型水平。
+ 
+ **从重建时间到工作流延迟。**
+ 
+-为量化汇合的影响，我们在四个活跃请求的输入长度代理上测量完整 Prefill。该实验与[图 2(c)](#fig-motivation-recompute)的层级对比均使用 Qwen2.5-7B-Instruct-1M[[29]](#ref-29)，在两张 A100 PCIe 40 GB GPU 上以 TP2、BF16、batch 为 1 执行。插桩后的 SGLang 0.5.10rc0 使用 MInference vertical/slash 注意力[[15]](#ref-15)与 dual chunk attention（DCA）位置处理，超过 32K 后采用稀疏注意力。四个历史长度代理来自 trace 的 hash-block 数乘以 64，范围为 100,864 至 113,664 tokens。每个测量输入均为固定合成历史加一个 token。每个长度完整预热一次后采集三次计时，报告中位数与 min–max。完整协议见[附录 A](#sec-motivation-protocol)。
++为量化汇合的影响，我们在四个活跃请求的输入长度代理上测量完整 Prefill。该实验与[图 3(c)](#fig-motivation-recompute)的层级对比均使用 Qwen2.5-7B-Instruct-1M[[29]](#ref-29)，在两张 A100 PCIe 40 GB GPU 上以 TP2、BF16、batch 为 1 执行。插桩后的 SGLang 0.5.10rc0 使用 MInference vertical/slash 注意力[[15]](#ref-15)与 dual chunk attention（DCA）位置处理，超过 32K 后采用稀疏注意力。四个历史长度代理来自 trace 的 hash-block 数乘以 64，范围为 100,864 至 113,664 tokens。每个测量输入均为固定合成历史加一个 token。每个长度完整预热一次后采集三次计时，报告中位数与 min–max。完整协议见[附录 A](#sec-motivation-protocol)。
+ 
+ <a id="fig-motivation-recovery-exposure"></a>
+ 
+-![图 3](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/recovery-exposure.png)
+-
+-**图 3：** 针对[图 2(a)](#fig-motivation-workflow)的实测 Prefill 成本：使用[图 2(c)](#fig-motivation-recompute)的配置，在 trace 输入长度代理加一个 token 的条件下测量。条形／误差线表示预热后三次计时的中位数／min–max。纹理表示被吸收的延迟；实色表示假定所有分支均需汇合、且其他执行固定时计算得到的 WCT 增量。每个案例都是单分支反事实计算，并非通过故障注入测得的 WCT。
+-
+-[图 3](#fig-motivation-recovery-exposure)将这些成本映射到假定的全分支汇合。在 fork 后 29.5 s，每个案例分别向分支 $i$ 加入实测重建暂停 $R_i$，其他执行与队列保持不变。利用 trace 完成时刻得到离线 slack $\sigma_i$，WCT 增量为：
++![图 4](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/recovery-exposure.png)
++
++**图 4：** 针对[图 3(a)](#fig-motivation-workflow)的实测 Prefill 成本：使用[图 3(c)](#fig-motivation-recompute)的配置，在 trace 输入长度代理加一个 token 的条件下测量。条形／误差线表示预热后三次计时的中位数／min–max。纹理表示被吸收的延迟；实色表示假定所有分支均需汇合、且其他执行固定时计算得到的 WCT 增量。每个案例都是单分支反事实计算，并非通过故障注入测得的 WCT。
++
++[图 4](#fig-motivation-recovery-exposure)将这些成本映射到假定的全分支汇合。在 fork 后 29.5 s，每个案例分别向分支 $i$ 加入实测重建暂停 $R_i$，其他执行与队列保持不变。利用 trace 完成时刻得到离线 slack $\sigma_i$，WCT 增量为：
+ 
+ $$
+ \Delta\mathrm{WCT}_i=\max(0,R_i-\sigma_i).
+@@ -140,7 +148,7 @@
+ 
+ <a id="sec-motivation-long-context"></a>
+ 
+-[图 2(c)](#fig-motivation-recompute)在相同执行配置下比较重建与 HBM、DRAM、共享存储复用。对于 $C=M+1$ 个 token，完整 Prefill 从空 KV 开始；复用从相同的 $M$-token 历史开始，并计算一个新 token。所有计时均在全部 $C$ 个 token 的 KV 就绪时结束，位于词表投影之前。HBM 是状态已驻留的参考；DRAM 和共享存储将状态恢复与计算串行执行。这些测量不包含 checkpoint 创建、故障检测和恢复路由。
++[图 3(c)](#fig-motivation-recompute)在相同执行配置下比较重建与 HBM、DRAM、共享存储复用。对于 $C=M+1$ 个 token，完整 Prefill 从空 KV 开始；复用从相同的 $M$-token 历史开始，并计算一个新 token。所有计时均在全部 $C$ 个 token 的 KV 就绪时结束，位于词表投影之前。HBM 是状态已驻留的参考；DRAM 和共享存储将状态恢复与计算串行执行。这些测量不包含 checkpoint 创建、故障检测和恢复路由。
+ 
+ 在 1,010,000 tokens 处，即使采用稀疏注意力，完整 Prefill 仍需 571.21 s。HBM、DRAM 和共享存储复用分别需要 1.305、2.663 和 10.156 s。保留历史可以避免大部分重建工作；其位置决定额外读取延迟。本次运行中，共享存储比 DRAM 多 7.49 s，而该历史在两个 rank 上共占用 57.92 GB。这区分了保留可复用状态的价值，以及使其能够快速访问的额外价值。HBM／DRAM 各数据点报告三次计时，完整 Prefill 和共享存储各数据点则各报告一次。结果描述这一固定输入与串行实现中的成本；存储缓存和 I/O 重叠可能改变差异。它们并未测量某种保护策略对整体服务性能的净收益。
+ 
+@@ -164,23 +172,23 @@
+ 
+ **1. 工作流依赖决定恢复紧迫性。**
+ 
+-[图 3](#fig-motivation-recovery-exposure)展示了相近的重建成本对 WCT 产生的不同影响：slack 吸收部分分支的延迟，而关键分支暴露全部暂停时间。因此，仅凭请求恢复时间不足以排序保护优先级；请求在剩余工作流中的位置同样重要。
++[图 4](#fig-motivation-recovery-exposure)展示了相近的重建成本对 WCT 产生的不同影响：slack 吸收部分分支的延迟，而关键分支暴露全部暂停时间。因此，仅凭请求恢复时间不足以排序保护优先级；请求在剩余工作流中的位置同样重要。
+ 
+ **2. 历史 KV 访问集中于部分块。**
+ 
+-[图 4](#fig-sparse-releases)梳理了采用块、token 或压缩条目选择的长上下文模型版本。[图 5](#fig-design-insights)进一步考察原生访问 trace：约 20% 的历史块，在三个模型中分别承载 87.64%、74.76% 和 56.54% 的访问。这些结果区分了完整历史状态与计算经常使用的子集。该调查不能证明稀疏程度单调增加，回顾性的访问集中度也不能确立未来 Query 的预测准确率。
++[图 5](#fig-sparse-releases)梳理了采用块、token 或压缩条目选择的长上下文模型版本。[图 6](#fig-design-insights)进一步考察原生访问 trace：约 20% 的历史块，在三个模型中分别承载 87.64%、74.76% 和 56.54% 的访问。这些结果区分了完整历史状态与计算经常使用的子集。该调查不能证明稀疏程度单调增加，回顾性的访问集中度也不能确立未来 Query 的预测准确率。
+ 
+ <a id="fig-sparse-releases"></a>
+ 
+-![图 4](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/sparse-models.png)
+-
+-**图 4：** 选定的稀疏／混合模型版本及其报告的上下文长度。编号：1 MiniCPM4[[23]](#ref-23)；2 MiniCPM4.1[[24]](#ref-24)；3 DeepSeek-V3.2-Exp[[6]](#ref-6)；4 DeepSeek-V3.2[[7]](#ref-7)；5 GLM-5[[38]](#ref-38)；6 MiniCPM-SALA[[25]](#ref-25)；7 DeepSeek-V4 preview[[8]](#ref-8)；8 MiniMax-M3[[20]](#ref-20)；9 GLM-5.2[[39]](#ref-39)；10 LongCat-Flash-Lite-Sparse[[19]](#ref-19)。日期取公告日期，编号 5、9 和 10 则取首次官方仓库日期。标记表示稀疏分支的选择单位，包括 SALA 的块分支和 V4 的压缩稀疏分支；它们不表示所有层都采用统一注意力形式。
++![图 5](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/sparse-models.png)
++
++**图 5：** 选定的稀疏／混合模型版本及其报告的上下文长度。编号：1 MiniCPM4[[23]](#ref-23)；2 MiniCPM4.1[[24]](#ref-24)；3 DeepSeek-V3.2-Exp[[6]](#ref-6)；4 DeepSeek-V3.2[[7]](#ref-7)；5 GLM-5[[39]](#ref-39)；6 MiniCPM-SALA[[25]](#ref-25)；7 DeepSeek-V4 preview[[8]](#ref-8)；8 MiniMax-M3[[20]](#ref-20)；9 GLM-5.2[[40]](#ref-40)；10 LongCat-Flash-Lite-Sparse[[19]](#ref-19)。日期取公告日期，编号 5、9 和 10 则取首次官方仓库日期。标记表示稀疏分支的选择单位，包括 SALA 的块分支和 V4 的压缩稀疏分支；它们不表示所有层都采用统一注意力形式。
+ 
+ <a id="fig-design-insights"></a>
+ 
+-![图 5](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/kv-access-concentration.png)
+-
+-**图 5：** NOSA-8B[[13]](#ref-13)、NSA-8B（MiniCPM-4-8B-NSA）[[10]](#ref-10)与 MiniCPM4.1-8B[[24]](#ref-24)的原生 KV 访问集中度。我们使用三篇 PG19 文本，在匹配的 32,704-token 前缀中选取最后 512 个 Query。对每个 Query，跨 head 的同一历史 64-token 块只计一次。在每层／窗口内对 503 个块排序；先对全部 32 层的访问份额取平均，再对文本取平均。阴影表示文本间的 min–max；对角线表示均匀访问。不包含压缩／selector 状态。这是回顾性集中度，而不是预测准确率或恢复加速比。
++![图 6](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/kv-access-concentration.png)
++
++**图 6：** NOSA-8B[[13]](#ref-13)、NSA-8B（MiniCPM-4-8B-NSA）[[10]](#ref-10)与 MiniCPM4.1-8B[[24]](#ref-24)的原生 KV 访问集中度。我们使用三篇 PG19 文本，在匹配的 32,704-token 前缀中选取最后 512 个 Query。对每个 Query，跨 head 的同一历史 64-token 块只计一次。在每层／窗口内对 503 个块排序；先对全部 32 层的访问份额取平均，再对文本取平均。阴影表示文本间的 min–max；对角线表示均匀访问。不包含压缩／selector 状态。这是回顾性集中度，而不是预测准确率或恢复加速比。
+ 
+ 这两条观察共同指导保护哪些状态，以及将其中哪些部分保持为可立即访问。
+ 
+@@ -188,15 +196,15 @@
+ 
+ <a id="sec-system-overview"></a>
+ 
+-AegisKV 将工作流优先级与三层 KV 层级结合起来（[图 6](#fig-system-overview)）。Peer HBM 将选定层与热块保留在另一个数据并行（DP）副本上，以支持快速恢复；共享 DRAM 和存储保留其余状态，用于复用与恢复。三个层级共同覆盖每个已提交 checkpoint，传输完成后每个对象只有一个受管 owner。这种划分使系统能够保留长历史，同时以有界的逐请求配额，将稀缺 HBM 用于零 slack 请求的状态。
++AegisKV 将工作流优先级与三层 KV 层级结合起来（[图 7](#fig-system-overview)）。Peer HBM 将选定层与热块保留在另一个数据并行（DP）副本上，以支持快速恢复；共享 DRAM 和存储保留其余状态，用于复用与恢复。三个层级共同覆盖每个已提交 checkpoint，传输完成后每个对象只有一个受管 owner。这种划分使系统能够保留长历史，同时以有界的逐请求配额，将稀缺 HBM 用于零 slack 请求的状态。
+ 
+ Application 向 Controller 提供请求和工作流进度。**(1)** Workflow Tracker 估计每个 Agent 能吸收多少延迟，**(2)** Recovery-aware Router 选择其执行 DP 和接管 DP。**(3)** KV Master 利用紧迫性与位置信息，决定每个 KV 对象的保留位置，以及哪些热块值得使用 Peer 空间。在 Engine 内部，**(4)** Adapter 随服务需求变化调整可用 Peer 容量。Connector 执行 Master 的传输计划并报告结果。Worker 故障后，Router 将请求重定向到接管 DP；Connector 结合 Peer 命中与下层读取，恢复执行。
+ 
+ <a id="fig-system-overview"></a>
+ 
+-![图 6](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/system-overview.png)
+-
+-**图 6：** AegisKV 架构。编号 (1)–(4) 与正文对应；DP1 具有与 DP0 对称的 Adapter／Connector。图中在 DP1 展示 Master 与 Connector 的通信：计划向下发送，传输状态向上返回。DP0 执行请求；DP1 保存选定的 Peer 对象并负责接管。蓝色实线传输 KV，深色虚线传输控制信息，红色虚线表示重试；橙色块为尚未封闭的尾部。其余 checkpoint 对象位于共享 DRAM／存储中，处于两个 DP 故障边界之外。
++![图 7](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/system-overview.png)
++
++**图 7：** AegisKV 架构。编号 (1)–(4) 与正文对应；DP1 具有与 DP0 对称的 Adapter／Connector。图中在 DP1 展示 Master 与 Connector 的通信：计划向下发送，传输状态向上返回。DP0 执行请求；DP1 保存选定的 Peer 对象并负责接管。蓝色实线传输 KV，深色虚线传输控制信息，红色虚线表示重试；橙色块为尚未封闭的尾部。其余 checkpoint 对象位于共享 DRAM／存储中，处于两个 DP 故障边界之外。
+ 
+ ### 3.3　Workflow Tracker：剩余时间与 Slack
+ 
+@@ -231,13 +239,13 @@
+ 
+ <a id="sec-recovery-router"></a>
+ 
+-Router 确定正常执行与恢复执行的位置。正常分派兼顾负载和兼容前缀的局部性。[图 7](#fig-agent-prefix-reuse)报告，同 Agent 潜在 token 覆盖率为 97.90%，额外跨 Agent 覆盖率为 0.37%。Agent 亲和仅是一种偏好：共享前缀仍可能帮助另一个 Agent 的首次调用。
++Router 确定正常执行与恢复执行的位置。正常分派兼顾负载和兼容前缀的局部性。[图 8](#fig-agent-prefix-reuse)报告，同 Agent 潜在 token 覆盖率为 97.90%，额外跨 Agent 覆盖率为 0.37%。Agent 亲和仅是一种偏好：共享前缀仍可能帮助另一个 Agent 的首次调用。
+ 
+ <a id="fig-agent-prefix-reuse"></a>
+ 
+-![图 7](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/agent-prefix-reuse.png)
+-
+-**图 7：** 98,827 个请求、2,090 个 Agent 和 393 个 CC/Weka 工作流中的潜在前缀复用。覆盖率基于同一工作流中、使用相同记录模型且更早完成的请求。同 Agent 与其他 Agent 的覆盖存在重叠；只有额外跨 Agent 覆盖能扩展同 Agent 复用范围。这些值表示 token 前缀复用机会，而非运行时缓存命中。
++![图 8](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/agent-prefix-reuse.png)
++
++**图 8：** 98,827 个请求、2,090 个 Agent 和 393 个 CC/Weka 工作流中的潜在前缀复用。覆盖率基于同一工作流中、使用相同记录模型且更早完成的请求。同 Agent 与其他 Agent 的覆盖存在重叠；只有额外跨 Agent 覆盖能扩展同 Agent 复用范围。这些值表示 token 前缀复用机会，而非运行时缓存命中。
+ 
+ 请求到达时，Router 记录一个带版本的接管绑定，目标是源故障域之外且布局兼容的 DP。该 DP 中对应的张量并行（TP）分片可以持有选定 Peer 对象。确认故障后，Router 隔离旧 epoch，并在满足工作区和准入约束的条件下激活目标。新目标不能将旧目标的 Peer 对象计为本地对象：重新绑定时需要取回仍可达的对象；若唯一 owner 已丢失，则使用较旧 checkpoint／重放回退。该绑定为 Master 提供具体访问路径和目标负载，以支持恢复性能估计与 Peer 放置。
+ 
+@@ -276,13 +284,13 @@
+ 
+ 对每个 Query，同一物理块跨 head 只计一次。可见性在稀疏选择之前定义，而不是在候选剪枝之后定义。在 200 次机会中被选择 40 次的块，其估计需求低于在 30 次机会中被选择 15 次的块；原始次数会颠倒这一排序。经过校准的逐层先验对小分母进行平滑。该因果估计在不修改原生 selector 的情况下预测需求；必需的辅助状态无论测得频率如何，都仍然是依赖项。
+ 
+-优先级与保留成本不同。对于同一 dense 层中大小相同、成本相同的块，访问贡献相等；但对象大小、传输路径和重建成本仍可能不同。[图 8](#fig-retention-value)说明了单位字节成本为何同样重要。这为下层采用成本感知的信用提供动机，而下文 Peer 策略则有意使用更简单的紧迫性规则。
++优先级与保留成本不同。对于同一 dense 层中大小相同、成本相同的块，访问贡献相等；但对象大小、传输路径和重建成本仍可能不同。[图 9](#fig-retention-value)说明了单位字节成本为何同样重要。这为下层采用成本感知的信用提供动机，而下文 Peer 策略则有意使用更简单的紧迫性规则。
+ 
+ <a id="fig-retention-value"></a>
+ 
+-![图 8](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/retention-value.png)
+-
+-**图 8：** 仅凭 slack 无法对保留价值排序。在这个独立故障示例中，A 使用两个容量单位，将恢复时间从 4 s 降到 2 s；B 使用一个容量单位，将恢复时间从 18 s 降到 8 s。Slack 为 0 的 A 节省 1 s/unit，slack 为 6 的 B 则节省 10 s/unit。正常使用价值为零。这个构造示例为成本感知的下层保留提供动机，并揭示仅按紧迫性进行 Peer 准入的局限；它不是策略加速结果。
++![图 9](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/retention-value.png)
++
++**图 9：** 仅凭 slack 无法对保留价值排序。在这个独立故障示例中，A 使用两个容量单位，将恢复时间从 4 s 降到 2 s；B 使用一个容量单位，将恢复时间从 18 s 降到 8 s。Slack 为 0 的 A 节省 1 s/unit，slack 为 6 的 B 则节省 10 s/unit。正常使用价值为零。这个构造示例为成本感知的下层保留提供动机，并揭示仅按紧迫性进行 Peer 准入的局限；它不是策略加速结果。
+ 
+ #### 3.5.2　带惰性更新的可续租信用
+ 
+@@ -301,7 +309,7 @@
+ 
+ 其中，$j$ 表示 DRAM 或存储；$\lambda_f$ 对统一决策时间范围内的故障风险加权。估计成本 $c$ 衡量对象离开 $j$ 后增加的服务工作：DRAM 降级后需要访问存储，或最后一份存储副本被移除后需要重建。复用项将因果的下一次使用估计与相应避免的服务工作相乘，且独立于 slack。这样可以为 slack 较大的多轮 Agent 保留有用状态。当恢复需要一个存在依赖的对象组时，其估计成本按字节分摊，而不是向每个块重复赋予整个组的成本。Agent 份额之和表达竞争需求，不等于精确的联合 WCT：工作流汇合点上的同时延迟不能相加。
+ 
+-一次性授予的信用会过时；每次 checkpoint 都重新授予信用，又可能无限期保留未使用的状态。受 Landlord 与 GreedyDual-Size 启发[[3]](#ref-3)、[[36]](#ref-36)，Master 将当前授予信用 $g$ 与已付租金 $d$ 分开：
++一次性授予的信用会过时；每次 checkpoint 都重新授予信用，又可能无限期保留未使用的状态。受 Landlord 与 GreedyDual-Size 启发[[3]](#ref-3)、[[37]](#ref-37)，Master 将当前授予信用 $g$ 与已付租金 $d$ 分开：
+ 
+ <a id="eq-rental-credit"></a>
+ 
+@@ -310,7 +318,7 @@
+  \qquad H_{x,j}=\rho_j+C_{x,j}/b_x. \tag{4}
+ $$
+ 
+-存储池压力时钟 $\rho_j$ 按字节数 $b_x$ 计费，而非按经过的时间计费。时钟增加 $\delta$ 时，扣除 $\min(C_{x,j},b_x\delta)$，并在仍为正的 Agent 份额之间按比例分摊。所有已提交的驻留对象都会老化，包括有 lease 的对象；是否允许淘汰另行判断。实际复用或恢复使用只续租发起使用的 Agent，并以对象与 request/use ID 为单位去重。注意力观察更新需求；checkpoint 增长、分数更新和迁移保留已付租金。过期的 Agent 需求被移除。[图 11](#fig-renewable-credit)展示了这些不同事件。最近使用情况通过续租体现，需求通过选择概率与复用历史体现，工作流紧迫性通过 $u_r$ 体现；这些都是明确的信号，并不意味着该机制涵盖所有 LRU／LFU 变体。
++存储池压力时钟 $\rho_j$ 按字节数 $b_x$ 计费，而非按经过的时间计费。时钟增加 $\delta$ 时，扣除 $\min(C_{x,j},b_x\delta)$，并在仍为正的 Agent 份额之间按比例分摊。所有已提交的驻留对象都会老化，包括有 lease 的对象；是否允许淘汰另行判断。实际复用或恢复使用只续租发起使用的 Agent，并以对象与 request/use ID 为单位去重。注意力观察更新需求；checkpoint 增长、分数更新和迁移保留已付租金。过期的 Agent 需求被移除。[图 12](#fig-renewable-credit)展示了这些不同事件。最近使用情况通过续租体现，需求通过选择概率与复用历史体现，工作流紧迫性通过 $u_r$ 体现；这些都是明确的信号，并不意味着该机制涵盖所有 LRU／LFU 变体。
+ 
+ **避免逐 token 更新信用。**
+ 
+@@ -324,25 +332,25 @@
+ 
+ Peer 加速恢复，但不参与租金机制。对于每种受支持的模型／布局，校准阶段固定 checkpoint 间隔 $Z$、前缀层深度 $L$ 和每个选定层的块数 $K$。在线策略改变热块身份与请求成员，而不改变这三个参数。一个 Peer slot 最多预留 $LK$ 个块，并为必需状态单独分配预算。短历史使用更少的块；共享物理对象只计费一次。这是固定配额，并不意味着每个请求的实际物理占用都相同。引擎 block size 与 $Z$ 独立配置；某项测量中的 64-token 单位不具有普适性。
+ 
+-[图 9](#fig-sparse-recovery)展示了相应放置。每个已封闭的层／块／TP 对象只有一个受管 owner，与执行侧工作 KV 区分开来。Peer、DRAM 和存储共同覆盖已提交 checkpoint；对象迁入 Peer 后，待交接完成再释放其下层副本。未选中的块留在下层，需求未命中时从实际 owner 取回。
++[图 10](#fig-sparse-recovery)展示了相应放置。每个已封闭的层／块／TP 对象只有一个受管 owner，与执行侧工作 KV 区分开来。Peer、DRAM 和存储共同覆盖已提交 checkpoint；对象迁入 Peer 后，待交接完成再释放其下层副本。未选中的块留在下层，需求未命中时从实际 owner 取回。
+ 
+ <a id="fig-sparse-recovery"></a>
+ 
+-![图 9](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/sparse-recovery.png)
+-
+-**图 9：** 跨三个互斥层级的 checkpoint，Peer 配额固定为 $L=2$、$K=2$。每个格子表示一组层／块对应的 TP 对象；四个格子位于 Peer，其余位于 DRAM／存储。第 1 层需要 B0/B1/B2：B0 在本地，B1 需要 H2D，B2 需要存储读取加 H2D。虚线尾部尚未提交。热块身份可以在配额内变化；被淘汰的 Peer 对象必须先向下迁移，其空间才能再次使用。
++![图 10](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/sparse-recovery.png)
++
++**图 10：** 跨三个互斥层级的 checkpoint，Peer 配额固定为 $L=2$、$K=2$。每个格子表示一组层／块对应的 TP 对象；四个格子位于 Peer，其余位于 DRAM／存储。第 1 层需要 B0/B1/B2：B0 在本地，B1 需要 H2D，B2 需要存储读取加 H2D。虚线尾部尚未提交。热块身份可以在配额内变化；被淘汰的 Peer 对象必须先向下迁移，其空间才能再次使用。
+ 
+ 只有经过截断、扣除 guard 后 slack 为 $s_r=0$ 的请求，才能进入 Peer 候选队列，包括运行期间 slack 降到零的请求。已准入请求按 $\widehat p$ 为每层选择 $K$ 个块，依次以最近使用时间和块 ID 打破平局。请求完成或交接给工具后，该请求的 slot 可被淘汰。准入或缩减配额时，Master 先回收已结束请求，再按 slack 从大到小回收活跃请求。普通准入在 slack 相等时保留已有请求；新的同值请求等待 Peer，同时保留下层保护。必要的缩减使用最久未发生请求使用的顺序打破活跃请求间的平局。因此，活跃请求具有策略上的保留偏好，而非绝对淘汰锁；物理 read/copy lease 始终必须遵守。只有不再有保留的 slot 需要共享对象时，才能释放该对象。不同接管 DP 不能同时将其唯一 owner 计为本地。
+ 
+ **为何固定保留前若干层？**
+ 
+-令 $M$ 为已提交历史，$N$ 为其后已确认但尚未提交的尾部。恢复需要重放 $N$，这部分计算可以与后续层读取重叠。下层状态已经避免了重建，Peer 额外消除的仅是暴露出的传输等待。[图 10](#fig-design-pipeline)在同一时间轴上包含存储读取、H2D 和重放。在该示例中，需求未命中使稀疏加载比完整层流水线更慢；相对于相同稀疏需求，Peer 减少约 15 ms。该对比展示部分驻留，而不说明某个 $L$ 普遍最优。校准在已声明的历史／尾部与负载配置上扫描固定配额，在 HBM 预算下选定一个配置，然后在其他工作流上评估之前冻结它。不同请求可能适合不同深度；自适应深度和小规模 oracle 对比用于测量这种简化的代价。
++令 $M$ 为已提交历史，$N$ 为其后已确认但尚未提交的尾部。恢复需要重放 $N$，这部分计算可以与后续层读取重叠。下层状态已经避免了重建，Peer 额外消除的仅是暴露出的传输等待。[图 11](#fig-design-pipeline)在同一时间轴上包含存储读取、H2D 和重放。在该示例中，需求未命中使稀疏加载比完整层流水线更慢；相对于相同稀疏需求，Peer 减少约 15 ms。该对比展示部分驻留，而不说明某个 $L$ 普遍最优。校准在已声明的历史／尾部与负载配置上扫描固定配额，在 HBM 预算下选定一个配置，然后在其他工作流上评估之前冻结它。不同请求可能适合不同深度；自适应深度和小规模 oracle 对比用于测量这种简化的代价。
+ 
+ <a id="fig-design-pipeline"></a>
+ 
+-![图 10](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/recovery-pipeline.png)
+-
+-**图 10：** 存储／H2D／重放的分析调度：32 层、32K 历史、64-token 尾部，以及 1,024 MiB 独特 KV。(a)–(c) 将历史均分到 DRAM／存储；(d) 将前 $L=7$ 层中每层 $K=336$ 个 64-token 块移到 Peer：Peer 占 147 MiB，下层各占 438.5 MiB。已有 MiniCPM4-8B 重放校准值为 2.870 ms/layer；存储／H2D 速率 3.125/6.25 GB/s 为假设值。两个稀疏案例均预加载 336 块，每层未命中 64 块；未命中需求在前一层完成后才揭示。这些需求是构造的。冷 KV 的读取位于图示终点之后。放置已经完成；各 I/O 阶段相互独立，工作区充足，无前台流量。这些是机制调度，不是集成测量，也不是最优配额搜索。
++![图 11](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/recovery-pipeline.png)
++
++**图 11：** 存储／H2D／重放的分析调度：32 层、32K 历史、64-token 尾部，以及 1,024 MiB 独特 KV。(a)–(c) 将历史均分到 DRAM／存储；(d) 将前 $L=7$ 层中每层 $K=336$ 个 64-token 块移到 Peer：Peer 占 147 MiB，下层各占 438.5 MiB。已有 MiniCPM4-8B 重放校准值为 2.870 ms/layer；存储／H2D 速率 3.125/6.25 GB/s 为假设值。两个稀疏案例均预加载 336 块，每层未命中 64 块；未命中需求在前一层完成后才揭示。这些需求是构造的。冷 KV 的读取位于图示终点之后。放置已经完成；各 I/O 阶段相互独立，工作区充足，无前台流量。这些是机制调度，不是集成测量，也不是最优配额搜索。
+ 
+ #### 3.5.4　在线三层管理
+ 
+@@ -379,9 +387,9 @@
+ 
+ <a id="fig-renewable-credit"></a>
+ 
+-![图 11](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/renewable-credit.png)
+-
+-**图 11：** 一个共享、单位大小 DRAM 对象的信用。授予信用 3 和 2，在收取租金 2 后变为剩余份额 1.8 和 1.2。将 A 的授予信用更新为 4 时保留其已付金额 1.2，剩余 2.8；A 发生一次实际新使用时，其份额续租为 4。B 保持 1.2。惰性具体更新先结算此前租金，再更新授予信用。这是构造的记账示例；Peer 没有租金时钟。
++![图 12](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/renewable-credit.png)
++
++**图 12：** 一个共享、单位大小 DRAM 对象的信用。授予信用 3 和 2，在收取租金 2 后变为剩余份额 1.8 和 1.2。将 A 的授予信用更新为 4 时保留其已付金额 1.2，剩余 2.8；A 发生一次实际新使用时，其份额续租为 4。B 保持 1.2。惰性具体更新先结算此前租金，再更新授予信用。这是构造的记账示例；Peer 没有租金时钟。
+ 
+ ### 3.6　Adapter：带保护条件的 AIMD Peer 容量调节
+ 
+@@ -445,7 +453,7 @@
+ 
+ Recompute 保留持久化的已接受输入／输出日志，但不保留额外的故障安全 KV 历史。Storage-only 在容量层保留完整 checkpoint。Hierarchical LRU 与 reuse-only 共享 AegisKV 的传输、manifest、安全机制和 checkpoint 前沿实现。LRU 是使用同一基础设施的主要基线；reuse-only 用于分离依赖与故障信息的收益。所有策略都计入已提交、预留、待释放、元数据和暂存字节，以及 checkpoint 与迁移流量。匹配的在线基线使用相同互斥所有权规则。共享对象在稳态下只占一份容量；迁移期间两份物理副本都计费。All-DRAM 放宽容量约束，是参考而非同成本竞争者。穷举的可行 oracle 限于小候选集合和相同目标；它不是在线系统 oracle。
+ 
+-外部对比应在兼容时使用固定版本的 DéjàVu、GhostServe 和 LUMEN 实验材料，以及经过调优的 Mooncake／SGLang 或 Strata 风格层级[[4]](#ref-4)、[[14]](#ref-14)、[[28]](#ref-28)、[[32]](#ref-32)、[[34]](#ref-34)。计入复制／校验容量、编码工作、写流量和实际前沿滞后。复现的机制应标为重新实现；当前曲线中没有为这些具名系统编造结果。TOPAS／KVFlow 对比必须使用相同的故障安全后备基础设施，之后才能将恢复差异归因于工作流策略。
++外部对比应在兼容时使用固定版本的 DéjàVu、GhostServe 和 LUMEN 实验材料，以及经过调优的 Mooncake／SGLang 或 Strata 风格层级[[4]](#ref-4)、[[14]](#ref-14)、[[28]](#ref-28)、[[33]](#ref-33)、[[35]](#ref-35)。计入复制／校验容量、编码工作、写流量和实际前沿滞后。复现的机制应标为重新实现；当前曲线中没有为这些具名系统编造结果。TOPAS／KVFlow 对比必须使用相同的故障安全后备基础设施，之后才能将恢复差异归因于工作流策略。
+ 
+ **结果指标与样本集合。**
+ 
+@@ -472,13 +480,13 @@
+ 
+ 主要实验在指定工作流、Agent 和请求达到冻结逻辑 token 进度的 80% 时，终止同一个源副本。样本集合包含该源上所有被中断请求，而不仅是触发注入的请求。基线与候选策略保持相同输入、token 历史、到达 trace、目标资源与故障身份。原始日志分别记录检测固定开销、路由／准入、checkpoint 查询、状态恢复、重放与恢复后的执行。按统一墙上时间终止会将进度与策略速度混淆。机制归因实验冻结故障前源分配和已提交覆盖。完整系统实验允许策略改变路由和实际前沿，并使用固定原始到达集合进行意向处理对比；同时报告哪些工作流被直接中断发生了变化。这两类实验回答不同问题。
+ 
+-分析网格覆盖状态大小因子 0.5/1/2、slack 因子 0/0.3/1/3，以及存储速率 1/4/12 GiB/s，共 36 个配置。该网格中的 DRAM 容量随状态大小同比缩放。[图 12](#fig-eval-workflow-outcomes)展示其分布。我们还为每个配置计算匹配差值。Workflow value 在 17 个配置中改善，在 19 个配置中持平；该网格中没有出现损失并不构成最坏情况保证。在这一明确声明的实例中，LRU 与 reuse-only 恰好选择相同顺序，因此两者一致不能作为否定所有复用策略的独立证据。实机对比必须包括其他最近访问／复用顺序，并分别考察各工作负载族。
++分析网格覆盖状态大小因子 0.5/1/2、slack 因子 0/0.3/1/3，以及存储速率 1/4/12 GiB/s，共 36 个配置。该网格中的 DRAM 容量随状态大小同比缩放。[图 13](#fig-eval-workflow-outcomes)展示其分布。我们还为每个配置计算匹配差值。Workflow value 在 17 个配置中改善，在 19 个配置中持平；该网格中没有出现损失并不构成最坏情况保证。在这一明确声明的实例中，LRU 与 reuse-only 恰好选择相同顺序，因此两者一致不能作为否定所有复用策略的独立证据。实机对比必须包括其他最近访问／复用顺序，并分别考察各工作负载族。
+ 
+ <a id="fig-eval-workflow-outcomes"></a>
+ 
+-![图 12](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/eval-workflow-outcomes.png)
+-
+-**图 12：** 36 个明确声明的状态大小、残余分支 slack 和存储带宽配置中的单次故障惩罚。每个策略使用相同配置。CDF 对配置等权，不是实测工作流的分布。分配 oracle 搜索相同的完整对象组候选空间。
++![图 13](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/eval-workflow-outcomes.png)
++
++**图 13：** 36 个明确声明的状态大小、残余分支 slack 和存储带宽配置中的单次故障惩罚。每个策略使用相同配置。CDF 对配置等权，不是实测工作流的分布。分配 oracle 搜索相同的完整对象组候选空间。
+ 
+ 在基准实例中，storage-only 为工作流完成增加 5.5583 s，LRU 增加 3.6208 s，workflow value 增加 1.6125 s。相对 LRU 减少 2.0083 s，即*故障惩罚*降低 55.5%；这不是端到端 WCT 降低 55.5%。正常状态下的剩余汇合时间为 12 s，因此故障后的剩余完成时间分别为 15.6208 s 和 13.6125 s。重建路径的 190.65 s 惩罚说明可靠覆盖的价值，而与 LRU 的比较则隔离了在已有覆盖基础上快速层放置的收益。实机实验应测量完整工作流生命周期，不应以这个剩余时间窗口示例替代。
+ 
+@@ -492,13 +500,13 @@
+ D=\max_i(d_i+R_i)-\max_i d_i. \tag{7}
+ $$
+ 
+-基准汇合 slack 为 0/2/7/11 s。LRU 保留 16 GiB 的 A3 历史；workflow value 保留 A0 和 A1，共 12 GiB。[图 13](#fig-eval-branch-exposure)说明这两种选择为何不同。A3 较长的恢复仍可能处于可用余量内，而 A0 无法隐藏任何延迟。完整对象组粒度使 4 GiB 未被使用；这是候选限制的一部分，并不是暗中分配给其他策略的免费容量。
++基准汇合 slack 为 0/2/7/11 s。LRU 保留 16 GiB 的 A3 历史；workflow value 保留 A0 和 A1，共 12 GiB。[图 14](#fig-eval-branch-exposure)说明这两种选择为何不同。A3 较长的恢复仍可能处于可用余量内，而 A0 无法隐藏任何延迟。完整对象组粒度使 4 GiB 未被使用；这是候选限制的一部分，并不是暗中分配给其他策略的免费容量。
+ 
+ <a id="fig-eval-branch-exposure"></a>
+ 
+-![图 13](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/eval-branch-exposure.png)
+-
+-**图 13：** 基准实例收益的来源。A0–A3 的汇合 slack 分别为 0、2、7 和 11 s。条形将这些 slack 与共同故障后模型中实际算出的恢复完成时间比较。此处加速最大历史 A3 的工作流价值很小；延迟 A0 则直接推迟汇合。
++![图 14](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/eval-branch-exposure.png)
++
++**图 14：** 基准实例收益的来源。A0–A3 的汇合 slack 分别为 0、2、7 和 11 s。条形将这些 slack 与共同故障后模型中实际算出的恢复完成时间比较。此处加速最大历史 A3 的工作流价值很小；延迟 A0 则直接推迟汇合。
+ 
+ **关键路径核算。**
+ 
+@@ -516,11 +524,11 @@
+ 
+ <a id="fig-eval-burst-interference"></a>
+ 
+-![图 14](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/eval-burst-interference.png)
+-
+-**图 14：** FIFO 恢复池压力模型：一批同时突发的相同中断工作流共享一个具有两个目标的恢复池。每个工作流最后一次状态恢复结束前，恢复池持续为其保留。排队延迟加入汇合惩罚。这一刻意限制并发的策略揭示了独立故障对比会遗漏的外部影响。
+-
+-[图 14](#fig-eval-burst-interference)中的 FIFO 压力模型持续占用一个恢复池，直至四个分支的状态恢复全部结束。对于 $n$ 个同时到达的相同工作流，平均惩罚为 $D+(n-1)S/2$，其中 $S=\max_i R_i$ 为恢复池占用时间。当额外的恢复池等待占主导时，workflow value 在独立案例中的优势消失：$n=8$ 时，workflow value 的平均惩罚为 28.5042 s，LRU 为 27.0125 s。这反驳了将独立放置结果推广到任意突发负载的做法，并不是对所提负载感知 Router 的测量。当正常 I/O 使用 4 GiB/s reader 的 70% 时，流体积压模型显示，更大的恢复字节量需要更长时间排空。该计算针对 I/O 积压，并非实测 TTFT 或连带 WCT。实机测试必须包含并发调度，以及受影响与连带工作流的联合价值。
++![图 15](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/eval-burst-interference.png)
++
++**图 15：** FIFO 恢复池压力模型：一批同时突发的相同中断工作流共享一个具有两个目标的恢复池。每个工作流最后一次状态恢复结束前，恢复池持续为其保留。排队延迟加入汇合惩罚。这一刻意限制并发的策略揭示了独立故障对比会遗漏的外部影响。
++
++[图 15](#fig-eval-burst-interference)中的 FIFO 压力模型持续占用一个恢复池，直至四个分支的状态恢复全部结束。对于 $n$ 个同时到达的相同工作流，平均惩罚为 $D+(n-1)S/2$，其中 $S=\max_i R_i$ 为恢复池占用时间。当额外的恢复池等待占主导时，workflow value 在独立案例中的优势消失：$n=8$ 时，workflow value 的平均惩罚为 28.5042 s，LRU 为 27.0125 s。这反驳了将独立放置结果推广到任意突发负载的做法，并不是对所提负载感知 Router 的测量。当正常 I/O 使用 4 GiB/s reader 的 70% 时，流体积压模型显示，更大的恢复字节量需要更长时间排空。该计算针对 I/O 积压，并非实测 TTFT 或连带 WCT。实机测试必须包含并发调度，以及受影响与连带工作流的联合价值。
+ 
+ ### 4.5　故障位置与 Checkpoint 新鲜度
+ 
+@@ -552,11 +560,11 @@
+ 
+ <a id="fig-eval-trace-penalty"></a>
+ 
+-![图 15](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/eval-trace-penalty.png)
+-
+-**图 15：** 由 LANL 开始时刻驱动的 FIFO 恢复模型：每个清洗后的节点中断对应一个假定四分支工作流，保留各系统原速率的开始时刻。曲线包含 21,738 次条件恢复事件。观测输入是中断日历；恢复时长与工作流惩罚来自模型。
+-
+-[图 15](#fig-eval-trace-penalty)报告条件恢复分布。在原始时间间隔下，LRU 的模型平均惩罚为 10.4533 s，workflow value 为 9.4673 s，降低 9.4%。平均排队等待从 6.8324 s 上升至 7.8548 s。P95 惩罚从 37.0375 s 恶化至 40.0292 s，P99 从 204.1208 s 恶化至 232.1125 s。因此，这组输入支持有条件的平均收益，同时反驳笼统的尾延迟改善声明。逐系统聚合也保留损失，包括 System 2 的负平均收益。数千次事件或很小的算术误差条，都不能将一条历史 trace 变成独立服务实验。
++![图 16](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/eval-trace-penalty.png)
++
++**图 16：** 由 LANL 开始时刻驱动的 FIFO 恢复模型：每个清洗后的节点中断对应一个假定四分支工作流，保留各系统原速率的开始时刻。曲线包含 21,738 次条件恢复事件。观测输入是中断日历；恢复时长与工作流惩罚来自模型。
++
++[图 16](#fig-eval-trace-penalty)报告条件恢复分布。在原始时间间隔下，LRU 的模型平均惩罚为 10.4533 s，workflow value 为 9.4673 s，降低 9.4%。平均排队等待从 6.8324 s 上升至 7.8548 s。P95 惩罚从 37.0375 s 恶化至 40.0292 s，P99 从 204.1208 s 恶化至 232.1125 s。因此，这组输入支持有条件的平均收益，同时反驳笼统的尾延迟改善声明。逐系统聚合也保留损失，包括 System 2 的负平均收益。数千次事件或很小的算术误差条，都不能将一条历史 trace 变成独立服务实验。
+ 
+ **对照与完整系统扩展。**
+ 
+@@ -568,11 +576,11 @@
+ 
+ <a id="fig-eval-value-ablation"></a>
+ 
+-![图 16](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/eval-value-ablation.png)
+-
+-**图 16：** 在相同 12 个状态大小／slack 场景、4 GiB/s 存储带宽下进行静态价值消融。每个策略包含故障惩罚条和正常下一次使用成本条；它们是不同成本，不是可相加的阶段。六个策略采用相同权重、容量和候选对象组。同时展示两种结果可以揭示恢复优先保护对正常复用的代价。这是静态放置模型，而非完整在线系统。
+-
+-[图 16](#fig-eval-value-ablation)在 4 GiB/s 存储带宽、12 个状态大小／slack 子集场景上，同时报告相同六个策略的故障成本与正常下一次使用成本；这些均值不同于结果 CDF 中混合带宽的 36 场景均值。每次真实实验还需记录驻留对象变化、预测计划价值、被接纳／拒绝的迁移、实际关键路径分支、移动字节和控制器耗时，以区分有用信号与偶然相同的放置。共同故障示例说明为何仅累加独立损失不够：互补的必要分支可能使对象组的边际价值不同于各单对象价值之和。将因子化策略与有界成对搜索和完整 DAG 参考比较，再枚举小实例以量化近似损失。所选在线策略不执行这种搜索。
++![图 17](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/eval-value-ablation.png)
++
++**图 17：** 在相同 12 个状态大小／slack 场景、4 GiB/s 存储带宽下进行静态价值消融。每个策略包含故障惩罚条和正常下一次使用成本条；它们是不同成本，不是可相加的阶段。六个策略采用相同权重、容量和候选对象组。同时展示两种结果可以揭示恢复优先保护对正常复用的代价。这是静态放置模型，而非完整在线系统。
++
++[图 17](#fig-eval-value-ablation)在 4 GiB/s 存储带宽、12 个状态大小／slack 子集场景上，同时报告相同六个策略的故障成本与正常下一次使用成本；这些均值不同于结果 CDF 中混合带宽的 36 场景均值。每次真实实验还需记录驻留对象变化、预测计划价值、被接纳／拒绝的迁移、实际关键路径分支、移动字节和控制器耗时，以区分有用信号与偶然相同的放置。共同故障示例说明为何仅累加独立损失不够：互补的必要分支可能使对象组的边际价值不同于各单对象价值之和。将因子化策略与有界成对搜索和完整 DAG 参考比较，再枚举小实例以量化近似损失。所选在线策略不执行这种搜索。
+ 
+ 对相互作用的机制采用因子实验：Slack $\times$ 共享 Agent 聚合；需求归一化 $\times$ 逐层重叠；租金筛选 $\times$ 惰性刷新；负载感知路由 $\times$ 共享链路竞争。保留每个 $2\!\times\!2$ 设计的全部四种组合。交互效应是配对差值之差，而不是各项加速比之和。持平或负向消融同样具有信息价值，不能仅因它削弱所提论述就将其移除。
+ 
+@@ -580,13 +588,13 @@
+ 
+ **受控机制模型。**
+ 
+-一个八层示例在完整选定需求下，每层 SSD payload 成本为 4 ms，H2D 成本为 1 ms，必需计算为 3 ms/layer。DRAM 保留两个 payload，可位于早期或后期；瞬时工作区只能容纳当前层与下一层。串行与流水线模式使用相同需求和资源。Payload 密度对所有策略的 I/O 等比例缩放，并不改变原生注意力算法。[图 17](#fig-eval-layer-factorial)隔离了放置与调度的交互。另一项预取正确性扫描固定必需需求，以隔离预测误差。
++一个八层示例在完整选定需求下，每层 SSD payload 成本为 4 ms，H2D 成本为 1 ms，必需计算为 3 ms/layer。DRAM 保留两个 payload，可位于早期或后期；瞬时工作区只能容纳当前层与下一层。串行与流水线模式使用相同需求和资源。Payload 密度对所有策略的 I/O 等比例缩放，并不改变原生注意力算法。[图 18](#fig-eval-layer-factorial)隔离了放置与调度的交互。另一项预取正确性扫描固定必需需求，以隔离预测误差。
+ 
+ <a id="fig-eval-layer-factorial"></a>
+ 
+-![图 17](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/eval-layer-factorial.png)
+-
+-**图 17：** 在八个合成层 payload 上进行同预算的 $2\!\times\!2$ 层放置／调度实验。早期／后期策略均保留两个 payload；串行／流水线调度使用相同的选定需求、速率和两层瞬时工作区。横轴对全部策略等比例改变选定 payload 密度，而不是改变注意力语义。
++![图 18](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/eval-layer-factorial.png)
++
++**图 18：** 在八个合成层 payload 上进行同预算的 $2\!\times\!2$ 层放置／调度实验。早期／后期策略均保留两个 payload；串行／流水线调度使用相同的选定需求、速率和两层瞬时工作区。横轴对全部策略等比例改变选定 payload 密度，而不是改变注意力语义。
+ 
+ 完整需求下，两种串行放置都需要 56 ms；采用流水线后，后期放置需要 34 ms，早期放置需要 32 ms。必需计算始终为 24 ms。剩余的 10 ms 与 8 ms 是暴露等待，而不是被避免的历史 Prefill。预测误差消耗额外读取，并使执行因等待需求揭示而停顿；完美预测只是一个敏感性分析点。
+ 
+@@ -606,11 +614,11 @@
+ 
+ <a id="fig-eval-rental-cost"></a>
+ 
+-![图 18](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/eval-rental-cost.png)
+-
+-**图 18：** 保留的历史租金回归结果，单位为抽象延迟成本。早期只检查一个受害对象的试租筛选迁移略少，但未命中加移动成本高于直接重估。这些曲线没有实现修订后的三层控制器。
+-
+-[图 18](#fig-eval-rental-cost)报告直接重估成本 462.96，原始租金策略成本 506.39。两者分别迁移 108 次和 106 次，各执行 396 次标量替换检查；这不是完整 DAG 遍历次数或 CPU 测量。去掉滞回后迁移次数增加到 121；去掉续租后迁移次数减少到 77，但成本上升到 526.05。在原始租金策略轨迹中，104 次被拒绝的机会实际上存在另一个驻留对象，能够满足当前价值增益阈值。这些是诊断观察，而不是总差距的可加因果分解。
++![图 19](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/eval-rental-cost.png)
++
++**图 19：** 保留的历史租金回归结果，单位为抽象延迟成本。早期只检查一个受害对象的试租筛选迁移略少，但未命中加移动成本高于直接重估。这些曲线没有实现修订后的三层控制器。
++
++[图 19](#fig-eval-rental-cost)报告直接重估成本 462.96，原始租金策略成本 506.39。两者分别迁移 108 次和 106 次，各执行 396 次标量替换检查；这不是完整 DAG 遍历次数或 CPU 测量。去掉滞回后迁移次数增加到 121；去掉续租后迁移次数减少到 77，但成本上升到 526.05。在原始租金策略轨迹中，104 次被拒绝的机会实际上存在另一个驻留对象，能够满足当前价值增益阈值。这些是诊断观察，而不是总差距的可加因果分解。
+ 
+ 有界修复保持输入和阈值不变。仅改为按实际计分命中续租，会将成本提高至 512.67。在不退还已付租金的情况下刷新当前价值，将成本降至 477.86；进一步检查两个低信用受害对象，成本降至 466.76。最后一种修复弥合原始差距的 91.26%，但仍比直接重估高 0.82%。在四个相位、三个漂移周期和三个容量构成的固定网格中，它在全部 36 个案例中优于原始租金策略，但仅在九个案例中优于直接价值策略。这些构造的敏感性案例既不是独立重复，也不是留出工作负载验证。基准实例中，该修复还需要 747 次替换检查和 4,088 次驻留对象 key 更新；结果不能证明控制器开销更低。
+ 
+@@ -618,15 +626,15 @@
+ 
+ ### 4.11　容量、存储与恢复覆盖
+ 
+-扫描 DRAM／独特 checkpoint 工作集比例 0/0.1/0.25/0.5/1，以及存储比例 0.5/1/2。统计独特物理字节，并记录随时间变化的工作集。有限存储配置必须实际触发最后副本删除和有效回退前沿；不能悄悄将 DRAM 降级变成无限后备存储。在相同预算下交叉比较上下文长度与源并发度。明确报告不受支持的内存／kernel 配置。[图 19](#fig-eval-capacity-frontier)展示容量敏感性；实验包还保留带宽扫描。基准模型假定后备容量充足，因此不能验证最后副本淘汰的性能。
++扫描 DRAM／独特 checkpoint 工作集比例 0/0.1/0.25/0.5/1，以及存储比例 0.5/1/2。统计独特物理字节，并记录随时间变化的工作集。有限存储配置必须实际触发最后副本删除和有效回退前沿；不能悄悄将 DRAM 降级变成无限后备存储。在相同预算下交叉比较上下文长度与源并发度。明确报告不受支持的内存／kernel 配置。[图 20](#fig-eval-capacity-frontier)展示容量敏感性；实验包还保留带宽扫描。基准模型假定后备容量充足，因此不能验证最后副本淘汰的性能。
+ 
+ 价值目标并非仅考虑故障 WCT。在 16 GiB 和 28 GiB 预算下，可行 oracle 的联合得分从 0.15049 s 改善到 0.14383 s，但故障惩罚从 1.6125 s 增加到 1.9458 s，因为正常复用也受益于保留，而且传输共享资源。因此，原始容量表同时记录两个目标与所选对象。仅故障曲线非单调，并不说明额外容量使 oracle 优化的联合目标变差。
+ 
+ <a id="fig-eval-capacity-frontier"></a>
+ 
+-![图 19](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/eval-capacity-frontier.png)
+-
+-**图 19：** 固定存储容量、速率和逻辑故障下的单次故障 DRAM 容量扫描。Value 与 oracle 策略优化正常使用／故障的联合得分；其仅故障惩罚不一定单调下降。可部署策略之间的比较必须使用相同 DRAM 容量。
++![图 20](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/eval-capacity-frontier.png)
++
++**图 20：** 固定存储容量、速率和逻辑故障下的单次故障 DRAM 容量扫描。Value 与 oracle 策略优化正常使用／故障的联合得分；其仅故障惩罚不一定单调下降。可部署策略之间的比较必须使用相同 DRAM 容量。
+ 
+ 对每个真实后端，测量读写带宽、对请求大小的依赖、并发读写竞争、提交持久性，以及端到端 GPU 就绪时间。客户端冷缓存、客户端热缓存和有记录的服务端缓存状态分别设为不同配置。Direct I/O 只控制客户端路径；无法控制的共享文件系统服务端缓存必须标为未知。各策略读取相同 payload，使用相同传输调度。增加共享存储降速或丢失实验，以区分存活 checkpoint 覆盖与名义上的低延迟放置。状态不可用时，即使期望价值很高，系统也无法恢复它。
+ 
+@@ -680,19 +688,19 @@
+ 
+ **容错 LLM 服务。**
+ 
+-DéjàVu 对 KV 进行流式传输与复制[[32]](#ref-32)；GhostServe 通过主机内存中的纠删码校验保护 KV[[14]](#ref-14)。RaidServe 使用循环放置、混合注意力与恢复路由处理 TP 韧性和负载不均衡[[35]](#ref-35)。LUMEN 在负载降低的条件下协调 checkpoint、请求重新分配与容量恢复[[4]](#ref-4)。放置对比必须使用同样强的恢复调度器。
++DéjàVu 对 KV 进行流式传输与复制[[33]](#ref-33)；GhostServe 通过主机内存中的纠删码校验保护 KV[[14]](#ref-14)。RaidServe 使用循环放置、混合注意力与恢复路由处理 TP 韧性和负载不均衡[[36]](#ref-36)。LUMEN 在负载降低的条件下协调 checkpoint、请求重新分配与容量恢复[[4]](#ref-4)。放置对比必须使用同样强的恢复调度器。
+ 
+ **分层上下文缓存。**
+ 
+-Mooncake 将 KV 池化并围绕局部性进行调度[[28]](#ref-28)；其 SSD offload 在内存压力下将状态溢写到 SSD[[21]](#ref-21)。CachedAttention 使用分层缓存、逐层预加载与异步保存[[11]](#ref-11)。Strata 处理碎片化 I/O、延迟命中和缓存感知调度[[34]](#ref-34)。HCache 在平衡 I/O 与计算的同时恢复中间激活[[12]](#ref-12)。我们提出的区别在于共同故障下的工作流价值，以及安全降级与显式最后副本回退。
++Mooncake 将 KV 池化并围绕局部性进行调度[[28]](#ref-28)；其 SSD offload 在内存压力下将状态溢写到 SSD[[21]](#ref-21)。CachedAttention 使用分层缓存、逐层预加载与异步保存[[11]](#ref-11)。Strata 处理碎片化 I/O、延迟命中和缓存感知调度[[35]](#ref-35)。HCache 在平衡 I/O 与计算的同时恢复中间激活[[12]](#ref-12)。我们提出的区别在于共同故障下的工作流价值，以及安全降级与显式最后副本回退。
+ 
+ **工作流感知的服务与预测。**
+ 
+-Parrot 优化应用级执行[[17]](#ref-17)；KVFlow 使用未来调用距离进行前缀淘汰[[27]](#ref-27)。Pythia 与 Cortex 利用工作流语义[[26]](#ref-26)、[[37]](#ref-37)。TOPAS 使用剩余路径、复用和移动成本调度状态保留与执行[[22]](#ref-22)；因此，仅为缓存加入关键路径分数不足以构成新颖性。本文拟议的区别是在同一 worker 故障后，处理陈旧 checkpoint 和有限层级转换下的恢复。Heddle 预测执行轨迹[[40]](#ref-40)，但这不能确立 AegisKV 对剩余墙上时间的预测准确率。
++Parrot 优化应用级执行[[17]](#ref-17)；KVFlow 使用未来调用距离进行前缀淘汰[[27]](#ref-27)。Pythia 与 Cortex 利用工作流语义[[26]](#ref-26)、[[38]](#ref-38)。TOPAS 使用剩余路径、复用和移动成本调度状态保留与执行[[22]](#ref-22)；因此，仅为缓存加入关键路径分数不足以构成新颖性。本文拟议的区别是在同一 worker 故障后，处理陈旧 checkpoint 和有限层级转换下的恢复。Heddle 预测执行轨迹[[41]](#ref-41)，但这不能确立 AegisKV 对剩余墙上时间的预测准确率。
+ 
+ **放置机制。**
+ 
+-关键路径分析[[16]](#ref-16)与基于成本／大小的缓存[[36]](#ref-36)提供了基础组成部分。AegisKV 的价值依赖 DAG、共享队列和对象位置，因此 Landlord 的竞争界不能直接迁移。小实例可行 oracle 用于测量近似损失。AegisKV 结合带惰性刷新的下层可续租信用、因子化请求／块优先级，以及固定配额 Peer 准入。在匹配资源与控制工作预算下，必须通过相对于直接重估的独立消融，确立租金、实际使用续租和价值刷新，以及稀疏排序与重叠各自的收益。
++关键路径分析[[16]](#ref-16)与基于成本／大小的缓存[[37]](#ref-37)提供了基础组成部分。AegisKV 的价值依赖 DAG、共享队列和对象位置，因此 Landlord 的竞争界不能直接迁移。小实例可行 oracle 用于测量近似损失。AegisKV 结合带惰性刷新的下层可续租信用、因子化请求／块优先级，以及固定配额 Peer 准入。在匹配资源与控制工作预算下，必须通过相对于直接重估的独立消融，确立租金、实际使用续租和价值刷新，以及稀疏排序与重叠各自的收益。
+ 
+ ## 6　结论
+ 
+@@ -834,43 +842,47 @@
+ 
+ <a id="ref-32"></a>
+ 
+-**[32]** Foteini Strati, Sara McAllister, Amar Phanishayee, Jakub Tarnawski, and Ana Klimovic. 2024. DéjàVu: KV-cache Streaming for Fast, Fault-tolerant Generative LLM Serving. In *Proceedings of the 41st International Conference on Machine Learning*, Vol. 235. PMLR, Vienna, Austria, 46745–46771. [来源](https://proceedings.mlr.press/v235/strati24a.html)
++**[32]** Chenchen Shou, Guyue Liu, Hao Nie, Huaiyu Meng, Yu Zhou, Yimin Jiang, Wenqing Lv, Yelong Xu, Yuanwei Lu, Zhang Chen, Yanbo Yu, Yichen Shen, Yibo Zhu, and Daxin Jiang. 2025. InfiniteHBD: Building Datacenter-Scale High-Bandwidth Domain for LLM with Optical Circuit Switching Transceivers. In *Proceedings of the ACM SIGCOMM 2025 Conference*. Public fault trace: [来源](https://github.com/stepfun-ai/InfiniteHBD-Trace). [doi:10.1145/3718958.3750468](https://doi.org/10.1145/3718958.3750468)
+ 
+ <a id="ref-33"></a>
+ 
+-**[33]** Qingyun Wu, Gagan Bansal, Jieyu Zhang, Yiran Wu, Beibin Li, Erkang Zhu, Li Jiang, Xiaoyun Zhang, Shaokun Zhang, Jiale Liu, Ahmed Hassan Awadallah, Ryen W. White, Doug Burger, and Chi Wang. 2023. AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation. arXiv:2308.08155 [来源](https://arxiv.org/abs/2308.08155)
++**[33]** Foteini Strati, Sara McAllister, Amar Phanishayee, Jakub Tarnawski, and Ana Klimovic. 2024. DéjàVu: KV-cache Streaming for Fast, Fault-tolerant Generative LLM Serving. In *Proceedings of the 41st International Conference on Machine Learning*, Vol. 235. PMLR, Vienna, Austria, 46745–46771. [来源](https://proceedings.mlr.press/v235/strati24a.html)
+ 
+ <a id="ref-34"></a>
+ 
+-**[34]** Zhiqiang Xie, Ziyi Xu, Mark Zhao, Yuwei An, Vikram Sharma Mailthody, Scott Mahlke, Michael Garland, and Christos Kozyrakis. 2026. Strata: Hierarchical Context Caching for Long Context Language Model Serving. In *20th USENIX Symposium on Operating Systems Design and Implementation (OSDI 26)*. USENIX Association, Seattle, WA, 1–16. 978-1-939133-55-7 [来源](https://www.usenix.org/conference/osdi26/presentation/xie-zhiqiang)
++**[34]** Qingyun Wu, Gagan Bansal, Jieyu Zhang, Yiran Wu, Beibin Li, Erkang Zhu, Li Jiang, Xiaoyun Zhang, Shaokun Zhang, Jiale Liu, Ahmed Hassan Awadallah, Ryen W. White, Doug Burger, and Chi Wang. 2023. AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation. arXiv:2308.08155 [来源](https://arxiv.org/abs/2308.08155)
+ 
+ <a id="ref-35"></a>
+ 
+-**[35]** Ziyi Xu, Zhiqiang Xie, Swapnil Gandhi, and Christos Kozyrakis. 2026. RaidServe: High-performance Resilient Serving. In *Proceedings of Machine Learning and Systems*, Aakanksha Chowdhery and Zhihao Jia (Eds.), Vol. 8. MLSys, Bellevue, WA, USA, 15 pages. [来源](https://proceedings.mlsys.org/paper_files/paper/2026/hash/507b4aacefe5325908e24f042617b741-Abstract-Conference.html)
++**[35]** Zhiqiang Xie, Ziyi Xu, Mark Zhao, Yuwei An, Vikram Sharma Mailthody, Scott Mahlke, Michael Garland, and Christos Kozyrakis. 2026. Strata: Hierarchical Context Caching for Long Context Language Model Serving. In *20th USENIX Symposium on Operating Systems Design and Implementation (OSDI 26)*. USENIX Association, Seattle, WA, 1–16. 978-1-939133-55-7 [来源](https://www.usenix.org/conference/osdi26/presentation/xie-zhiqiang)
+ 
+ <a id="ref-36"></a>
+ 
+-**[36]** Neal E. Young. 2002. On-Line File Caching. *Algorithmica* 33, 3 (2002), 371–383. [doi:10.1007/s00453-001-0124-5](https://doi.org/10.1007/s00453-001-0124-5)
++**[36]** Ziyi Xu, Zhiqiang Xie, Swapnil Gandhi, and Christos Kozyrakis. 2026. RaidServe: High-performance Resilient Serving. In *Proceedings of Machine Learning and Systems*, Aakanksha Chowdhery and Zhihao Jia (Eds.), Vol. 8. MLSys, Bellevue, WA, USA, 15 pages. [来源](https://proceedings.mlsys.org/paper_files/paper/2026/hash/507b4aacefe5325908e24f042617b741-Abstract-Conference.html)
+ 
+ <a id="ref-37"></a>
+ 
+-**[37]** Shan Yu, Junyi Shu, Yuanjiang Ni, Kun Qian, Xue Li, Yang Wang, Jinyuan Zhang, Ziyi Xu, Shuo Yang, Lingjun Zhu, Ennan Zhai, Qingda Lu, Jiarong Xing, Youyou Lu, Xin Jin, Xuanzhe Liu, and Harry Xu. 2026. Pythia: Exploiting Workflow Predictability for Efficient Agent-Native LLM Serving. Version 2. arXiv:2604.25899 [来源](https://arxiv.org/abs/2604.25899)
++**[37]** Neal E. Young. 2002. On-Line File Caching. *Algorithmica* 33, 3 (2002), 371–383. [doi:10.1007/s00453-001-0124-5](https://doi.org/10.1007/s00453-001-0124-5)
+ 
+ <a id="ref-38"></a>
+ 
+-**[38]** Z.ai. 2026a. GLM-5 Model Card. Hugging Face. Accessed September 18, 2026; technical report arXiv:2602.15763. [来源](https://huggingface.co/zai-org/GLM-5)
++**[38]** Shan Yu, Junyi Shu, Yuanjiang Ni, Kun Qian, Xue Li, Yang Wang, Jinyuan Zhang, Ziyi Xu, Shuo Yang, Lingjun Zhu, Ennan Zhai, Qingda Lu, Jiarong Xing, Youyou Lu, Xin Jin, Xuanzhe Liu, and Harry Xu. 2026. Pythia: Exploiting Workflow Predictability for Efficient Agent-Native LLM Serving. Version 2. arXiv:2604.25899 [来源](https://arxiv.org/abs/2604.25899)
+ 
+ <a id="ref-39"></a>
+ 
+-**[39]** Z.ai. 2026b. GLM-5.2 Model Card. [来源](https://huggingface.co/zai-org/GLM-5.2)
++**[39]** Z.ai. 2026a. GLM-5 Model Card. Hugging Face. Accessed September 18, 2026; technical report arXiv:2602.15763. [来源](https://huggingface.co/zai-org/GLM-5)
+ 
+ <a id="ref-40"></a>
+ 
+-**[40]** Zili Zhang, Yinmin Zhong, Chengxu Yang, Chao Jin, Bingyang Wu, Xinming Wei, Yuliang Liu, and Xin Jin. 2026. Heddle: A Distributed Orchestration System for Agentic RL Rollout. arXiv:2603.28101 [cs.LG] [来源](https://arxiv.org/abs/2603.28101v1)
++**[40]** Z.ai. 2026b. GLM-5.2 Model Card. [来源](https://huggingface.co/zai-org/GLM-5.2)
+ 
+ <a id="ref-41"></a>
+ 
+-**[41]** Lianmin Zheng, Liangsheng Yin, Zhiqiang Xie, Chuyue Sun, Jeff Huang, Cody Hao Yu, Shiyi Cao, Christos Kozyrakis, Ion Stoica, Joseph E. Gonzalez, Clark Barrett, and Ying Sheng. 2024. SGLang: Efficient Execution of Structured Language Model Programs. In *Advances in Neural Information Processing Systems*, Vol. 37. Curran Associates, Inc., Red Hook, NY, USA, 27 pages. [doi:10.52202/079017-2000](https://doi.org/10.52202/079017-2000)
++**[41]** Zili Zhang, Yinmin Zhong, Chengxu Yang, Chao Jin, Bingyang Wu, Xinming Wei, Yuliang Liu, and Xin Jin. 2026. Heddle: A Distributed Orchestration System for Agentic RL Rollout. arXiv:2603.28101 [cs.LG] [来源](https://arxiv.org/abs/2603.28101v1)
++
++<a id="ref-42"></a>
++
++**[42]** Lianmin Zheng, Liangsheng Yin, Zhiqiang Xie, Chuyue Sun, Jeff Huang, Cody Hao Yu, Shiyi Cao, Christos Kozyrakis, Ion Stoica, Joseph E. Gonzalez, Clark Barrett, and Ying Sheng. 2024. SGLang: Efficient Execution of Structured Language Model Programs. In *Advances in Neural Information Processing Systems*, Vol. 37. Curran Associates, Inc., Red Hook, NY, USA, 27 pages. [doi:10.52202/079017-2000](https://doi.org/10.52202/079017-2000)
+ 
+ ## 附录 A　Motivation 测量协议
+ 
+@@ -878,7 +890,7 @@
+ 
+ **范围与配置。**
+ 
+-[图 2(c)](#fig-motivation-recompute)与[图 3](#fig-motivation-recovery-exposure)使用相同的固定 Qwen2.5-7B-Instruct-1M 权重、SGLang 0.5.10rc0、PyTorch 2.9.1/CUDA 12.8，在两张 A100 PCIe 40 GB GPU 上以 TP2、BF16 权重／KV 和 batch 为 1 执行。两组实验分别申请同型号 GPU，使用由模型 tokenizer 编码的同一固定重复合成文本。Trace 提供工作流位置与长度代理，不提供基准测试 prompt。我们的 adapter 使用固定 MInference vertical/slash 配置与 DCA 位置处理，在超过 32,768 tokens 后采用稀疏注意力，包括最后一个 token 的 EXTEND。SM80 稀疏 kernel 构建和模型／注意力源码均附哈希存档。GQA 的 K/V 共享；前缀执行每组最多包含两个 Query head，单 Query 则将全部 head 一起批处理。这些是插桩 worker 测量，而非未修改服务前端的吞吐测量。
++[图 3(c)](#fig-motivation-recompute)与[图 4](#fig-motivation-recovery-exposure)使用相同的固定 Qwen2.5-7B-Instruct-1M 权重、SGLang 0.5.10rc0、PyTorch 2.9.1/CUDA 12.8，在两张 A100 PCIe 40 GB GPU 上以 TP2、BF16 权重／KV 和 batch 为 1 执行。两组实验分别申请同型号 GPU，使用由模型 tokenizer 编码的同一固定重复合成文本。Trace 提供工作流位置与长度代理，不提供基准测试 prompt。我们的 adapter 使用固定 MInference vertical/slash 配置与 DCA 位置处理，在超过 32,768 tokens 后采用稀疏注意力，包括最后一个 token 的 EXTEND。SM80 稀疏 kernel 构建和模型／注意力源码均附哈希存档。GQA 的 K/V 共享；前缀执行每组最多包含两个 Query head，单 Query 则将全部 head 一起批处理。这些是插桩 worker 测量，而非未修改服务前端的吞吐测量。
+ 
+ **统一终点。**
+ 
+@@ -890,8 +902,8 @@
+ 
+ **计时样本。**
+ 
+-[图 2(c)](#fig-motivation-recompute)在一次资源分配中测量 8,192、65,536、262,144 和 1,010,000 tokens。HBM／DRAM 每个长度预热一次、计时三次；完整 Prefill 与共享存储各计时一次。计时前执行短前向与算子检查；64K 还执行完整的原始全 head 稀疏参考。256K/1.01M 没有额外的完整 Prefill 预热，也没有存储读取预热。因此，这些完整 Prefill／存储数据点描述单次运行，而非稳定延迟分布。[图 3](#fig-motivation-recovery-exposure)使用两次资源分配，在 $C=100{,}865$、$105{,}921$、$108{,}865$ 和 $113{,}665$ 处测量，每个长度完整预热一次并进行三次完整 Prefill 计时。首次分配完成了三个长度；最后一个长度在提前终止信号后恢复测量。其不完整计时保留在实验材料中，但整组排除。图中报告中位数与 min–max。重复是同一输入的计时样本，不是独立工作流或置信区间。原始计时与全部样本都保留在实验材料中。
++[图 3(c)](#fig-motivation-recompute)在一次资源分配中测量 8,192、65,536、262,144 和 1,010,000 tokens。HBM／DRAM 每个长度预热一次、计时三次；完整 Prefill 与共享存储各计时一次。计时前执行短前向与算子检查；64K 还执行完整的原始全 head 稀疏参考。256K/1.01M 没有额外的完整 Prefill 预热，也没有存储读取预热。因此，这些完整 Prefill／存储数据点描述单次运行，而非稳定延迟分布。[图 4](#fig-motivation-recovery-exposure)使用两次资源分配，在 $C=100{,}865$、$105{,}921$、$108{,}865$ 和 $113{,}665$ 处测量，每个长度完整预热一次并进行三次完整 Prefill 计时。首次分配完成了三个长度；最后一个长度在提前终止信号后恢复测量。其不完整计时保留在实验材料中，但整组排除。图中报告中位数与 min–max。重复是同一输入的计时样本，不是独立工作流或置信区间。原始计时与全部样本都保留在实验材料中。
+ 
+ **校验与工作流映射。**
+ 
+-在重建／复用路径之间检查完整历史哈希、最终 hidden state、所有层的新 KV 和贪心输出。重复完整 Prefill 额外检查输出一致性，CUDA 事件时间线检查串行复制。这些检查验证所比较稀疏状态执行的一致性，不验证其与 dense attention 等价或长上下文任务质量。对于[图 3](#fig-motivation-recovery-exposure)，四个历史长度是活跃请求 trace hash-block 数乘以 64。它们是大小代理，不是原模型准确 token 数或故障时观测到的 KV 前沿。该示例按四个并行分支和约 100 s 的差值选取；它不是该工作流的最大差值组。每个反事实分别在 fork 后 29.5 s，将一段实测完整 Prefill 时长作为额外分支暂停插入。全分支汇合假设、其他执行与队列保持固定。因此，只有重建成本是实测；图中的 WCT 增量是条件计算，而非 Claude Code 工作流中实际观测的故障恢复。
++在重建／复用路径之间检查完整历史哈希、最终 hidden state、所有层的新 KV 和贪心输出。重复完整 Prefill 额外检查输出一致性，CUDA 事件时间线检查串行复制。这些检查验证所比较稀疏状态执行的一致性，不验证其与 dense attention 等价或长上下文任务质量。对于[图 4](#fig-motivation-recovery-exposure)，四个历史长度是活跃请求 trace hash-block 数乘以 64。它们是大小代理，不是原模型准确 token 数或故障时观测到的 KV 前沿。该示例按四个并行分支和约 100 s 的差值选取；它不是该工作流的最大差值组。每个反事实分别在 fork 后 29.5 s，将一段实测完整 Prefill 时长作为额外分支暂停插入。全分支汇合假设、其他执行与队列保持固定。因此，只有重建成本是实测；图中的 WCT 增量是条件计算，而非 Claude Code 工作流中实际观测的故障恢复。

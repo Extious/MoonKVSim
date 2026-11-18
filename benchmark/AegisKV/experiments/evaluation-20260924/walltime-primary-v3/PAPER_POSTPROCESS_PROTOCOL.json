@@ -1,0 +1,48 @@
+{
+  "evidence": "modeled FCFS and fixed batch-one AIC profile; not physical execution or semantic-encoder validation",
+  "executor_amendment": {
+    "amended_workers": 16,
+    "boundary": "RUN_START/completion UTC, host wall_seconds and gzip container metadata can differ. They are not compared as simulator-overhead evidence.",
+    "host_wall_seconds_comparable": false,
+    "numerical_inputs_unchanged": true,
+    "original_workers": 2,
+    "path": "execution-amendment-16workers/AMENDMENT.json",
+    "sha256": "a17e1ab7ab42be2fb8523728bc7d05e2548cffaca56f257cce1cf21d4ed9edbe",
+    "stopped_state_sha256": "1ebf7eb6d7d3d7c583be9aab0aa720528b1890b3e9bcfaaefd6d1bc3f8122835"
+  },
+  "gates": [
+    "AUDIT PASS/180verified",
+    "endpoint PROVENANCE PASS/180summaries/150faultrows",
+    "new walltime model binding sidecar"
+  ],
+  "guard_ns": {
+    "Qwen3-32B": 995028646,
+    "Qwen3-8B": 910471105
+  },
+  "intervention": "joint final hashed-text walltime regressor + train12 role priors + train-only LOOWF guard",
+  "manifest_sha256": "0991836f07ee254b6378650fa1fcc910f7e0a500b3243b1966a5cf5cbb7c4afa",
+  "no_DES": true,
+  "no_paper_changes": true,
+  "operation": "reuse unchanged sealed v2 marker/style code and v3 original-identity endpoints",
+  "original_method": "causal current-prompt plus training-role-output service proxy",
+  "plan_sha256": "b355ad6f8e8b02dcbae1eed8195ff34c0c3afa00445855d0dae7119096f104d4",
+  "predictor_sha256": {
+    "models/Qwen3-32B.json": "60a7065746ce96bd95bbd58d71e8f706a5d85a5e05b429f1e393ac8a1cf68a3f",
+    "models/Qwen3-8B.json": "e6e2e9d3f96a75bd9df911f37c8ca751e54f41d421997eb4f74f550111e04368"
+  },
+  "priors_sha256": "774af0492f1ab67a37241e95c6b1c1c9e3263590e14310db742de58891a0c83a",
+  "protocol_seal_sha256": "ab60ac33ac63813d8f5e68dc82f2b75f73ae3bc0ec45d65e211a56f686680760",
+  "summaries": [
+    "six cells by five policies,target/cohort",
+    "sixrowAgent latency",
+    "AllDRAMbytes36pairs",
+    "Static/Aegis2232WFpairs",
+    "all extrema/adverse cases",
+    "all7440 signed workflow pairs across four policy contrasts",
+    "two logged Aegis .65 F1 fallback denominators/reasons, exact Slack reconstruction",
+    "v2-v3 endpoints/workflows/saved placement changes for all180 conditions",
+    "six healthy predictor cells"
+  ],
+  "unchanged": "original core/profile/workload arrivals/fault identities/L/K/hardware; no other numerical input change",
+  "visual_review": "render178x105mm,color/grayscale; metadata only until actual inspection"
+}

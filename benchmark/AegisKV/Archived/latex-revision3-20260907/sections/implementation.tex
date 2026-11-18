@@ -1,0 +1,68 @@
+\section{Implementation and Model Alignment}
+\label{sec:implementation}
+\subsection{Earlier prototype and simulation projection}
+The Mooncake prototype adds a native C++ Controller, Application/Router
+services and a vLLM connector. Request salts isolate physical KV across calls;
+the gate seals completed buffers, resolves tier outcomes and drains pending
+copies before cleanup. Recovery materializes local HBM before Store keys.
+Section~\ref{sec:physical} reports its physical validation.
+
+MoonKVSim uses one global nanosecond clock, per-worker schedulers, memory
+ledgers and shared fluid-rate resources. Forward completion makes KV readable;
+transfers reserve destinations and track source lifetime, service and commitment.
+Failed GPU memory returns empty after repair. The frozen
+\texttt{mooncake\_prompt\_v1} projection models prompt protection, request salt,
+rendezvous routing, shared ordinal gating, independent tiers, recovery copying
+and cleanup. It reserves separate recovery-primary memory on the bound target.
+
+Table~\ref{tab:alignment} identifies remaining differences. The frozen workload
+has exact prompt IDs and prescribed output counts, without generated KV tensors;
+therefore decode protection earns no simulated recovery credit. Coarser source
+allocation may overallocate a partial page but does not pad token sequences.
+
+\begin{table*}[t]
+\centering
+\caption{Alignment with the Mooncake reference and remaining model boundaries.
+Conformance of metadata does not calibrate device timing.}
+\label{tab:alignment}
+\begin{tabular}{@{}p{.21\textwidth}p{.37\textwidth}p{.37\textwidth}@{}}
+\toprule
+Aspect & Mooncake prototype & Evaluated projection \\
+\midrule
+Tier ownership & Source-owned independent HBM/DRAM & Same admission, commit and lifetime contract \\
+Chunk visibility & Completed forward buffers; shared ordinal & Same atomic visibility and ordinal barrier \\
+Recovery & Local copy locking; visibility lease & Explicit copy; source pinned until load completes \\
+AIMD interval & 5 s in the accepted physical pilot & 1 s in the frozen simulation \\
+Application signal & Causal GBDT plus calibrated residual CPM & Prescribed ideal durations; zero-Slack ablation \\
+Protected state & Prompt and sealed decode KV tensors & Exact prompt token intervals; decode replay only \\
+Allocation granularity & 16-token vLLM pages & 64-token source allocation units \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+The native HBM free path hides recovery keys and frees slots; the Controller
+does not consult Worker leases when selecting pressure victims. The local
+copy is locked, but eviction between activation and load may require fallback.
+The simulator excludes pinned victims throughout materialization, a stronger
+retention assumption. The differential checks do not validate this race.
+AegisController metadata is in-memory; integration with Store HA durability
+is outside the demonstrated prototype.
+
+\subsection{Verification and revision-3 boundary}
+The earlier harness compares 260 native policy cases and six ordinal-finalizer
+sequences. Overlapping regression suites pass 127 and 184 tests. Execution
+audits reconstruct workflow times and resource cleanup, with source/workload
+hashes. These checks do not establish concurrent data-plane equivalence.
+
+Three new Python modules provide a serial revision-3 pool owner, foreground
+budget and event adapter. They execute groups, shared references, staged
+commit, generation-safe free/read ACKs, TTL/deadline cancellation and resource
+permits. The 159 reference tests include 81 gain combinations checked against
+an independent objective and 41 memory-demand cases, plus sharing, copy failure,
+reclaim retry, stale state and burst sequences. Another 33 old-contract tests
+pass. These are metadata checks, not tensor movement or interference calibration.
+
+The new reference does not replace the frozen DES or native connector. Native
+integration needs allocator lending and reservation hooks, source leases, cancellation
+ACKs and shared group state. Single-group concurrency and eager closure-search
+cost remain unevaluated at production scale.

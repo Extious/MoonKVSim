@@ -1,0 +1,88 @@
+% Capacity execution and replica lifetime, part of section 3.6.
+\paragraph{Admit DRAM protection explicitly.}
+Each backing pool has a finite byte ledger charging committed objects,
+pending reservations, retiring buffers, and required metadata. Shared
+objects are charged once. Reserve the missing dependency closure before
+accepting a checkpoint; publish only completed coverage. Live checkpoint
+and reader references protect DRAM objects; zero-reference objects enter
+LRU reclamation, with physical release delayed until I/O leases drain.
+Newer valid manifests, request completion, or an explicit transition to
+recomputation release obsolete ownership. An old manifest remains retained
+until its replacement is committed or its recovery claim is withdrawn.
+If reservation or commit fails, keep the earlier valid frontier and replay
+its missing suffix, or use R from logged inputs. A Peer denial does not
+imply DRAM admission, and partial copies do not establish full D protection.
+DRAM exhaustion is an operational limit, not hidden unlimited backing.
+
+\paragraph{Protect ownership, not a permanent HBM address.}
+A request reference prevents \emph{other requests} from taking its Peer
+capacity, even when they have smaller slack. Normal admission uses free
+space or safely reclaimable zero-reference copies; otherwise the new
+Peer increment is denied. An inference request need not wait to obtain
+Peer protection. The owner can replace its own hot set or reduce its
+depth. Completion, including a handoff to a tool, drops that request's
+references, while other owners of shared blocks retain theirs.
+
+These ownership references differ from short-lived \emph{I/O leases}.
+A lease pins the physical buffer while a kernel, read, or copy uses it.
+An owner update removes only its own reference and cannot free a shared
+copy still protected by another owner. Adapter contraction has explicit
+system-level authority to demote even protected copies; it never overrides
+an outstanding I/O lease or deletes the logical KV state.
+
+\paragraph{Demote through a committed DRAM copy.}
+The Connector and directory expose four operations:
+reserve space, commit a versioned replica, acquire/release an I/O lease,
+and retire a location. A block ID includes model/weights/layout, request-prefix
+identity, layer, shard, and sealed token interval; a location generation
+prevents reuse of a stale address. A pending copy is never readable.
+A checkpoint frontier advances only when its required shards, layers,
+selector state, and token log are recoverable in the declared failure model.
+Independent Peer and DRAM transfers do not imply an atomic joint commit.
+
+Retiring a Peer location follows the same order for an owner update and
+an Adapter contraction:
+\begin{enumerate}
+  \item Reserve DRAM if needed, copy the immutable block, and commit
+    a complete matching replica outside the failed source's domain.
+    A valid existing DRAM replica avoids another writeback.
+  \item Atomically redirect the directory to DRAM and mark the old
+    Peer generation retiring. This transition closes new lease acquisition
+    on that address; a lookup racing the transition must retry.
+  \item Wait for all old-generation readers, writers, and DMA operations
+    to release their leases. Existing holders may finish; no fresh holder
+    can enter through a cached stale address.
+  \item Free the Peer buffer and then return its bytes to the allocator.
+\end{enumerate}
+Before the directory transition, an unsuccessful writeback leaves the
+surviving Peer location authoritative; afterward new readers resolve DRAM.
+If DRAM allocation, transfer, or commit fails, retain the Peer copy and
+report the unfulfilled shrink.
+Fault detection fences stale writers and retries; directory generations
+and metadata survive the source failure. These are required runtime
+interfaces, not claims of a verified implementation.
+
+\paragraph{Bound replacement and contraction.}
+For old and new hot sets, retain their intersection, retire departing
+owned blocks, and fetch only new arrivals. With no spare space, safe
+retirement precedes admission; overlapping copies require explicit
+temporary reservations. Thus changing $\{A,B,C,D\}$ to $\{C,D,E,F\}$
+can retain four blocks after migration, without pinning every historical
+hot set until request completion. Shared replicas and incomplete transfers
+remain separately charged until physically releasable.
+
+When occupancy exceeds a new $B_p$, stop new Peer reservations and reclaim
+zero-reference copies first. If insufficient, Adapter requests protected
+demotions in the Master's order: larger slack first, then deeper layer,
+lower recent selection count, and stable object ID. A shared object's
+priority uses the smallest slack of its remaining owners. This ordering
+chooses victims; it does not serialize independent migrations or retries.
+Publish the reduced coverage to the Master, and do not re-admit it beyond
+the new budget. The Master subsequently reassesses request-specific $L_r$.
+
+Contraction waits for bounded transfers and leases, not for the LLM
+request to finish. Actual usage may temporarily exceed the target;
+foreground admission can still wait for physical space if headroom is
+exhausted. The scheduler reserves progress for required writeback, and
+the controller reports pending bytes rather than claiming an instantaneous
+shrink. Insufficient backing capacity remains an explicit operational limit.

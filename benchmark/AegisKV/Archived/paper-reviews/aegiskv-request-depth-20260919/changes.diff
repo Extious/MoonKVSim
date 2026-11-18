@@ -1,0 +1,1042 @@
+--- before/benchmark/AegisKV/paper/sections/kv_placement.tex
++++ after/benchmark/AegisKV/paper/sections/kv_placement.tex
+@@ -1,23 +1,29 @@
+-\subsection{KV Master: Backup Decisions}
++\subsection{KV Master: Request-Specific Backup Decisions}
+ \label{sec:kv-placement}
+ \label{sec:kv-master}
+ 
+-KV Master (3) chooses backup timing, the recovery tier (recomputation,
+-DRAM, or Peer HBM), and historical blocks eligible for Peer residency.
+-It uses the Recovery Manager's fixed target assignment and the Adapter's
+-window settings for checkpoint interval, capacity, and common layer
+-depth (\S\ref{sec:kv-runtime}).
++KV Master (3) makes checkpoint decisions, choosing recovery tiers, each request's
++Peer depth $L_r$, and historical hot blocks. The Recovery Manager fixes
++the retry/Peer target at arrival; the target Adapter publishes only a
++window-level Peer capacity budget (\S\ref{sec:kv-runtime}).
++Different requests can use different depths within the same window.
+ 
+-\paragraph{Decision triggers.}
++\paragraph{Decision triggers and checkpoint interval.}
+ The Master establishes a policy at arrival, offers sealed state at
+ prefill completion, and reviews an active request after each additional
+-$Z$ generated tokens. The Adapter sets $Z$ each control window. Sealing
+-updates eligibility; it does not by itself trigger every backup.
+-Significant slack or DAG changes and window updates can refresh policy
+-earlier. Completion releases that request's Peer references, preserving
+-shared references; unchanged decisions produce no new transfer.
+-Hot-block statistics use the preceding 512 decoding steps, independently
+-of the checkpoint interval and wall-clock control window.
++$Z$ generated tokens. The block-aligned interval $Z$ is a fixed system
++configuration, not an adaptive output. Significant slack or DAG changes, revised budgets,
++and material changes in context or copy conditions can refresh policy
++earlier. Sealing updates block eligibility without triggering a depth
++decision for every token. Completion releases that request's Peer
++references while preserving shared references; unchanged decisions
++produce no new transfer. Hot-block statistics use the preceding 512
++decoding steps, independently of checkpoint and capacity-control windows.
++
++A trigger requests a decision, not a completed replica. The replay tail
++contains known tokens beyond the latest valid committed frontier;
++queued copies can make it longer than $Z$. Tier R need not checkpoint.
++The Master uses reported commit progress when estimating this tail.
+ 
+ \paragraph{Choose protection tiers.}
+ Let $T_{\mathrm{rc}}$ be historical-prefix recomputation cost,
+@@ -32,85 +38,147 @@
+ \end{aligned}
+ \label{eq:recovery-base}
+ \end{equation}
+-Costs are calibrated by model, context, tail length, hardware, and
+-representative concurrency; \S\ref{sec:kv-runtime} uses these recovery profiles.
++Costs are profiled jointly by model, committed context, replay tail,
++hardware, and representative concurrency.
+ Tier \emph{R} requires no backup when $\sigma_r\ge R_R$;
+ tier \emph{D} retains DRAM when $R_D\le\sigma_r<R_R$;
+ tier \emph{P} retains DRAM and requests Peer protection otherwise.
+ Tier changes use 20\% hysteresis around these nominal boundaries.
+-Peer is an additional fast copy, with actual residency reported by
+-the Adapter. A tier-P request with no Peer grant retains DRAM recovery.
+-Slack orders requests competing for Peer; it does not scale their
+-per-layer hot sets or impose a serial retry order.
++A tier-P request without a Peer grant retains DRAM recovery.
++Slack orders competing requests; it does not scale their hot-set
++fraction or impose a serial retry order.
+ 
+ \paragraph{Define and rank protection objects.}
+ A protection object is a \emph{(layer, block)} containing all KV heads;
+ the profiled selectors use 64-token blocks. Sealing makes a full block
+ eligible for copying; the commit frontier determines the prefix that
+-survives failure. Known uncommitted tokens, including sealed but
+-uncommitted blocks, are replayed without resampling.
++survives failure. Known uncommitted tokens are replayed without resampling.
+ 
+ The historical blocks needed by a length-$n$ replay form the union
+ $U_l(n)=\bigcup_{q=1}^{n}\bigcup_g S_{l,q,g}$, where $S_{l,q,g}$ is the
+ native selector output. Repeated reads count once. A fixed preload
+-fraction $h$ is configured for the chosen model and sparse-attention
+-method using replay profiles; it is not the selector's instantaneous
+-Top-$k$ fraction or a guaranteed hit rate. At time $\tau$, let $n_r(\tau)$
+-be request $r$'s sealed historical block count per layer. The Master uses
++fraction $h$ is configured for each model and sparse-attention method;
++it is not the selector's instantaneous Top-$k$ fraction or a guaranteed
++hit rate. With $n_r(\tau)$ sealed historical blocks per layer, the Master uses
+ \begin{equation}
+  K_r(\tau)=\lceil h n_r(\tau)\rceil
+  \label{eq:hot-block-count}
+ \end{equation}
+-slots in each layer, reserving mandatory sealed sink/window blocks
+-\emph{within} that quota; the configured quota must accommodate them.
+-Remaining slots follow actual selection counts, breaking ties by recency.
+-An optional block leaves the candidate set after two successive decoding
+-windows outside the top set. A replacement needs fresh admission if
+-the old replica still has a request reference; changing hotness alone
+-does not free its physical slot.
++slots in each layer, including mandatory sealed sink/window blocks.
++The configured quota must accommodate them. Remaining slots follow
++observed selection counts, breaking ties by recency. An optional block
++leaves the candidate set after two successive decoding-statistics windows
++outside the top set. A replacement needs fresh admission if the old
++replica still has a request reference.
+ 
+-The Adapter uses one $L$ for all requests in each control window. For
+-uniform layer layouts, a request's candidate Peer set therefore has
+-$LK_r(\tau)$ layer-block objects, plus required selector state.
+-Sealing changes the quota only when the rounded count changes; it does
+-not trigger a new layer-depth decision. Hot-block identities can change
+-without increasing the candidate quota. D and P retain these sets as
+-preload hints; P requests offer the leading $L$ sets for Peer admission.
+-Actual coverage can be partial, while previously referenced copies
+-remain charged until safe release.
++\paragraph{Select a depth for each request.}
++At a policy decision, the Master reviews $L_r$ using that request's
++committed history, generation progress, slack, and recovery profiles.
++Both transfer bytes and replay computation depend on context; hot-set
++misses can also vary with the replay tail. Candidate costs average over
++plausible future checkpoint phases and commit lag, using the same
++request-growth and fault-state samples across depths. This does not
++assume that a future failure occurs at the current tail or at $N=Z$.
++
++For each request in slack order, the Master compares a small configured
++set of depths within the model, including zero and its current depth. Each candidate
++previews incremental admission against the same target-state snapshot,
++accounting for shared copies, live references, in-flight reservations,
++and copy limits. Recovery estimates credit only expected committed
++coverage, including retained old copies. The score adds predicted
++foreground delay from the candidate's backup work and memory occupancy
++to recovery delay beyond the request's slack, weighted by source-failure
++probability from the configured risk model over the same policy horizon. It is a local decision
++heuristic under slack priority, not a global optimum or workflow-makespan sum.
++
++The minimum-score candidate wins, with smaller depths breaking ties.
++An existing depth changes only when its advantage exceeds a configured
++uncertainty margin. Missing applicable profiles retain an existing target;
++a new request starts with zero Peer depth and DRAM protection.
++Only the chosen plan updates the preview state before the next request.
++Real allocation rechecks availability atomically; it may admit fewer
++objects than the preview.
++
++For uniform layer layouts, a tier-P request offers the first $L_r$
++hot sets: $L_rK_r(\tau)$ logical layer-block objects plus required state.
++Tiers R/D have a zero target depth. The target is held between policy
++decisions, while the hot-block quota grows with sealed history.
++D/P keep per-layer hot sets as recovery-preload hints. Actual Peer
++coverage can be partial; lowering $L_r$ does not revoke references to
++old copies (\S\ref{sec:kv-runtime}).
+ 
+ \begin{figure}[t]
+   \raggedright
+   \refstepcounter{designalgorithm}\label{alg:placement}
+-  \noindent\textbf{Algorithm \thedesignalgorithm: KV backup policy}
++  \noindent\textbf{Algorithm \thedesignalgorithm: Per-request backup policy}
+   \par\smallskip
+-  \noindent Input: live requests, slack, profiles, counts, targets $p_r$.
+-  Output: DRAM set $D_s$, hot sets $H$, and ordered Peer lists $Q_p$.
++  \noindent Input: requests, slack, profiles, targets, budgets, copy state.
++  Output: DRAM set $D_s$, depths $\{L_r\}$, and Peer plans $\{Q_p\}$.
+   \par\smallskip
+   \begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
+     \toprule
+     1 & $D_s,H\gets\varnothing$; $Q_p\gets[\,]$ for each target $p$ \\
+-    2 & \textbf{for} $r$ in $(\sigma_r,\mathrm{ID}_r)$ order: \\
+-    3 & \quad$\tau_r\gets\mathrm{Tier}(r,R_R,R_D,\sigma_r)$ \\
+-    4 & \quad\textbf{if} $\tau_r=R$: \textbf{continue} \\
+-    5 & \quad$D_s\gets D_s\cup\mathrm{sealed}(r)\cup\mathrm{state}(r)$ \\
+-    6 & \quad$H_{r,l}\gets\mathrm{HotSet}(r,l,K_r)$ for each layer $l$ \\
+-    7 & \quad\textbf{if} $\tau_r=D$: \textbf{continue} \\
+-    8 & \quad Append $(r,\{H_{r,l}\},\mathrm{profile}(r))$ to $Q_{p_r}$ \\
+-    9 & \textbf{return} $D_s,H,\{Q_p\}$ \\
++    2 & Snapshot retained copies and reserved capacity as $S$ \\
++    3 & \textbf{for} $r$ in $(\sigma_r,\mathrm{ID}_r)$ order: \\
++    4 & \quad$\tau_r\gets\mathrm{Tier}(r,R_R,R_D,\sigma_r)$ \\
++    5 & \quad\textbf{if} $\tau_r=R$: $L_r\gets0$; \textbf{continue} \\
++    6 & \quad Add $\mathrm{sealed}(r)\cup\mathrm{state}(r)$ to $D_s$ \\
++    7 & \quad$H_{r,l}\gets\mathrm{HotSet}(r,l,K_r)$ for each layer \\
++    8 & \quad\textbf{if} $\tau_r=D$: $L_r\gets0$; \textbf{continue} \\
++    9 & \quad\textbf{for each} candidate depth $d$: \\
++    10 & \qquad$G_d\gets\mathrm{Preview}(S,r,H_{r,1:d})$ \\
++    11 & \qquad Score $G_d$; keep missing costs unknown \\
++    12 & \quad$L_r\gets\mathrm{StableBest}(r,\{G_d\})$ \\
++    13 & \quad Append $(r,L_r,H_{r,1:L_r},G_{L_r})$ to $Q_{p_r}$ \\
++    14 & \quad Update $S$ with the chosen plan only \\
++    15 & \textbf{return} $D_s,H,\{L_r\},\{Q_p\}$ \\
+     \bottomrule
+   \end{tabularx}
+-  \Description{The KV Master chooses a tier with hysteresis, requires
+-    DRAM for tiers D and P, and sends ordered per-layer hot sets to each
+-    preassigned target Adapter. Capacity and resident layer counts are
+-    decided by the Adapter.}
++  \Description{KV Master chooses recovery tiers, hot blocks, and a
++    separate Peer depth for each request. Depth previews share a common
++    snapshot within a request; only its selected plan advances the
++    snapshot. Target Adapters enforce capacity and report committed copies.}
+ \end{figure}
+ 
+-Algorithm~\ref{alg:placement} emits policy, not readable replicas.
+-It shows a full refresh; a token-interval event updates only the affected
+-request's desired policy and retains the others.
+-\textsc{Tier} applies hysteresis to an existing tier and uses the nominal
+-thresholds at arrival. Sorting costs $O(n\log n)$ for $n$ requests;
+-physical shared objects are deduplicated during allocation. Adapters
+-reconcile changed policy with committed copies and return their actual
+-residency, commit status, and loading estimates for the next policy refresh.
++Algorithm~\ref{alg:placement} shows a full refresh; a token-interval
++event updates only the affected request while retaining other policies
++and reservations. \textsc{Tier} applies hysteresis, and
++\textsc{StableBest} implements the switching margin and profile fallback.
++The state snapshot is virtual, not a physical reservation.
++Sorting costs $O(n\log n)$, followed by bounded candidate scans.
++Runtime allocation deduplicates shared objects and reconciles policy
++with committed copies, reporting actual residency and commit progress.
++
++\paragraph{Commit and recover by actual readiness.}
++Peer and fault-independent DRAM paths commit separately, after transfer
++completion and model/layout/shard validation. Low-priority copying is
++rate-limited (default 20\% of link capacity), with target HBM bandwidth
++also accounted for. Recovery reads committed objects, preloads hot
++blocks in layer order, and gives newly revealed misses priority over
++speculative copies. Selector state arrives before selection; each layer
++waits for all required inputs. Actual DMA granularity can limit copy
++preemption. Tier R rebuilds history. Placement changes neither selector
++outputs nor known replay tokens and adds no attention approximation;
++compatible weights, layout, and operators reconstruct the same logical
++KV state, without promising identical future stochastic samples across
++floating-point schedules.
++
++\begin{figure}[t]
++  \centering
++  \includegraphics[width=\columnwidth]{figures/design-single/design-layer-pipeline.pdf}
++  \caption{Modeled recovery pipelines: MiniCPM4-8B, 32 layers, 32K
++    history, 64-token known tail; $C=2.87$\,ms/layer (measured) and
++    $D=5.37$\,ms at an assumed 6.25\,GB/s. In (d), 147\,MiB of Peer
++    residency removes preload wait. Totals end at tail-KV reconstruction.
++    The homogeneous, preemptible-copy model excludes detection,
++    queuing, and interference.}
++  \label{fig:design-pipeline}
++  \Description{Four timelines compare token-block transfer, full-layer
++    pipelining, hot preloads with demand fetch, and Peer-resident hot sets.}
++\end{figure}
++
++Figure~\ref{fig:design-pipeline} illustrates the depth tradeoff at one
++fixed tail length: layer pipelining, hot preloads, and seven resident
++hot sets reduce exposed wait from 172 to 83, 44, and 20\,ms.
++This calibrated example does not validate request-specific depth selection
++or make seven layers appropriate for every request and checkpoint state.
+--- before/benchmark/AegisKV/paper/sections/kv_runtime.tex
++++ after/benchmark/AegisKV/paper/sections/kv_runtime.tex
+@@ -1,148 +1,51 @@
+-\subsection{Adapter: Windowed Protection Control}
++\subsection{Adapter: Windowed Peer Capacity Control}
+ \label{sec:kv-runtime}
+ \label{sec:capacity-allocation}
+ 
+-The Adapter (4) adjusts protection to failure risk and foreground
+-memory demand. At each control-window boundary, it publishes a checkpoint interval $Z$ in
+-generated tokens, a target Peer depth $L$, and a total Peer budget $B_p$
+-for each target DP. The Controller coordinates Adapter reports so all
+-requests of the same deployed model use the same $Z$ and $L$, including
+-new arrivals. These settings remain fixed within the window; physical
+-allocation still checks current free space. The KV Master makes request
+-and block decisions under these settings, while Connectors move bytes.
+-
+-\paragraph{Adjust checkpoint frequency to failure risk.}
+-Failure risk comes from a smoothed history of failures per unit of
+-device operating time in the relevant failure domain. A configured
+-prior is used when observations are insufficient; a fault-free control
+-window does not imply zero risk. Higher risk favors shorter checkpoint
+-intervals, balancing normal-operation overhead against lost work, as in
+-classical checkpointing~\cite{daly2006checkpoint}. Here, $Z$ advances by
+-one level in a configured, block-aligned list. The Adapter shortens $Z$
+-above an upper risk threshold only when copy backlog, commit lag, and
+-foreground interference stay within configured guards. Below a lower
+-threshold it lengthens $Z$; otherwise it retains the current value.
+-At either end of the allowed list, it stays at that bound. Thresholds,
+-copy guards, candidate depths, and switching margins are deployment settings.
+-Incremental asynchronous copying requires its own calibration, rather
+-than directly applying a blocking-checkpoint formula.
+-
+-$Z$ triggers a Master decision, not a completed replica. The Master
+-offers sealed state after prefill and revisits an active request after
+-each additional $Z$ generated tokens. Publishing a new interval does
+-not reset that request's progress counter. The actual replay tail is
+-the known token prefix beyond the last valid committed checkpoint;
+-copy queuing can make it longer than $Z$. Tier R need not checkpoint.
+-The Adapter therefore records commit lag as well as decision frequency.
++The Adapter (4) controls the total Peer HBM budget $B_p$ on each
++target DP. At a control-window boundary it publishes the next budget;
++that target stays fixed within the window while every allocation checks
++current physical space. KV Master owns backup decisions at the configured
++checkpoint interval, request tiers,
++and request-specific depths $L_r$. These depths can differ and change
++at policy events inside the same capacity window.
+ 
+ \paragraph{Reserve memory for foreground inference.}
+-For each DP, the next budget is the managed KV pool minus estimated
+-foreground KV demand and admission headroom, clamped between zero and
+-half of that pool. The pool excludes weights and fixed runtime state,
+-but includes existing Peer copies. Thus $B_p$ is a total target, not
+-newly available space. Rising foreground memory demand reduces this
+-target; sustained relief permits expansion. KV watermarks and
+-memory-related admission stalls inform demand, rather than GPU compute
+-utilization alone.
+-
+-\paragraph{Choose one depth for the next window.}
+-A shorter interval usually leaves less tail computation to overlap
+-DRAM loading, making additional Peer layers useful. A longer interval
+-can reach diminishing returns at a smaller depth. These are tendencies:
+-failures can occur anywhere between checkpoints, and larger $L$ may
+-leave fewer requests protected under the same budget.
+-
+-The Adapter compares a small configured set of depths, including zero
+-and the current $L$ (Algorithm~\ref{alg:adapter}). Its recovery table
+-covers checkpoint intervals, context lengths, copy bandwidth, replay
+-costs, and concurrency. Entries average over time-sampled checkpoint
+-phases from backup/replay profiles at each interval, including commit
+-lag. This assumes failure risk is independent of checkpoint phase,
+-rather than a failure at exactly $Z$ tokens. Recent workload statistics
+-select and weight the entries.
+-For a candidate depth, a preview of the Master's admission policy
+-accounts for shared objects, referenced copies, pending transfers, and
+-the next-window copy limit; it credits only expected committed coverage.
+-The score adds predicted foreground delay from memory displacement and
+-backup work to recovery delay not absorbed by request slack, weighted
+-by each source's failure probability in the next window. This sum of request delays is a
+-selection heuristic, not an additive estimate of workflow makespan.
+-The lowest score wins, with smaller depths breaking ties. A change
+-requires an improvement beyond the configured uncertainty margin,
+-compared with keeping the current depth under the new interval and budgets;
+-missing profiles retain the current depth. This avoids deriving a
+-separate $L$ for every request or assuming that higher risk always
+-permits a larger depth.
++The next budget is the managed KV pool minus estimated foreground
++KV demand and admission headroom, clamped between zero and half of
++the pool. The pool excludes weights and fixed runtime state, but includes
++existing Peer copies. Thus $B_p$ is a total target, not newly free space.
++KV watermarks and memory-related admission stalls inform demand;
++compute utilization alone does not imply insufficient KV capacity.
++Increased foreground demand reduces the Peer target; sustained relief
++permits expansion. The Adapter reports available, referenced, in-flight,
++and reclaimable bytes so the Master can assess request-specific plans.
+ 
+ \begin{figure}[t]
+   \raggedright
+   \refstepcounter{designalgorithm}\label{alg:adapter}
+-  \noindent\textbf{Algorithm \thedesignalgorithm: Windowed protection update}
++  \noindent\textbf{Algorithm \thedesignalgorithm: Windowed Peer budget update}
+   \par\smallskip
+-  \noindent Input: current settings, risk and load reports, recovery table.
+-  Output: next-window $Z$, common $L$, and budgets $B_p$.
++  \noindent Input: KV pool, foreground demand, headroom, copy state.
++  Output: next-window total Peer budget $B_p$ for each target.
+   \par\smallskip
+   \begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
+     \toprule
+-    1 & Snapshot live requests, references, and copy progress \\
+-    2 & Estimate failure risk from the longer-term history \\
+-    3 & \textbf{for each} target DP $p$: \\
+-    4 & \quad$B_p\gets$ KV pool $-$ foreground demand $-$ headroom \\
+-    5 & \quad Clamp $B_p$ to $[0,\ \text{half of KV pool}]$ \\
+-    6 & $Z_{\mathrm{next}}\gets Z$; $L_{\mathrm{next}}\gets L$ \\
+-    7 & \textbf{if} risk is high and copy/foreground guards allow: \\
+-    8 & \quad$Z_{\mathrm{next}}\gets$ next smaller allowed interval \\
+-    9 & \textbf{else if} risk is low: \\
+-    10 & \quad$Z_{\mathrm{next}}\gets$ next larger allowed interval \\
+-    11 & \textbf{if} profiles cover $Z_{\mathrm{next}}$ and current load: \\
+-    12 & \quad\textbf{for each} candidate depth, including $0$ and $L$: \\
+-    13 & \qquad Preview admissions and committed coverage \\
+-    14 & \qquad Score $\gets$ estimated foreground delay \\
+-    15 & \qquad Add risk-weighted recovery delay beyond slack \\
+-    16 & \quad Pick minimum score; break ties by smaller depth \\
+-    17 & \quad \textbf{if} materially better: $L_{\mathrm{next}}\gets$ chosen depth \\
+-    18 & Publish $Z_{\mathrm{next}},L_{\mathrm{next}},\{B_p\}$ for the next window \\
+-    19 & Pause excess admission; reclaim only safe copies \\
++    1 & \textbf{for each} target DP $p$ at the window boundary: \\
++    2 & \quad Snapshot pool, occupancy, references, and copies \\
++    3 & \quad Estimate next-window foreground KV demand \\
++    4 & \quad$B_p\gets$ pool $-$ demand $-$ admission headroom \\
++    5 & \quad Clamp $B_p$ to $[0,\ \text{half of pool}]$ \\
++    6 & \quad Publish $B_p$ and capacity state to KV Master \\
++    7 & \quad Pause new space reservations above the budget \\
++    8 & \quad Reclaim safe zero-reference copies as needed \\
++    9 & \quad Count bytes until physical release completes \\
+     \bottomrule
+   \end{tabularx}
+-  \Description{The Adapter reserves foreground memory, adjusts the
+-    checkpoint interval using failure risk and copy guards, evaluates
+-    common layer depths, and publishes one set of window settings.
+-    Reclamation preserves active references and committed recovery state.}
++  \Description{Each Adapter updates only its Peer capacity budget at
++    a window boundary, reserving space for foreground inference and
++    preserving live references during reclamation. KV Master selects
++    each request's layer depth separately.}
+ \end{figure}
+ 
+ \input{sections/capacity_allocation}
+-
+-\paragraph{Commit and recover by actual readiness.}
+-Peer and fault-independent DRAM paths commit separately, after transfer
+-completion and model/layout/shard validation. Low-priority copying is
+-rate-limited (default 20\% of link capacity), with target HBM bandwidth
+-also accounted for. Recovery reads committed objects, preloads hot
+-blocks in layer order, and gives newly revealed misses priority over
+-speculative copies. Selector state arrives before selection; each layer
+-waits for all required inputs. Actual DMA granularity can limit copy
+-preemption. Tier R rebuilds history. Placement changes neither selector
+-outputs nor known replay tokens and adds no attention approximation;
+-compatible weights, layout, and operators reconstruct the same logical
+-KV state, without promising identical future stochastic samples across
+-floating-point schedules.
+-
+-\begin{figure}[t]
+-  \centering
+-  \includegraphics[width=\columnwidth]{figures/design-single/design-layer-pipeline.pdf}
+-  \caption{Modeled recovery pipelines: MiniCPM4-8B, 32 layers, 32K
+-    history, 64-token known tail; $C=2.87$\,ms/layer (measured) and
+-    $D=5.37$\,ms at an assumed 6.25\,GB/s. In (d), 147\,MiB of Peer
+-    residency removes preload wait. Totals end at tail-KV reconstruction.
+-    The homogeneous, preemptible-copy model excludes detection,
+-    queuing, and interference.}
+-  \label{fig:design-pipeline}
+-  \Description{Four timelines compare token-block transfer, full-layer
+-    pipelining, hot preloads with demand fetch, and Peer-resident hot sets.}
+-\end{figure}
+-
+-Figure~\ref{fig:design-pipeline} illustrates the depth tradeoff at one
+-fixed tail length: layer pipelining, hot preloads, and seven resident
+-hot sets reduce exposed wait from 172 to 83, 44, and 20\,ms.
+-This calibrated example does not validate the adaptive controller or
+-make seven layers appropriate for every checkpoint interval.
+--- before/benchmark/AegisKV/paper/sections/capacity_allocation.tex
++++ after/benchmark/AegisKV/paper/sections/capacity_allocation.tex
+@@ -1,10 +1,11 @@
+ % Reference-aware execution of the window targets, part of section 3.6.
+ \paragraph{Admit and reclaim without evicting live references.}
+-The Master offers hot blocks from the first $L$ layers in slack order,
++The Master offers hot blocks from each request's first $L_r$ layers in slack order,
+ using stable request IDs to break ties. Existing copies can be shared;
+ new copies require both budget and physical space, reserved before
+ transfer. Under pressure, only zero-reference objects with no in-flight
+ reader or writer and valid DRAM backing enter the LRU eviction queue.
++These are runtime checks against the Master's ordered plan.
+ If free space and safe victims are insufficient, the Peer increment is
+ denied and the request retains its DRAM path. Normal inference does not
+ wait for a Peer grant, and priority does not revoke a live reference.
+@@ -19,9 +20,9 @@
+ 
+ When the budget shrinks, new allocations stop above the target and
+ safe zero-reference copies are reclaimed first. Referenced copies drain
+-as requests finish; reducing $L$ likewise does not revoke their pins.
++as requests finish; reducing a request's $L_r$ likewise does not revoke their pins.
+ Physical usage can therefore exceed a newly reduced target, and memory
+ is returned to foreground inference only after release completes.
+-Increasing $L$ queues additional candidates subject to the same checks.
++Increasing $L_r$ queues additional candidates subject to the same checks.
+ Copying, committed, and reclaiming bytes remain charged until physical
+ release. Window targets never imply instant copies or instant free space.
+--- before/benchmark/AegisKV/paper/sections/system_design.tex
++++ after/benchmark/AegisKV/paper/sections/system_design.tex
+@@ -4,9 +4,10 @@
+ 
+ AegisKV combines workflow delay tolerance with each request's KV
+ recovery demand. The Tracker estimates slack; the Recovery Manager binds
+-takeover destinations at arrival; the KV Master chooses backup tiers
+-and hot blocks; Adapters coordinate checkpoint intervals, a common layer
+-depth, and target-local Peer budgets at window boundaries. The following design
++takeover destinations at arrival; the KV Master chooses backup tiers,
++per-request layer depths, and hot blocks at backup-policy events.
++The checkpoint interval is configured, while Adapters update target-local
++Peer budgets at window boundaries. The following design
+ separates these decisions from the evidence that motivates them.
+ 
+ \input{sections/design_insights}
+--- before/benchmark/AegisKV/paper/sections/system_overview.tex
++++ after/benchmark/AegisKV/paper/sections/system_overview.tex
+@@ -5,8 +5,9 @@
+ inference engines. Applications report request/workflow IDs and DAG
+ updates. The Router dispatches by load and locality; the AegisKV
+ Controller owns slack, recovery assignments, and backup policy.
+-Adapters coordinate checkpoint intervals and a common layer depth,
+-control local Peer budgets, and invoke Connectors to move KV directly
++KV Master sets each request's depth and hot blocks at checkpoints
++or policy changes. Each Adapter manages its local Peer budget
++and invokes a Connector to copy KV directly
+ between engines and storage. Badges index the mechanisms below, not
+ execution order.
+ 
+@@ -17,23 +18,24 @@
+   \caption{AegisKV overview. Badges identify Tracker (1), Recovery
+     Manager (2), KV Master (3), and Adapter (4). Recovery targets are
+     assigned at arrival; backup policy flows to Adapters, which control
+-    Peer budgets and layer counts. Peer and DRAM paths commit independently.
++    Peer budgets; KV Master selects each request's layer depth.
++    Peer and DRAM paths commit independently.
+     Equivalent DPs hold local KV and smaller Peer regions; memory
+     proportions are schematic.}
+   \label{fig:system-overview}
+   \Description{Three horizontal tiers show applications, control, and inference.
+     A workflow DAG feeds a Tracker with per-request slack bars. The Recovery
+     Manager binds target DPs and forks concurrent retries. The KV Master
+-    selects protection tiers and hot-block candidates. Equivalent DP0 and
+-    DP1 engines each contain an Adapter controlling Peer budgets and layer counts,
++    selects protection tiers, request-specific depths, and hot-block candidates.
++    Equivalent DP0 and DP1 engines each contain an Adapter controlling Peer budgets,
+     a layer/block grid in Local KV, a smaller Peer KV region holding the other
+     DP's replicas, and a Connector. Adapters invoke Connectors; Peer transfers
+     and independent DRAM copy/restore paths bypass the control plane.}
+ \end{figure}
+ 
+-The Recovery Manager records a request's retry target and Peer DP rank
+-at arrival (\S\ref{sec:recovery-manager}). The KV Master refreshes
+-backup policy on request/KV/slack events and control windows
+-(\S\ref{sec:kv-master}); Adapters update checkpoint intervals, the shared
+-layer depth, and local budgets at window boundaries (\S\ref{sec:kv-runtime}). The Controller
++The Recovery Manager binds retry and Peer targets at arrival
++(\S\ref{sec:recovery-manager}). KV Master uses a fixed checkpoint
++interval and reviews each request's depth at policy events
++(\S\ref{sec:kv-master}). Adapters update budgets at window boundaries
++(\S\ref{sec:kv-runtime}). The Controller
+ retains directory and commit metadata outside the source's failure domain.
+--- before/benchmark/AegisKV/paper/sections/design_discussion.tex
++++ after/benchmark/AegisKV/paper/sections/design_discussion.tex
+@@ -7,7 +7,8 @@
+ use zero slack. Prefill failures require calibration for the lost chunk,
+ not a fixed 64-token decode tail. Agent-workload slack accuracy, profile
+ drift, simultaneous retries, and foreground interference remain to be
+-validated end to end. The failure-risk controller additionally requires
+-checkpoint-interval profiles and a sensitivity study of its thresholds,
+-copy guards, and reference-drain delays; the trace study and analytical
+-pipeline do not establish those properties.
++validated end to end. Request-specific depth selection requires joint
++context/tail profiles and tests of switching margins and competing admissions.
++The capacity controller requires demand-prediction and reference-drain studies.
++The configured checkpoint interval needs sensitivity analysis;
++the trace study and analytical pipeline do not establish those properties.
+--- before/benchmark/AegisKV/paper/sections/README.md
++++ after/benchmark/AegisKV/paper/sections/README.md
+@@ -23,9 +23,9 @@
+ | `system_overview.tex` | 三层职责、正常路径、预定接管位置、决策时间尺度 | — |
+ | `workflow_protection.tex` | §3.3：GBDT 剩余时间预测、agent 执行段、CPM Slack 传播与算法 1 | ① Tracker |
+ | `parallel_recovery.tex` | §3.4：请求到达时绑定 retry 目标和 Peer DP rank，故障后并发重路由 | ② Recovery Manager |
+-| `kv_placement.tex` | §3.5：备份决策触发、R/D/P 层级、每层候选热块和算法 2 | ③ KV Master |
+-| `kv_runtime.tex` | §3.6：逐窗口容量和层数控制、装载模型、副本提交及恢复执行 | ④ Adapter |
+-| `capacity_allocation.tex` | §3.6 内的目标 DP 预算与统一层数下的整请求足迹准入，由 `kv_runtime.tex` 引入 | ④ Adapter |
++| `kv_placement.tex` | §3.5：固定 Z、R/D/P 层级、逐请求 L_r、候选热块和算法 2 | ③ KV Master |
++| `kv_runtime.tex` | §3.6：逐窗口 Peer 总预算与前台容量保留 | ④ Adapter |
++| `capacity_allocation.tex` | §3.6 内的物理容量检查、增量准入与引用保护，由 `kv_runtime.tex` 引入 | ④ Adapter |
+ | `design_discussion.tex` | §3.6 末尾的简短适用边界段落 | — |
+ 
+ Connector 仅作为传输执行接口出现，不设独立小节或编号。
+@@ -69,13 +69,13 @@
+ 后续 Overview v11 的逐轮导出与论文嵌入检查位于 `output/pdf/aegiskv-overview-v11/`。
+ 当前单栏修订、图内页脚删除及旧 Figure 3(b) 查找记录在 `output/pdf/aegiskv-single-column-20260918/`。
+ 
+-## 当前组件职责（2026-09-18）
++## 当前组件职责（2026-09-19）
+ 
+ 最新正文顺序为 §3.4 Recovery Manager、§3.5 KV Master、§3.6 Adapter；旧记录中的 Planner/节号只描述历史版本。
+-Recovery Manager 在请求到达时固定 retry 目标及 Peer DP rank；KV Master 在到达、密封、Slack/DAG 变化、完成及控制窗口做备份策略决策；Adapter 采用 时间窗口，所有请求共用窗口内固定的 $L_t$，目标 DP 各自控制总预算 $B_{p,t}$。固定预取比例 $h$ 决定每请求的热块数量 $K_r=\lceil h n_r\rceil$；历史增长只触发块级增量更新，不为请求单独求层数。
+-算法 2 输出 DRAM 集合及按目标分组的 Peer 候选，Adapter 在预算内准入前 $L_t$ 层的完整请求足迹；不足时保留 DRAM 路径。共享参考画像只在窗口边界提供一个统一层数，不保证所有请求都达到各自的等待地板。
+-预算、层数公式和 Figure 5 的流水线解释移入 §3.6；图数据未改。Overview 保留原比例与双 DP 对称能力，同步名称、编号和接口标注。
+-本次是论文规格更新，旧实现和历史结果不构成新策略的端到端验证。编译、差异和最终页面检查见 `output/pdf/aegiskv-component-roles-20260918/`。
++Recovery Manager 在到达时固定 retry/Peer 目标；KV Master 在配置的固定 Z、prefill 完成及显著策略事件中决定各请求层级、L_r、热块与准入顺序。Adapter 仅在时间窗口边界更新目标 DP 的 Peer 总预算 B_p。固定 h 决定每层 K_r；历史增长在备份策略事件中更新该请求的目标，不要求逐 token 重算 L_r。
++算法 2 输出 DRAM、逐请求 L_r 和按目标排序的 Peer 计划；实际覆盖受增量准入、共享对象、在途预留和引用保护约束，不是整请求全放或全不放。算法 3 仅更新容量目标；预算或 L_r 收缩均不撤销活跃引用。
++逐请求层数选择及 Figure 5 流水线解释位于 §3.5，预算与安全回收位于 §3.6；图数据未改。Overview 保留原比例与双 DP 对称能力，同步名称、编号和接口标注。
++本次是论文规格更新，旧实现和历史结果不构成新策略的端到端验证。编译、差异和最终页面检查见 `output/pdf/aegiskv-request-depth-20260919/`。
+ 
+ ## System Design 篇幅压缩（2026-09-18）
+ 
+--- before/benchmark/AegisKV/paper/draft/system_design.md
++++ after/benchmark/AegisKV/paper/draft/system_design.md
+@@ -1,6 +1,6 @@
+ ## 3 AegisKV Design
+ 
+-AegisKV 结合工作流的延迟容忍度与单请求的 KV 恢复需求：Tracker 估计 Slack；Recovery Manager 在请求到达时绑定接管目标；KV Master 决定保护层级及候选热块；Adapter 在每个时间窗口边界更新 checkpoint 间隔、所有请求共用的驻留层数和各目标 Peer 预算，并提交副本、执行恢复。下面先说明设计依据，再按模块给出决策与执行过程。
++AegisKV 结合工作流的延迟容忍度与单请求的 KV 恢复需求：Tracker 估计 Slack；Recovery Manager 在请求到达时绑定接管目标；KV Master 在固定 checkpoint 间隔及策略事件中决定保护层级、逐请求目标层数和候选热块；Adapter 在每个时间窗口边界只更新各目标 DP 的 Peer 容量预算。下面先说明设计依据，再按模块给出决策与执行过程。
+ 
+ ### 3.1 Insights 与设计启示
+ 
+@@ -20,17 +20,17 @@
+ 
+ ### 3.2 System Overview
+ 
+-图 4 分为应用、控制面和推理引擎。应用上报 request/workflow 标识与 DAG 更新；Router 按负载及 KV 局部性分发；AegisKV Controller 维护 Slack、恢复目标和备份策略。DP0 与 DP1 各有 Adapter、Connector、Local KV 和较小的 Peer 区。KV Master 决定备份策略，各 Adapter 协调 checkpoint 间隔和统一层数、控制本地 Peer 预算，并调用 Connector 执行复制；KV 直接在引擎与存储间传输。黑底编号只索引下文模块，不表示执行顺序。
++图 4 分为应用、控制面和推理引擎。应用上报 request/workflow 标识与 DAG 更新；Router 按负载及 KV 局部性分发；AegisKV Controller 维护 Slack、恢复目标和备份策略。DP0 与 DP1 各有 Adapter、Connector、Local KV 和较小的 Peer 区。KV Master 决定备份策略及各请求的目标层数，各 Adapter 控制本地 Peer 预算，并调用 Connector 执行复制；KV 直接在引擎与存储间传输。黑底编号只索引下文模块，不表示执行顺序。
+ 
+ <figure class="paper-figure">
+ 
+ [<img src="../figures/system-overview-v11.drawio.png" width="480" alt="图 4 AegisKV 三层架构">](../figures/system-overview-v11.drawio.pdf)
+ 
+-**图 4：AegisKV Overview。** ① Tracker、② Recovery Manager、③ KV Master、④ Adapter 各标一次；到达时绑定恢复目标，备份策略下发至 Adapter，Peer 容量和层数逐窗口调整；两侧 DP 能力相同。Peer 与 DRAM 路径独立提交，内存比例和块布局为示意。图源：[Draw.io](../figures/system-overview-v11.drawio)。
++**图 4：AegisKV Overview。** ① Tracker、② Recovery Manager、③ KV Master、④ Adapter 各标一次；到达时绑定恢复目标，备份策略下发至 Adapter，Peer 容量逐窗口调整，层数由 KV Master 按请求分别决策；两侧 DP 能力相同。Peer 与 DRAM 路径独立提交，内存比例和块布局为示意。图源：[Draw.io](../figures/system-overview-v11.drawio)。
+ 
+ </figure>
+ 
+-Recovery Manager 在请求到达时记录 retry 目标及 Peer DP rank（§3.4）；KV Master 在请求/KV/Slack 事件及控制窗口更新备份策略（§3.5）；Adapter 在每个时间窗口边界更新 checkpoint 间隔、统一层数和目标容量（§3.6）。目录与提交元数据保存在源故障域之外。
++Recovery Manager 在请求到达时记录 retry 目标及 Peer DP rank（§3.4）；KV Master 在请求/KV/Slack 事件及控制窗口更新备份策略（§3.5）；Adapter 在每个时间窗口边界只更新目标 Peer 容量（§3.6）；checkpoint 间隔为固定系统配置，层数由 Master 逐请求更新。目录与提交元数据保存在源故障域之外。
+ 
+ ### 3.3 Workflow Tracker：GBDT 与 CPM ①
+ 
+@@ -71,100 +71,61 @@
+ 
+ 各请求独立进入恢复，仍受前台准入、连续批处理及共享计算/复制容量约束，并依据自身逐层就绪事件推进。放置优先级不产生请求级完成屏障，Manager 不因某请求 Slack 较小而等待它恢复完才提交下一个。
+ 
+-### 3.5 KV Master：备份时机与层级决策 ③
++### 3.5 KV Master：逐请求备份与层数决策 ③
+ 
+-KV Master 决定请求何时需要备份、采用 Recompute/DRAM/Peer 中哪种保护方式，以及哪些历史块是 Peer 候选。它使用 Recovery Manager 已绑定的目标；Adapter 提供窗口级 checkpoint 间隔、统一层数和容量约束（§3.6）。
++KV Master 在备份决策时选择请求的 Recompute/DRAM/Peer 保护层级、各自的目标层数 $L_r$ 和候选热块。Recovery Manager 已在请求到达时绑定 retry/Peer 目标；Adapter 只提供目标 DP 的窗口级容量预算（§3.6）。同一容量窗口内，不同请求的 $L_r$ 可以不同。
+ 
+-**何时决策。** 请求到达时先建立策略，prefill 完成后提供首批密封状态，之后每增加 $Z$ 个生成 token 复核该请求；$Z$ 由 Adapter 按 时间窗口发布。块密封只更新候选资格，不再独自触发每次备份。显著 Slack 或 DAG 变化及窗口更新可以提前复核策略。请求完成后释放其 Peer 引用，保留其他请求的共享引用；策略未变则不重复传输。热块统计采用此前 512 个解码步，与 token checkpoint 间隔和墙钟控制窗口分别计量。
++**何时决策。** 请求到达时建立策略，prefill 完成后提供首批密封状态，之后每增加 $Z$ 个生成 token 复核该请求。$Z$ 是与物理块大小对齐的固定系统配置，既不由 Adapter 调整，也不随故障率在线变化。显著 Slack/DAG 变化、预算更新，以及历史长度或复制条件的实质变化，可以提前触发策略复核；块密封只更新候选资格，不要求每生成一个 token 就重新求 $L_r$。请求结束后释放其 Peer 引用并保留其他请求的共享引用；策略不变则不重复传输。热块统计使用此前 512 个解码步，与 checkpoint 和容量控制窗口独立计量。
++
++checkpoint 触发一次决策，不代表复制已经提交。实际尾部 $N_r$ 是已知 token 前沿超出最新有效提交前沿的部分；异步排队可使它超过 $Z$。Master 使用实际提交进度估计尾部；Tier R 可以不做 checkpoint。
+ 
+ **选择保护层级。** 设 $T_{\mathrm{rc}}$ 为历史重算代价，$T_{\mathrm{rp}}$ 为已知尾部重放计算代价，$W_0$ 为无 Peer 时暴露的 DRAM 等待；$R_{\mathrm{floor}}$ 包含检测、重路由与准入。Master 使用
+ 
+ $$R_{\mathrm{base}}=R_{\mathrm{floor}}+T_{\mathrm{rp}},\qquad R_R=R_{\mathrm{base}}+T_{\mathrm{rc}},\qquad R_D=R_{\mathrm{base}}+W_0.$$
+ 
+-代价按模型、上下文、尾长、设备和代表性并发校准；相关恢复画像用于 §3.6 的窗口控制。若 $\sigma_r\ge R_R$，请求为 **Tier R**，计划无需备份，故障后重算；否则若 $\sigma_r\ge R_D$，为 **Tier D**，保留 DRAM；其余为 **Tier P**，保留 DRAM 并申请 Peer HBM 保护。层级切换在上述名义边界周围采用 20% 滞回。Peer 是额外的快速副本，实际驻留由 Adapter 回报；没有取得 Peer 配额的 Tier P 请求仍走 DRAM。Slack 决定竞争 Peer 的请求顺序，不缩放每层热集，也不规定串行 retry 顺序。
++代价按模型、已提交历史、尾长、设备与代表性并发联合建模。若 $\sigma_r\ge R_R$，请求为 **Tier R**，计划无需备份、故障后重算；否则若 $\sigma_r\ge R_D$，为 **Tier D**，保留 DRAM；其余为 **Tier P**，保留 DRAM 并申请 Peer 保护。层级切换在上述名义边界周围采用 20% 滞回。没有 Peer 准入的 Tier P 请求仍走 DRAM。Slack 决定竞争顺序，不缩放每层热集比例，也不规定串行 retry 顺序。
+ 
+-**定义与选择保护对象。** 对象为包含全部 KV heads 的 `(layer, block)`；当前画像使用 64-token 块。写满密封后才可复制，但故障后的可用前缀以提交前沿为准；未提交的密封块和活跃尾部使用故障前已知的 token ID 重放，不重新采样。
++**定义与选择保护对象。** 对象为包含全部 KV heads 的 (layer, block)；当前画像使用 64-token 块。密封后才可复制，但故障可用前缀以提交前沿为准。未提交的密封块与活跃尾部使用已知 token ID 重放，不重新采样。
+ 
+-第 $l$ 层长度 $n$ 重放需要的历史块并集为 $U_l(n)=\bigcup_{q=1}^{n}\bigcup_g S_{l,q,g}$，$S$ 为原生选择器输出，重复读取只计一块。根据模型和稀疏注意力方式的重放画像配置固定预取比例 $h$；它不随请求长度调整，也不等于原生选择器每次的 Top-k 比例或保证命中率。时刻 $\tau$，请求 $r$ 每层有 $n_r(\tau)$ 个已密封历史块，则每层候选热块数量为
++第 $l$ 层长度 $n$ 重放所需的历史块并集为 $U_l(n)=\bigcup_{q=1}^{n}\bigcup_g S_{l,q,g}$，$S$ 为原生选择器输出，重复读取只计一块。按模型及稀疏方式配置固定预取比例 $h$；它不等于每次选择的 Top-k 比例或保证命中率。时刻 $\tau$，请求 $r$ 每层有 $n_r(\tau)$ 个密封历史块，则每层热块候选数为
+ 
+ $$K_r(\tau)=\lceil h n_r(\tau)\rceil.$$
+ 
+-Master 先将强制密封起始/窗口块计入该名额，配置须能容纳这些强制块；再按 Adapter 上报的实际选择频次填满剩余槽，同频时最近优先。可选旧块连续两个解码统计窗口跌出热集后移出候选；若旧副本仍有请求引用，新候选必须另外申请容量，不能仅因热度变化就复用旧副本的物理槽。
++强制密封起始/窗口块计入该名额，配置须能容纳它们；剩余槽按实际选择频次填充，同频时最近优先。可选旧块连续两个解码统计窗口跌出热集后移出候选；仍被引用的旧副本不能仅因热度变化就复用物理槽，替换块需要新准入。
+ 
+-Adapter 在每个时间窗口内对所有请求使用相同的 $L$。同质层布局下，一个请求的 Peer 候选集合包含 $LK_r(\tau)$ 个逻辑 (layer, block) 对象及必需选择器状态。历史块密封且取整结果改变时才增加候选数量，无需重新求层数；热块身份可在候选数量不变时更新。D/P 两类都保留逐层热集作为恢复预取提示，P 类请求申请前 $L$ 层热集的 Peer 驻留。实际覆盖可以不完整，已被引用的旧副本仍需计账并等待安全释放。
++**为每个请求选择层数。** Master 在策略事件中根据该请求的已提交历史 $M_r$、生成进度、Slack 和恢复画像复核 $L_r$。传输字节与重放计算均随上下文变化，按需未命中也可随尾长变化。对于每个候选深度，使用相同的请求增长轨迹和可能故障状态，平均未来 checkpoint 阶段及提交滞后的代价；不把当前 $N_r$ 或 $N=Z$ 当成确定的未来故障状态。
+ 
+-**算法 2：KV 备份策略**
++请求按 Slack 排序逐个处理。对请求 $r$，比较包含零和当前深度的少量配置候选；所有候选从相同的目标状态快照预演增量准入，计入共享副本、已有引用、在途预留和复制限额。恢复估计只计预计能提交的覆盖，也计入仍然保留的旧副本。得分由候选的备份工作/内存占用引入的前台延迟，以及超出该请求 Slack 的恢复延迟组成，后者按配置风险模型中同一策略时间范围内的源故障概率加权。这是 Slack 优先级下的局部决策代理，不是全局最优，也不是可直接相加的 Workflow 完成时间。
+ 
+-```text
+-Input: live requests, Slack, profiles, counts, target ranks pr
+-Output: desired DRAM set Ds, hot sets H, and ordered Peer candidates Qp
++选择最低得分，同分优先较小深度；已有目标只有在改善超过配置的不确定性余量时才改变。缺少适用画像时保留已有目标，新请求从零 Peer 深度和 DRAM 保护开始。仅将胜出候选的计划加入虚拟快照，再评估下一请求；实际分配仍需原子复核空间，可能少于预演覆盖。
++
++同质层下，P 类请求的目标为前 $L_r$ 层热集，即 $L_rK_r(\tau)$ 个逻辑层块对象及必需状态；R/D 的目标深度为零。$L_r$ 在策略事件之间保持，候选块数随密封历史增长；D/P 都保留逐层热集用于恢复预取。实际 Peer 覆盖可以不完整，减小 $L_r$ 不撤销旧副本引用。
++
++**算法 2：逐请求 KV 备份策略**
++
++~~~text
++Input: requests, Slack, profiles, targets, budgets, copy state
++Output: desired DRAM set Ds, depths {Lr}, ordered Peer plans {Qp}
+ 1  Ds, H ← ∅; Qp ← [] for each target p
+-2  for r in (Slack, stable request ID) order:
+-3      τr ← Tier(r, RR, RD, σr)
+-4      if τr = R: continue
+-5      Ds ← Ds ∪ sealed(r) ∪ state(r)
+-6      Hr,l ← HotSet(r, l, Kr) for each layer l
+-7      if τr = D: continue
+-8      append (r, {Hr,l}, profile(r)) to Qpr
+-9  return Ds, H, {Qp}
+-```
++2  snapshot retained copies and reserved capacity as S
++3  for r in (Slack, stable request ID) order:
++4      τr ← Tier(r, RR, RD, σr)
++5      if τr = R: Lr ← 0; continue
++6      add sealed(r) and state(r) to Ds
++7      Hr,l ← HotSet(r, l, Kr) for each layer
++8      if τr = D: Lr ← 0; continue
++9      for each candidate depth d, including zero and current Lr:
++10         Gd ← Preview(S, r, Hr,1:d)
++11         score profiled costs; mark missing profiles unknown
++12     Lr ← StableBest(r, {Gd})
++13     append (r, Lr, Hr,1:Lr, GLr) to Qpr
++14     update S with the chosen plan only
++15 return Ds, H, {Lr}, {Qp}
++~~~
+ 
+-`Tier` 对已有层级应用滞回，到达时使用名义阈值。算法展示全量策略刷新；token 间隔事件只更新受影响请求的期望策略，其余保留。输出尚不代表可读副本；$n$ 个请求的排序为 $O(n\log n)$，共享物理对象在分配时去重。Adapter 对策略变化和已提交副本执行差量更新，并回报实际驻留、提交状态及下次策略刷新所需的装载估计。
++算法展示全量刷新；token 间隔事件只更新受影响请求，保留其他策略和预留。Tier 对已有层级应用滞回；StableBest 实现切换余量和画像不足时的回退。虚拟快照不等于真实空间预留。排序为 $O(n\log n)$，随后进行有限候选扫描；物理分配去重共享对象，按策略执行差量复制并反馈实际驻留和提交进度。
+ 
+-### 3.6 Adapter：逐窗口保护控制 ④
+-
+-Adapter 根据故障风险和正常推理的内存需求调整保护强度。在每个**时间窗口边界**发布下一窗口的三个参数：以生成 token 数计量的 checkpoint 触发间隔 $Z$、所有请求共用的 Peer 目标层数 $L$，以及各目标 DP 的 Peer 总容量 $B_p$。Controller 汇总各 Adapter 的状态，为同一部署模型发布共同的 $Z$ 和 $L$，窗口内不变，新到请求也使用当前值。实际分配仍需检查即时空闲空间。KV Master 在这些参数下决定请求的保护层级、候选块和准入顺序，Connector 执行传输。
+-
+-**根据故障风险调整 checkpoint 频率。** Adapter 使用相关故障域中单位设备运行时间内的故障记录，得到较长统计周期上的平滑风险估计；观测不足时使用配置先验，不把最近一个时间窗口无故障等同于风险为零。风险升高时，更频繁的 checkpoint 可以减少故障后的丢失进度，但也增加正常备份开销。这一方向与经典 checkpoint 权衡一致（[Daly, 2006](https://doi.org/10.1016/j.future.2004.11.016)），具体间隔仍需按异步增量 KV 备份校准，不能直接套用阻塞式 checkpoint 的公式。
+-
+-$Z$ 从配置的、与物理块大小对齐的离散档位中选择。风险高于上阈值，且复制积压、提交滞后及前台干扰均在允许范围内时，缩短一档；风险低于下阈值时，放宽一档；其余情况保持不变，并遵守最小、最大间隔。这样既响应风险变化，也避免拥塞时不断增加尚未完成的备份工作。
+-
+-$Z$ 触发的是 KV Master 的一次决策，不代表副本已经完成。Master 在 prefill 完成后提供首批密封状态，之后每增加 $Z$ 个生成 token 重新决策。窗口发布新 $Z$ 时不清零请求已有的进度计数。故障时真正需要重放的尾部，是已知 token 前缀超出最新有效提交前沿的部分；异步排队可以使其超过 $Z$，Tier R 则可以不做 checkpoint。因此，Adapter 同时观察决策频率和实际提交滞后。
+-
+-**先为正常推理保留容量。** 每个目标 DP 从可管理 KV 池中扣除下一窗口的前台 KV 需求估计及准入余量，将剩余量作为 Peer 预算，最少为零、最多为整个 KV 池的一半。这里的 KV 池已扣除模型权重和固定运行时开销，但包含现有 Peer 副本；$B_p$ 是总占用目标，不是新增空闲量。正常请求需要更多 KV 空间时缩减预算，压力持续下降时允许恢复。需求估计使用 KV 水位和由内存不足造成的准入等待，不能仅凭 GPU 计算利用率升高就缩减 Peer。
+-
+-**结合新间隔选择统一层数。** 较小的 $Z$ 通常留下较短的重放尾部，可用于隐藏 DRAM 装载的计算较少，因此更多 Peer 层可能产生收益；较大的 $Z$ 则可能在较小 $L$ 处达到收益平台。但故障可能发生在 checkpoint 周期中的任意位置，而且相同预算下，增加每个请求的层数可能减少能够保护的请求数量。因此，Adapter 不将“风险升高”机械地转换成“增加一层”，而是按算法 3 比较少量候选层数。
+-
+-恢复画像表按 checkpoint 间隔、历史长度、复制带宽、重放代价和并发情况组织，通过各间隔下的备份与恢复重放校准。表项覆盖按时间采样的 checkpoint 阶段及实际提交滞后，而不是假设故障总在第 $Z$ 个 token 发生；按阶段采样使用故障风险与 checkpoint 阶段近似独立的假设。在线用近期负载统计匹配并加权这些表项。
+-
+-对每个候选 $L$，Adapter 在当前状态快照上预演 KV Master 的准入，计入共享对象、已有引用、在途复制和下一窗口的复制限额，只按预计能够提交的副本计算恢复收益。候选得分由两部分组成：内存挤占与备份工作引入的前台请求延迟，以及超出请求 Slack 的恢复延迟，后者按请求源在下一窗口内的故障概率加权，两者使用相同的窗口范围。选择得分最低的层数，同分时优先较小值；与新间隔、新预算下保留当前层数相比，只有改善超过配置的不确定性余量才切换，缺少适用画像时保持当前层数。该得分是请求延迟的决策代理，不能把它解释为可直接相加的 Workflow 完成时间损失。
+-
+-**算法 3：逐窗口更新保护参数**
+-
+-$Z$ 的档位边界、风险上下阈值、干扰上限、候选层数及切换余量均为部署配置。算法不需要知道下一次故障的时刻，也不为各请求分别求层数。
+-
+-```text
+-Input: current settings, risk/load reports, recovery profiles
+-Output: next-window checkpoint interval Z, common depth L, budgets Bp
+-
+-1  snapshot live requests, references, and copy progress
+-2  estimate failure risk from the longer-term history
+-3  for each target DP p:
+-4      Bp ← KV pool − foreground KV demand − admission headroom
+-5      clamp Bp between zero and half of the KV pool
+-6  next_Z ← Z; next_L ← L
+-7  if risk is high and copy/foreground guards allow:
+-8      next_Z ← next smaller allowed checkpoint interval
+-9  else if risk is low:
+-10     next_Z ← next larger allowed checkpoint interval
+-11 if profiles cover next_Z and current load:
+-12     for each candidate depth, including zero and current L:
+-13         preview admissions and expected committed coverage
+-14         score ← estimated foreground delay
+-15         add risk-weighted recovery delay beyond Slack
+-16     choose minimum score; break ties by smaller depth
+-17     if materially better: next_L ← chosen depth
+-18 publish next_Z, next_L, and Bp for the next window
+-19 pause excess admission; reclaim only safe copies
+-```
+-
+-**按引用状态准入和回收。** KV Master 按 Slack 排序提出前 $L$ 层的热块候选，同 Slack 时使用稳定请求 ID。已有副本可以共享；新增副本必须同时满足预算和实际空间限制，在复制前预留容量。有压力时，只有引用数为零、没有在途读写且已有有效 DRAM 后备的对象可以进入 LRU 淘汰队列。空闲空间与安全可淘汰对象仍不足时，拒绝这部分 Peer 增量，保留请求的 DRAM 路径；正常推理不等待 Peer 准入，高优先级也不能撤销其他活跃请求的引用。
+-
+-成功取得的 Peer 副本保留请求引用，直到本次 LLM 请求结束，包括返回外部 tool 调用的情况。请求结束后递减引用；共享对象要等所有引用释放才具备回收资格，引用归零不等于立即删除。热集增长或身份变化时，新增对象重新申请准入，已获准对象仍受保护。因此，每层候选数量是保护目标，既不保证当前热集完整驻留，也不是保留旧副本后的实际占用上限。
+-
+-预算下调后，超过目标时暂停新的空间分配，先释放安全的零引用副本，其余随请求结束逐步回收；减小 $L$ 同样不撤销已有引用。实际占用可能暂时高于新目标，只有物理释放完成后，内存才真正归还正常推理。增大 $L$ 只增加候选范围，新副本仍受准入检查。复制中、已提交和回收中的字节在释放前持续计账，不能把参数发布当作复制或回收已经完成。
+-
+-**按实际就绪状态提交和恢复。** Peer 与故障域外 DRAM 路径独立提交，传输完成并验证模型、布局和分片后才发布可读副本。低优先级复制流限速，默认不超过链路容量的 20%，同时核算目标 HBM 带宽。恢复只使用已提交对象：按层预取热块，新揭示的缺失块优先于推测性复制，选择器状态先于选择操作就绪，每层等待全部必需输入到齐。实际 DMA 粒度可能限制复制抢占，Tier R 重建历史。AegisKV 不改变选择器输出和已知重放 token；在兼容权重、布局与算子下恢复同一逻辑 KV，不引入新的注意力近似，但不保证不同浮点调度下后续随机采样逐 token 一致。
++**按实际就绪状态提交和恢复。** Peer 与故障域外 DRAM 独立提交，在传输完成并验证模型、布局和分片后发布可读副本。低优先级复制流默认限制在链路容量的 20%，同时核算目标 HBM 带宽。恢复只读已提交对象：逐层预取热块，新揭示的缺失块优先于推测性复制，选择器状态先于选择操作就绪；每层等待全部必需输入到齐。实际 DMA 粒度可能限制复制抢占，Tier R 重建历史。放置不改变选择器输出或已知重放 token；兼容权重、布局与算子恢复同一逻辑 KV，不引入新的注意力近似，但不保证不同浮点调度下后续随机采样逐 token 一致。
+ 
+ <figure class="paper-figure">
+ 
+@@ -174,9 +135,37 @@
+ 
+ </figure>
+ 
+-图 5 在固定尾长下说明层数的作用：逐层流水线、热集预取和前七层热集驻留依次将暴露等待从 172 ms 降至 83、44 和 20 ms。这是一个校准画像，既不能验证自适应控制器，也不意味着不同 checkpoint 间隔都应选择七层。
++图 5 在固定尾长下说明层数的作用：逐层流水线、热集预取和前七层热集驻留依次将暴露等待从 172 ms 降至 83、44 和 20 ms。这是一个校准画像，不能验证逐请求深度选择，也不能推出所有请求都应保护七层。
+ 
+-**适用边界与验证。** 接入稀疏模型要求可观察索引、可恢复选择器状态及所有必需注意力分支，token 索引需映射到物理复制块。预测差时退化为逐层完整装载；稠密注意力使用完整历史集合（$h=1$），独立请求取零 Slack。Prefill 故障需按丢失 chunk 校准，不能套用固定 64-token 尾部。Agent 负载的 Slack 精度、画像漂移、同时 retry 与前台干扰仍需端到端验证，故障风险控制器还需校准不同 checkpoint 间隔的画像，并验证阈值、复制约束及引用释放滞后的影响；轨迹分析和流水线模型不能替代这些证据。
++### 3.6 Adapter：逐窗口 Peer 容量控制 ④
++
++Adapter 的自适应输出只有每个目标 DP 的 Peer HBM 总预算 $B_p$。它在**时间窗口边界**发布下一窗口预算，窗口内目标不变，每次实际分配仍检查即时空间。KV Master 负责固定 $Z$ 下的备份决策、请求层级和各自的 $L_r$；同一容量窗口内，不同请求的层数可以不同，也可在策略事件中更新。
++
++**先为正常推理保留容量。** 从可管理 KV 池中扣除下一窗口的前台 KV 需求估计及准入余量，将剩余量作为 Peer 预算，最少为零、最多为 KV 池的一半。池已扣除模型权重和固定运行时开销，但包含现有 Peer 副本；$B_p$ 是总占用目标，不是新增空闲量。需求根据 KV 水位与内存不足造成的准入等待估计，不仅依赖 GPU 计算利用率。前台需求增加时缩减 Peer 目标，压力持续下降时允许扩张。Adapter 上报实际空闲、引用中、复制中及可回收字节，供 Master 评估各请求计划。
++
++**算法 3：逐窗口更新 Peer 预算**
++
++~~~text
++Input: KV pool, foreground demand, headroom, copy state
++Output: next-window total Peer budget Bp for each target
++1  for each target DP p at the window boundary:
++2      snapshot pool, occupancy, references, and copies
++3      estimate next-window foreground KV demand
++4      Bp ← pool − demand − admission headroom
++5      clamp Bp between zero and half of the pool
++6      publish Bp and capacity state to KV Master
++7      pause new space reservations above the budget
++8      reclaim safe zero-reference copies as needed
++9      count bytes until physical release completes
++~~~
++
++**按引用状态准入和回收。** Master 按 Slack 顺序提出各请求前 $L_r$ 层热块，同 Slack 时使用稳定 ID。已有副本可以共享；新增对象在复制前必须取得预算和真实空间预留。压力下只有引用为零、无在途读写、已有有效 DRAM 后备的对象进入 LRU 淘汰队列。空闲与安全可回收空间仍不足时，拒绝 Peer 增量，保留 DRAM 路径；正常推理不等待 Peer，高优先级不能撤销活跃引用。
++
++成功取得的副本保留请求引用，直到该次 LLM 请求结束，包括返回外部 tool 调用的情况。共享引用全部释放后才可回收，归零不等于立即删除。热集增长或替换需要新准入，旧副本仍计账，因此候选数不保证当前热集完整驻留，也不是保留旧副本后的占用上限。
++
++预算下调后，超过目标时暂停新空间预留并先释放安全副本，其余随请求结束逐步回收；减小请求的 $L_r$ 同样不撤销已有引用。实际占用可暂时超过新目标，只有物理释放完成后才归还前台。增大 $L_r$ 增加候选范围，新对象仍需准入。复制中、已提交与回收中的字节在物理释放前持续计账。
++
++**范围与验证。** 稀疏接入需可观测索引、可恢复的选择器状态和全部必需注意力分支，并将 token 选择映射到物理块。热度不准时可退回完整层装载，稠密注意力取 $h=1$。独立请求取零 Slack，prefill 故障按丢失 chunk 校准。逐请求 $M_r,N_r$ 联合画像、深度切换、竞争准入、预算预测和引用释放滞后仍需验证；轨迹分析与单请求流水线不能替代这些证据。
+ 
+ ---
+ 
+@@ -196,3 +185,6 @@
+ 编辑记录（不进入论文，2026-09-18 故障风险驱动的 Adapter 修订）：§3.6 改为每 5 秒发布 checkpoint 间隔、统一层数和各目标预算的控制流程，新增算法 3，删除该节的闭式等待/字节/层数推导。故障风险来自较长统计周期，间隔调整受复制与前台开销约束；层数通过有限候选的画像比较选择。回收改为请求引用保护及零引用 LRU，预算下调逐步生效；§3.5 同步触发时机、候选与实际占用的区别。图 5 的原始文件和数字不变。本轮仅更新论文设计规格，尚未实现或验证新的控制器。
+ 
+ 编辑记录（不进入论文，2026-09-19）：按用户要求，算法 3 及当前中英文正文统一使用“时间窗口”，不再将窗口长度固定为 5 秒；历史修订记录仅用于追溯。
++
++
++编辑记录（2026-09-19 最新修订）：用户将层数改为逐请求调整，Adapter 仅调 Peer HBM 容量，并明确 Z 固定为系统配置。§3.5 和算法 2 由 KV Master 选择各自 L_r；§3.6 和算法 3 仅发布窗口级 B_p。撤回动态 Z 与统一 L 的控制职责；旧编辑记录保留历史含义。Figure 5 的单请求流水线移回 §3.5，数据不变。引用保护、零引用回收和 DRAM 回退继续适用。
+--- before/benchmark/AegisKV/paper/draft/implementation.md
++++ after/benchmark/AegisKV/paper/draft/implementation.md
+@@ -1,3 +1,3 @@
+ ## 4 Implementation
+ 
+-实验平台采用 MoonKVSim（以 Mooncake 为原型、以 KV 块为一等对象的离散事件模拟器），复用块级复制/提交、Peer 容量管理和故障注入接口。新版接入点是 §3.4 的到达时目标绑定与并发重路由、§3.5 的 KV 备份策略，以及 §3.6 的 Adapter 时间窗口 checkpoint 间隔/统一层数/容量控制和逐请求异步就绪条件；不向调度器添加请求级串行屏障。GPU 原型需提供选块索引观测、异步块复制与逐层就绪事件。MiniCPM4-8B 和 NOSA-1B 的选块轨迹、完整 prefill 与尾部重放测量已完成；新版故障风险控制、引用回收及并行恢复的端到端实现尚待验证，本节不把旧示意模型视为其实现证据。
++实验平台采用 MoonKVSim（以 Mooncake 为原型、以 KV 块为一等对象的离散事件模拟器），复用块级复制/提交、Peer 容量管理和故障注入接口。新版接入点是 §3.4 的到达时目标绑定与并发重路由、§3.5 的逐请求 KV 备份与层数选择，以及 §3.6 的 Adapter 时间窗口 Peer 容量控制和逐请求异步就绪条件；不向调度器添加请求级串行屏障。GPU 原型需提供选块索引观测、异步块复制与逐层就绪事件。MiniCPM4-8B 和 NOSA-1B 的选块轨迹、完整 prefill 与尾部重放测量已完成；checkpoint 间隔固定为系统配置；新版逐请求深度选择、容量控制、引用回收及并行恢复的端到端实现尚待验证，本节不把旧示意模型视为其实现证据。
+--- before/benchmark/AegisKV/paper/draft/evaluation.md
++++ after/benchmark/AegisKV/paper/draft/evaluation.md
+@@ -32,13 +32,14 @@
+ - **无稀疏热度优先级：** 保留 Slack 与层序，块按最近位置选择，恢复仍使用原模型的真实选择器与补取；不能通过改成稠密注意力替代这一消融。
+ - **无层序优先级：** 保留 Slack 与热度，改为 token 段优先，以分离层就绪顺序的作用。
+ - **无 Peer 层：** 保留 Slack 分层与在线装载器，只使用 DRAM/重算。
+-- **固定窗口参数：** 分别固定 checkpoint 间隔、统一层数或 Peer 预算，其余控制与引用回收规则不变，区分风险适应、层数选择和容量适应的作用。
++- **固定请求层数：** 将逐请求 L_r 替换为统一固定深度，其余准入、引用及恢复规则相同，检验历史/尾长异质性下的深度选择价值。
++- **固定 Peer 预算：** 禁用 Adapter 的容量调整，保留逐请求深度决策。所有策略使用相同的固定 Z；不同 Z 仅作为跨运行的配置敏感性。
+ 
+ 分别在两种带宽下报告 WCT 惩罚、Peer 驻留量与复制流量。预算充足或带宽很高时，差异可能很小；不要求每项机制在所有条件下均显著获益。
+ 
+ ### 5.6 敏感性
+ 
+-另需验证 时间窗口的故障风险控制：记录风险估计、$Z$、共同 $L$、各目标预算、实际提交尾长、前台 KV 水位、候选热块数、Peer 准入/拒绝、引用数及复制/释放时延。检查窗口内参数固定、发布 $Z$ 不重置生成进度、引用归零前不驱逐、预算下调不提前计入空闲空间，以及增长失败后的 DRAM 回退。扫描风险估计误差、风险上下阈值、checkpoint 档位、层数切换余量和复制积压，特别测试风险与前台压力同时升高、所有 Peer 副本均有引用、热集持续增长和长 tool 等待。控制效果另用较长故障序列评估，固定各策略的故障域、工作负载和随机种子；§5.1 的 80% 进度注入只用于配对恢复比较，不能作为故障率估计或动态风险控制的验证。扫描 Peer 预算 0–16 GiB、总 H2D 带宽 6.25–50 GB/s、同时 retry 数 1/2/4/8 及低 Slack 请求比例，保留共享总带宽约束。报告实际重叠率、前台开销、请求与 Workflow 延迟，不把算法 3 的请求得分当作 WCT 实测。跨模型分别校准 KV 大小、尾部重放及选块轨迹。
++验证两种更新时机：Adapter 的窗口级容量控制与 KV Master 的逐请求深度复核。记录固定配置 $Z$、各请求 $M_r,N_r,L_r$、目标与实际预算、前台 KV 水位、候选热块数、Peer 准入/拒绝、引用数及复制/释放时延。检查预算目标窗口内固定，而 $L_r$ 只在策略事件更新；引用归零前不驱逐，预算或 $L_r$ 下调不提前计入空闲空间，增长失败保留 DRAM。使用相同请求增长轨迹和故障位置比较策略，逐策略根据有效提交前沿得到 $M_r,N_r$，不能改变 Z 却固定 M。扫描跨运行的 Z 配置、历史长度分布、画像误差、层数切换余量和复制积压，覆盖所有 Peer 副本均有引用、热集增长与长 tool 等待。较长故障序列固定各策略故障域、负载与随机种子；不再声称验证动态 Z 控制。扫描 Peer 预算 0–16 GiB、总 H2D 带宽 6.25–50 GB/s、同时 retry 数 1/2/4/8 及低 Slack 请求比例，保留共享总带宽约束。报告实际重叠率、前台开销、请求与 Workflow 延迟，不把算法 2 的逐请求决策得分当作 WCT 实测。跨模型分别校准 KV 大小、尾部重放及选块轨迹。
+ 
+ ### 5.7 结论边界
+ 
+--- before/benchmark/AegisKV/paper/draft/introduction.md
++++ after/benchmark/AegisKV/paper/draft/introduction.md
+@@ -6,11 +6,10 @@
+ 
+ 我们的回答建立在两个观察上。第一，请求之间不平等。在 124 个真实多智能体工作流中，并行分支的执行时间差中位数为 141 s，91% 的 workflow 的时间差大于实测的 128K 前缀重算时间（§2.2）。持续时间差本身不等于 Slack；只有恢复代价不超过请求的 Slack 时，重算才不推迟汇合，而关键路径上的请求多等 1 s，WCT 就多 1 s。用调度理论中的 Slack 度量这种差别，可以把有限容量集中到真正会暴露给 WCT 的请求。第二，请求内部也不平等。原生稀疏注意力模型在每个 query 只读取少数历史 KV 块：在 NOSA-1B 和 MiniCPM4-8B 的真实选块轨迹上，最热的 20% `(layer, block)` 字节分别承担 90% 和 66% 的访问（§3.3）。这一集中性在 256/512 个后续 query 的窗口中都可检验，说明有限的 Peer HBM 不应均匀保护全部 KV。访问频次不直接等于恢复收益：§3.3 再区分历史热度、重算尾部所需的去重块并集和在线预取，以保证未预测到的必要块仍能到齐。
+ 
+-基于这两个观察，我们设计了 AegisKV。Recovery Manager 在请求到达时将恢复目标与 Peer HBM 所在的 DP rank 绑定为同一目标（§3.4）；KV Master 按 checkpoint 触发及请求/Slack 事件决定采用 Recompute、DRAM-only 或 Peer + DRAM，并选择每层候选热块（§3.5）。Adapter 在每个时间窗口边界根据故障风险、提交滞后和前台内存需求更新 checkpoint 间隔 $Z$、所有请求共用的目标层数 $L$ 及各目标 Peer 预算，窗口内参数固定。预取比例 $h$ 按模型及稀疏注意力方式配置，每层候选数 $K_r=\lceil h n_r\rceil$ 随密封历史增长。Peer 增量按 Slack 顺序准入，活跃请求的引用不被抢占；空间不足时保留 DRAM，完成后引用归零的副本可在压力下淘汰。故障后按实际已提交对象逐层预取，并在选择器揭示确切需求时补取缺失块（§3.6）。不同请求的 retry、H2D 与计算由引擎并发推进，不设置请求级完成屏障。热度来自稀疏 kernel 已有的块索引，AegisKV 不改变选择器，也不要求额外的专用恢复 GPU。
++基于这两个观察，我们设计了 AegisKV。Recovery Manager 在请求到达时将恢复目标与 Peer HBM 所在的 DP rank 绑定为同一目标（§3.4）；KV Master 按 checkpoint 触发及请求/Slack 事件决定采用 Recompute、DRAM-only 或 Peer + DRAM，并选择各请求的目标层数 $L_r$ 和每层候选热块（§3.5）。Checkpoint 间隔 $Z$ 是固定系统配置；Adapter 在每个时间窗口边界根据前台内存需求更新各目标 Peer 总预算，窗口内预算目标固定，$L_r$ 在各请求的策略事件中复核。预取比例 $h$ 按模型及稀疏注意力方式配置，每层候选数 $K_r=\lceil h n_r\rceil$ 随密封历史增长。Peer 增量按 Slack 顺序准入，活跃请求的引用不被抢占；空间不足时保留 DRAM，完成后引用归零的副本可在压力下淘汰。故障后按实际已提交对象逐层预取，并在选择器揭示确切需求时补取缺失块（§3.5）。不同请求的 retry、H2D 与计算由引擎并发推进，不设置请求级完成屏障。热度来自稀疏 kernel 已有的块索引，AegisKV 不改变选择器，也不要求额外的专用恢复 GPU。
+ 
+ 本文的贡献：
+ 
+ 1. 用真实轨迹和实机测量指出多智能体长上下文服务中的三个事实：重算代价随上下文超线性增长；工作流结构使同样的恢复延迟对 WCT 的影响相差数量级，且这一结构在真实轨迹中普遍存在；在真实原生稀疏注意力轨迹的 256/512-query 窗口中，请求内部 KV 的访问并不均匀，少量字节承担大量选块事件（§2、§3.3）。
+-2. 设计基于 Slack 的请求间保护优先级、基于层序与稀疏热度的请求内优先级，以及由 KV Master 做层级决策、Adapter 按 时间窗口控制 checkpoint 间隔、Peer 容量与统一层数的备份机制；通过"预取 + 按需补取"恢复装载器支持并行 retry，不改变模型的注意力选择（§3）。
++2. 设计基于 Slack 的请求间保护优先级、基于层序与稀疏热度的请求内优先级，以及由 KV Master 做层级和逐请求层数决策、Adapter 按时间窗口仅控制 Peer 容量的备份机制；通过"预取 + 按需补取"恢复装载器支持并行 retry，不改变模型的注意力选择（§3）。
+ 3. 设计以 WCT 为中心的评估方法：配对无故障/故障运行、按逻辑进度对齐的注入、故障位置扫描、恢复来源与关键路径时间分解、两级优先级消融及带宽/并发度敏感性（§5）。端到端结果待并行恢复实现验证；旧串行队列模型输出不再用于本文结论。
+-
+--- before/benchmark/AegisKV/paper/draft/conclusion.md
++++ after/benchmark/AegisKV/paper/draft/conclusion.md
+@@ -1,6 +1,6 @@
+ ## 7 Conclusion
+ 
+-AegisKV 面向多智能体长上下文服务，以 WCT 为保护目标：Slack 决定请求之间的保护优先级，Recovery Manager 在到达时绑定恢复目标与 Peer DP rank；KV Master 决定请求层级、候选热块和实际备份，Adapter 在每个时间窗口边界根据故障风险和前台内存需求更新 checkpoint 间隔、统一层数及 Peer 总预算。增量备份受引用保护和容量准入约束，预算下调后逐步回收零引用副本。故障后，各请求沿用引擎的并行 retry 与计算/传输重叠能力，以实际提交和逐层就绪状态推进。测量与单请求解析图支持设计动机；新版控制器、端到端收益及前台干扰仍需 §5 的实验验证。
++AegisKV 面向多智能体长上下文服务，以 WCT 为保护目标：Slack 决定请求之间的保护优先级，Recovery Manager 在到达时绑定恢复目标与 Peer DP rank；KV Master 在固定 checkpoint 间隔和策略事件中决定请求层级、各自的目标层数、候选热块和实际备份；Adapter 仅在每个时间窗口边界根据前台内存需求更新 Peer 总预算。增量备份受引用保护和容量准入约束，预算下调后逐步回收零引用副本。故障后，各请求沿用引擎的并行 retry 与计算/传输重叠能力，以实际提交和逐层就绪状态推进。测量与单请求解析图支持设计动机；新版控制器、端到端收益及前台干扰仍需 §5 的实验验证。
+ 
+ ---
+ 
+--- before/benchmark/AegisKV/paper/draft/README.md
++++ after/benchmark/AegisKV/paper/draft/README.md
+@@ -15,7 +15,7 @@
+ 当前图源是 `figures/system-overview-v10.drawio`；`main.tex` 已连接英文 Background/Motivation 与 System Design。
+ 较早日志中的“本轮不修改设计章”“终稿形态”描述历史轮次；当前仍保留端到端验证边界，不能视为投稿完备。
+ 
+-当前职责（2026-09-18 最新修订）：§3.4 Recovery Manager 在到达时绑定 retry/Peer 目标；§3.5 KV Master 在 Adapter 给定的 checkpoint 间隔下决定 R/D/P 层级、热块候选和准入顺序；§3.6 Adapter 在每个时间窗口边界按故障风险和前台内存需求更新统一 $Z$、统一 $L$ 及各目标 Peer 预算。固定比例 $h$ 决定每层候选数量，实际驻留受增量准入、提交状态和引用保护约束；预算收缩只回收安全的零引用副本。算法 3 展示新控制流程，尚无对应实现与端到端验证。旧日志中的 Planner、逐请求层数、闭式足迹和整请求抢占属于历史版本。当前图源为 system-overview-v11.drawio，图号 3–5，算法 1–3，组件编号为 ① Tracker、② Recovery Manager、③ KV Master、④ Adapter。
++当前职责（2026-09-19 最新修订）：§3.4 Recovery Manager 在到达时绑定 retry/Peer 目标；§3.5 KV Master 在固定系统 checkpoint 间隔 $Z$ 和策略事件中决定 R/D/P 层级、各请求的目标层数 $L_r$、热块候选和准入顺序；§3.6 Adapter 仅在时间窗口边界按前台内存需求更新各目标 Peer 预算。固定比例 $h$ 决定每层候选数量，实际驻留受增量准入、提交状态和引用保护约束；预算收缩只回收安全的零引用副本。算法 3 展示新控制流程，尚无对应实现与端到端验证。旧日志中的 Planner、统一层数、动态 checkpoint 间隔、闭式足迹和整请求抢占属于历史版本；本次逐请求层数采用引用保护和增量准入，不恢复旧整请求足迹算法。当前图源为 system-overview-v11.drawio，图号 3–5，算法 1–3，组件编号为 ① Tracker、② Recovery Manager、③ KV Master、④ Adapter。
+ 
+ | 顺序 | 文件 | 内容 |
+ |---|---|---|
+--- before/benchmark/AegisKV/paper/draft/appendix_draft_status.md
++++ after/benchmark/AegisKV/paper/draft/appendix_draft_status.md
+@@ -20,7 +20,7 @@
+ 
+ ## 附录 B：Reviewer 视角的自审与本版修正（不进入投稿）
+ 
+-本轮明确放置与恢复解耦：请求可并行 retry，H2D 与计算可重叠，不引入 EDD/SPT 或请求级完成屏障。当前 KV Master 负责 Slack 排序和层级/热块决策；Adapter 按 时间窗口根据故障风险与前台需求更新 checkpoint 间隔、共同层数和各目标预算。旧闭式足迹及整请求抢占已被引用保护、增量准入和零引用回收取代。算法 3 是论文设计规格，新增画像表、评分、阈值和回收行为尚无运行时实现及端到端验证，不声称全局最优。下列条目保留其他历史审查边界。
++本轮明确放置与恢复解耦：请求可并行 retry，H2D 与计算可重叠，不引入 EDD/SPT 或请求级完成屏障。当前 KV Master 负责 Slack 排序、层级、逐请求深度及热块决策；checkpoint 间隔固定为系统配置，Adapter 仅按时间窗口根据前台需求更新各目标 Peer 预算。旧闭式足迹及整请求抢占已被引用保护、增量准入和零引用回收取代。算法 3 是论文设计规格，逐请求深度画像与评分、容量预测及引用回收尚无运行时实现及端到端验证，不声称全局最优。下列条目保留其他历史审查边界。
+ 
+ | # | Reviewer 可能的质疑 | 上一版的不足 | 本版处理 |
+ |---|---|---|---|
+--- before/benchmark/AegisKV/paper/figures/system-overview-v11.drawio
++++ after/benchmark/AegisKV/paper/figures/system-overview-v11.drawio
+@@ -147,7 +147,7 @@
+         <mxCell id="tier-P" value="P" vertex="1" parent="planner" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;fontFamily=Helvetica;fontSize=29;fontColor=#243746;fillColor=#C9E0F0;strokeColor=#2375A5;strokeWidth=1.8;fontStyle=1;rounded=1;arcSize=8;">
+           <mxGeometry x="219" y="83" width="87" height="34" as="geometry" />
+         </mxCell>
+-        <mxCell id="plan-caption" value="Hot blocks" vertex="1" parent="planner" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;fontFamily=Helvetica;fontSize=29;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.8;">
++        <mxCell id="plan-caption" value="Depth / hot blocks" vertex="1" parent="planner" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;fontFamily=Helvetica;fontSize=29;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.8;">
+           <mxGeometry x="20" y="158" width="287" height="34" as="geometry" />
+         </mxCell>
+         <mxCell id="plan-cell-0-0" value="" vertex="1" parent="planner" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;fontFamily=Helvetica;fontSize=29;fontColor=#243746;fillColor=#BCC7D7;strokeColor=none;strokeWidth=1.8;">
+@@ -280,7 +280,7 @@
+         <mxCell id="adapter-title0" value="Adapter" vertex="1" parent="adapter0" style="html=0;whiteSpace=wrap;align=left;verticalAlign=middle;spacing=0;fontFamily=Helvetica;fontSize=31;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.8;fontStyle=1;">
+           <mxGeometry x="23" y="10" width="170" height="40" as="geometry" />
+         </mxCell>
+-        <mxCell id="adapter-detail0" value="Peer budget · layers" vertex="1" parent="adapter0" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;fontFamily=Helvetica;fontSize=29;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.8;">
++        <mxCell id="adapter-detail0" value="Peer budget" vertex="1" parent="adapter0" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;fontFamily=Helvetica;fontSize=29;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.8;">
+           <mxGeometry x="186" y="14" width="324" height="33" as="geometry" />
+         </mxCell>
+         <mxCell id="hbm0" value="" vertex="1" parent="dp0" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;fontFamily=Helvetica;fontSize=29;fontColor=#243746;fillColor=#FAFCFD;strokeColor=#8DA3B2;strokeWidth=1.8;container=1;collapsible=0;pointerEvents=0;">
+@@ -473,7 +473,7 @@
+         <mxCell id="adapter-title1" value="Adapter" vertex="1" parent="adapter1" style="html=0;whiteSpace=wrap;align=left;verticalAlign=middle;spacing=0;fontFamily=Helvetica;fontSize=31;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.8;fontStyle=1;">
+           <mxGeometry x="23" y="10" width="170" height="40" as="geometry" />
+         </mxCell>
+-        <mxCell id="adapter-detail1" value="Peer budget · layers" vertex="1" parent="adapter1" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;fontFamily=Helvetica;fontSize=29;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.8;">
++        <mxCell id="adapter-detail1" value="Peer budget" vertex="1" parent="adapter1" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;fontFamily=Helvetica;fontSize=29;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.8;">
+           <mxGeometry x="186" y="14" width="324" height="33" as="geometry" />
+         </mxCell>
+         <mxCell id="hbm1" value="" vertex="1" parent="dp1" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=0;fontFamily=Helvetica;fontSize=29;fontColor=#243746;fillColor=#FAFCFD;strokeColor=#8DA3B2;strokeWidth=1.8;container=1;collapsible=0;pointerEvents=0;">
+--- before/benchmark/AegisKV/paper/figures/system-overview-v11.json
++++ after/benchmark/AegisKV/paper/figures/system-overview-v11.json
+@@ -1,8 +1,8 @@
+ {
+   "evidence": "logical architecture and mechanism schematic; not data or measured capacity ratios",
+   "generator": "benchmark/AegisKV/experiments/scripts/paper/build_system_overview_v11.py",
+-  "generator_sha256": "84ca872675536af113f304996b0353af9668ba7fc9e56ad4e9b48628d74b4e9d",
+-  "source_sha256": "ed1174b91ee69d1263d7472b3314a3b08c9792726395b0305e5aa528d9da2113",
++  "generator_sha256": "a5a323ce103e6a3b49703dc2051e95ccad86ddae1036f3b8450aefca2aac43fc",
++  "source_sha256": "5eebcc79da6f252eec2537b2cabac65ecb32aea8f0ce6672f65ec8e33a11c85b",
+   "canvas": [
+     1400,
+     1260
+@@ -16,19 +16,19 @@
+   },
+   "responsibilities": {
+     "Recovery Manager": "Bind retry target and Peer DP rank at arrival; activate retries after failure",
+-    "KV Master": "Choose backup timing, R/D/P tier, per-layer hot-block candidates and priority",
+-    "Adapter": "Control Peer budget and resident layer prefix each window; commit copies and execute recovery"
++    "KV Master": "Decide backup policy at fixed checkpoint interval and policy events; choose per-request depth, R/D/P tier, hot blocks and priority",
++    "Adapter": "Update only the Peer capacity budget each window; report physical state and execute issued copy/recovery plans"
+   },
+   "memory_encoding": "Local cells show layer/block layout; blue outlines are a schematic Peer selection in early layers, gold is an active unsealed tail. Peer cells are copies from the opposite DP.",
+   "connector": "execution only; no independent protection or routing decisions",
+   "review": {
+-    "record": "output/pdf/aegiskv-kv-master-20260918/REVIEW.json",
+-    "native_png_viewed": true,
+-    "paper_pages_viewed": [
+-      4,
+-      5,
+-      6
+-    ],
+-    "known_limitation": "Existing single-column overview uses approximately 5 pt minimum text; this rename is not a font-compliance pass"
++    "status": "native PNG and PDF plus final paper pages inspected",
++    "record": "output/pdf/aegiskv-request-depth-20260919/REVIEW.json",
++    "placed_minimum_label_pt": 4.97206449508667,
++    "limitation": "Existing proportional single-column labels remain about 5 pt; no new 10 pt readability claim."
++  },
++  "exports_sha256": {
++    "png": "880ee2e9a3367399224665bc47ec93cd6328d7f11971032bbd0ae2013e561702",
++    "pdf": "453deb75288508e39293d70a1dd920e1a1f0b5010aef66d0571aa122af0a1f7b"
+   }
+ }
+--- before/benchmark/AegisKV/paper/figures/system-overview-v11.md
++++ after/benchmark/AegisKV/paper/figures/system-overview-v11.md
+@@ -14,13 +14,12 @@
+ - The Router dispatches requests using load and KV locality. The AegisKV
+   Controller owns workflow, placement, directory, and recovery state.
+ - The Recovery Manager binds each request's retry target and Peer DP rank at
+-  arrival. The KV Master chooses backup triggers, R/D/P tiers and per-layer
+-  hot-block candidates. The miniature matrix illustrates these candidates.
++  arrival. The KV Master chooses R/D/P tiers, each request's layer depth,
++  and hot-block candidates at configured checkpoint and policy events. The miniature matrix illustrates these candidates.
+ - Local KV is shown by layer and block. Blue outlines identify selected
+   sealed blocks in early layers; the gold last column is the unsealed tail.
+   Each smaller Peer region contains replicas from the other DP.
+-- Each Adapter controls its local Peer budget and request layer prefixes
+-  every time window, accesses Local/Peer KV, and invokes its Connector.
++- Each Adapter controls only its local Peer budget at each capacity-window boundary, accesses Local/Peer KV, and invokes its Connector.
+   Connectors execute copies; they do not select a backup tier or destination.
+   A target reads committed Peer KV locally during takeover.
+ - Peer copies follow Local KV → Connector → peer Connector → Peer KV.
+@@ -98,9 +97,14 @@
+ 
+ The current labels and badges follow the reordered design sections. The
+ Recovery Manager sends target assignments to the KV Master; policy goes
+-to Adapters, and rankings/residency return to the controller. Both Adapter
+-labels explicitly own Peer budget and layer control. The three-tier layout,
++to Adapters, and rankings/residency return to the controller. The 2026-09-18 labels assigned both budget and layer control to Adapters;
++the 2026-09-19 revision below supersedes that ownership. The three-tier layout,
+ DP symmetry, data paths and independent annotation layer are retained.
+ The current review is in `output/pdf/aegiskv-component-roles-20260918/`;
+ the original review above describes the previous labels. Current insertion
+ remains 84.65 mm wide, with the same known small-text limitation.
++
++
++## Request-specific depth update (2026-09-19)
++
++KV Master now chooses each request's L_r and hot blocks at fixed-Z checkpoint and policy events. Adapters update only Peer capacity budgets. The Master label reads Depth / hot blocks; both Adapter labels read Peer budget. The canvas, geometry, paths, independent badges and proportional single-column insertion are preserved. Current native export and paper review: output/pdf/aegiskv-request-depth-20260919/.
+--- before/benchmark/AegisKV/experiments/scripts/paper/build_system_overview_v11.py
++++ after/benchmark/AegisKV/experiments/scripts/paper/build_system_overview_v11.py
+@@ -117,7 +117,7 @@
+     for i,(value,fill,col) in enumerate([("R","#F3F4F6",GRAY),("D","#F7E8D2",GOLD),("P",PEER,BLUE)]):
+         n(f"tier-{value}",value,741+i*101,449,87,34,parent="planner",fill=fill,stroke=col,bold=True,
+           style="rounded=1;arcSize=8;")
+-    n("plan-caption","Hot blocks",744,524,287,34,parent="planner")
++    n("plan-caption","Depth / hot blocks",744,524,287,34,parent="planner")
+     for row in range(2):
+         for col in range(8):
+             selected=(row,col) in {(0,1),(0,4),(1,0),(1,5)}
+@@ -152,7 +152,7 @@
+         g(f"adapter{dp}",x+21,738,528,59,parent=group,fill="#EAF0F5",stroke="#95A7B5",
+           style="rounded=1;arcSize=6;")
+         n(f"adapter-title{dp}","Adapter",x+44,748,170,40,parent=f"adapter{dp}",font=31,bold=True,align="left")
+-        n(f"adapter-detail{dp}","Peer budget · layers",x+207,752,324,33,parent=f"adapter{dp}")
++        n(f"adapter-detail{dp}","Peer budget",x+207,752,324,33,parent=f"adapter{dp}")
+         g(f"hbm{dp}",x+21,839,528,173,parent=group,fill="#FAFCFD",stroke="#8DA3B2")
+         # Mirror the regions so the Peer endpoints face the interconnect.
+         localx,peerx=(x+21,x+387) if dp==0 else (x+183,x+21)
+@@ -193,7 +193,7 @@
+             read_port=.5 if region=="local" else .75
+             e(f"adapter-{region}{dp}",f"adapter{dp}",f"{region}{dp}",
+               exit=((rx+rw*read_port-(x+21))/528,1),entry=(read_port,0),both=True,width=2)
+-        # KV Master chooses policy; Adapter controls capacity/layers and invokes Connector.
++        # KV Master chooses request depths; Adapter controls capacity and invokes Connector.
+         controlx=x+562 if dp==0 else x+8
+         e(f"adapter-connector{dp}",f"adapter{dp}",f"connector{dp}",dashed=True,
+           exit=(1 if dp==0 else 0,.5),entry=(1 if dp==0 else 0,.2),
+@@ -246,8 +246,8 @@
+         'source_sha256':sha(p),'canvas':[W,H],'placed_width_in':84.65/25.4,
+         'annotations':{'1':'Workflow Tracker','2':'Recovery Manager','3':'KV Master','4':'DP0 Adapter only'},
+         'responsibilities':{'Recovery Manager':'Bind retry target and Peer DP rank at arrival; activate retries after failure',
+-                            'KV Master':'Choose backup timing, R/D/P tier, per-layer hot-block candidates and priority',
+-                            'Adapter':'Control Peer budget and resident layer prefix each window; commit copies and execute recovery'},
++                            'KV Master':'Decide backup policy at fixed checkpoint interval and policy events; choose per-request depth, R/D/P tier, hot blocks and priority',
++                            'Adapter':'Update only the Peer capacity budget each window; report physical state and execute issued copy/recovery plans'},
+         'memory_encoding':'Local cells show layer/block layout; blue outlines are a schematic Peer selection in early layers, gold is an active unsealed tail. Peer cells are copies from the opposite DP.',
+         'connector':'execution only; no independent protection or routing decisions',
+         'review':'pending native exports and paper-size inspection'
+--- before/benchmark/AegisKV/experiments/plans/adapter-control-evidence.md
++++ after/benchmark/AegisKV/experiments/plans/adapter-control-evidence.md
+@@ -3,6 +3,15 @@
+ 状态：2026-09-19 图与实验设计稿。用户随后要求先画分析/模拟图、暂不实测，并将等待收益与总恢复时延两幅合为一幅；已生成[三面板分析候选与合成队列模拟](../../../../output/pdf/aegiskv-adapter-analysis-20260919/COMPACT_README.md)，保留总恢复时延、参数和证据边界。下文仍为未来实测设计，不表示实测已完成；正文 Figure 5 尚未替换。
+ 
+ 对应：[Adapter 正文与算法 3](../../paper/sections/kv_runtime.tex)、[引用保护与容量执行](../../paper/sections/capacity_allocation.tex)。
++
++## 当前分工与后续证据范围（2026-09-19，取代下方旧控制器方案）
++
++用户最终选择：Z 固定为系统配置；KV Master 在 checkpoint/策略事件中选择每个请求的 L_r；Adapter 仅在容量窗口边界调整 B_p。以下原“统一 Z/L/B 控制器”的计划保留历史参考，不再作为当前算法 3 的执行协议。
++
++- 算法 2 的层数证据：模拟异质请求的历史增长、实际提交前沿与尾长分布，比较逐请求 L_r 和统一固定 L，使用相同请求/故障位置、预算、Z、引用与准入规则。记录每次决策的目标深度与实际提交覆盖。成本同时依赖 M_r、N_r、热集/未命中与并发，不将 M 固定为一个全局值。
++- 算法 3 的证据：固定 Z，保持相同逐请求深度策略，对比自适应与固定 Peer 预算，观察前台需求变化时的排队、实际驻留、引用阻塞与回收滞后。不会动态调整 Z 或统一 L。
++- Z 的分析仅作为跨运行的配置敏感性；保留正常 checkpoint 开销与故障恢复代价，不声称是 Adapter 的风险控制。
++- 图像仍停留在分析/模拟阶段；本次改职责不提交任何新增实测作业。已有三面板的原始数值不变，(a) 是 Z 配置权衡，(b) 是单请求深度机制，(c) 是容量竞争。
+ 
+ ## 1. 图要回答什么
+ 
+--- before/output/pdf/aegiskv-adapter-analysis-20260919/README.md
++++ after/output/pdf/aegiskv-adapter-analysis-20260919/README.md
+@@ -1,4 +1,6 @@
+ # Adapter 分析图与合成队列模拟
++
++当前职责更新（2026-09-19）：Z 已固定为系统配置，KV Master 在策略事件中逐请求选择 L_r，Adapter 仅调 Peer 容量。下文图像与数值保留原分析条件；风险/Z 曲线仅是配置敏感性，不能作为当前 Algorithm 3 的控制行为。恢复层数图属于 KV Master 的单请求机制，容量图对应 Adapter；尚未模拟异质请求增长下的深度竞争。
+ 
+ 日期：2026-09-19。用户要求先画分析/模拟图，不新增实测。本组图由可复算的解析模型和 CPU 上的离散事件队列生成，**没有 GPU 作业、模型推理或实测时延输入**。这是 Algorithm 3 的控制依据候选，尚未替换正文 Figure 5，也不是完整 Algorithm 3 的端到端评估。
+ 
+--- before/output/pdf/aegiskv-adapter-analysis-20260919/COMPACT_README.md
++++ after/output/pdf/aegiskv-adapter-analysis-20260919/COMPACT_README.md
+@@ -1,4 +1,6 @@
+ # Adapter 三面板候选与 Peer/DRAM 趋势解释
++
++当前职责更新（2026-09-19）：Z 已固定为系统配置，KV Master 在策略事件中逐请求选择 L_r，Adapter 仅调 Peer 容量。下文图像与数值保留原分析条件；风险/Z 曲线仅是配置敏感性，不能作为当前 Algorithm 3 的控制行为。恢复层数图属于 KV Master 的单请求机制，容量图对应 Adapter；尚未模拟异质请求增长下的深度竞争。
+ 
+ 2026-09-19 修订：用户希望旧 (b)/(c) 只保留一幅。本版保留总恢复时延，重新编号为 (a) 风险与 Z、(b) 恢复时延与 L、(c) Peer 占用与前台排队。直接读取上一版 CSV，未重跑模拟、未修改任何数值，也没有新增实测。
+ 

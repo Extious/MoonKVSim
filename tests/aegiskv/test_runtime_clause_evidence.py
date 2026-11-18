@@ -6,7 +6,7 @@ from types import ModuleType
 
 
 def _load_audit(root: Path) -> ModuleType:
-    path = root / "benchmark/AegisKV/experiments/scripts/audit_aegiskv_runtime_contract.py"
+    path = root / "benchmark/AegisKV/docs/patent/audit_aegiskv_runtime_contract.py"
     spec = importlib.util.spec_from_file_location("audit_aegiskv_runtime_contract", path)
     if spec is None or spec.loader is None:
         raise RuntimeError("cannot load runtime contract audit")

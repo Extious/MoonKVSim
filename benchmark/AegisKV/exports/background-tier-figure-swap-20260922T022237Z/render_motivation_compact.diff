@@ -1,0 +1,74 @@
+--- before/experiments/scripts/paper/render_motivation_compact.py
++++ experiments/scripts/paper/render_motivation_compact.py
+@@ -62,7 +62,7 @@
+     return {"workflow_maxima_s": gap.tolist(), "median_s": median, "p90_s": p90}
+ 
+ 
+-def exposure():
++def exposure(layout="column"):
+     with base.CC_CSV.open() as stream:
+         rows = list(csv.DictReader(stream))
+     data = json.loads(MEASURED_COSTS.read_text())
+@@ -82,12 +82,14 @@
+     low = np.array([c["trial_min_s"] for c in costs])
+     high = np.array([c["trial_max_s"] for c in costs])
+     assert np.allclose(exposed, [c["wct_increase_s"] for c in costs], rtol=0, atol=1e-10)
+-    fig = plt.figure(figsize=(3.34, 1.45))
+-    ax = fig.add_axes([.14, .28, .64, .54])
+-    stats = fig.add_axes([.82, .28, .17, .54], sharey=ax)
++    in_row = layout == "row"
++    width = WIDTHS_IN["recovery-exposure"] if in_row else 3.34
++    fig = plt.figure(figsize=(width, HEIGHT_IN if in_row else 1.45))
++    ax = fig.add_axes(axes_rect(width, .43, .53) if in_row else [.14, .28, .64, .54])
++    stats = fig.add_axes(axes_rect(width, width - .53, .10) if in_row else [.82, .28, .17, .54], sharey=ax)
+     y = np.arange(len(rows))
+     ax.barh(y, absorbed, height=.60, color=base.PALE_GREEN, edgecolor=base.GREEN,
+-            hatch="//", lw=.6, label="Slack absorbs")
++            hatch="//", lw=.6, label="Absorbed" if in_row else "Slack absorbs")
+     ax.barh(y, exposed, left=absorbed, height=.60, color=base.RED, label="WCT increase")
+     ax.errorbar(times, y, xerr=np.array([times-low, high-times]), fmt="none",
+                 color=base.INK, elinewidth=.7, capsize=2, capthick=.7, zorder=4)
+@@ -99,7 +101,7 @@
+     limit = max(50, float(np.ceil((high.max()+8)/10)*10))
+     ax.set_xlim(0, limit)
+     ax.set_xticks(np.arange(0, limit, 20))
+-    ax.set_xlabel("Measured Prefill time (s)", labelpad=2)
++    ax.set_xlabel("Prefill time (s)" if in_row else "Measured Prefill time (s)", labelpad=3 if in_row else 2)
+     ax.set_ylabel("Agent", labelpad=2)
+     ax.tick_params(axis="y", length=0, pad=2)
+     ax.tick_params(axis="x", length=2.5, pad=2)
+@@ -107,14 +109,14 @@
+     ax.grid(axis="x", color="#E3E7EB", lw=.6)
+     stats.set_xlim(0, 1)
+     stats.set_axis_off()
+-    stats.text(.5, 1.045, "Slack (s)", transform=stats.transAxes,
++    stats.text(.5, 1.025 if in_row else 1.045, "Slack (s)", transform=stats.transAxes,
+                ha="center", va="bottom", color=base.GRAY)
+     fig.legend(*ax.get_legend_handles_labels(), loc="upper left",
+-               bbox_to_anchor=(.03, .985), ncol=2, handlelength=1.1,
+-               handletextpad=.4, columnspacing=.7, borderpad=0, borderaxespad=0)
+-    base.save(fig, "recovery-exposure", evidence=data["evidence"], width_in=3.34,
++               bbox_to_anchor=(.03, .97 if in_row else .985), ncol=2, handlelength=1.1,
++               handletextpad=.35, columnspacing=.6, borderpad=0, borderaxespad=0)
++    base.save(fig, "recovery-exposure", evidence=data["evidence"], width_in=width,
+               note="Measured Qwen2.5-7B-Instruct-1M sparse Prefill, TP2 A100 PCIe 40 GB, "
+-                   "BF16/batch one and C=M+1, matching Figure 1(c). Median and min--max of three "
++                   "BF16/batch one and C=M+1, matching the standalone tier-cost figure. Median and min--max of three "
+                    "timings after one full warmup at each trace input-size proxy. "
+                    "Measured cost is inserted as an added pause in four independent single-branch "
+                    "counterfactuals; all-branch join assumed, other execution and queueing fixed. "
+@@ -129,12 +131,13 @@
+     parser = argparse.ArgumentParser(description=__doc__)
+     parser.add_argument("--output-dir", type=Path, required=True)
+     parser.add_argument("--only", choices=("both", "gaps", "exposure"), default="both")
++    parser.add_argument("--exposure-layout", choices=("column", "row"), default="column")
+     args = parser.parse_args()
+     base.OUT = args.output_dir
+     plt.rcParams.update({"font.size":10.25, "axes.labelsize":10.25,
+                          "xtick.labelsize":10.25, "ytick.labelsize":10.25, "legend.fontsize":10.25})
+     gaps = branch_gap() if args.only in ("both", "gaps") else None
+-    cases = exposure() if args.only in ("both", "exposure") else None
++    cases = exposure(args.exposure_layout) if args.only in ("both", "exposure") else None
+     sources = []
+     if gaps is not None:
+         sources += [base.GAP_CSV, row.GAP_SELECTION]

@@ -1,0 +1,61 @@
+{
+  "evidence_boundary": {
+    "panel_a": "Real CC trace observation; one maximum strict-parallel fan-out duration gap per workflow",
+    "panel_b": "Real CC trace reconstruction from top-level order and timestamps because the trace has no parent ID",
+    "panel_c": "frozen trace-plus-AIConfigurator counterfactual, not a Claude, physical PP, failure-to-ready, or paired failure measurement"
+  },
+  "inputs": {
+    "embedded_raw_trace_sha256": "29b6a19e751ff5230771519aab755f80a0f43a4ba9cf96b72d3a6a437ec99276",
+    "failure_csv": "aegiskv/figures/data/real-cc-example-failure-position.csv",
+    "failure_csv_sha256": "96aaf85f4c9f3ed5b19c78548125d70d6fdabdf3bd01602ad189df546c9de7f2",
+    "gap_csv": "aegiskv/figures/data/real-cc-workflow-parallel-gap.csv",
+    "gap_csv_sha256": "c78a84bf55713b3c112a8f38ee5330c2fc27e3f1e9437b87770a45b154d5cbb6",
+    "workflow_drawio": "aegiskv/figures/real-cc-workflow-8ab0a089.drawio",
+    "workflow_drawio_sha256": "d244fc068c025d85b7830232a52672ae0499444da06e1a62f542a424d8925699",
+    "workflow_pdf": "aegiskv/figures/real-cc-workflow-8ab0a089.pdf",
+    "workflow_pdf_sha256": "b5b5668f3dc3ab065e6eb7aa5ecc8187c2f0472eed279b87436d313bc225fa6f"
+  },
+  "new_experiment": false,
+  "operation": "paper_only_relayout_of_frozen_historical_figure_1",
+  "outputs": {
+    "pdf": "aegiskv/paper/figures/motivation-real-cc-three-panel-submission.pdf",
+    "pdf_sha256": "7015e8edbae3bf7c6fb78e4e7267a2b291f7cbcf0f7f6f45b3aab59984511415",
+    "png": "aegiskv/paper/figures/motivation-real-cc-three-panel-submission.png",
+    "png_height_px": 1245,
+    "png_sha256": "25d34c9fb0c3e772966cf2cb0a7a80cf3645af2f11668569c348137bc2689c59",
+    "png_width_px": 2100
+  },
+  "pdf_audit": {
+    "embedded_raster_images": 0,
+    "height_in": 4.15,
+    "minimum_extracted_font_pt": 10.0,
+    "minimum_font_text": "1",
+    "page_count": 1,
+    "text_inside_media_box": true,
+    "text_spans": 48,
+    "vector_only": true,
+    "width_in": 7.0
+  },
+  "predictor_executed": false,
+  "raw_trace_accessed": false,
+  "renderer": {
+    "path": "aegiskv/paper/scripts/render_motivation_real_cc_submission.py",
+    "sha256": "c8071cc90ebd19849e6942821e99e2b31946e83e1ebac8730835118c7527c0d7"
+  },
+  "schema": "aegiskv_historical_motivation_submission_layout_v1",
+  "sglsim_executed": false,
+  "statistics": {
+    "example_failure_time_s": 349.5,
+    "example_workflow_id": "8ab0a0892b0035b681a85c71d603caeb9e0f",
+    "failure_target_delta_wct_s": [
+      0.0,
+      17.152499,
+      0.0,
+      35.903174,
+      21.376957
+    ],
+    "median_workflow_max_gap_s": 140.611,
+    "p90_workflow_max_gap_s": 1570.29,
+    "workflows": 124
+  }
+}

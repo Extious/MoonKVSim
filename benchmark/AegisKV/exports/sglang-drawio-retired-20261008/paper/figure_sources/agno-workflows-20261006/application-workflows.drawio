@@ -1,0 +1,199 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="agno-workflows" name="Agno research and programming">
+    <mxGraphModel page="1" pageWidth="1008" pageHeight="704" background="#FFFFFF">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="canvas" value="" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#24323B;fillColor=#FFFFFF;strokeColor=none;strokeWidth=1.5;spacing=2;align=center;">
+          <mxGeometry x="0" y="0" width="1008" height="704" as="geometry" />
+        </mxCell>
+        <mxCell id="research-title" value="(a) CrewAI-style research / DeepResearch Bench" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=26;fontColor=#24323B;fillColor=none;strokeColor=none;strokeWidth=1.5;spacing=2;fontStyle=1;align=left;">
+          <mxGeometry x="24" y="8" width="960" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="planner" value="Planner" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#24323B;fillColor=#EAF4F1;strokeColor=#4D8074;strokeWidth=1.5;spacing=2;align=center;">
+          <mxGeometry x="24" y="164" width="176" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="data_collector" value="Data collector" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#24323B;fillColor=#EAF4F1;strokeColor=#4D8074;strokeWidth=1.5;spacing=2;align=center;">
+          <mxGeometry x="376" y="58" width="200" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="deep_analyst" value="Deep analyst" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#24323B;fillColor=#EAF4F1;strokeColor=#4D8074;strokeWidth=1.5;spacing=2;align=center;">
+          <mxGeometry x="376" y="128" width="200" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="trend_scout" value="Trend scout" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#24323B;fillColor=#EAF4F1;strokeColor=#4D8074;strokeWidth=1.5;spacing=2;align=center;">
+          <mxGeometry x="376" y="198" width="200" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="risk_assessor" value="Risk assessor" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#24323B;fillColor=#EAF4F1;strokeColor=#4D8074;strokeWidth=1.5;spacing=2;align=center;">
+          <mxGeometry x="376" y="268" width="200" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="synthesizer" value="Synthesizer" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#24323B;fillColor=#FCF2E4;strokeColor=#AC864B;strokeWidth=1.5;spacing=2;align=center;">
+          <mxGeometry x="800" y="164" width="184" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="planner--data_collector" source="planner" target="data_collector" edge="1" parent="1" style="rounded=0;strokeColor=#53636B;strokeWidth=1.6;endArrow=block;endFill=1;endSize=6;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;jumpStyle=arc;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="280" y="192" />
+              <mxPoint x="280" y="84" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="data_collector--synthesizer" source="data_collector" target="synthesizer" edge="1" parent="1" style="rounded=0;strokeColor=#53636B;strokeWidth=1.6;endArrow=block;endFill=1;endSize=6;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;jumpStyle=arc;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="690" y="84" />
+              <mxPoint x="690" y="192" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="planner--deep_analyst" source="planner" target="deep_analyst" edge="1" parent="1" style="rounded=0;strokeColor=#53636B;strokeWidth=1.6;endArrow=block;endFill=1;endSize=6;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;jumpStyle=arc;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="280" y="192" />
+              <mxPoint x="280" y="154" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="deep_analyst--synthesizer" source="deep_analyst" target="synthesizer" edge="1" parent="1" style="rounded=0;strokeColor=#53636B;strokeWidth=1.6;endArrow=block;endFill=1;endSize=6;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;jumpStyle=arc;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="690" y="154" />
+              <mxPoint x="690" y="192" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="planner--trend_scout" source="planner" target="trend_scout" edge="1" parent="1" style="rounded=0;strokeColor=#53636B;strokeWidth=1.6;endArrow=block;endFill=1;endSize=6;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;jumpStyle=arc;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="280" y="192" />
+              <mxPoint x="280" y="224" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="trend_scout--synthesizer" source="trend_scout" target="synthesizer" edge="1" parent="1" style="rounded=0;strokeColor=#53636B;strokeWidth=1.6;endArrow=block;endFill=1;endSize=6;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;jumpStyle=arc;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="690" y="224" />
+              <mxPoint x="690" y="192" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="planner--risk_assessor" source="planner" target="risk_assessor" edge="1" parent="1" style="rounded=0;strokeColor=#53636B;strokeWidth=1.6;endArrow=block;endFill=1;endSize=6;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;jumpStyle=arc;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="280" y="192" />
+              <mxPoint x="280" y="294" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="risk_assessor--synthesizer" source="risk_assessor" target="synthesizer" edge="1" parent="1" style="rounded=0;strokeColor=#53636B;strokeWidth=1.6;endArrow=block;endFill=1;endSize=6;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;jumpStyle=arc;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="690" y="294" />
+              <mxPoint x="690" y="192" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="coding-title" value="(b) ChatDev-style programming / APPS" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=26;fontColor=#24323B;fillColor=none;strokeColor=none;strokeWidth=1.5;spacing=2;fontStyle=1;align=left;">
+          <mxGeometry x="24" y="346" width="960" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="product_manager" value="Product&#10;manager" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#24323B;fillColor=#EAF4F1;strokeColor=#4D8074;strokeWidth=1.5;spacing=2;align=center;">
+          <mxGeometry x="24" y="486" width="156" height="62" as="geometry" />
+        </mxCell>
+        <mxCell id="architect" value="Architect" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#24323B;fillColor=#EAF4F1;strokeColor=#4D8074;strokeWidth=1.5;spacing=2;align=center;">
+          <mxGeometry x="224" y="426" width="156" height="62" as="geometry" />
+        </mxCell>
+        <mxCell id="test_designer" value="Test designer" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#24323B;fillColor=#EAF4F1;strokeColor=#4D8074;strokeWidth=1.5;spacing=2;align=center;">
+          <mxGeometry x="224" y="586" width="156" height="62" as="geometry" />
+        </mxCell>
+        <mxCell id="programmer" value="Programmer" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#24323B;fillColor=#EAF4F1;strokeColor=#4D8074;strokeWidth=1.5;spacing=2;align=center;">
+          <mxGeometry x="424" y="426" width="156" height="62" as="geometry" />
+        </mxCell>
+        <mxCell id="reviewer" value="Reviewer" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#24323B;fillColor=#EAF4F1;strokeColor=#4D8074;strokeWidth=1.5;spacing=2;align=center;">
+          <mxGeometry x="624" y="426" width="156" height="62" as="geometry" />
+        </mxCell>
+        <mxCell id="tester" value="Test engineer" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#24323B;fillColor=#EAF4F1;strokeColor=#4D8074;strokeWidth=1.5;spacing=2;align=center;">
+          <mxGeometry x="624" y="586" width="156" height="62" as="geometry" />
+        </mxCell>
+        <mxCell id="release" value="Release&#10;engineer" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=24;fontColor=#24323B;fillColor=#FCF2E4;strokeColor=#AC864B;strokeWidth=1.5;spacing=2;align=center;">
+          <mxGeometry x="824" y="506" width="160" height="62" as="geometry" />
+        </mxCell>
+        <mxCell id="product_manager--architect" source="product_manager" target="architect" edge="1" parent="1" style="rounded=0;strokeColor=#53636B;strokeWidth=1.6;endArrow=block;endFill=1;endSize=6;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;jumpStyle=arc;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="202" y="517" />
+              <mxPoint x="202" y="457" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="product_manager--test_designer" source="product_manager" target="test_designer" edge="1" parent="1" style="rounded=0;strokeColor=#53636B;strokeWidth=1.6;endArrow=block;endFill=1;endSize=6;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;jumpStyle=arc;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="202" y="517" />
+              <mxPoint x="202" y="617" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="product_manager--programmer" source="product_manager" target="programmer" edge="1" parent="1" style="rounded=0;strokeColor=#53636B;strokeWidth=1.6;endArrow=block;endFill=1;endSize=6;exitX=0.5;exitY=0;exitPerimeter=0;entryX=0.5;entryY=0;entryPerimeter=0;jumpStyle=arc;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="102" y="396" />
+              <mxPoint x="502" y="396" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="architect--programmer" source="architect" target="programmer" edge="1" parent="1" style="rounded=0;strokeColor=#53636B;strokeWidth=1.6;endArrow=block;endFill=1;endSize=6;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;jumpStyle=arc;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="architect--reviewer" source="architect" target="reviewer" edge="1" parent="1" style="rounded=0;strokeColor=#53636B;strokeWidth=1.6;endArrow=block;endFill=1;endSize=6;exitX=0.5;exitY=0;exitPerimeter=0;entryX=0.5;entryY=0;entryPerimeter=0;jumpStyle=arc;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="302" y="402" />
+              <mxPoint x="702" y="402" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="programmer--reviewer" source="programmer" target="reviewer" edge="1" parent="1" style="rounded=0;strokeColor=#53636B;strokeWidth=1.6;endArrow=block;endFill=1;endSize=6;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;jumpStyle=arc;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="programmer--tester" source="programmer" target="tester" edge="1" parent="1" style="rounded=0;strokeColor=#53636B;strokeWidth=1.6;endArrow=block;endFill=1;endSize=6;exitX=1;exitY=0.75;exitPerimeter=0;entryX=0;entryY=0.25;entryPerimeter=0;jumpStyle=arc;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="602" y="472.5" />
+              <mxPoint x="602" y="601.5" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="test_designer--tester" source="test_designer" target="tester" edge="1" parent="1" style="rounded=0;strokeColor=#53636B;strokeWidth=1.6;endArrow=block;endFill=1;endSize=6;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;jumpStyle=arc;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="programmer--release" source="programmer" target="release" edge="1" parent="1" style="rounded=0;strokeColor=#53636B;strokeWidth=1.6;endArrow=block;endFill=1;endSize=6;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0;entryY=0.25;entryPerimeter=0;jumpStyle=arc;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="502" y="520" />
+              <mxPoint x="804" y="520" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="reviewer--release" source="reviewer" target="release" edge="1" parent="1" style="rounded=0;strokeColor=#53636B;strokeWidth=1.6;endArrow=block;endFill=1;endSize=6;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.25;entryPerimeter=0;jumpStyle=arc;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="804" y="457" />
+              <mxPoint x="804" y="521.5" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="tester--release" source="tester" target="release" edge="1" parent="1" style="rounded=0;strokeColor=#53636B;strokeWidth=1.6;endArrow=block;endFill=1;endSize=6;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.75;entryPerimeter=0;jumpStyle=arc;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="804" y="617" />
+              <mxPoint x="804" y="552.5" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="footer" value="Each node is one Agent task; model and tool turns remain inside that task." vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O;fontSize=22;fontColor=#24323B;fillColor=none;strokeColor=none;strokeWidth=1.5;spacing=2;fontStyle=1;align=left;">
+          <mxGeometry x="24" y="664" width="960" height="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

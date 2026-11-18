@@ -1,0 +1,77 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" version="31.1.5">
+  <diagram id="figure-2-agent-credit" name="附图2：Agent 恢复收益与租值键">
+    <mxGraphModel math="1" grid="1" gridSize="10" page="1" pageWidth="1100" pageHeight="1320" background="#FFFFFF">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="canvas" value="&lt;div style=&quot;line-height:1.35&quot;&gt;&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=28;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;text;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="0" y="0" width="1100" height="1320" />
+        </mxCell>
+        <mxCell id="title" value="&lt;div style=&quot;line-height:1.35&quot;&gt;单 Agent 恢复收益与共享块租值键&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=34;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;text;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="35" y="10" width="1030" height="60" />
+        </mxCell>
+        <mxCell id="symbols" value="&lt;div style=&quot;line-height:1.35&quot;&gt;\(a\)：本次 Agent；\(u,v\)：块的引用 Agent；\(x\)：第 \(k_a+1\) 个完整块；\(b_x\)：物理字节数&lt;br&gt;\(s_a\)：本请求固定 Slack；\(c_{u,x}\)：Agent 份额；\(\mathrm{Credit}_x\)：块总余额&lt;br&gt;\(L\)：本池累计每字节租金，初值 0；\(H_x\)：块租值键；\(Q\)：可释放尾块队列&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#000000;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;spacing=10;strokeWidth=2;text;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="30" y="85" width="1040" height="110" />
+        </mxCell>
+        <mxCell id="input" value="&lt;div style=&quot;line-height:1.35&quot;&gt;① 读取本请求与当前块&lt;br&gt;\(a,\ s_a,\ x,\ b_x,\ k_a\)；仅评估当前已生成的 KV&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=27;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="65" y="215" width="970" height="85" />
+        </mxCell>
+        <mxCell id="time" value="&lt;div style=&quot;line-height:1.35&quot;&gt;&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=28;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="65" y="345" width="970" height="270" />
+        </mxCell>
+        <mxCell id="time-title" value="&lt;div style=&quot;line-height:1.35&quot;&gt;② 累计前缀复用时间与剩余重算时间&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=27;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;text;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="85" y="357" width="930" height="45" />
+        </mxCell>
+        <mxCell id="before" value="&lt;div style=&quot;line-height:1.35&quot;&gt;\(T_a(k_a)\)&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=28;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;text;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="95" y="424" width="180" height="55" />
+        </mxCell>
+        <mxCell id="after" value="&lt;div style=&quot;line-height:1.35&quot;&gt;\(T_a(k_a+1)\)&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=28;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;text;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="75" y="497" width="200" height="55" />
+        </mxCell>
+        <mxCell id="before-prefix" value="&lt;div style=&quot;line-height:1.35&quot;&gt;前 \(k_a\) 块：复用&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="290" y="422" width="280" height="57" />
+        </mxCell>
+        <mxCell id="before-x" value="&lt;div style=&quot;line-height:1.35&quot;&gt;x：重算&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=6;dashed=1;dashPattern=5 4;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="590" y="422" width="145" height="57" />
+        </mxCell>
+        <mxCell id="before-suffix" value="&lt;div style=&quot;line-height:1.35&quot;&gt;已生成后缀：重算&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=6;dashed=1;dashPattern=5 4;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="755" y="422" width="250" height="57" />
+        </mxCell>
+        <mxCell id="after-prefix" value="&lt;div style=&quot;line-height:1.35&quot;&gt;前 \(k_a\) 块：复用&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="290" y="495" width="280" height="57" />
+        </mxCell>
+        <mxCell id="after-x" value="&lt;div style=&quot;line-height:1.35&quot;&gt;x：复用&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="590" y="495" width="145" height="57" />
+        </mxCell>
+        <mxCell id="after-suffix" value="&lt;div style=&quot;line-height:1.35&quot;&gt;已生成后缀：重算&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=6;dashed=1;dashPattern=5 4;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="755" y="495" width="250" height="57" />
+        </mxCell>
+        <mxCell id="time-note" value="&lt;div style=&quot;line-height:1.35&quot;&gt;刚生成 x 时，其后没有已生成后缀；续租内部块时，后缀仍计入重算。&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=23;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;text;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="90" y="560" width="920" height="40" />
+        </mxCell>
+        <mxCell id="gain" value="&lt;div style=&quot;line-height:1.35&quot;&gt;③ 只计算当前 Agent 的恢复收益与密度&lt;br&gt;\(G_{a,x}=\min\{T_a(k_a)-T_a(k_a+1),\ \max[T_a(k_a)-s_a,0]\}\)&lt;br&gt;\(P_{a,x}=G_{a,x}/b_x\)&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=26;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="65" y="660" width="970" height="150" />
+        </mxCell>
+        <mxCell id="settle" value="&lt;div style=&quot;line-height:1.35&quot;&gt;④ 先结算已有块的旧租金&lt;br&gt;\(x\in Q:\quad \mathrm{Credit}_x\leftarrow b_x\max(H_x-L,0)\)&lt;br&gt;\(c_{u,x}\leftarrow c_{u,x}\,\frac{\mathrm{Credit}_x}{\sum_v c_{v,x}}\quad(\forall u)\)&lt;br&gt;分母统一取结算前总额；总额为 0 时跳过。&lt;br&gt;不在 Q 的块保留冻结份额；新副本从空分账开始。&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=26;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="65" y="855" width="970" height="215" />
+        </mxCell>
+        <mxCell id="renew" value="&lt;div style=&quot;line-height:1.35&quot;&gt;⑤ 只续租 a，暂存共享块的 Credit 与 H&lt;br&gt;\(c_{a,x}\leftarrow G_{a,x},\quad \mathrm{Credit}_x\leftarrow\sum_u c_{u,x}\)&lt;br&gt;\(H_x\leftarrow L+\mathrm{Credit}_x/b_x\)&lt;br&gt;其他 Agent 保留租后余额；交由附图 3 保存或进行新副本准入。&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=26;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="65" y="1115" width="970" height="165" />
+        </mxCell>
+        <mxCell id="edge-0" edge="1" parent="1" source="input" target="time" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.5;endArrow=block;endFill=1;endSize=10;jettySize=20;exitX=0.5;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge-1" edge="1" parent="1" source="time" target="gain" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.5;endArrow=block;endFill=1;endSize=10;jettySize=20;exitX=0.5;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge-2" edge="1" parent="1" source="gain" target="settle" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.5;endArrow=block;endFill=1;endSize=10;jettySize=20;exitX=0.5;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge-3" edge="1" parent="1" source="settle" target="renew" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.5;endArrow=block;endFill=1;endSize=10;jettySize=20;exitX=0.5;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

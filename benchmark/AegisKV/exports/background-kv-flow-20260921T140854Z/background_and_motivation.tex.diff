@@ -1,0 +1,13 @@
+--- before/background_and_motivation.tex
++++ after/background_and_motivation.tex
+@@ -78,9 +78,7 @@
+ progress stored by the application. In conventional per-token layouts,
+ its size grows with context length, layer count and KV-head dimensions;
+ a long conversation can therefore occupy much more memory as KV than
+-as token IDs. Sparse attention reduces the historical KV accessed by
+-an operation~\cite{jiang2024minference}, but state skipped by that
+-operation may still be needed later.
++as token IDs.
+ 
+ \paragraph{Recovery and storage tiers.}
+ A serving-worker failure can interrupt requests, make GPU-resident KV

@@ -1,0 +1,243 @@
+--- before/paper/background_and_motivation.tex
++++ paper/background_and_motivation.tex
+@@ -170,12 +170,13 @@
+ 
+ \subsection{Motivation and Challenges}
+ 
+-Limited capacity requires deciding which KV histories to retain and
+-which merit faster access. We use agent execution traces and measured
+-KV readiness costs to examine the workflow consequences of these choices.
+-The traces characterize branch timing; the model measurements quantify
+-reconstruction and reuse under a common endpoint. Together they motivate
+-two challenges in allocating protection resources.
++The storage tiers above provide different ways to retain KV and avoid
++reconstruction. Their capacity costs and access latencies leave a further
++question: which state should be protected, and where, to reduce
++failure-induced increases in WCT under a limited storage budget?
++Fault-tolerant serving and workflow-aware KV management approach this
++question from different directions. The following limitations explain
++why their existing priorities do not directly resolve it.
+ 
+ \begin{figure*}[t]
+   \centering
+@@ -232,119 +233,117 @@
+     whiskers show timing minima and maxima, not confidence intervals.}
+ \end{figure*}
+ 
+-\paragraph{Unequal progress across parallel branches.}
++\paragraph{Limitation 1: Fault tolerance without workflow-aware priorities.}
++Fault-tolerant serving systems preserve state and coordinate recovery
++for interrupted requests. D\'ej\`aVu streams KV checkpoints, and GhostServe
++uses host-memory parity to reduce reconstruction
++work~\cite{strati2024dejavu,jayakody2026ghostserve}.
++LUMEN further coordinates checkpoint placement, recovery routing and
++capacity restoration according to worker load~\cite{cao2026lumen}.
++These mechanisms address state loss and recovery contention, but do not
++use multi-agent dependencies to determine which requests' faster
++recovery would advance workflow completion. Request recovery cost and
++worker load alone cannot express this benefit.
++
+ \label{sec:motivation-workflow}
+-Figure~\ref{fig:motivation}(\subref{fig:motivation-workflow}) shows four
+-trace-derived branches. A2 finishes last, 151.6\,s after the fork;
+-A1 finishes at 60.4\,s. If the following Main stage needs all four outputs,
+-A1 can absorb 91.2\,s of additional delay before postponing the join,
+-whereas any delay on A2 postpones it. We call the additional delay that
+-a branch can absorb without postponing the required output its
++Figure~\ref{fig:motivation}(\subref{fig:motivation-workflow}) illustrates
++why workflow position matters. A2 finishes last, 151.6\,s after the fork,
++whereas A1 finishes at 60.4\,s. If the following Main stage requires all
++four outputs, A1 can absorb 91.2\,s of additional delay before postponing
++the join, whereas any delay on A2 postpones it. We call the additional
++delay a branch can absorb without postponing the required output its
+ \emph{slack}.
+ 
+-The public SemiAnalysis CC/Weka trace contains 393 filtered Claude Code
+-sessions~\cite{semianalysis2026cctraces}. We retain overlapping subagent
+-groups whose branches complete and are followed by a Main request after
+-the last branch finishes; Main activity during the branches is allowed.
+-This temporal fan-in proxy retains 286 groups in 121 workflows.
+-For each group, we compute the longest minus the shortest branch duration,
+-then take each workflow's maximum gap.
+-Figure~\ref{fig:motivation}(\subref{fig:motivation-branch-gap}) shows a
+-median of 138\,s and a 90th percentile of 1,173\,s. These statistics show
+-substantial duration differences within the retained workflows.
+-The trace does not record explicit result-consumption edges, so they
+-neither verify all-branch joins nor measure slack at a fault. The
+-four-branch example is one retained group, not a representative
++Such timing differences occur across the retained CC/Weka
++traces~\cite{semianalysis2026cctraces}. From 393 filtered Claude Code
++sessions, a temporal fan-in proxy retains 286 overlapping subagent
++groups in 121 workflows: all branches complete, and a Main request
++follows the last completion; Main activity during the branches is allowed.
++Figure~\ref{fig:motivation}(\subref{fig:motivation-branch-gap}) reports
++each workflow's maximum longest-minus-shortest branch-duration gap,
++with a median of 138\,s and a 90th percentile of 1,173\,s.
++The trace lacks explicit result-consumption edges, so these differences
++neither verify all-branch joins nor measure failure-time slack.
++The four-branch example is one retained group, not a representative
+ workflow-maximum gap.
+ 
+-\paragraph{From reconstruction time to workflow delay.}
+-To quantify the consequence of a join, we measure full prefill at the
+-four active requests' input-size proxies. Both this experiment and the
+-tier comparison in Figure~\ref{fig:motivation-recompute}
+-use Qwen2.5-7B-Instruct-1M~\cite{qwen2025qwen25oneM} on two A100 PCIe
+-40\,GB GPUs, with TP2, BF16 and batch one. Our instrumented SGLang
+-0.5.10rc0 execution uses MInference vertical/slash
+-attention~\cite{jiang2024minference} and dual chunk attention (DCA)
+-position handling, with sparse attention above 32K.
+-The four history-length proxies come from trace hash-block counts times
+-64 and range from 100,864 to 113,664 tokens. Each measured input is a
+-fixed synthetic history plus one token. After one complete warmup per
+-length, we collect three timings and report their median and min--max.
+-Appendix~\ref{sec:motivation-protocol} gives the complete protocol.
+-
+-Figure~\ref{fig:motivation}(\subref{fig:motivation-recovery-exposure}) maps these costs to the
+-assumed all-branch join. At 29.5\,s after the fork, each case separately
+-adds a measured reconstruction pause $R_i$ to branch $i$, holding all
+-other execution and queues fixed. With offline slack $\sigma_i$ from
+-the trace completion times, the WCT increment is
++To connect reconstruction cost to workflow delay, we measure full
++prefill at the four active requests' trace input-size proxies, using
++Figure~\ref{fig:motivation-recompute}'s Qwen2.5-7B-Instruct-1M
++configuration with sparse attention~\cite{qwen2025qwen25oneM,jiang2024minference}.
++Figure~\ref{fig:motivation}(\subref{fig:motivation-recovery-exposure})
++then inserts each measured cost $R_i$ separately as a pause on branch
++$i$ at 29.5\,s after the fork. With offline slack $\sigma_i$, an assumed
++all-branch join, and all other execution and queues fixed, the WCT
++increment is
+ \[
+   \Delta\mathrm{WCT}_i=\max(0,R_i-\sigma_i).
+ \]
+ A1's 33.2\,s reconstruction fits within its 91.2\,s slack and leaves WCT
+ unchanged. A2's slightly smaller cost, 32.6\,s, is fully exposed because
+-its slack is zero. A3 and A4 expose 16.3 and 18.0\,s, respectively.
+-Thus similar reconstruction costs can have different workflow effects.
+-The costs are physical measurements; the WCT increments are conditional
+-calculations using synthetic inputs and assumed dependencies, not
+-fault-injected measurements of the original workflows.
+-
+-\paragraph{Limitation 1: Request-level priorities incompletely express
+-workflow benefit.}
+-Recency, proximity to the next use and reconstruction cost describe when
+-state may be needed and how expensive it is to recover. Taken alone,
+-they do not determine how restoring a request sooner advances the
+-workflow's required outputs. An expensive history can belong to a branch
+-with time to spare, while a shorter recovery can delay the branch that
+-gates completion. Protection priorities must account for dependencies
+-and the branches' remaining progress.
+-
+-\paragraph{Challenge 1: Estimating the workflow impact of recovery.}
+-A protection decision must connect the delay it avoids to the required
+-workflow outputs. The example uses completed traces to obtain slack,
+-but an online system sees only execution so far: remaining model and
+-tool durations are uncertain, and later dependencies may not yet be
+-exposed. Priorities must change as branches progress. A worker failure
+-can also interrupt several branches whose recoveries share resources,
+-so their isolated WCT increments cannot simply be added. The challenge
+-is to derive useful recovery priorities from partial workflow progress
+-while accounting for these uncertainties and interactions.
+-
+-\paragraph{The cost of retaining and accessing long histories.}
++its slack is zero. Thus prioritizing the more expensive reconstruction
++can favor a branch with less immediate effect on completion.
++Only the Prefill costs are measured; WCT increments are conditional
++calculations using synthetic inputs and trace timing, not fault-injected
++workflow measurements. Appendix~\ref{sec:motivation-protocol} gives the
++input construction, timing samples and mapping protocol.
++
++\paragraph{Challenge 1: Estimating workflow recovery urgency online.}
++Protection decisions must reflect how a recovery delay propagates to
++required workflow outputs. The example obtains slack from completed
++traces, whereas an online system must act before the remaining model
++and tool durations are known. The branch that gates completion can
++change as execution progresses. A worker failure can also interrupt
++several agents whose recoveries share resources, so isolated WCT
++increments cannot simply be added. The challenge is to derive and
++update useful protection priorities from partial workflow progress
++under uncertain remaining execution and recovery load.
++
++\paragraph{Limitation 2: Workflow-aware caching without a recovery objective.}
++Workflow-aware KV management uses application structure to improve
++normal execution. KVFlow uses upcoming agent invocations to guide prefix
++retention and prefetching~\cite{pan2025kvflow}; TOPAS jointly schedules
++prefix residency and request admission using remaining workflow paths,
++reuse benefits and movement or preemption costs~\cite{ni2026topas}.
++These systems already exploit workflow information, but their cache
++decisions do not explicitly optimize protection against serving-worker
++failures: which state must survive, where to retain it, and how quickly
++it should become available to a replacement worker.
++
++The distinction changes the value of retained state. For example,
++KVFlow gives varying suffixes the highest eviction priority while
++protecting reusable fixed prompts~\cite{pan2025kvflow}. A suffix with
++little expected reuse can nevertheless be needed to resume an
++interrupted execution. Likewise, keeping a prefix in the executing
++worker's HBM accelerates normal access but does not by itself preserve
++that state when the worker fails. A cache copy can support recovery if
++it survives; its usefulness for future calls alone does not determine
++its value as protection against a particular failure.
++
+ \label{sec:motivation-long-context}
+-The tier costs in Figure~\ref{fig:motivation-recompute} distinguish
+-the value of retaining reusable state from the additional value of
+-making it quickly accessible. Retaining the history avoids most
+-reconstruction work; its location determines the additional retrieval
+-delay. At the longest context, shared storage adds 7.49\,s over DRAM
+-in the measured run. Whether reducing this delay advances workflow
+-completion depends on the recovering branch's position and progress.
+-The measurements characterize fixed inputs and the stated access paths;
+-they do not measure the net serving benefit of a protection policy.
+-
+-\paragraph{Limitation 2: Recovery speed alone omits retention value and
+-resource costs.}
+-A branch that can tolerate recovery delay may still reuse its history
+-on the next normal request. Removing its last KV copy forfeits that reuse;
+-moving the copy to a slower tier preserves it but adds retrieval work.
+-Conversely, keeping every recoverable history in fast memory consumes
+-space needed by other histories and foreground execution. Minimizing
+-recovery latency in isolation therefore does not resolve which state
+-to retain, where to retain it, or how much protection the serving system
+-can afford.
+-
+-\paragraph{Challenge 2: Balancing fast recovery, reuse and resource use.}
+-Finite capacity prevents every long history from remaining near
+-execution. Protection must decide both which histories retain reusable
+-state and which state merits faster access. These decisions
+-need to combine the workflow impact of recovery with future normal reuse,
+-capacity occupancy and data movement. In particular, low recovery
+-urgency does not imply low reuse value, and a faster restore path is
+-useful only to the extent that it advances required work. The challenge
+-is to allocate protection resources as these demands change without
+-allowing protection itself to undermine foreground service.
++The tier costs in Figure~\ref{fig:motivation-recompute} make the resulting
++allocation tradeoff concrete. Retaining KV in a slower tier already
++avoids much of the full-prefill cost; faster tiers reduce the remaining
++retrieval delay at a higher capacity cost. Whether that reduction
++advances workflow completion depends on the recovering branch's slack.
++Conversely, a branch with ample slack may still reuse its history during
++normal execution, so low recovery urgency does not justify deleting its
++last reusable copy. These are distinct reasons to retain and accelerate
++state, even when both use the same storage hierarchy.
++
++\paragraph{Challenge 2: Allocating KV protection across storage tiers.}
++A protection policy must decide both which histories remain recoverable
++from saved KV and which merit faster access, accounting for workflow
++recovery urgency, normal reuse and tier capacity costs. These demands
++change as agents accumulate context, invoke tools and release dependent
++work. The policy must preserve useful state outside the protected
++failure boundary while limiting the capacity and copying work taken
++from foreground service. Simply adding checkpoints to a reuse-oriented
++cache does not determine these priorities; managing the two objectives
++requires a coordinated retention and placement policy.
+ 
+ \label{sec:motivation-goals}
+-AegisKV targets these two challenges: using workflow progress to guide
+-recovery priorities, and managing limited KV capacity across storage
+-tiers while preserving normal reuse. The next section develops the
+-observations and mechanisms that support these decisions.
++AegisKV addresses this gap by using multi-agent workflow progress to
++guide KV protection and by allocating limited tiered storage to recovery
++and normal reuse. The next section develops the observations and
++mechanisms that support these decisions.

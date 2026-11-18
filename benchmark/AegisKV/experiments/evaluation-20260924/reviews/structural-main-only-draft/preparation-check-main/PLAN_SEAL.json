@@ -1,0 +1,5 @@
+{
+  "manifest_sha256": "d4771f87bf2968b782be2a70d8c8e6f02aad36e6bb1eebfda0982745f19d4f59",
+  "plan_sha256": "742f3acd86ef299630e30e70d0f08124d303df5d03c0eae46bfd0126b9ffccb8",
+  "scope": "pre-execution plan, source manifest, profile and workload bindings"
+}

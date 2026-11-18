@@ -1,0 +1,504 @@
+{
+  "data": "/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/experiments/data/reuse-physical-qwen25-1m/blsc/results/1516002/measured.json",
+  "data_sha256": "1245520227aa5f230c434c809a9bb86607d4f62e4dace73d4dd187833cea746c",
+  "evidence": "physical_worker_microbenchmark",
+  "run_complete": false,
+  "contexts": [
+    8192,
+    16384,
+    32768,
+    65536,
+    131072
+  ],
+  "omitted_contexts": [
+    262144,
+    524288,
+    1010000
+  ],
+  "width_inches": 2.24,
+  "height_inches": 2.25,
+  "error_bars": "minimum to maximum measured timing repeat; not confidence intervals",
+  "metadata": {
+    "evidence": "physical_worker_microbenchmark",
+    "model": "Qwen/Qwen2.5-7B-Instruct-1M",
+    "revision": "e28526f7bb80e2a9c8af03b831a9af3812f18fba",
+    "framework": "sglang 0.5.10rc0",
+    "torch": "2.9.1+cu128",
+    "cuda": "12.8",
+    "gpu": "NVIDIA A100-PCIE-40GB",
+    "tp": 2,
+    "gpu_bytes": 42298834944,
+    "host": "paraai-n32-h-01-agent-64",
+    "job_id": "1516002",
+    "dtype": "BF16",
+    "batch": 1,
+    "tail_tokens": 64,
+    "attention": "native DualChunkFlashAttention; sparse acceleration disabled",
+    "dca_config": {
+      "chunk_size": 262144,
+      "local_size": 8192,
+      "original_max_position_embeddings": 262144,
+      "sparse_attention_enabled": false
+    },
+    "contexts": [
+      8192,
+      16384,
+      32768,
+      65536,
+      131072
+    ],
+    "chunk_tokens": 8192,
+    "inputs": 1,
+    "repeats": 3,
+    "warmup": 1,
+    "input_kind": "1 fixed synthetic repeated text/code streams; not independent workloads",
+    "endpoint": "all known-tail KV ready; excludes vocabulary projection",
+    "dram": "complete pinned host KV, synchronous-before-compute H2D, no overlap",
+    "pinned_host_allocation": "one maximum-history buffer per layer/rank, reused as prefix views across contexts",
+    "hbm": "complete history resident on the recovery TP group",
+    "recompute_schedule": "rebuild history with 8192-token chunks, then the same separate 64-token tail as reuse",
+    "partition_equivalence": "ordinary fused-tail chunking is diagnostic only; not the timed recompute schedule",
+    "timing": "synchronized perf_counter elapsed, maximum across TP ranks",
+    "script_sha256": "1d5fc803bad9ac084d0c75d522f30e3ab6d5951e2d9436a51b8ca743c1a9bfeb",
+    "cache_shapes": [
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ],
+      [
+        1,
+        63125,
+        16,
+        2,
+        128
+      ]
+    ],
+    "cache_dtypes": [
+      "torch.bfloat16"
+    ],
+    "framework_source_sha256": {
+      "srt/models/qwen2.py": "6519d72f2e158b78cbc5e6381636f8ce46f36c248b6bcc631ebffb101c440890",
+      "srt/layers/attention/dual_chunk_flashattention_backend.py": "86fc86a8b2544a22294a3449c39bab689760239326ddbb8be4a95c3d577f18b7",
+      "srt/model_executor/model_runner.py": "dd02497f8aec958cdc920caa2bb03359f4fb233218aaee9ea34ffa8abb3b3af0",
+      "srt/model_executor/forward_batch_info.py": "ee0e9d4916fcbcf71b056b0f90f2f2347e950060a7bef11d13d707a3cba64fe1"
+    },
+    "adapter_sha256": "3306c1fa9a58af0e29cbcb9fd1a46984d0a5a1f9eed4dd3debd84700f3ad4ac3",
+    "framework_git_revision": null,
+    "framework_package_version": "0.5.10rc0",
+    "activation_backend": "flashinfer.activation.silu_and_mul",
+    "activation_layers": 28,
+    "kernel_build": {
+      "passed": true,
+      "libraries": {
+        "flash-ops": {
+          "library": "/home/bingxing2/home/scx8q31/aegiskv_reuse_qwen25_1m_20260919/.venv/lib/python3.12/site-packages/sgl_kernel/flash_ops.abi3.so",
+          "library_sha256": "2145359fc076f9481bf57cad4874662c1caab8783f0060b3e75e77836318bf28",
+          "architectures": {
+            "sm_90a": 24,
+            "sm_80": 24
+          },
+          "source": "sm80-build/sources.json",
+          "build_customization": "sm80-build/build-customization.json",
+          "checked_at": 1789876717.6459656
+        }
+      },
+      "checked_at": 1789876800.9436436
+    },
+    "planned_contexts": [
+      8192,
+      16384,
+      32768,
+      65536,
+      131072,
+      262144,
+      524288,
+      1010000
+    ]
+  },
+  "exports_sha256": {
+    "pdf": "6e21f8dfb75f0f2e9f83a24fffd21bbb91a1c73a54472c37bb8ad988f237f773",
+    "png": "e77d41b0a2da1e3252d42c572b4adfce55896fd42e8f75c1257e899437e92685",
+    "svg": "739e1c1de84596b29fb35b1568a0d2d27a3daa72ed652743dfcb1481ad9676bb"
+  }
+}

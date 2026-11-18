@@ -1,0 +1,606 @@
+--- before/benchmark/AegisKV/experiments/scripts/paper/render_motivation_row.py
++++ after/benchmark/AegisKV/experiments/scripts/paper/render_motivation_row.py
+@@ -73,7 +73,7 @@
+     ax.set_xticks([1, 100, 10000], ["1", "100", "10k"])
+     ax.minorticks_off()
+     ax.set_yticks([0, .5, 1], ["0", "50", "100"])
+-    ax.set_xlabel("Branch-duration gap (s)")
++    ax.set_xlabel("Max. duration gap (s)")
+     ax.set_ylabel("Workflows (%)", labelpad=3)
+     ax.tick_params(length=3, pad=3)
+     save(fig, "motivation-branch-gap", "trace",
+@@ -128,8 +128,9 @@
+          f"at {float(rows[0]['failure_time_s']):.1f} s; other branches/queues unchanged. "
+          "Four-branch group selected for gap near 100 s and visible exposure; not representative "
+          "population failure impact. Group is not its workflow maximum or a sample in the ECDF. "
+-         "Exact Qwen3-14B AIConfigurator queries rebuild the trace-derived prefix plus an assumed "
+-         "64-token tail. No measured latency and no extrapolation of a measured curve.",
++         "Qwen3-14B AIConfigurator queries use each active request's input-size proxy "
++         "(hash-block count times 64, not a tokenizer length), plus an assumed 64-token tail. "
++         "No measured latency and no extrapolation of a measured curve.",
+          [str(base.CC_CSV.relative_to(base.ROOT)), str(SELECTION.relative_to(base.ROOT)),
+           str(EXAMPLE_COSTS.relative_to(base.ROOT))])
+     return [dict(branch=f"A{i+1}", recompute_s=float(t), slack_s=float(s), exposed_s=float(e))
+@@ -144,25 +145,32 @@
+     # Reserve fixed physical bands for the three legend rows and axis labels.
+     fig.subplots_adjust(left=.21, right=.97, bottom=.40/REUSE_H,
+                         top=1-.66/REUSE_H)
+-    paths = [("hbm_ms", "HBM reuse", base.BLUE),
+-             ("dram_ms", "DRAM reuse", base.ORANGE),
+-             ("recompute_ms", "Recompute", base.RED)]
+-    models = [("Qwen3-14B", "o", "-", 5),
+-              ("Llama-3.1-70B", "s", "--", 4),
+-              ("Qwen3-235B-A22B-Instruct-2507", "^", "-.", 4.5),
+-              ("DeepSeek-V3.2", "D", ":", 4)]
++    # Paths have redundant color/line encodings, including in grayscale.
++    # Marker shape identifies the model; hollow points flag only the two
++    # named extrapolation regimes. Every point, filled or hollow, is static.
++    paths = [("hbm_ms", "HBM reuse", base.BLUE, "-"),
++             ("dram_ms", "DRAM reuse", base.ORANGE, "--"),
++             ("recompute_ms", "Recompute", base.RED, ":")]
++    models = [("Qwen3-14B", "o", 5),
++              ("Llama-3.1-70B", "s", 4),
++              ("Qwen3-235B-A22B-Instruct-2507", "^", 4.5),
++              ("DeepSeek-V3.2", "D", 4)]
+     labels = {"Qwen3-235B-A22B-Instruct-2507": "Qwen3-235B (2507)"}
+     assert set(data['models']) == {m[0] for m in models}
+-    for model, marker, style, size in models:
++    for model, marker, size in models:
+         rows = sorted((r for r in data['rows'] if r['model'] == model),
+                       key=lambda r: r['total_tokens'])
+         assert all(r['status'] == 'estimated' for r in rows)
+         assert rows[-1]['total_tokens'] == data['models'][model]['context_limit']
+         assert all(r['context_tokens']+r['tail_tokens'] == r['total_tokens'] for r in rows)
+-        for key, label, color in paths:
++        for key, label, color, style in paths:
+             ax.plot([r['total_tokens'] for r in rows], [r[key] for r in rows],
+-                    color=color, marker=marker, ls=style, lw=1.15, ms=size,
+-                    mfc='white', mew=.9, label=f'{model}: {label}')
++                    color=color, ls=style, lw=1.15, label=f'{model}: {label}')
++            for r in rows:
++                extrapolated = r['dsa_beyond_table_context'] or r['qwen_full_attention_projection']
++                ax.plot(r['total_tokens'], r[key], color=color, marker=marker,
++                        ls='none', ms=size, mfc='white' if extrapolated else color,
++                        mew=.9)
+     ax.set_xscale('log', base=2); ax.set_yscale('log')
+     ax.set_xlim(6800, 1250000); ax.set_ylim(7, 500000)
+     ax.set_yticks([10, 100, 1000, 10000, 100000], ['10', '100', '1k', '10k', '100k'])
+@@ -173,19 +181,22 @@
+     ax.set_ylabel('Recovery time (ms)', labelpad=3)
+     # Three path keys in a row, then four model keys in a separate two-column key.
+     # This avoids twelve repetitive legend entries at single-column width.
+-    path_handles = [Line2D([], [], color=c, lw=1.8, label=label) for _, label, c in paths]
+-    model_handles = [Line2D([], [], color=base.INK, marker=m, ls=s, lw=1.15,
+-                           ms=z, mfc='white', mew=.9, label=labels.get(name, name))
+-                     for name, m, s, z in models]
++    path_handles = [Line2D([], [], color=c, ls=s, lw=1.8, label=label)
++                    for _, label, c, s in paths]
++    model_handles = [Line2D([], [], color=base.INK, marker=m, ls='none',
++                           ms=z, mfc=base.INK, mew=.9, label=labels.get(name, name))
++                     for name, m, z in models]
+     fig.legend(handles=path_handles, loc='upper center',
+                bbox_to_anchor=(.5, 1-.025/REUSE_H), borderpad=0, borderaxespad=0,
+-               ncol=3, handlelength=1, columnspacing=.6, handletextpad=.4)
++               ncol=3, handlelength=1.3, columnspacing=.4, handletextpad=.35)
+     fig.legend(handles=model_handles, loc='upper center',
+                bbox_to_anchor=(.5, 1-.23/REUSE_H), borderpad=0, borderaxespad=0,
+                ncol=2, handlelength=1.5, columnspacing=.7, handletextpad=.4, labelspacing=.25)
+     save(fig, "motivation-recompute", "static-estimate",
+-         "Single-column, single-axis recovery comparison: color encodes path, line style and "
+-         "marker encode model. All 75 points are deterministic estimates; no jitter. "
++         "Single-column, single-axis recovery comparison: color and line style encode path; "
++         "marker shape encodes model. Hollow markers flag DSA table extrapolation beyond 32K "
++         "and Qwen2507 full-attention cost projection beyond 256K. Filled markers are also static estimates. "
++         "All 75 points are deterministic estimates; no jitter. "
+          "Qwen3-14B dense TP1 to 128K with YaRN, Llama-3.1-70B dense TP4 to 128K, "
+          "Qwen3-235B-A22B-Instruct-2507 dense-attention MoE TP/EP16 to 1,010,000, "
+          "DeepSeek-V3.2 671B sparse DSA MoE TP/EP32. PP1; H100-SXM BF16 batch1, "
+--- before/benchmark/AegisKV/paper/draft/background_and_motivation.md
++++ after/benchmark/AegisKV/paper/draft/background_and_motivation.md
+@@ -1,6 +1,6 @@
+ ## 2 Background and Motivation
+ 
+-多智能体应用通过相互依赖的 LLM 请求完成一个用户任务。执行节点故障后，重建丢失的 KV 可以恢复单个请求，但用户感知的损失取决于整个工作流何时完成。本节从工作流的依赖关系与长上下文的重建代价出发，说明为什么 KV 保护需要以工作流完成时间为目标，并在有限的备份容量与带宽下分配资源。
++多智能体应用通过相互依赖的 LLM 请求完成一个用户任务。执行节点故障会同时损失服务能力与 KV 状态，推迟受影响请求及其后继。备份 KV 能减少重建工作，却也占用正常请求所需的内存与带宽。因此，本节关注如何在有限资源下分配保护，以减少工作流完成时间（WCT），以及更快的 GPU 驻留保护何时值得付出额外资源。
+ 
+ <table class="motivation-figures">
+ <tr>
+@@ -9,45 +9,47 @@
+ <td width="33%" align="center" valign="top"><a href="../figures/motivation-row/motivation-recovery-exposure.pdf"><img src="../figures/motivation-row/motivation-recovery-exposure.png" width="100%" alt="图 1(c)：同一工作流四个分支的重算时间与 WCT 损失"></a></td>
+ </tr>
+ <tr>
+-<td align="center">(a) 并行分支的耗时差异</td>
++<td align="center">(a) 工作流内最大耗时差</td>
+ <td align="center">(b) 四分支 Workflow 实例</td>
+-<td align="center">(c) 重算代价与工作流损失</td>
++<td align="center">(c) 恢复延迟暴露估计</td>
+ </tr>
+ </table>
+ 
+-**图 1：面向工作流的 KV 保护动机。** (a) 121 个 CC/Weka 工作流的经验累积分布，每个工作流贡献通过时序 fan-in 筛选的严格重叠组中最大的分支持续时间差，中位数为 138 s，P90 为 1,173 s。汇合关系由全部分支结束后的 Main 请求推断，允许期间存在 Main 请求。(b) 同一批 fan-in 组中的四分支实例，时长差为 91.2 s；该组不是所属工作流的最大差值组。横轴以首个分支启动为零点，条形保留真实起止时间，右侧数字为持续时间（秒），虚线为到汇合的 Slack。A2 决定 151.6 s 的汇合；Main 方框仅示意依赖。(c) 扇出后 29.5 s 的四个独立分支故障反事实；斜纹部分由 Slack 吸收，实色部分暴露给 WCT。重算代价采用 Qwen3-14B、A100-SXM、BF16、batch 1、TP 1 的静态估计，包含假设的 64-token 尾部；该说明性实例不代表总体故障收益。
++**图 1：工作流时序与恢复延迟暴露示例。** (a) 每个工作流内最大分支持续时间差的 ECDF（121 个工作流，fan-in 由时序推断），并非 Slack 分布。(b) 选取的四分支轨迹实例，时长差为 91.2 s，不是 (a) 中的最大差值样本。条形保留相对首个分支启动的真实时序；虚线假设全部分支均为 A2 在 151.6 s 完成时的汇合所必需。(c) 扇出后 29.5 s 的独立分支故障反事实，斜纹表示吸收的延迟，实色表示 WCT 损失。重建代价以块计数输入代理值查询 Qwen3-14B/A100 BF16 静态模型，包含假设的 64-token 尾部（batch/TP 均为 1）。
+ 
+ ### 2.1 工作流、故障与 KV 恢复
+ 
+ **多智能体工作流。** 我们将一个工作流表示为有向无环图 $G=(V,E)$：节点是 LLM 请求，边表示请求之间的数据依赖。一个 agent 分支可以包含多轮请求和工具调用，后继节点在其依赖满足后才能执行。工作流完成时间（workflow completion time，WCT）从首个请求释放计至最后一个请求完成。对于给定的执行计划，请求的 Slack 是在不推迟工作流完成的前提下，其完成时间能够延后的最大幅度；关键路径上的请求没有这种余量。
+ 
+-**服务与故障模型。** 我们考虑由多个 GPU worker 提供服务的集群，请求的 KV 按块管理，可复制到其他 GPU 或主机 DRAM 池。这与 [Mooncake](https://www.usenix.org/conference/fast25/presentation/qin) 等将 KV 存储与请求执行分离的架构相容。本文关注单个执行 GPU 或 worker 的 fail-stop 故障：其本地 KV 不再可用，控制面、承载备份的 DRAM 与其他 worker 存活，由已加载相同模型的存活 worker 接管受影响请求。整机故障、网络分区和静默数据损坏不在本节的故障模型内。
++**服务与故障模型。** 我们考虑按块管理 KV 的 worker，每个 worker 是一个完整模型副本，也可以由一个张量并行（TP）组承载。GPU 或 worker 的 fail-stop 故障使该 worker 不可用，由已加载兼容权重的存活 worker 接管请求。控制面、token 历史、承载备份的 DRAM 和接管 worker 必须存活。本文研究这一前提下的 KV 恢复，不涵盖整机故障、网络分区、静默数据损坏或丢失的模型服务能力如何恢复。
+ 
+ **恢复途径与资源代价。** 没有可用副本时，系统需重新执行 prefill 来重建丢失的 KV。DRAM 副本可以避免重建已保存的前缀，但使用前仍需将状态传入 GPU，多个恢复请求会共享传输带宽。若副本预先驻留在实际接管 GPU 的 HBM 中，则可直接供该 GPU 使用；代价是占用原本可用于前台请求的 HBM，并产生故障前的复制流量。因此，备份介质的容量、恢复速度与正常服务开销之间存在权衡。
+ 
+-已有系统通过 KV 流式复制（[DéjàVu](https://proceedings.mlr.press/v235/strati24a.html)）、纠删编码（[GhostServe](https://proceedings.mlsys.org/paper_files/paper/2026/hash/d99e8e80a6c41e148db686918dd7eab3-Abstract-Conference.html)）或结合负载协调检查点与恢复（[LUMEN](https://arxiv.org/abs/2606.17787)）降低故障代价。多智能体应用进一步提出了一个资源分配问题：保护不同请求所节省的恢复时间，对用户等待时间可能具有不同价值。仅以保存的 KV 字节数或避免的重算量衡量保护效果，无法体现这种差异。
++**与现有系统的关系。** [DéjàVu](https://proceedings.mlr.press/v235/strati24a.html) 将 KV 副本流式传入远端 CPU 内存以恢复流水线执行，消耗主机存储和传输带宽。[GhostServe](https://proceedings.mlsys.org/paper_files/paper/2026/file/d99e8e80a6c41e148db686918dd7eab3-Paper-Conference.pdf) 在主机内存存储纠删编码校验片，用编码与重建工作换取更少的检查点字节，并将部分重算与恢复 I/O 重叠；其内存丢失恢复实验维持静态并行拓扑，硬设备故障还需恢复或重建该拓扑。[LUMEN](https://arxiv.org/html/2606.17787v1) 已根据负载协调主机内存检查点放置和重试路由，并在模型重新加载期间提供草稿模型辅助，代价包括检查点流量、预留主机内存和临时草稿状态。[Mooncake](https://www.usenix.org/conference/fast25/presentation/qin) 汇聚 DRAM/SSD KV 存储，在请求延迟 SLO 约束下调度复用以提高吞吐。
++
++工作流感知的缓存分配也已有研究：[KVFlow](https://arxiv.org/html/2507.07400v1) 利用后续 agent 执行步数决定前缀驱逐和重叠预取；[TOPAS 预印本](https://arxiv.org/html/2608.25523v1) 在共享 KV 预算下联合选择前缀驻留和请求准入，利用剩余工作流路径优化任务完成时间。[NOSA/NOSI](https://arxiv.org/html/2510.13602v2) 限制稀疏注意力传输量，并在解码时调入选中但未驻留的块。这些机制面向前缀复用或卸载推理。AegisKV 的具体问题是：依据活跃 KV 丢失后对 WCT 的边际影响，分配 DRAM 备份和额外 HBM 副本，同时保持模型的注意力选择不变。因此，工作流感知、稀疏加载或传算重叠本身均不足以构成新颖性。
+ 
+ ### 2.2 请求恢复代价与工作流损失不同
+ 
+-并行分支的汇合决定了依赖这些分支的后继何时能继续：较早完成的分支可以容忍一定延迟，而决定汇合时刻的分支一旦延迟就会推迟后继执行。为刻画这类时间差异，我们分析公开的 [CC/Weka 编码 agent 轨迹](https://huggingface.co/datasets/semianalysisai/cc-traces-weka-062126)。我们先从 393 条会话中提取严格重叠的子 agent 组，即最晚启动的分支早于最早结束的分支，再保留所有分支均已完成、且最后一个分支结束后仍有 Main 请求的组。Main 在分支执行期间可以继续发出请求。轨迹未记录显式结果依赖，因此这里的 fan-in 是根据时序推断的，不能据此验证 Main 是否消费了全部分支输出。
++并行分支的汇合决定了依赖这些分支的后继何时能继续：较早完成的分支可以容忍一定延迟，而决定汇合时刻的分支一旦延迟就会推迟后继执行。为刻画这类时间差异，我们分析公开的 [CC/Weka 编码 agent 轨迹](https://huggingface.co/datasets/semianalysisai/cc-traces-weka-062126)。上游发布版要求每会话至少 20 次 Anthropic 请求、峰值并发 subagent 组不超过 10，排除被标记存在动态 agent 标签缺陷的会话，并删除超过输入长度上限的请求；我们的覆盖范围以这一预筛选语料为条件。我们从其中的 393 条会话提取严格重叠的子 agent 组，即最晚启动的分支早于最早结束的分支，再保留所有分支均已完成、且最后一个分支结束后仍有 Main 请求的组。Main 在分支执行期间可以继续发出请求。轨迹未记录显式结果依赖，因此 fan-in 是时序推断，不能验证 Main 是否消费了全部分支输出。
+ 
+-这一筛选保留 121 个工作流中的 286 个并行组。对每个保留组计算最长与最短分支的持续时间之差，再对每个工作流取最大值。图 1(a) 中该差值的中位数为 138 s，P90 为 1,173 s，表明这些工作流的并行分支存在明显的耗时差异。由于分支起点可以不同，持续时间差并不等于汇合处的 Slack，也不能直接解释为能够吸收故障的时间。
++这一筛选从 292 个重叠组中保留 121 个工作流的 286 个组。对每个保留组计算最长与最短分支的持续时间之差，再对每个工作流取最大值。图 1(a) 的中位数为 138 s，P90 为 1,173 s，说明工作流内最大分支持续时间差存在明显异质性，并不表示请求或故障时刻的 Slack 总体分布。未进入这 121 个工作流的会话不能据此归为串行执行。
+ 
+-图 1(b) 从这些保留的 fan-in 组中选择一个四分支实例，A1–A4 分别持续 60.370、151.612、132.409、129.429 s，最长与最短之差为 91.242 s。该组并非其工作流的最大差值组，因此不作为图 1(a) 中单个样本的展开。各分支内部的请求和工具调用聚合为一条区间，条形位置与长度保留原始时间差。A2 在扇出后 151.6 s 最晚完成，随后 Main 在 157.4 s 发出请求。在后继依赖全部四个分支的假设下，各分支的 Slack 等于其完成时刻到 A2 完成时刻的余量。我们在分支数为 4–5、时长差约 100 s 的候选组中选取关键分支前缀较长的实例，以清楚展示恢复代价与延迟容忍度的区别。
++图 1(b) 选取一个时长差为 91.2 s 的四分支实例。条形保留真实起止时刻，将分支内的请求与工具调用聚合为一条区间。我们从分支数为 4–5、时长差距 100 s 不超过 15 s 的合格候选中选取关键分支前缀最长的组，使恢复延迟暴露更易辨认；该组不是所属工作流的最大差值组。A2 在扇出后 151.6 s 最晚完成，Main 在 157.4 s 发出请求。在 Main 依赖全部四个分支的明确假设下，各分支到 A2 完成的时间余量构成其汇合 Slack；轨迹提供时间，依赖边来自假设。
+ 
+-图 1(c) 在扇出后 29.5 s 分别假设一个分支丢失当前历史 KV，四行对应四个独立反事实。该时刻取自四个分支均有活跃 LLM 请求的区间，并按接近公共执行区间中点的规则确定。历史长度 $M_i$ 取该请求的轨迹哈希块计数，范围为 100,864–113,664 tokens，并统一假设存在已知但未提交的 64-token 尾部。重算时间 $T_i$ 直接查询 Qwen3-14B、A100-SXM、BF16、batch 1、TP 1 静态模型，从空缓存重建 $M_i+64$ tokens；该尾部状态是反事实假设，不是轨迹中的观测量。分支 Slack $\sigma_i$ 由原轨迹完成时刻离线计算。其他分支、后继执行和排队保持不变时，暴露给 WCT 的损失为 $\max(0,T_i-\sigma_i)$。这是一项跨模型代价替换分析，不是原服务模型的实测故障重放。
++图 1(c) 在扇出后 29.5 s、四个分支均有活跃 LLM 请求时构造四个独立的单分支故障反事实。我们采用这四个请求记录的输入字段，不取最终输出或分支总量。输入长度代理值为 100,864–113,664，等于 64-token 哈希块数乘以 64，并非真实 tokenizer 计数，在重缓存场景下可能高估。我们加上假设的已知 64-token 尾部，用 AIConfigurator 的 Qwen3-14B、A100-SXM、BF16、batch 1、TP 1 配置估计重建时间 $T_i$。汇合 Slack $\sigma_i$ 由轨迹完成时刻离线计算；其他执行与排队不变时，WCT 损失为 $\max(0,T_i-\sigma_i)$。这项分析组合了轨迹时序、依赖假设与替换的静态模型代价，并非原服务模型上的故障重放或总体收益估计。
+ 
+-A1–A4 的重算代价分别为 35.2、32.2、36.7、38.9 s，暴露给 WCT 的损失却分别为 0、32.2、17.6、17.0 s。A1 的 91.2 s Slack 可以完全吸收重算；A2 的重算代价最低，却因 Slack 为零而产生最大的 WCT 损失；A3 和 A4 的 19.1、21.9 s Slack 则只能部分吸收延迟。因此，避免最多的重算未必带来最大的 WCT 改善。KV 保护需要考虑请求在工作流中的延迟容忍度；在线估计与实际资源竞争的处理由后续设计与评估展开。
++A1–A4 的重建代价分别为 35.2、32.2、36.7、38.9 s，暴露给 WCT 的损失却分别为 0、32.2、17.6、17.0 s。A1 的 91.2 s Slack 完全吸收其重建代价；A2 的重建代价最低，却因 Slack 为零产生最大的 WCT 损失。因此，仅按避免的计算量排序可能错误分配保护。该实例支持以 WCT 为目标，并未验证在线 Slack 估计的准确度。
+ 
+ ### 2.3 长上下文与备份层级的恢复代价
+ 
+ Agent 的多轮交互将代码、工具输出和其他 agent 的中间结果不断加入上下文。保存历史状态可以避免故障后的重复计算，但副本所在的存储层级仍会影响恢复延迟。图 2 比较三个起点状态：完整历史 KV 及必要辅助状态已在接管 GPU 组的 HBM 中、相同状态仅在本机 DRAM 中，以及没有可用副本。三条路径统一以已知 64-token 尾部前向结束、历史与尾部状态重建完成为终点，模型权重均已加载。因此 HBM reuse 仍包含尾部计算代价。
+ 
+-比较采用 [NVIDIA AIConfigurator](https://github.com/ai-dynamo/aiconfigurator) 0.9.0 HYBRID 静态估计，覆盖 Qwen3-14B 与 Llama-3.1-70B 两种稠密模型、Qwen3-235B-A22B-Instruct-2507（235B 总参数、22B 激活参数）的 MoE，以及 DeepSeek-V3.2（671B 总参数、37B 激活参数）的 MoE＋DSA 稀疏注意力。MoE 描述前馈专家结构，本身不代表稀疏注意力；Qwen 采用稠密 GQA 成本模型，DeepSeek 则使用索引器选择历史 token。统一采用 H100-SXM 80 GiB、vLLM 0.19.0、BF16 权重与 KV、batch 1，四个模型的 TP 分别为 1、4、16、32；两个 MoE 的 EP 分别为 16、32，PP 均为 1。各模型的 GPU 数量不同，比较对象是同一模型配置下的三种恢复路径。
++比较采用 [NVIDIA AIConfigurator](https://github.com/ai-dynamo/aiconfigurator) 0.9.0 HYBRID 静态估计，覆盖 Qwen3-14B 与 Llama-3.1-70B 两种稠密模型、Qwen3-235B-A22B-Instruct-2507（235B 总参数、22B 激活参数）的 MoE，以及 DeepSeek-V3.2（671B 总参数、37B 激活参数）的 MoE＋DSA 稀疏注意力。Qwen 采用稠密分组查询注意力（GQA）成本模型，DSA 包含历史 token 索引器。统一采用 H100-SXM 80 GiB、vLLM 0.19.0、BF16 权重与 KV、batch 1，四个模型的 TP 分别为 1、4、16、32；两个 MoE 的 EP 分别为 16、32，PP 均为 1。各模型的 GPU 数量不同，比较对象是同一模型配置下的三种恢复路径。
+ 
+-横轴为总上下文 $C=M+64$，其中 $M$ 为已保存历史，64 为已知尾部。每个模型的曲线延伸到其对应的上下文上限：[Qwen3-14B](https://huggingface.co/Qwen/Qwen3-14B) 使用 YaRN 到 131,072 tokens，[Llama-3.1-70B](https://huggingface.co/meta-llama/Llama-3.1-70B-Instruct) 到 131,072，[DeepSeek-V3.2](https://huggingface.co/deepseek-ai/DeepSeek-V3.2/blob/main/config.json) 到官方配置中的 163,840，而 [Qwen 2507](https://huggingface.co/Qwen/Qwen3-235B-A22B-Instruct-2507) 到官方扩展配置的 1,010,000。Qwen 2507 原生支持 256K；超过该范围的点仅投影全注意力计算成本，不估计 DCA 的位置处理或稀疏内核加速。因此，这些点不能作为官方约 1M 部署方案的性能测量。
++横轴为总上下文 $C=M+64$，其中 $M$ 为已保存历史，64 为已知尾部。各曲线延伸到对应上限：[Qwen3-14B](https://huggingface.co/Qwen/Qwen3-14B) 使用 YaRN 到 131,072 tokens，[Llama-3.1-70B](https://huggingface.co/meta-llama/Llama-3.1-70B-Instruct) 到 131,072，[DeepSeek-V3.2](https://huggingface.co/deepseek-ai/DeepSeek-V3.2/blob/main/config.json) 到官方配置的 163,840，[Qwen 2507](https://huggingface.co/Qwen/Qwen3-235B-A22B-Instruct-2507) 到官方扩展配置的 1,010,000。Qwen 2507 原生支持 256K；超过该范围只投影全注意力成本，不含 DCA 位置处理或稀疏内核加速。DSA 算子表覆盖到 32K，更长形状采用表外推算，含历史前缀的查询还使用解析前缀修正。空心标记标出这两类外推区间，实心标记同样是静态估计。
+ 
+-HBM reuse 仅计算新增 64 tokens。Recompute 从空缓存开始，将总上下文分成至多 8,192 tokens 的连续块，逐块重建，后续块复用已重建的历史 KV；所有路径均排除不参与 KV 重建的词表投影计算，保持计时终点一致。采用统一分块大小可控制静态模型中的峰值激活占用，避免将整段 prefill 的容量告警解释成模型无法处理长上下文；分块调度的软件开销不计。DRAM reuse 先恢复每个 TP rank 所需的完整历史状态，再执行相同尾部。GQA 的传输量按实际 KV 分片和必要的头复制计算；DSA 则计入每个 rank 上的 MLA 压缩状态、RoPE key、FP8 索引器 key 及其 FP32 scale。所有 rank 假设同时以各自 64 GB/s 的 H2D 带宽恢复，主机带宽不形成共享瓶颈，且传输与计算不重叠。该带宽来自 AIConfigurator 的系统假设，未作有效带宽测量。
++HBM reuse 仅计算新增 64 tokens。Recompute 从空缓存开始，以至多 8,192 tokens 的连续块逐块重建，后续块复用先前重建的 KV；所有路径均排除不参与 KV 重建的词表投影。分块控制建模的激活内存，分块调度的软件开销不计。DRAM reuse 先恢复每个 rank 所需的完整历史状态，再执行相同尾部。GQA 传输量计入 KV 分片和必要的头复制；DSA 计入每个 rank 上复制的 MLA 压缩状态、RoPE key，以及在其余 BF16 配置下保留原生 FP8 的索引器 key 和 FP32 scale。所有 rank 假设同时以各自 64 GB/s 恢复，主机不形成共享瓶颈，传输与计算不重叠。带宽是系统模型假设，未经测量。
+ 
+ 在 128K 总上下文下，四个模型的 HBM reuse 估计为 22–56 ms，DRAM reuse 为 155–357 ms，分块 Recompute 为 14.5–21.0 s。Qwen 2507 的全注意力成本投影在 1,010,000 tokens 时为 70 ms、830 ms 和 220 s。以 Qwen3-14B 的 128K 点为例，DRAM 副本避免了绝大部分历史重算，而完整 HBM 驻留在此串行传输模型下进一步减少约 335 ms 的等待。这一区别表明，备份首先避免历史计算，HBM 相对 DRAM 的增量价值则来自减少传输等待；参数量、状态格式与并行配置共同影响绝对代价。
+ 
+@@ -55,16 +57,18 @@
+ 
+ [<img src="../figures/motivation-row/motivation-recompute.png" width="480" alt="图 2：四模型三路径恢复估计，各曲线延伸到其对应的上下文上限，Qwen 2507 超过 256K 为全注意力成本外推">](../figures/motivation-row/motivation-recompute.pdf)
+ 
+-**图 2：各模型上下文范围内的恢复延迟估计。** 颜色区分路径，线型及标记区分模型。Qwen14B、Llama70B、Qwen235B（Instruct-2507）、DeepSeek-V3.2 分别使用 1/4/16/32 张 H100，终点为 128K（YaRN）/128K/1,010,000/160K。BF16、batch 1；总上下文包含已知 64-token 尾部，坐标后缀 K = 1,024、M = $10^6$。Recompute 使用 8K 分块；DRAM 按每 GPU 64 GB/s 的假设恢复完整状态后再计算，无传算重叠。全部为静态估计：Qwen 超过 256K 为全注意力成本外推，不含 DCA 加速；DSA 使用解析前缀修正及超过 32K 的性能表外推。不计检测、排队及软件接管开销。
++**图 2：同一模型内的静态恢复估计。** 颜色／线型区分路径，标记形状区分模型。Qwen14B、Llama70B、Qwen235B（2507）、DeepSeek-V3.2 使用 1/4/16/32 张 H100，终点为 128K（YaRN）/128K/1,010,000/160K。BF16、batch 1，总上下文包含相同的 64-token 尾部。HBM 保存完整历史；DRAM 按每 GPU 64 GB/s 恢复完整状态后再计算；Recompute 使用 8K 分块。空心标记表示 Qwen 超过 256K 的全注意力投影，以及 DSA 超过 32K 的算子表外推。K = 1,024，M = $10^6$。
+ 
+ </figure>
+ 
+-HYBRID 使用已有算子性能表及性能模型，仍不能视为物理恢复测量。25 个模型／上下文组合均通过该配置下的静态显存检查，最大估计占用为每卡 77.8 GiB，但未进行实机容量、长上下文精度或原生稀疏恢复验证。完整历史 HBM 驻留只是一项参照，不等于 AegisKV 的有限热块 Peer 方案。该图不模拟资源竞争，也不能直接推出有限备份容量下的 WCT 收益。图 1 进一步说明，这些恢复时间只有在超过分支延迟余量时才会成为工作流损失。
++25 个配置均通过 batch 1 下逐 TP rank 的静态显存检查，最大为每 GPU 77.8 GiB；这不代表多个备份或恢复并发时的容量可行性，也未验证实机部署、长上下文精度或原生稀疏恢复正确性。完整历史 HBM 驻留是一项理想复用参照；AegisKV 的有限热块预算通常仍将部分必需状态留在 DRAM。串行完整状态 DRAM 路径同样是代价参照，并非优化后的 DRAM 基线。该图隔离同一模型内的路径代价，不含检测、排队、软件接管和带宽竞争。
+ 
+ ### 2.4 问题定义与设计目标
+ 
+ <!-- 当前为用户授权的 AIConfigurator 暂定估计版。原生稀疏模型的同条件物理测量仍未补齐；协议和估计口径见 ../../experiments/plans/reuse-latency-insight.md。 -->
+ 
+-AegisKV 要解决的问题是：在备份容量和复制、恢复带宽有限的条件下，哪些请求的哪些 KV 应获得何种保护，才能减少故障对工作流完成时间的影响？依赖关系使不同请求的保护收益不同，长上下文提高了状态丢失的代价，而备份本身又与前台服务竞争资源。
++AegisKV 要解决的问题是：在备份容量和复制、恢复带宽有限的条件下，哪些请求的哪些 KV 应获得何种保护，才能减少故障对工作流完成时间的影响？图 2 支持保存 KV，同时说明 DRAM-only 必须是关键基线：它无需预留备份 HBM 就能避免绝大部分重算。只有 HBM 增量减少的恢复等待暴露给工作流时，才能改善 WCT。对 Slack 为 $\sigma$ 的孤立请求，若 DRAM 和 HBM 的恢复延迟分别为 $D\ge H$，则节省的 WCT 为 $\max(0,D-\sigma)-\max(0,H-\sigma)$，至多为 $D-H$；当 $\sigma\ge D$ 时为零。因此，较大的分支持续时间差本身不能证明占用 HBM 合理，避免数秒 prefill 也不能证明相对 DRAM 的亚秒级收益值得其代价。
+ 
+-这一问题要求系统满足五项目标与约束：**(R1)** 以 WCT 衡量恢复效果，考虑请求依赖带来的延迟容忍度；**(R2)** 在请求及其 KV 之间分配有限备份容量，使保护减少实际暴露的恢复等待；**(R3)** 支持并发恢复及传输与计算重叠，避免保护策略引入额外的请求级串行等待；**(R4)** 控制正常运行时的复制开销，使备份容量与带宽占用服从前台服务的资源需要；**(R5)** 保持模型计算与 KV 恢复的正确性，利用已有服务资源完成恢复。下一节给出支撑方法选择的分析，以及相应的放置与恢复机制。
++收益成立的条件应包括：请求剩余 Slack 较小、传输等待无法由必要计算隐藏，以及存在不会损害前台服务的可用 HBM。只有多个恢复共享受限主机或链路时，并发恢复才可能放大这类等待；图 2 未建模该效应。确定收支平衡点，需要将有限 HBM 保护与强 DRAM-only 基线配对比较：基线支持按层优先传输、模型允许的按需加载及传算重叠，两者使用相同恢复内核重建相同必需状态。测试须扫描负载、共享带宽、每 rank 备份容量和故障频率，统计受影响及未受影响工作流；传输和重算均不能默认拥有无争用资源。按故障频率加权的恢复收益需要抵偿复制和挤占前台 KV 带来的正常服务损失；若不能，系统应保留 DRAM 保护并释放额外 HBM。这些是需要验证的条件，并非当前静态曲线已证明的收益。
++
++这一问题要求系统满足五项目标与约束：**(R1)** 以 WCT 衡量恢复效果，考虑请求依赖带来的延迟容忍度；**(R2)** 在请求及其 KV 之间分配有限备份容量，使保护减少实际暴露的恢复等待；**(R3)** 支持并发恢复及传输与计算重叠，避免保护策略引入额外的请求级串行等待；**(R4)** 控制正常运行时的复制开销，使备份容量与带宽占用服从前台服务的资源需要；**(R5)** 保持模型计算与 KV 恢复的正确性，利用已有服务资源完成恢复。下一节给出相应的放置与恢复设计。
+--- before/benchmark/AegisKV/paper/sections/background_and_motivation.bib
++++ after/benchmark/AegisKV/paper/sections/background_and_motivation.bib
+@@ -37,3 +37,29 @@
+   howpublished = {Hugging Face},
+   url = {https://huggingface.co/openbmb/MiniCPM4-8B}
+ }
++
++% External review A07: section-scoped additions; both are preprints.
++% KVFlow reuses pan2025kvflow from references.bib.
++@misc{ni2026topas,
++  author = {Ni, Hongqiu and Tian, Han and Zhang, Chi and Li, Guopeng
++            and Tan, Haisheng},
++  title = {{TOPAS}: Workflow-Aware Prefix-State Scheduling for Multi-Agent
++           {LLM} Serving},
++  year = {2026},
++  eprint = {2608.25523},
++  archivePrefix = {arXiv},
++  note = {Preprint, version 1},
++  url = {https://arxiv.org/abs/2608.25523v1}
++}
++
++@misc{huang2026nosav2,
++  author = {Huang, Yuxiang and Wang, Pengjie and Han, Jicheng and Zhao, Weilin
++            and Su, Zhou and Sun, Ao and Lyu, Hongya and Zhao, Hengyu
++            and Wang, Yudong and Xiao, Chaojun and Han, Xu and Liu, Zhiyuan},
++  title = {{NOSA}: Native and Offloadable Sparse Attention},
++  year = {2026},
++  eprint = {2510.13602},
++  archivePrefix = {arXiv},
++  note = {Preprint, version 2, January 29, 2026; first posted in 2025},
++  url = {https://arxiv.org/abs/2510.13602v2}
++}
+--- before/benchmark/AegisKV/paper/sections/background_and_motivation.tex
++++ after/benchmark/AegisKV/paper/sections/background_and_motivation.tex
+@@ -4,11 +4,12 @@
+ \label{sec:background-motivation}
+ 
+ Multi-agent applications complete a user task through interdependent LLM
+-requests. After a worker failure, rebuilding lost key--value (KV) state can
+-restore an individual request, but the user-visible penalty depends on when
+-the entire workflow completes. Workflow dependencies and the cost of
+-rebuilding long contexts motivate allocating limited KV protection resources
+-to reduce workflow completion time (WCT).
++requests. A worker failure loses both serving capacity and key--value (KV)
++state, delaying interrupted requests and potentially their successors.
++Backing up KV reduces reconstruction work, but uses memory and bandwidth
++that also serve healthy requests. We therefore ask how to allocate limited
++protection to reduce workflow completion time (WCT), and when faster
++GPU-resident protection earns its additional resource cost.
+ 
+ \input{sections/motivation-figures}
+ 
+@@ -25,14 +26,14 @@
+ workflow completion. Requests on a critical path have zero slack.
+ 
+ \paragraph{Serving and failure model.}
+-We consider a cluster of GPU workers with block-managed KV that can be
+-replicated to other GPUs or a host DRAM pool, consistent with KV-centric
+-architectures such as Mooncake~\cite{qin2025mooncake}. Our failure model is
+-a fail-stop failure of one GPU or worker: its local KV becomes unavailable,
+-while the control plane, backup DRAM, and other workers survive. Surviving
+-workers with the same model already loaded take over affected requests.
+-Whole-host failures, network partitions, and silent corruption are outside
+-this failure model.
++We consider workers with block-managed KV, where a worker is a complete
++model replica, possibly sharded across a tensor-parallel (TP) group.
++A fail-stop GPU or worker failure makes that worker unavailable; its
++requests move to a surviving worker with compatible weights already
++loaded. The control plane, token history, backup DRAM, and takeover worker
++must survive. We address KV recovery under this contract, not whole-host
++failures, network partitions, silent corruption, or restoration of lost
++model-serving capacity.
+ 
+ \paragraph{Recovery paths and resource costs.}
+ Without a usable copy, the system must rerun prefill to rebuild lost KV.
+@@ -43,13 +44,32 @@
+ and replication traffic before failure. Backup placement therefore trades
+ capacity and normal-service overhead against recovery speed.
+ 
+-Prior systems reduce failure costs through KV streaming in
+-D\'{e}j\`{a}Vu~\cite{strati2024dejavu}, erasure coding in
+-GhostServe~\cite{jayakody2026ghostserve}, and load-aware checkpoint and
+-recovery coordination in LUMEN~\cite{cao2026lumen}. Multi-agent
+-applications add an allocation problem: saving the same recovery time for
+-different requests can have different value to the user. Neither saved KV
+-bytes nor avoided computation alone captures that difference.
++\paragraph{Relation to existing systems.}
++D\'{e}j\`{a}Vu streams replicated KV to remote CPU memory to recover
++pipeline execution, spending host storage and transfer
++bandwidth~\cite{strati2024dejavu}. GhostServe stores erasure-coded parity
++in host memory, trading encoding and reconstruction work for fewer
++checkpoint bytes; it also overlaps partial recomputation with recovery
++I/O~\cite{jayakody2026ghostserve}. Its evaluated memory-loss recovery
++retains a static parallel topology, so recovery of hard device failures
++also requires restoring or rebuilding that topology.
++LUMEN already coordinates host-memory checkpoint placement and retry
++routing by load, and uses draft-model assistance during model reload;
++it incurs checkpoint traffic, reserved host memory, and temporary draft
++state~\cite{cao2026lumen}. Mooncake pools DRAM/SSD KV storage and schedules
++reuse for throughput subject to request-latency SLOs~\cite{qin2025mooncake}.
++Workflow-aware cache allocation is also established: KVFlow uses future
++agent steps for prefix eviction and overlapped
++prefetch~\cite{pan2025kvflow}; the TOPAS preprint jointly selects prefix
++residency and request admission under a shared KV budget, using remaining
++workflow paths to optimize task completion~\cite{ni2026topas}.
++NOSA/NOSI constrains sparse-attention transfers and fetches nonresident
++selected blocks during decoding~\cite{huang2026nosav2}.
++These mechanisms address prefix reuse or offloaded inference. AegisKV's
++specific question is how to allocate DRAM backups and additional HBM
++copies by their marginal effect on WCT after loss of active KV, without
++changing the model's attention selection. Workflow awareness, sparse
++loading, and overlap alone are therefore insufficient novelty claims.
+ 
+ \subsection{Recovery Cost Is Not Workflow Delay}
+ \label{sec:motivation-workflow}
+@@ -58,7 +78,11 @@
+ some delay, whereas delaying the branch that determines the join time
+ postpones downstream work. To characterize branch timing differences, we
+ analyze the public CC/Weka coding-agent
+-traces~\cite{semianalysis2026cctraces}. From 393 sessions, we first extract
++traces~\cite{semianalysis2026cctraces}. The upstream release filters for
++at least 20 Anthropic requests per session and at most 10 concurrent
++subagent groups, excludes sessions flagged for a dynamic-agent labeling
++bug, and removes requests above its input-size cap. Our coverage is
++conditional on that filtered corpus. From its 393 sessions, we extract
+ strictly overlapping subagent groups: the latest branch start precedes
+ the earliest branch finish. We retain groups whose branches all complete
+ and are followed by a Main request after the last branch finishes.
+@@ -66,52 +90,47 @@
+ does not record result dependencies, this criterion infers fan-in from
+ timing; it does not verify consumption of every branch's output.
+ 
+-The filter retains 286 groups across 121 workflows. For each retained
+-group, we compute the longest minus the shortest branch duration; each
+-workflow contributes its maximum such gap.
++The filter retains 286 of 292 overlapping groups across 121 workflows.
++For each retained group, we compute the longest minus the shortest branch
++duration; each workflow contributes its maximum such gap.
+ Figure~\ref{fig:motivation}(\subref{fig:motivation-branch-gap}) shows a median of
+ 138\,s and a 90th percentile of 1,173\,s. These gaps establish substantial
+-branch-duration heterogeneity. With unequal branch start times, however,
+-a duration gap is neither join slack nor a direct measure of fault tolerance.
++branch-duration heterogeneity among workflow maxima, not the slack
++distribution across requests or failure instants. Sessions outside the
++121 retained workflows are not thereby classified as serial.
+ 
+ Figure~\ref{fig:motivation}(\subref{fig:motivation-workflow}) shows a
+-four-branch group from the retained fan-ins. A1--A4 last 60.370, 151.612,
+-132.409, and 129.429\,s, respectively, giving a duration gap of 91.242\,s.
+-This group is not its workflow's maximum-gap group, so it does not expand
+-an individual sample in Figure~\ref{fig:motivation}(\subref{fig:motivation-branch-gap}).
+-Bars aggregate each branch's requests and tool calls while preserving
+-observed starts and durations. A2 finishes last at 151.6\,s after the
+-fork, followed by a Main request at 157.4\,s. Assuming that the successor
+-depends on all four branches, each branch's slack is its time margin to
+-A2's completion. Among groups with four or five branches and a gap near
+-100\,s, we select one with a longer critical-branch prefix to illustrate
+-recovery exposure, not population-average failure impact.
++selected four-branch example with a 91.2\,s duration gap. Bars preserve
++observed starts and durations, aggregating requests and tool calls.
++Among eligible groups with four or five branches and a gap within
++15\,s of 100\,s, we select the one with the longest critical-branch prefix
++to make recovery exposure visible. It is not its workflow's maximum-gap
++group. A2 finishes last at 151.6\,s after the fork, and Main issues a
++request at 157.4\,s. Under the explicit assumption that Main depends on
++all four branches, each branch's margin to A2's completion is its join
++slack; the trace supplies times, not these dependency edges.
+ 
+ Figure~\ref{fig:motivation}(\subref{fig:motivation-recovery-exposure}) shows
+-four independent counterfactuals at 29.5\,s after the fork, each losing
+-one branch's history KV. The instant lies in an interval with active LLM
+-requests on all four branches, chosen near the midpoint of their common
+-execution overlap. Trace hash-block counts provide history lengths
+-$M_i$ of 100,864--113,664 tokens, to which we add an assumed known
+-64-token tail. We query a Qwen3-14B static configuration at each exact
+-length: $T_i$ estimates
+-empty-cache reconstruction of $M_i+64$ tokens on A100-SXM, with BF16,
+-batch one, and TP one. The tail state is a counterfactual assumption,
+-not a trace observation. Slack $\sigma_i$ comes from trace completion
+-times. Holding other branches, downstream execution, and queueing
+-unchanged, the WCT penalty is $\max(0,T_i-\sigma_i)$.
+-This cost substitution does not constitute physical failure replay on
+-the original serving model.
++four independent single-branch failure counterfactuals at 29.5\,s after
++the fork, when all four branches have active LLM requests. We use those
++requests' recorded inputs, not their final outputs or branch totals.
++Their input-size proxies are 100,864--113,664: each is the number of
++hashed 64-token blocks multiplied by 64, not a tokenizer count, and may
++overcount under heavy caching. We add an assumed known 64-token tail
++and estimate reconstruction time $T_i$ using
++AIConfigurator with Qwen3-14B, A100-SXM, BF16, batch one, and TP one.
++With join slack $\sigma_i$ derived offline from the observed completions,
++and all other execution and queueing unchanged, the WCT penalty is
++$\max(0,T_i-\sigma_i)$. This combines trace timing, an assumed dependency,
++and substituted static model costs; it is not a failure replay on the
++original serving model or a population estimate.
+ 
+ A1--A4 cost 35.2, 32.2, 36.7, and 38.9\,s to rebuild, but expose
+ 0, 32.2, 17.6, and 17.0\,s to WCT, respectively. A1's 91.2\,s slack
+-absorbs its entire cost. A2 has the lowest rebuilding cost yet incurs
+-the largest WCT penalty because it has zero slack. A3 and A4 absorb
+-only part of their delay with 19.1 and 21.9\,s of slack. Thus, avoiding
+-the most recomputation need not yield the largest WCT improvement.
+-KV protection must account for delay tolerance within a workflow;
+-online estimation and resource contention require the mechanisms and
+-evaluation developed later.
++absorbs its entire cost. A2 has the lowest rebuilding cost yet the
++largest WCT penalty because its slack is zero. Thus, avoided computation
++alone can rank protection incorrectly. The example motivates a WCT
++objective; it does not establish the accuracy of online slack estimates.
+ 
+ \subsection{Long Contexts and Recovery Tiers}
+ \label{sec:motivation-long-context}
+@@ -132,8 +151,8 @@
+ for dense Qwen3-14B and Llama-3.1-70B, the Instruct-2507 version of
+ Qwen3-235B-A22B (235B total, 22B active parameters) with MoE, and DeepSeek-V3.2
+ (671B total, 37B active) with MoE and DeepSeek Sparse Attention (DSA).
+-MoE selects feed-forward experts. We model Qwen with dense GQA and
+-DSA with its historical-token indexer. We use
++We model Qwen with dense grouped-query attention (GQA) and DSA with its
++historical-token indexer. We use
+ H100-SXM 80\,GiB, vLLM 0.19.0, BF16 weights and KV, and batch one.
+ TP is 1, 4, 16, and 32, respectively; the MoE models use EP 16 and 32,
+ and all use PP one. GPU allocations differ, so we compare recovery
+@@ -146,17 +165,18 @@
+ DeepSeek-V3.2 configuration~\cite{deepseek2025v32config}, and 1,010,000
+ in Qwen 2507's extended configuration~\cite{qwen2025instruct2507}.
+ Qwen 2507 natively supports 256K; beyond that length, we project
+-full-attention costs without modeling Dual Chunk Attention (DCA)
+-position handling or sparse-kernel acceleration. Those points do not
+-estimate the performance of the official sparse 1M serving path.
++full-attention costs without Dual Chunk Attention (DCA) position handling
++or sparse-kernel acceleration. DSA module tables end at 32K; longer
++shapes extrapolate those tables, and cached-prefix queries use analytical
++prefix correction. Hollow markers identify these two extrapolation
++regimes; filled markers are also static estimates.
+ 
+ HBM reuse computes only the 64-token tail. Recompute starts empty and
+ processes sequential chunks of at most 8,192 tokens, reusing KV rebuilt
+ by earlier chunks; vocabulary projection is excluded
+-from all paths because it does not rebuild KV. A common chunk size bounds modeled
+-activation memory, rather than interpreting an unchunked-prefill
+-capacity warning as a model's context limit. Inter-chunk scheduling
+-overhead is excluded. DRAM first restores each rank's full historical
++from all paths because it does not rebuild KV. Chunking bounds modeled
++activation memory; inter-chunk scheduling overhead is excluded.
++DRAM first restores each rank's full historical
+ state, then executes the same tail. GQA transfer bytes account for KV
+ sharding and head replication. DSA includes replicated MLA latents,
+ RoPE keys, and native FP8 indexer keys with FP32 scales within the
+@@ -174,17 +194,15 @@
+ DRAM comes from reducing transfer waiting. Parameter counts, state
+ representation, and parallelism jointly affect the cost.
+ 
+-HYBRID combines kernel tables and performance models; these are not
+-physical recovery measurements. DSA module tables end at 32K total
+-tokens, so longer shapes involve extrapolation; cached-prefix queries
+-use analytical prefix correction. All 25 model/context combinations
+-pass the static memory check, with a maximum estimate of 77.8\,GiB
+-per GPU, without validating deployment, long-context accuracy, or
+-native sparse recovery. Full-history HBM residency is a reference,
+-not AegisKV's limited hot-block placement. These estimates omit
+-contention and cannot establish WCT gains under limited backup capacity.
+-Figure~\ref{fig:motivation} further shows why recovery savings must be
+-interpreted in the context of branch delay tolerance.
++All 25 configurations pass the batch-one static memory check per TP
++rank, with a maximum of 77.8\,GiB per GPU. This does not establish capacity
++for simultaneous backups or recoveries, physical deployment, long-context
++accuracy, or native sparse recovery correctness.
++Full-history HBM residency is an ideal reuse reference: AegisKV's finite
++hot-block budget generally leaves some required state in DRAM.
++The serialized full-state DRAM path is likewise a cost reference, not
++an optimized DRAM baseline. The figure isolates within-model path costs
++and excludes detection, queueing, software takeover, and contention.
+ 
+ \subsection{Problem and Design Goals}
+ \label{sec:motivation-goals}
+@@ -192,8 +210,34 @@
+ AegisKV asks: \emph{with limited backup capacity and replication and
+ recovery bandwidth, which KV from which requests should receive what
+ protection to reduce the workflow-level impact of failures?}
+-Dependencies differentiate protection benefits, long contexts increase
+-state-loss costs, and replication competes with foreground serving.
++Figure~\ref{fig:motivation-recompute} supports preserving KV, but also
++shows why DRAM-only protection is an essential baseline: it avoids most
++recomputation without reserving backup HBM. HBM can improve WCT only when
++its incremental reduction in recovery waiting is exposed to a workflow.
++For an isolated request with slack $\sigma$ and recovery delays
++$D\geq H$ under DRAM and HBM reuse, respectively, the saved WCT is
++$\max(0,D-\sigma)-\max(0,H-\sigma)$, at most $D-H$ and zero if
++$\sigma\geq D$. A large branch-duration gap therefore cannot by itself
++justify HBM occupancy, nor can seconds of avoided prefill justify a
++subsecond gain over DRAM.
++
++The useful regime must instead combine requests with little remaining
++slack, transfer waiting that cannot be hidden by required computation,
++and enough spare HBM to avoid harming foreground serving. Concurrent
++restores may increase that waiting only when they share a constrained
++host or link; that effect is absent from Figure~\ref{fig:motivation-recompute}.
++Establishing break-even requires matched finite-HBM runs against a strong
++DRAM-only baseline with layer-prioritized transfers, on-demand loading
++where supported by the model, and transfer--compute overlap. Both paths
++must rebuild the same required state with the same recovery kernels.
++Tests must vary load, shared bandwidth, per-rank backup capacity, and
++failure frequency, counting affected and unaffected workflows; neither
++transfer nor recomputation has contention-free resources by default.
++Frequency-weighted recovery gains
++must justify healthy-service costs from replication and displaced KV.
++When they do not, the system should retain DRAM protection and relinquish
++the extra HBM. These are validation conditions, not benefits established
++by the current static curves.
+ 
+ This problem imposes five goals and constraints.
+ \textbf{(R1)} Optimize recovery for WCT, accounting for dependency-induced
+@@ -206,5 +250,4 @@
+ backup capacity and bandwidth use to foreground needs.
+ \textbf{(R5)} Preserve model computation and KV recovery correctness using
+ existing serving resources.
+-The next section develops the evidence for mechanism choices and the
+-corresponding placement and recovery design.
++The next section develops the corresponding placement and recovery design.
+--- before/benchmark/AegisKV/paper/sections/motivation-figures.tex
++++ after/benchmark/AegisKV/paper/sections/motivation-figures.tex
+@@ -8,7 +8,7 @@
+   \begin{subfigure}[t]{0.32\textwidth}
+     \vspace{0pt}
+     \includegraphics[width=\linewidth]{figures/motivation-row/motivation-branch-gap.pdf}
+-    \caption{Branch-duration gaps}
++    \caption{Workflow-maximum gaps}
+     \label{fig:motivation-branch-gap}
+   \end{subfigure}\hfill
+   \begin{subfigure}[t]{0.32\textwidth}
+@@ -20,24 +20,20 @@
+   \begin{subfigure}[t]{0.32\textwidth}
+     \vspace{0pt}
+     \includegraphics[width=\linewidth]{figures/motivation-row/motivation-recovery-exposure.pdf}
+-    \caption{Recovery cost vs. WCT loss}
++    \caption{Estimated recovery exposure}
+     \label{fig:motivation-recovery-exposure}
+   \end{subfigure}
+-  \caption{Motivation for workflow-aware KV protection.
+-    (a) Each of 121 CC/Weka workflows contributes its largest
+-    branch-duration gap across strictly overlapping groups with inferred
+-    fan-in (median: 138\,s; P90: 1,173\,s). Inference uses a Main request
+-    after all branches finish; Main activity during branches is allowed.
+-    (b) Four parallel branches with a 91.2\,s duration gap, drawn from
+-    the same retained groups but not the workflow maxima in (a).
+-    Time zero is the first branch launch; widths encode durations and
+-    the right-hand column reports seconds. Dashed tails show slack to
+-    the 151.6\,s join, determined by A2. Main boxes indicate inferred
+-    dependencies only. (c) Four independent branch-failure counterfactuals
+-    at 29.5\,s after the fork. Hatched time is absorbed by slack;
+-    solid time delays WCT. Costs use Qwen3-14B on A100-SXM with BF16,
+-    batch one, and TP one, including an assumed 64-token tail. The example illustrates recovery exposure, not
+-    population-average failure impact.}
++  \caption{Workflow timing and illustrative recovery exposure.
++    (a) ECDF of maximum branch-duration gaps per workflow
++    (121 workflows; temporally inferred fan-in), not a slack distribution.
++    (b) Selected four-branch trace example, with a 91.2\,s gap;
++    it is not a maximum-gap sample from (a). Bar positions and lengths
++    encode observed timing from the first branch launch; dashed tails
++    assume all branches are required at A2's 151.6\,s finish.
++    (c) Independent branch-failure counterfactuals at 29.5\,s:
++    hatching denotes absorbed delay, solid fill WCT loss.
++    Rebuild costs use block-count input proxies and Qwen3-14B/A100 BF16
++    static estimates with an assumed 64-token tail (batch/TP one).}
+   \label{fig:motivation}
+   \Description{The panels show workflow-maximum duration gaps, a time-scaled
+     four-branch fan-in example with a 91.2-second gap, and estimated
+--- before/benchmark/AegisKV/paper/sections/motivation-prefill-figure.tex
++++ after/benchmark/AegisKV/paper/sections/motivation-prefill-figure.tex
+@@ -3,26 +3,28 @@
+ \begin{figure}[t]
+   \centering
+   \includegraphics[width=\linewidth]{figures/motivation-row/motivation-recompute.pdf}
+-  \caption{Recovery estimates up to each model's context limit.
+-    Color denotes path; line style and marker denote model.
+-    Qwen14B, Llama70B, Qwen235B (Instruct-2507), and DeepSeek-V3.2
+-    use 1/4/16/32 H100 GPUs and end at 128K (YaRN)/128K/1,010,000/160K,
+-    respectively. BF16, batch one; total context includes the known
+-    64-token tail. K~=~1,024; M~=~$10^6$.
+-    Recompute uses 8K chunks; DRAM restores full state at an assumed
+-    64\,GB/s per GPU before tail compute, without overlap.
+-    All values are static estimates: Qwen beyond 256K projects full
+-    attention without DCA acceleration; DSA uses analytical prefix
+-    correction and table extrapolation beyond 32K.
+-    Detection, queueing, and software takeover are excluded.}
++  \caption{Static recovery estimates, compared within each model.
++    Color/line style denotes path; marker shape denotes model.
++    Qwen14B, Llama70B, Qwen235B (2507), and DeepSeek-V3.2 use
++    1/4/16/32 H100 GPUs and end at 128K (YaRN)/128K/1,010,000/160K.
++    BF16, batch one; total context includes the same 64-token tail.
++    HBM holds full history; DRAM restores full state at 64\,GB/s per GPU
++    before compute; Recompute uses 8K chunks. Hollow markers flag Qwen's
++    full-attention projection beyond 256K and DSA table extrapolation
++    beyond 32K. K~=~1,024; M~=~$10^6$.}
+   \label{fig:motivation-recompute}
+   \Description{One plot compares twelve estimated recovery curves on
+-    logarithmic context and latency axes. Blue, orange, and red encode
+-    HBM reuse, DRAM reuse, and Recompute. Circles, squares, triangles,
++    logarithmic context and latency axes. Blue solid, orange dashed,
++    and red dotted lines encode HBM reuse, DRAM reuse, and Recompute.
++    Circles, squares, triangles,
+     and diamonds encode Qwen3-14B, Llama-3.1-70B, Qwen3-235B-A22B-Instruct-2507,
+     and DeepSeek-V3.2, respectively. The latter two are MoE models;
+     DeepSeek additionally uses sparse attention. Curves stop at each
+-    model's configured context limit. At 1,010,000 total tokens,
++    model's configured context limit. Hollow markers identify Qwen
++    full-attention projection beyond 256K and DSA extrapolation beyond
++    32K; all values including filled markers are static estimates.
++    Full-history HBM is a reference rather than a finite backup policy.
++    At 1,010,000 total tokens,
+     Qwen 2507 costs an estimated 70 milliseconds for HBM reuse,
+     830 milliseconds for DRAM reuse, and 220 seconds for chunked
+     full-attention recomputation. GPU allocations differ across models.}

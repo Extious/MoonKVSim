@@ -1,0 +1,120 @@
+{
+  "created_utc": "2026-09-20T09:28:17Z",
+  "target": "Seconds until the reported completion of the whole Agent instance/task, across all future requests and intervening delays",
+  "observation": "Arrival of each LLM request, only when all prior calls in that Agent have completed; not an explicitly logged tool completion",
+  "primary_landmark": 2,
+  "secondary_landmarks": [
+    1,
+    2,
+    5,
+    10,
+    20
+  ],
+  "primary_metric": "Seconds MAE at request 2; remaining-time APE ECDF and tails also mandatory",
+  "source": "/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/experiments/data/design-insights/agent-episodes.jsonl",
+  "source_sha256": "72de6124e2d23b99967829935e487b915fb006aadd8f55c066b871fdd9338545",
+  "source_provenance": {
+    "source": "/home/comp/zhanzhao/sglsim/AegisKV/doc/Archived/2026-08-06-pre-kvcache-centric/presentations/presentation/experiments/sglsim_large/traces/cc-traces-weka-062126/traces.materialized.jsonl",
+    "source_sha256": "29b6a19e751ff5230771519aab755f80a0f43a4ba9cf96b72d3a6a437ec99276",
+    "counts": {
+      "source_workflows": 393,
+      "source_agents": 1697,
+      "excluded_inconsistent_episode_clock": 9,
+      "included_agents": 1688,
+      "included_workflows": 174
+    },
+    "roles": {
+      "Subagent": 1688
+    },
+    "extraction": "All completed subagent groups with positive durations, requests, and internally consistent clocks; no duration or error threshold."
+  },
+  "samples": 36901,
+  "input_agents": 1688,
+  "workflows": 174,
+  "exclusions": {
+    "overlap_landmarks": 4953
+  },
+  "causal_invariance_checks": 100,
+  "basic_features": [
+    "current_prompt_proxy",
+    "elapsed_s",
+    "model",
+    "step"
+  ],
+  "history_features": [
+    "api_s_lag1",
+    "api_s_lag2",
+    "api_s_lag3",
+    "api_s_last3_mean",
+    "api_s_mean",
+    "api_s_std",
+    "api_s_sum",
+    "context_growth",
+    "current_prompt_proxy",
+    "elapsed_per_completed_request",
+    "elapsed_s",
+    "first_prompt_proxy",
+    "gap_s_lag1",
+    "gap_s_lag2",
+    "gap_s_lag3",
+    "gap_s_last3_mean",
+    "gap_s_mean",
+    "gap_s_std",
+    "gap_s_sum",
+    "interval_s_lag1",
+    "interval_s_lag2",
+    "interval_s_lag3",
+    "interval_s_last3_mean",
+    "interval_s_mean",
+    "interval_s_std",
+    "interval_s_sum",
+    "model",
+    "model_changes",
+    "output_tokens_lag1",
+    "output_tokens_lag2",
+    "output_tokens_lag3",
+    "output_tokens_last3_mean",
+    "output_tokens_mean",
+    "output_tokens_std",
+    "output_tokens_sum",
+    "prompt_growth_lag1",
+    "prompt_growth_lag2",
+    "prompt_growth_lag3",
+    "prompt_growth_last3_mean",
+    "prompt_growth_mean",
+    "prompt_growth_std",
+    "prompt_growth_sum",
+    "step"
+  ],
+  "split": "Five folds by whole Workflow ID; identical fold salt to previous early diagnostic",
+  "fold_salt": "aegiskv-design-insight-agent-20260918",
+  "config": {
+    "loss": "absolute_error",
+    "learning_rate": 0.05,
+    "max_iter": 200,
+    "max_leaf_nodes": 15,
+    "min_samples_leaf": 40,
+    "l2_regularization": 1.0,
+    "early_stopping": false,
+    "random_state": 20260920
+  },
+  "label_transform": "None: remaining seconds directly",
+  "training_weight": "Within each Agent, retained landmarks sum to one; normalized to average training weight one",
+  "evaluation_weight": "One sample per eligible Agent at each specified landmark; no snapshot pooling in primary figure",
+  "tuning": "Fixed settings before fitting; no held-out tuning or favorable-landmark selection",
+  "baselines": "Training-fold median at same request index and model (>=20 samples); else same-index median (>=20), else entry-time global median; basic GBDT ablation",
+  "limitations": [
+    "Roles are all Subagent; task text, tool identities/results, semantic progress and explicit tool completion times absent",
+    "Input length is a 64-token hash-block proxy, not exact tokenizer length",
+    "Completed recorded episodes only; sessions filtered by original corpus",
+    "Workflow-disjoint cross-validation, not unseen-role or chronological deployment evaluation",
+    "Raw repeated tasks/users may span workflow IDs; identities not available to audit them",
+    "Observed service/queue/tool delays included in labels; no physical AegisKV or WCT experiment"
+  ],
+  "versions": {
+    "python": "3.11.13",
+    "numpy": "1.26.4",
+    "sklearn": "1.5.1"
+  },
+  "script_sha256": "378f0cb8c9813479c4c7418de6d396fed2d2e2f7b7abea2e16bf73960fa1d0c9"
+}

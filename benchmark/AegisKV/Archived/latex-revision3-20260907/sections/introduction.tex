@@ -1,0 +1,26 @@
+\section{Introduction}
+Agent applications interleave LLM calls, tools, forks and joins. Their
+key--value (KV) state can be expensive to reconstruct, yet a recovery delay
+may be absorbed before a join or propagate through every downstream stage.
+Uniform protection can therefore consume memory and bandwidth without
+improving application completion time.
+
+Existing systems trade KV storage/transfer for recomputation
+\cite{qin2025mooncake,strati2024dejavu,jayakody2026ghostserve}, while workflow-aware
+serving exploits application structure\cite{lin2024parrot,pan2025kvflow,yu2026pythia}.
+Protection must also consider the workflow consequence of state loss.
+
+AegisKV values protection using residual workflow Slack. The Application
+predicts this signal from a causal DAG; protection policy admits compatible
+prefixes and prioritizes recovery. The source independently copies to HBM
+and DRAM. Growing requests, shared multi-round prefixes and bursty primary
+memory demand make static per-chunk values and delayed quota feedback
+insufficient to specify a complete ownership contract.
+
+We separate an earlier Mooncake prototype with source-bound simulation and
+physical functional recovery from revised algorithms with an executable event
+reference. Revision 3 adds current shared-prefix value, staged group replacement,
+acknowledged reclamation and foreground copy constraints. Classical CPM,
+Landlord and AIMD guarantees\cite{kelley1959cpm,young2002landlord,chiu1989aimd}
+do not automatically apply. Earlier inconclusive workload results motivate
+tighter constraints; new boundary-case checks do not demonstrate speedup.

@@ -1,0 +1,80 @@
+\section{Simulation Results}
+\label{sec:results}
+All 170 measured executions complete the frozen workload and pass the
+independent raw-evidence audit. This section separates protection traffic,
+recovery preparation and whole-workflow completion. Figures show all five
+paired admission orders and 95\% intervals where applicable.
+%RESULT_TABLE%
+
+\subsection{Healthy protection cost}
+%RESULT_HEALTHY%
+\begin{figure*}[t]
+\centering\includegraphics[width=\textwidth]{figures/aligned-healthy.pdf}
+\caption{Healthy execution. (a) Full minus control mean WCT, aggregated within
+each seed before comparison. (b) Bytes actually transferred for protection
+across the complete workload, including work on later-aborted copies.
+Traffic is in TiB ($2^{40}$ bytes). Open circle, square, up/down triangle
+and plus markers identify seeds 0--4; filled diamonds and bars show means
+and 95\% Student-$t$ intervals. Modeled zero latency cost would not imply zero physical
+controller or kernel overhead.}
+\Description{Paired healthy workflow-latency differences and protection
+traffic for unprotected, DRAM-only and full treatments.}
+\label{fig:healthy}
+\end{figure*}
+
+\subsection{Failure impact on complete workflows}
+%RESULT_FAILURE%
+\begin{figure*}[t]
+\centering\includegraphics[width=\textwidth]{figures/aligned-failure.pdf}
+\caption{Base-setting failure outcomes. (a) Descriptive WCT ECDFs over 160
+workflows in each of five runs per arm; the 800 values are not independent
+replicates. (b,c) Paired F1-minus-F0 penalty contrasts for the whole-workload
+mean and the prespecified focus workflow. Negative values favor full.
+Intervals use five admission orders, not workflow-level pseudo-replicates.}
+\Description{Raw workflow completion distributions and controlled contrasts
+against unprotected recomputation and DRAM-only protection.}
+\label{fig:failure}
+\end{figure*}
+
+\subsection{Recovery state and preparation}
+%RESULT_RECOVERY%
+\begin{figure*}[t]
+\centering\includegraphics[width=\textwidth]{figures/aligned-recovery.pdf}
+\caption{The five prespecified focus requests. (a) DRAM/full bars partition each
+prompt into HBM copy, DRAM load and recomputation. (b) Paired prefix-ready
+times include queueing and preparation; lines connect treatments within a
+seed. (c) Prefix-ready saving against the F0-corrected focus-WCT penalty
+contrast; numbers identify seeds (1--3 nearly coincide). Seed 4 prepares
+faster yet finishes its workflow later. No regression is fitted.}
+\Description{Per-seed recovery-source proportions, paired prefix preparation times,
+and their relationship to corrected workflow completion penalties.}
+\label{fig:recovery}
+\end{figure*}
+
+\subsection{Mechanism ablations}
+%RESULT_ABLATIONS%
+\begin{figure*}[t]
+\centering\includegraphics[width=\textwidth]{figures/aligned-ablations.pdf}
+\caption{Ablation minus full: (a,b) failure penalties corrected by each arm's
+own F0 run; (c) healthy copy traffic. Positive values favor full. Slack
+sets the signal to zero; AIMD fixes the initial quota; LRU replaces retention.
+All keep request ownership, copying and cleanup. Each estimate uses five
+paired admission orders; the byte effect does not establish a WCT gain.}
+\Description{Whole-workload, focus-workflow and healthy-byte effects of removing
+Slack, fixing quota control, and replacing retention with LRU.}
+\label{fig:ablations}
+\end{figure*}
+
+\subsection{Sensitivity to modeled conditions}
+%RESULT_SENSITIVITY%
+\begin{figure*}[t]
+\centering\includegraphics[width=\textwidth]{figures/aligned-sensitivity.pdf}
+\caption{Full minus DRAM failure-penalty contrasts across the declared
+settings. $C$ is workflow concurrency and $\beta$ the serialized fraction of
+modeled batch service. Two faults use their two prespecified focus workflows
+and reuse base F0 controls. Open markers show all seeds; intervals are exploratory,
+unadjusted comparisons. Negative values favor full.}
+\Description{Paired sensitivity to concurrency, batch service composition,
+path bandwidth and two sequential failures.}
+\label{fig:sensitivity}
+\end{figure*}

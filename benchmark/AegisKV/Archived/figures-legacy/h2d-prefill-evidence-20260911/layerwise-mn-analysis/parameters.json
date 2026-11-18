@@ -1,0 +1,36 @@
+{
+  "evidence_type": "analytical_scenario_not_measured",
+  "model_source_url": "https://huggingface.co/Qwen/Qwen3-8B/raw/main/config.json",
+  "model_source_checked_on": "2026-09-11",
+  "model": "Qwen3-8B",
+  "model_dimensions": {
+    "hidden_size": 4096,
+    "intermediate_size": 12288,
+    "num_attention_heads": 32,
+    "num_key_value_heads": 8,
+    "head_dim": 128,
+    "max_position_embeddings": 40960
+  },
+  "scenario": {
+    "tensor_parallel_size": 1,
+    "requests": 1,
+    "kv_bytes_per_element": 2,
+    "history_tokens_M": 32768,
+    "new_tokens_N": [128, 512, 1024],
+    "assumed_effective_h2d_GB_per_s": 25,
+    "assumed_effective_compute_TFLOP_per_s": 100,
+    "layer_i_history_ready_at_start": true,
+    "layer_i_plus_1_h2d_starts_at_layer_i_compute_start": true,
+    "weights_already_on_gpu": true,
+    "attention": "dense causal GQA; new N queries attend to M historical positions and their causal part of N",
+    "compute_scope": "one complete transformer layer: QKV projections, attention products, output projection, gated MLP",
+    "copy_scope": "one next layer, M historical tokens, both K and V"
+  },
+  "omitted": [
+    "kernel launch overhead, normalization, RoPE, softmax and pointwise activation costs",
+    "explicit HBM read/write traffic and operator-specific achieved throughput",
+    "host packing, page gathers, fixed DMA costs, NUMA effects and shared-link contention",
+    "copy/compute interference and request queueing",
+    "fault detection, reroute, model loading, output sampling and WCT"
+  ]
+}

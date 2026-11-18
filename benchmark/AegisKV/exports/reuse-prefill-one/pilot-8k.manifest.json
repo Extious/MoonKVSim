@@ -1,0 +1,91 @@
+{
+  "data": "/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/experiments/data/reuse-physical-qwen25-1m/blsc/results/1516142/measured.json",
+  "data_sha256": "76449d36ee800341e3cbe0cebea0f9a2c32326ca5cc74970d1ee7695400dfcf1",
+  "evidence": "physical_worker_microbenchmark",
+  "run_complete": true,
+  "contexts": [
+    8192
+  ],
+  "omitted_contexts": [],
+  "width_inches": 2.24,
+  "height_inches": 2.25,
+  "error_bars": "minimum to maximum where timing repeats exceed one; not confidence intervals",
+  "metadata": {
+    "protocol": "prefill_kv_fill_one_token_v1",
+    "evidence": "physical_worker_microbenchmark",
+    "model": "Qwen/Qwen2.5-7B-Instruct-1M",
+    "revision": "e28526f7bb80e2a9c8af03b831a9af3812f18fba",
+    "framework": "sglang 0.5.10rc0",
+    "torch": "2.9.1+cu128",
+    "cuda": "12.8",
+    "gpu": "NVIDIA A100-PCIE-40GB",
+    "tp": 2,
+    "host": "paraai-n32-h-01-agent-7",
+    "job_id": "1516142",
+    "dtype": "BF16",
+    "batch": 1,
+    "contexts": [
+      8192
+    ],
+    "new_tokens": 1,
+    "chunk_tokens": 8192,
+    "dca_config": {
+      "chunk_size": 262144,
+      "local_size": 8192,
+      "original_max_position_embeddings": 262144,
+      "sparse_attention_enabled": false
+    },
+    "attention": "native DCA, sparse acceleration disabled; unchanged adapter",
+    "forward_mode": "EXTEND, including the single new token",
+    "endpoint": "synchronized model-body Prefill completion; all C token KV populated; excludes lm_head",
+    "endpoint_limit": "Includes final layer attention/MLP; not an instrumented last-KV-write timestamp",
+    "history_tokens": "C-1; exact token slice, including partial page",
+    "hbm": "M=C-1 KV resident before timing; Prefill one new token",
+    "dram": "exactly M token KV copied from pinned DRAM before same one-token Prefill; no overlap",
+    "recompute_schedule": "empty-cache Prefill of M in <=8192-token chunks, followed by one-token EXTEND",
+    "repeats_by_path": {
+      "HBM": 3,
+      "DRAM": 3,
+      "Recompute": 1
+    },
+    "inputs": 1,
+    "input_kind": "fixed synthetic repeated text; not independent workflows",
+    "warmup": "untimed short Prefill/EXTEND/DECODE kernel audit; one HBM and DRAM warmup per context",
+    "recompute_warmup_limit": "One timed full Prefill per context; no duplicated full-context warmup. First shape-specific setup is included.",
+    "timing": "synchronized perf_counter; maximum across TP ranks",
+    "script_sha256": "0370919bd276085ecaf12557cc418b1f080dadbf5425edbacf9de76a1ab4aa75",
+    "framework_source_sha256": {
+      "srt/models/qwen2.py": "6519d72f2e158b78cbc5e6381636f8ce46f36c248b6bcc631ebffb101c440890",
+      "srt/layers/attention/dual_chunk_flashattention_backend.py": "86fc86a8b2544a22294a3449c39bab689760239326ddbb8be4a95c3d577f18b7",
+      "srt/model_executor/model_runner.py": "dd02497f8aec958cdc920caa2bb03359f4fb233218aaee9ea34ffa8abb3b3af0",
+      "srt/model_executor/forward_batch_info.py": "ee0e9d4916fcbcf71b056b0f90f2f2347e950060a7bef11d13d707a3cba64fe1"
+    },
+    "adapter_sha256": "3306c1fa9a58af0e29cbcb9fd1a46984d0a5a1f9eed4dd3debd84700f3ad4ac3",
+    "framework_git_revision": null,
+    "framework_package_version": "0.5.10rc0",
+    "activation_backend": "flashinfer.activation.silu_and_mul",
+    "activation_layers": 28,
+    "kernel_build": {
+      "passed": true,
+      "libraries": {
+        "flash-ops": {
+          "library": "/home/bingxing2/home/scx8q31/aegiskv_reuse_qwen25_1m_20260919/.venv/lib/python3.12/site-packages/sgl_kernel/flash_ops.abi3.so",
+          "library_sha256": "2145359fc076f9481bf57cad4874662c1caab8783f0060b3e75e77836318bf28",
+          "architectures": {
+            "sm_90a": 24,
+            "sm_80": 24
+          },
+          "source": "sm80-build/sources.json",
+          "build_customization": "sm80-build/build-customization.json",
+          "checked_at": 1789876717.6459656
+        }
+      },
+      "checked_at": 1789876800.9436436
+    }
+  },
+  "exports_sha256": {
+    "pdf": "30979834549d240eb44e585e941f9286848ae391a60b43fe66e5b03ba25c054c",
+    "png": "1fb135b9c4d4bedd9afaf8274c992508758f107c5913a70884338804d9438eff",
+    "svg": "3955832a3309f16e81b748b35da0759f08b3c74b0a88228a13f6e54c82a8f696"
+  }
+}

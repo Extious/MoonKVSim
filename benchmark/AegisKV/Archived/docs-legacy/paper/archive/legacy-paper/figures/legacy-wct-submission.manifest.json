@@ -1,0 +1,176 @@
+{
+  "current_design_validation": false,
+  "evidence_boundary": "All inputs predate the current source-owned independent-tier design. The DP8 comparison is a single-seed/single-trial fixed-alpha legacy prototype result; the DP64 panel is a model projection; the heavy-fail panels are logical-PP stress smoke results.",
+  "metrics": {
+    "dp64_projection": {
+      "aegiskv": {
+        "l1_reuse_tokens": 5597459,
+        "l2_reuse_tokens": 7936810,
+        "max_wct_s": 5772.662082,
+        "mean_wct_s": 4193.34787,
+        "p50_wct_s": 4041.10182,
+        "p90_wct_s": 5244.822086,
+        "p99_wct_s": 5705.160619,
+        "recompute_tokens": 7825633,
+        "retry_count": 405,
+        "retry_tokens_total": 21359902,
+        "workflow_count": 160
+      },
+      "no_backup": {
+        "l1_reuse_tokens": 0,
+        "l2_reuse_tokens": 0,
+        "max_wct_s": 6693.852624,
+        "mean_wct_s": 4753.025625,
+        "p50_wct_s": 4761.916766,
+        "p90_wct_s": 5816.912995,
+        "p99_wct_s": 6676.35146,
+        "recompute_tokens": 21359902,
+        "retry_count": 405,
+        "retry_tokens_total": 21359902,
+        "workflow_count": 160
+      }
+    },
+    "heavyfail_stress": {
+      "c16": {
+        "aegiskv_mean_wct_s": 14473.890433167462,
+        "mean_wct_reduction_percent": 30.397073197513524,
+        "no_backup_mean_wct_s": 20794.94512384557,
+        "workflow_count": 20
+      },
+      "c8": {
+        "aegiskv_mean_wct_s": 5077.737755369537,
+        "mean_wct_reduction_percent": 18.874477319708937,
+        "no_backup_mean_wct_s": 6259.11253031981,
+        "workflow_count": 20
+      },
+      "source_metadata": {
+        "c16_aegiskv": {
+          "evidence_tier": "sglsim-offline-unvalidated",
+          "failure_count_injected": 16,
+          "simulation_time_mode": "logical",
+          "workflow_concurrency": 16,
+          "workflow_count": 20
+        },
+        "c16_no_backup": {
+          "evidence_tier": "sglsim-offline-unvalidated",
+          "failure_count_injected": 16,
+          "simulation_time_mode": "logical",
+          "workflow_concurrency": 16,
+          "workflow_count": 20
+        },
+        "c8_aegiskv": {
+          "evidence_tier": "sglsim-offline-unvalidated",
+          "failure_count_injected": 16,
+          "simulation_time_mode": "logical",
+          "workflow_concurrency": 8,
+          "workflow_count": 20
+        },
+        "c8_no_backup": {
+          "evidence_tier": "sglsim-offline-unvalidated",
+          "failure_count_injected": 16,
+          "simulation_time_mode": "logical",
+          "workflow_concurrency": 8,
+          "workflow_count": 20
+        }
+      }
+    },
+    "policy_comparison": {
+      "aegiskv": {
+        "mean_wct_s": 87.75579329331715,
+        "p50_wct_s": 89.35529291629791,
+        "p90_wct_s": 99.62477338314056,
+        "p99_wct_s": 104.26885235548019,
+        "paired_mean_delta_s": -3.9390375216801963,
+        "paired_wins": 15,
+        "workflow_count": 24
+      },
+      "gpu_replica": {
+        "mean_wct_s": 81.73064916332562,
+        "p50_wct_s": 82.72882103919983,
+        "p90_wct_s": 94.05418646335602,
+        "p99_wct_s": 97.38219754695892,
+        "paired_mean_delta_s": -9.964181651671728,
+        "paired_wins": 18,
+        "workflow_count": 24
+      },
+      "host_only": {
+        "mean_wct_s": 79.73392542203267,
+        "p50_wct_s": 79.4262467622757,
+        "p90_wct_s": 91.16301393508911,
+        "p99_wct_s": 99.33853571653366,
+        "paired_mean_delta_s": -11.960905392964682,
+        "paired_wins": 17,
+        "workflow_count": 24
+      },
+      "no_backup": {
+        "mean_wct_s": 91.69483081499736,
+        "p50_wct_s": 95.18596196174622,
+        "p90_wct_s": 110.32586498260498,
+        "p99_wct_s": 113.73276221990585,
+        "workflow_count": 24
+      }
+    }
+  },
+  "new_experiment": false,
+  "operation": "paper_only_analysis_and_relayout_of_frozen_legacy_results",
+  "outputs": {
+    "dp64_projection": {
+      "pdf": "figures/legacy-wct-dp64-projection.pdf",
+      "pdf_sha256": "e6592cd4590aec5ebb615dda8b74e04e14eb17434bda0c8fe2a6145a16f135ea",
+      "png": "figures/legacy-wct-dp64-projection.png",
+      "png_sha256": "0a40cdd676f72cf69aefaf341b4bf540520ba496c0b3240d5602edf29bd6800f"
+    },
+    "heavyfail_stress": {
+      "pdf": "figures/legacy-wct-heavyfail-stress.pdf",
+      "pdf_sha256": "8f2b3e35225f8345abc202505362ef60b9ff82be8e8199c37aade66bcee05bfa",
+      "png": "figures/legacy-wct-heavyfail-stress.png",
+      "png_sha256": "f104268a6a0df3b6e1cec277a8448f41f10d66f16deace44c0e7a75395238963"
+    },
+    "policy_comparison": {
+      "pdf": "figures/legacy-wct-policy-comparison.pdf",
+      "pdf_sha256": "cd503e7b2a2d81091c13e707a02168f5ab407cdecec7aacff27cad9494b5fc10",
+      "png": "figures/legacy-wct-policy-comparison.png",
+      "png_sha256": "2309dab67a96b3960482275d0cb94d3e8cd3f57a719df5f4bbeb41352b4ba39c"
+    }
+  },
+  "physical_runtime_executed": false,
+  "schema": "aegiskv_legacy_wct_paper_relayout_v1",
+  "sglsim_executed": false,
+  "sources": [
+    {
+      "bytes": 6297,
+      "path": "/home/comp/zhanzhao/sglsim/AegisKV/Archived/2026-08-06-pre-kvcache-centric/presentations/presentation/figures/data/measured/fig_backup_policy_comparison_paired_wct.csv",
+      "sha256": "43ab92cca0f7551445403e7f19573977b4b2bec52540069dbc74fc7421299b73"
+    },
+    {
+      "bytes": 28964,
+      "path": "/home/comp/zhanzhao/sglsim/AegisKV/Archived/2026-08-06-pre-kvcache-centric/presentations/presentation/figures/data/projected/fig_weka_subagent_policy_wct_cdf_projected_128k_dp64.csv",
+      "sha256": "e5e3ab811449c844075631e79dcf73f43b961d74ac7637f3b73f027e8f744c15"
+    },
+    {
+      "bytes": 3149,
+      "path": "/home/comp/zhanzhao/sglsim/AegisKV/Archived/2026-08-06-pre-kvcache-centric/presentations/presentation/figures/data/projected/fig_weka_subagent_policy_wct_cdf_projected_128k_dp64.assumptions.json",
+      "sha256": "ea8a281ac8d5b8e2b215b83168f8503520ec648e21095bb55eeb14b152ba59cd"
+    },
+    {
+      "bytes": 160908024,
+      "path": "/home/comp/zhanzhao/sglsim/AegisKV/Archived/2026-08-06-pre-kvcache-centric/experiments/demo/results/fast_logical_pp_20w_16k_c8_c16_heavyfail_v1/c8-heavyfail-aegiskv-v2.json",
+      "sha256": "fd02f86efaa6975a66dad5ff0ccd887201ece1c214752fdcf45aabaa3476d023"
+    },
+    {
+      "bytes": 160956621,
+      "path": "/home/comp/zhanzhao/sglsim/AegisKV/Archived/2026-08-06-pre-kvcache-centric/experiments/demo/results/fast_logical_pp_20w_16k_c8_c16_heavyfail_v1/c8-heavyfail-no_backup-v2.json",
+      "sha256": "615a4e4e1a07e9bef0d2c781bf1e2a0f90b8a671d912f98b04aaeee0f9d1ec70"
+    },
+    {
+      "bytes": 179707857,
+      "path": "/home/comp/zhanzhao/sglsim/AegisKV/Archived/2026-08-06-pre-kvcache-centric/experiments/demo/results/fast_logical_pp_20w_16k_c8_c16_heavyfail_v1/c16-heavyfail-aegiskv-v2.json",
+      "sha256": "fb1624dd742f7fbc7b46f1071eb488b9f62629b108fd2a825c41b221a96f81db"
+    },
+    {
+      "bytes": 179855344,
+      "path": "/home/comp/zhanzhao/sglsim/AegisKV/Archived/2026-08-06-pre-kvcache-centric/experiments/demo/results/fast_logical_pp_20w_16k_c8_c16_heavyfail_v1/c16-heavyfail-no_backup-v2.json",
+      "sha256": "008202c850d64d58a788c8d99e18c5a81db2f48b983d074376a5cdbe88c69cff"
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+\subsection{System Overview}
+\label{sec:system-overview}
+
+Figure~\ref{fig:system-overview} separates applications, control, and
+inference engines. Applications report request/workflow IDs and DAG
+updates. The Router dispatches by load and locality; the AegisKV
+Controller owns slack, recovery assignments, and backup policy.
+Adapters coordinate checkpoint intervals and a common layer depth,
+control local Peer budgets, and invoke Connectors to move KV directly
+between engines and storage. Badges index the mechanisms below, not
+execution order.
+
+\begin{figure}[t]
+  \centering
+  % Preserve v11 geometry; only uniform width scaling, as requested.
+  \includegraphics[width=\columnwidth]{figures/system-overview-v11.drawio.pdf}
+  \caption{AegisKV overview. Badges identify Tracker (1), Recovery
+    Manager (2), KV Master (3), and Adapter (4). Recovery targets are
+    assigned at arrival; backup policy flows to Adapters, which control
+    Peer budgets and layer counts. Peer and DRAM paths commit independently.
+    Equivalent DPs hold local KV and smaller Peer regions; memory
+    proportions are schematic.}
+  \label{fig:system-overview}
+  \Description{Three horizontal tiers show applications, control, and inference.
+    A workflow DAG feeds a Tracker with per-request slack bars. The Recovery
+    Manager binds target DPs and forks concurrent retries. The KV Master
+    selects protection tiers and hot-block candidates. Equivalent DP0 and
+    DP1 engines each contain an Adapter controlling Peer budgets and layer counts,
+    a layer/block grid in Local KV, a smaller Peer KV region holding the other
+    DP's replicas, and a Connector. Adapters invoke Connectors; Peer transfers
+    and independent DRAM copy/restore paths bypass the control plane.}
+\end{figure}
+
+The Recovery Manager records a request's retry target and Peer DP rank
+at arrival (\S\ref{sec:recovery-manager}). The KV Master refreshes
+backup policy on request/KV/slack events and control windows
+(\S\ref{sec:kv-master}); Adapters update checkpoint intervals, the shared
+layer depth, and local budgets every 5\,s (\S\ref{sec:kv-runtime}). The Controller
+retains directory and commit metadata outside the source's failure domain.

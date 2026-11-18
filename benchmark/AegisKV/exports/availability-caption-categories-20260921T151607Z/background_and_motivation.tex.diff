@@ -1,0 +1,17 @@
+--- before/background_and_motivation.tex
++++ background_and_motivation.tex
+@@ -120,10 +120,10 @@
+   \includegraphics[width=\columnwidth]{figures/gpu-server-availability.pdf}
+   \caption{GPU-server availability reconstructed from InfiniteHBD's
+     production-training trace~\cite{shou2025infinitehbd}: 400 servers minus
+-    those within recorded fault intervals. Overlapping intervals per
+-    server are merged; all recorded categories, including tests and
+-    changes, are retained. Availability here is at the node level,
+-    not idle GPU capacity or end-to-end serving availability.}
++    those within recorded outage intervals. Records include GPU, network,
++    power/cooling, and software faults; unknown causes, tests,
++    troubleshooting, and changes are also retained. Overlapping intervals
++    per server are merged. Availability is measured at the node level.}
+   \label{fig:gpu-server-availability}
+   \Description{A step curve over approximately 349 days shows 365 to 400
+     GPU servers outside active recorded fault intervals in a fixed

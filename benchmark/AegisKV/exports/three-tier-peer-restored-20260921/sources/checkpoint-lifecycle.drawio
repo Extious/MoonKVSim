@@ -1,0 +1,44 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" version="31.1.5">
+  <diagram id="checkpoint-lifecycle" name="checkpoint-lifecycle">
+    <mxGraphModel page="1" pageScale="1" pageWidth="480" pageHeight="420" background="#FFFFFF">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" value="Mechanism" />
+        <mxCell id="canvas" value="" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#FFFFFF;strokeColor=none;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="480" height="420" as="geometry" />
+        </mxCell>
+        <mxCell id="title" value="Commit coverage before release" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="8" y="3" width="464" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="a" value="(a) Full checkpoint frontier" style="html=0;whiteSpace=wrap;align=left;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="14" y="42" width="452" height="29" as="geometry" />
+        </mxCell>
+        <mxCell id="frontier" value="M = 128 · tokens 129–192 pending" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#DDEBF3;strokeColor=#23688D;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="16" y="79" width="448" height="29" as="geometry" />
+        </mxCell>
+        <mxCell id="publish" value="All dependencies commit → M = 192" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="16" y="120" width="448" height="29" as="geometry" />
+        </mxCell>
+        <mxCell id="b" value="(b) Whole-checkpoint demotion" style="html=0;whiteSpace=wrap;align=left;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="14" y="167" width="452" height="29" as="geometry" />
+        </mxCell>
+        <mxCell id="copy" value="DRAM → copy / verify → storage" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#F3E5D1;strokeColor=#9B6428;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="16" y="204" width="448" height="29" as="geometry" />
+        </mxCell>
+        <mxCell id="drain" value="Commit → redirect → drain → free" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="16" y="242" width="448" height="29" as="geometry" />
+        </mxCell>
+        <mxCell id="c" value="(c) Release a Peer hot replica" style="html=0;whiteSpace=wrap;align=left;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="14" y="289" width="452" height="29" as="geometry" />
+        </mxCell>
+        <mxCell id="backing" value="Full DRAM/storage backing valid?" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="16" y="328" width="448" height="29" as="geometry" />
+        </mxCell>
+        <mxCell id="free" value="Yes → redirect reads → drain → free" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="16" y="368" width="448" height="29" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

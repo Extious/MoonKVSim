@@ -1,0 +1,87 @@
+{
+  "schema": "aegiskv.paper_story.diagrams.v1",
+  "figures": [
+    {
+      "name": "system-overview",
+      "evidence": "design",
+      "width_in": 7,
+      "files": {
+        "pdf": "84ae8f70c796ce7cc8dd57c7a8310f0b63bf13d7c30171bcf63dfd65ebac1fe9",
+        "svg": "ced9c01e4e0c9fd4352e9125a43386ea159c8c0909a30071f488cfdefe0b956f",
+        "png": "3e45d3d99e47236d8adb90a2bf4ccf667a08041a63998bb078237553a2166d88",
+        "drawio": "2c5c25d4d9543673869746788cb5a7f1375a41b068c98e8d3701d731881c92fd"
+      }
+    },
+    {
+      "name": "design-slack-tickets",
+      "evidence": "design",
+      "width_in": 7,
+      "files": {
+        "pdf": "b5aa6bdb041f219c0619ef768c8f3057ebe9097ba955b0fa7005e36f0543d49b",
+        "svg": "1cfdb751b6d77d6b204b4cc3b6a5febebb1a3bb36877342969bf20a2f29b1714",
+        "png": "9481df5ce98fcff3d08c8903c6179fe1c5f65bd0558683fa43b1424b86926c68",
+        "drawio": "ae247e3ded2f2e7b4dcd4698d380e19e5276320d58f606b018786b81465ff55d"
+      }
+    },
+    {
+      "name": "design-shared-prefix",
+      "evidence": "design",
+      "width_in": 7,
+      "files": {
+        "pdf": "78ac8719db6c1070cda0b25b354ed4852101ded4969ddf1ff36dfb4cf1101ebf",
+        "svg": "1c2974e3f92bcddaad97579689ee5ddcc1945d9b11e17251332e55b484ce7350",
+        "png": "0fc9dd7998730dc03321eeb33aa676bf9c58dbb8b6f4b97c78dd5fb1a3ac8997",
+        "drawio": "e55b8ad8bfcc79ac091fccd4fff503599a7cdcb532b5ebe9c67b5985293eb4cf"
+      }
+    },
+    {
+      "name": "design-foreground-budget",
+      "evidence": "design",
+      "width_in": 7,
+      "files": {
+        "pdf": "bd72e4d301a64afdd1416fe5b7565280cc04464dba0830c41870b23973d9c1d4",
+        "svg": "d81bed8fc01e8118fdf5ff70659b73ca31a5d80f0f4fe8efb288350f86c215dd",
+        "png": "5648d278ef28fc98575228e257836a620f39e960a1b8468ea3a040a029be10a3",
+        "drawio": "e192ccd686a10dcd88c8eda63a2db489291222e1777b50f4908d4e6056279fec"
+      }
+    },
+    {
+      "name": "commit-tier-timeline",
+      "evidence": "design",
+      "width_in": 7,
+      "files": {
+        "pdf": "f5843df77dbe67b057d0708b4681dd4eba78d30afd97603cdd41dc84d19fe1e8",
+        "svg": "5fb119a02fe7d15c0909149d6693f245538899e86662037263332eedf76a9d96",
+        "png": "3caf91db03ca08f4e9ac1b24d80bcebaaa8bc1fadaae248d688aeb37b4045582",
+        "drawio": "8ff4ddd3700e5efa0591f428c1dd2698c35fe3700771f61beb510c469987c928"
+      }
+    },
+    {
+      "name": "commit-recoverable-prefix",
+      "evidence": "design",
+      "width_in": 7,
+      "files": {
+        "pdf": "730c0b3d98581c9faeec7fc0be4cae3396276795c12615ffd9718b7c75eec816",
+        "svg": "98f344d4604eacb31d907596ced231e706cead9fe0130349225ce3c1891c6fab",
+        "png": "d64ab8129ab8834f81554c4dafca5f1a857368f969bbbe6927b50054db640eaf",
+        "drawio": "6469696e7fbc0c6c0be342953015e0788952f4eb09637417429a925b92a33ba3"
+      }
+    },
+    {
+      "name": "commit-materialize-recompute",
+      "evidence": "design",
+      "width_in": 7,
+      "files": {
+        "pdf": "844770b9012f2f1d34a1a53bf1c0592229e4ed9ea9ee38e8fa2c2ffa98b8d4e2",
+        "svg": "5326d769abf34c496c4916399917042ef8efd8ab80a36b30ba4fe08eb8576fd6",
+        "png": "461f1953ca8768877c7ec18a44bca46397c7787595af0e7f1acba58388787945",
+        "drawio": "501aad5b2763e031d84faa178ee3a1b8875e160d8dea080191550c5fb4e00840"
+      }
+    }
+  ],
+  "input_bindings": {
+    "benchmark/AegisKV/experiments/scripts/paper/build_paper_story_diagrams.py": "0f574563c0fcd19179c231bd601b7fe2c5884b1f4d4b2d11698ac17939d31e27",
+    "benchmark/AegisKV/experiments/scripts/paper/build_submission_diagrams.py": "58863769b288f561b30ebeeb870ee2695b2de62a7c3185cccb1f1e61a87c6069",
+    "benchmark/AegisKV/docs/paper/ALGORITHM_REVISION_V3.md": "0c64e05f9f62d9cc1bf024b13aea1674885c11aa6804564bfdccbd4159d28a1e"
+  }
+}

@@ -12,6 +12,7 @@ from moonkvsim.simulation.event import EventKind, ScheduledEvent
 from moonkvsim.simulation.global_des import GlobalDES
 from moonkvsim.workload import (
     CausalReleaseEngine,
+    CausalReplayError,
     CausalTraceValidationError,
     SpanRuntimeStatus,
     load_normalized_trace_jsonl,
@@ -107,6 +108,7 @@ def _run_to_completion(
     durations_ns: dict[str, int],
     *,
     workflow_concurrency: int | None = None,
+    workflow_admission_seed: int | None = None,
 ) -> tuple[CausalReleaseEngine, GlobalDES]:
     trace = load_normalized_trace_records(records)
     des = GlobalDES()
@@ -132,6 +134,7 @@ def _run_to_completion(
         des,
         on_release=on_release,
         workflow_concurrency=workflow_concurrency,
+        workflow_admission_seed=workflow_admission_seed,
     )
     holder["engine"] = engine
     engine.start()
@@ -247,6 +250,50 @@ def test_workflow_concurrency_is_closed_loop_and_releases_slot_on_completion() -
     assert [record.data["workflow_id"] for record in admissions] == ["wf-0", "wf-1", "wf-2"]
     assert max(int(record.data["active_workflows"]) for record in admissions) == 2
     assert admissions[-1].data["queue_wait_ns"] == 5
+
+
+def test_seeded_workflow_admission_is_deterministic_and_changes_realized_order() -> None:
+    records = [
+        _span(f"root-{index}", workflow_id=f"wf-{index}", top_level_index=0)
+        for index in range(8)
+    ]
+    durations = {f"root-{index}": 1 for index in range(8)}
+
+    seed_zero, _ = _run_to_completion(
+        records,
+        durations,
+        workflow_concurrency=1,
+        workflow_admission_seed=0,
+    )
+    seed_zero_repeat, _ = _run_to_completion(
+        list(reversed(records)),
+        durations,
+        workflow_concurrency=1,
+        workflow_admission_seed=0,
+    )
+    seed_one, _ = _run_to_completion(
+        records,
+        durations,
+        workflow_concurrency=1,
+        workflow_admission_seed=1,
+    )
+
+    assert seed_zero.release_order == seed_zero_repeat.release_order
+    assert seed_zero.release_order != seed_one.release_order
+    assert set(seed_zero.release_order) == set(seed_one.release_order)
+    assert seed_zero.workflow_admission_order == tuple(
+        span_id.replace("root-", "wf-") for span_id in seed_zero.release_order
+    )
+    assert seed_one.workflow_admission_order == tuple(
+        span_id.replace("root-", "wf-") for span_id in seed_one.release_order
+    )
+
+
+def test_workflow_admission_seed_requires_closed_loop_replay() -> None:
+    trace = load_normalized_trace_records([_span("root")])
+
+    with pytest.raises(CausalReplayError, match="requires closed-loop"):
+        CausalReleaseEngine(trace, GlobalDES(), workflow_admission_seed=0)
 
 
 @pytest.mark.parametrize("kind", ["missing", "cross_workflow", "cycle"])

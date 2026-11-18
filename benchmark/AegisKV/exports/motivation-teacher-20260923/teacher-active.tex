@@ -1,0 +1,62 @@
+\section{Motivation} \label{sec:motivation} 
+
+
+As described in Section~\ref{sec:background}, a failed agent can recover by reconstructing its KV cache from durable inputs or by restoring a surviving KV checkpoint. Reconstruction avoids checkpointing overhead during normal execution, but repeats the prefill of the agent's accumulated history. Checkpointing avoids this repeated computation, but continuously consumes memory and I/O resources as the agent's history grows.
+
+This section first quantifies why fully protecting all agent KV states is prohibitively expensive. We then make three observations that shape the design of \system. 
+
+\subsection{Full KV Protection Is Expensive} \label{sec:motivation:cost} 
+
+An agent's KV state grows throughout iterative execution. Later invocations commonly incorporate previous model outputs, tool results, and outputs from other agents. A failure late in the workflow can therefore lose considerably more KV state than a failure near the beginning.
+
+
+We quantify the resulting recovery cost using Qwen2.5-7B-Instruct-1M on two A100 PCIe 40\,GB GPUs with TP=2, BF16 weights and KV state, and batch size one. %Figure~\ref{fig:context_recovery} compares
+We compare full KV reconstruction with reuse from HBM, host DRAM, and shared storage. Full reconstruction starts with an empty KV cache and prefills the complete context. Each reuse path starts from the same historical KV state and processes one additional token. 
+%
+At a context length of 1M tokens, full reconstruction takes 571.2\,s. Reusing the historical KV state reduces readiness time to 1.3\,s from HBM, 2.7\,s from host DRAM, and 10.2\,s from shared storage. The corresponding historical KV state occupies 57.9\,GB across the two tensor-parallel ranks. Retaining KV can therefore avoid hundreds of seconds of reconstruction, but one long-running agent can require tens of gigabytes of checkpoint capacity. 
+
+% \begin{figure}[t] \centering 
+% \includegraphics[width=\columnwidth]{figures/context_recovery.pdf} \caption{KV reconstruction and reuse latency as context grows. Reuse starts from the same historical KV state and processes one additional token. HBM and DRAM report the median and range of three runs; shared storage and full reconstruction report one run per context length.} \label{fig:context_recovery} \end{figure}
+
+%Fully protecting all active agents is expensive along three dimensions. First, checkpoint capacity grows with the aggregate histories of all active agents. Second, each iterative turn creates new KV blocks that must be copied and committed, consuming memory and I/O bandwidth during failure-free execution. Third, keeping complete replicas on takeover GPUs competes with foreground inference for HBM that could otherwise support execution state and batching. 
+
+%Lower storage tiers mitigate HBM pressure but do not eliminate this trade-off. Host DRAM has finite capacity, while shared storage increases restoration latency and consumes shared I/O bandwidth. Consequently, the system cannot treat every agent and every KV block as equally valuable. It must determine both \emph{which agents} deserve protection and \emph{which portions} of their KV state deserve fast replication.
+
+\subsection{O1: Agents Have Unequal Recovery Value} \label{sec:motivation:agent} 
+
+
+An agent's KV reconstruction time does not directly determine its effect on workflow completion. Figure~\ref{fig:agent_value}(a) shows a fork--join workflow in which A2 determines the join, while A1 finishes 91.2\,s earlier. A delay shorter than this interval (called slack) does not postpone the downstream stage. 
+
+Such branch heterogeneity is common in our analyzed traces. Among 121 workflows containing temporally inferred fan-in groups, the maximum branch-duration gap has a median of 138\,s and a 90th percentile of 1,173\,s. These gaps are not direct measurements of failure-time slack because the trace does not expose explicit dependency edges, but they show that parallel agents can have substantially different timing tolerance. 
+
+Figure~\ref{fig:agent_value}(b) combines the example workflow with measured KV reconstruction times for its four active agents. Similar reconstruction delays do not produce similar workflow delays. Reconstructing A1 takes 33.2\,s, but this delay fits within A1's 91.2\,s slack and does not postpone the join. Reconstructing A2 takes a similar 32.6\,s, but A2 has no slack, so the entire delay postpones the join. The slack of A3 and A4 absorbs part of their reconstruction, leaving 16.3\,s and 18.0\,s added to workflow completion time, respectively.
+
+For an isolated branch $i$, this relationship is \begin{equation} \Delta W_i = \max(0, R_i - \sigma_i), \label{eq:isolated_penalty} \end{equation} where $R_i$ is the recovery delay and $\sigma_i$ is the remaining workflow slack. Therefore, protecting the largest or most expensive KV state does not necessarily provide the greatest workflow benefit. 
+
+One worker failure may also interrupt multiple agents. Their recovery values are not always additive: accelerating one delayed branch may not advance a join if another affected branch remains the bottleneck. Protection decisions should therefore consider both an agent's workflow position and the other agents affected by the same failure. 
+
+\begin{figure}[t] \centering 
+\includegraphics[width=\columnwidth]{figures/agent_value.pdf} \caption{Agents have unequal recovery value. Similar KV reconstruction times produce different workflow delays because parallel agents have different slack. Hatched portions are absorbed before the join; solid portions postpone the join.} \label{fig:agent_value} \end{figure}
+
+
+
+
+\subsection{O2: KV Regions Have Unequal Recovery Value} \label{sec:motivation:kv} 
+
+Even for an important agent, not all KV state is equally valuable for fast recovery. Figure~\ref{fig:kv_value}(a) shows that historical KV accesses concentrate on a subset of blocks. For the three evaluated sparse-attention models, the hottest approximately 20\% of historical blocks account for 87.64\%, 74.76\%, and 56.54\% of accesses, respectively. 
+
+Access frequency alone is insufficient. During layer-ordered recovery, computation on earlier layers can overlap with transfers for later layers. Replicating a block whose transfer would otherwise be hidden does not shorten recovery. Only KV state whose absence causes exposed waiting directly affects recovery time. Thus, placing an agent's complete KV checkpoint in takeover HBM can consume substantially more capacity than is required for fast recovery. The system should distinguish the complete state needed to avoid full reconstruction from the subset that must be available immediately to reduce recovery stalls. 
+
+\begin{figure}[t] \centering \includegraphics[width=\columnwidth]{figures/kv_value.pdf} \caption{KV regions have unequal recovery value. (a) Historical accesses concentrate on a subset of KV blocks. (b) Only missing KV transfers exposed on the recovery path increase recovery time.} \label{fig:kv_value} \end{figure}
+
+
+\subsection{O3: Replication Capacity Changes over Time} \label{sec:motivation:adaptation} 
+
+Fast KV replicas share HBM with foreground inference. The HBM available for replication changes as requests arrive and complete, agent histories grow, and active execution consumes different amounts of KV state and temporary workspace. A fixed replication budget can therefore be inefficient. A large budget may displace foreground execution state under high load, while a small budget may leave available HBM unused under low load. Replication must adapt to the capacity safely available without interfering with foreground serving.
+
+
+\paragraph{Summary.}
+Together, these observations suggest that efficient failure recovery requires selectivity at two levels and adaptation over time. The system must distinguish agents by their effect on workflow completion, distinguish KV regions by their effect on exposed recovery delay, and adjust fast-replication capacity as foreground demand changes. Section~\ref{sec:design} describes how \system realizes these three requirements.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

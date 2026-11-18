@@ -1,0 +1,9 @@
+Agent workflows accumulate large KV caches, and a worker failure forces the
+replacement replica to prefill that history before generation can resume.
+\system keeps a peer-DRAM checkpoint and a Top-$K$ peer-HBM copy. Replaying
+captured NOSA, NSA, and MiniCPM traces on the recorded BLSC A100-PCIe
+configuration, the same arrival with no failure finishes at the same time as
+a restart. One GPU failure during a 24{,}576-token workflow cuts retry
+latency from 3{,}960.7\,ms to 2{,}375.3\,ms, and every later workflow keeps
+that 1{,}585.4\,ms gap. The saving grows with the checkpointed prefix. The
+HBM blocks move completion by at most 0.217\,ms.

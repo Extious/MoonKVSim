@@ -1,0 +1,184 @@
+\subsection{KV Master: Request-Specific Backup Decisions}
+\label{sec:kv-placement}
+\label{sec:kv-master}
+
+KV Master (3) makes checkpoint decisions, choosing recovery tiers, each request's
+Peer depth $L_r$, and historical hot blocks. The Recovery Manager fixes
+the retry/Peer target at arrival; the target Adapter publishes only a
+window-level Peer capacity budget (\S\ref{sec:kv-runtime}).
+Different requests can use different depths within the same window.
+
+\paragraph{Decision triggers and checkpoint interval.}
+The Master establishes a policy at arrival, offers sealed state at
+prefill completion, and reviews an active request after each additional
+$Z$ generated tokens. The block-aligned interval $Z$ is a fixed system
+configuration, not an adaptive output. Significant slack or DAG changes, revised budgets,
+and material changes in context or copy conditions can refresh policy
+earlier. Sealing updates block eligibility without triggering a depth
+decision for every token. Completion releases that request's Peer
+references while preserving shared references; unchanged decisions
+produce no new transfer. Hot-block statistics use the preceding 512
+decoding steps, independently of checkpoint and capacity-control windows.
+
+A trigger requests a decision, not a completed replica. The replay tail
+contains known tokens beyond the latest valid committed frontier;
+queued copies can make it longer than $Z$. Tier R need not checkpoint.
+The Master uses reported commit progress when estimating this tail.
+
+\paragraph{Choose protection tiers.}
+Let $T_{\mathrm{rc}}$ be historical-prefix recomputation cost,
+$T_{\mathrm{rp}}$ known-tail replay cost, and $W_0$ exposed DRAM-loading
+wait without Peer residency. Detection, rerouting, and readmission
+contribute $R_{\mathrm{floor}}$. The Master uses
+\begin{equation}
+\begin{aligned}
+ R_{\mathrm{base}}&=R_{\mathrm{floor}}+T_{\mathrm{rp}},\\
+ R_R&=R_{\mathrm{base}}+T_{\mathrm{rc}},\quad
+ R_D=R_{\mathrm{base}}+W_0.
+\end{aligned}
+\label{eq:recovery-base}
+\end{equation}
+Costs are profiled jointly by model, committed context, replay tail,
+hardware, and representative concurrency.
+Tier \emph{R} requires no backup when $\sigma_r\ge R_R$;
+tier \emph{D} retains DRAM when $R_D\le\sigma_r<R_R$;
+tier \emph{P} retains DRAM and requests Peer protection otherwise.
+Tier changes use 20\% hysteresis around these nominal boundaries.
+A tier-P request without a Peer grant retains DRAM recovery.
+Slack orders competing requests; it does not scale their hot-set
+fraction or impose a serial retry order.
+
+\paragraph{Define and rank protection objects.}
+A protection object is a \emph{(layer, block)} containing all KV heads;
+the profiled selectors use 64-token blocks. Sealing makes a full block
+eligible for copying; the commit frontier determines the prefix that
+survives failure. Known uncommitted tokens are replayed without resampling.
+
+The historical blocks needed by a length-$n$ replay form the union
+$U_l(n)=\bigcup_{q=1}^{n}\bigcup_g S_{l,q,g}$, where $S_{l,q,g}$ is the
+native selector output. Repeated reads count once. A fixed preload
+fraction $h$ is configured for each model and sparse-attention method;
+it is not the selector's instantaneous Top-$k$ fraction or a guaranteed
+hit rate. With $n_r(\tau)$ sealed historical blocks per layer, the Master uses
+\begin{equation}
+ K_r(\tau)=\lceil h n_r(\tau)\rceil
+ \label{eq:hot-block-count}
+\end{equation}
+slots in each layer, including mandatory sealed sink/window blocks.
+The configured quota must accommodate them. Remaining slots follow
+observed selection counts, breaking ties by recency. An optional block
+leaves the candidate set after two successive decoding-statistics windows
+outside the top set. A replacement needs fresh admission if the old
+replica still has a request reference.
+
+\paragraph{Select a depth for each request.}
+At a policy decision, the Master reviews $L_r$ using that request's
+committed history, generation progress, slack, and recovery profiles.
+Both transfer bytes and replay computation depend on context; hot-set
+misses can also vary with the replay tail. Candidate costs average over
+plausible future checkpoint phases and commit lag, using the same
+request-growth and fault-state samples across depths. This does not
+assume that a future failure occurs at the current tail or at $N=Z$.
+
+For each request in slack order, the Master compares a small configured
+set of depths within the model, including zero and its current depth. Each candidate
+previews incremental admission against the same target-state snapshot,
+accounting for shared copies, live references, in-flight reservations,
+and copy limits. Recovery estimates credit only expected committed
+coverage, including retained old copies. The score adds predicted
+foreground delay from the candidate's backup work and memory occupancy
+to recovery delay beyond the request's slack, weighted by source-failure
+probability from the configured risk model over the same policy horizon. It is a local decision
+heuristic under slack priority, not a global optimum or workflow-makespan sum.
+
+The minimum-score candidate wins, with smaller depths breaking ties.
+An existing depth changes only when its advantage exceeds a configured
+uncertainty margin. Missing applicable profiles retain an existing target;
+a new request starts with zero Peer depth and DRAM protection.
+Only the chosen plan updates the preview state before the next request.
+Real allocation rechecks availability atomically; it may admit fewer
+objects than the preview.
+
+For uniform layer layouts, a tier-P request offers the first $L_r$
+hot sets: $L_rK_r(\tau)$ logical layer-block objects plus required state.
+Tiers R/D have a zero target depth. The target is held between policy
+decisions, while the hot-block quota grows with sealed history.
+D/P keep per-layer hot sets as recovery-preload hints. Actual Peer
+coverage can be partial; lowering $L_r$ does not revoke references to
+old copies (\S\ref{sec:kv-runtime}).
+
+\begin{figure}[t]
+  \raggedright
+  \refstepcounter{designalgorithm}\label{alg:placement}
+  \noindent\textbf{Algorithm \thedesignalgorithm: Per-request backup policy}
+  \par\smallskip
+  \noindent Input: requests, slack, profiles, targets, budgets, copy state.
+  Output: DRAM set $D_s$, depths $\{L_r\}$, and Peer plans $\{Q_p\}$.
+  \par\smallskip
+  \begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
+    \toprule
+    1 & $D_s,H\gets\varnothing$; $Q_p\gets[\,]$ for each target $p$ \\
+    2 & Snapshot retained copies and reserved capacity as $S$ \\
+    3 & \textbf{for} $r$ in $(\sigma_r,\mathrm{ID}_r)$ order: \\
+    4 & \quad$\tau_r\gets\mathrm{Tier}(r,R_R,R_D,\sigma_r)$ \\
+    5 & \quad\textbf{if} $\tau_r=R$: $L_r\gets0$; \textbf{continue} \\
+    6 & \quad Add $\mathrm{sealed}(r)\cup\mathrm{state}(r)$ to $D_s$ \\
+    7 & \quad$H_{r,l}\gets\mathrm{HotSet}(r,l,K_r)$ for each layer \\
+    8 & \quad\textbf{if} $\tau_r=D$: $L_r\gets0$; \textbf{continue} \\
+    9 & \quad\textbf{for each} candidate depth $d$: \\
+    10 & \qquad$G_d\gets\mathrm{Preview}(S,r,H_{r,1:d})$ \\
+    11 & \qquad Score $G_d$; keep missing costs unknown \\
+    12 & \quad$L_r\gets\mathrm{StableBest}(r,\{G_d\})$ \\
+    13 & \quad Append $(r,L_r,H_{r,1:L_r},G_{L_r})$ to $Q_{p_r}$ \\
+    14 & \quad Update $S$ with the chosen plan only \\
+    15 & \textbf{return} $D_s,H,\{L_r\},\{Q_p\}$ \\
+    \bottomrule
+  \end{tabularx}
+  \Description{KV Master chooses recovery tiers, hot blocks, and a
+    separate Peer depth for each request. Depth previews share a common
+    snapshot within a request; only its selected plan advances the
+    snapshot. Target Adapters enforce capacity and report committed copies.}
+\end{figure}
+
+Algorithm~\ref{alg:placement} shows a full refresh; a token-interval
+event updates only the affected request while retaining other policies
+and reservations. \textsc{Tier} applies hysteresis, and
+\textsc{StableBest} implements the switching margin and profile fallback.
+The state snapshot is virtual, not a physical reservation.
+Sorting costs $O(n\log n)$, followed by bounded candidate scans.
+Runtime allocation deduplicates shared objects and reconciles policy
+with committed copies, reporting actual residency and commit progress.
+
+\paragraph{Commit and recover by actual readiness.}
+Peer and fault-independent DRAM paths commit separately, after transfer
+completion and model/layout/shard validation. Low-priority copying is
+rate-limited (default 20\% of link capacity), with target HBM bandwidth
+also accounted for. Recovery reads committed objects, preloads hot
+blocks in layer order, and gives newly revealed misses priority over
+speculative copies. Selector state arrives before selection; each layer
+waits for all required inputs. Actual DMA granularity can limit copy
+preemption. Tier R rebuilds history. Placement changes neither selector
+outputs nor known replay tokens and adds no attention approximation;
+compatible weights, layout, and operators reconstruct the same logical
+KV state, without promising identical future stochastic samples across
+floating-point schedules.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/design-single/design-layer-pipeline.pdf}
+  \caption{Modeled recovery pipelines: MiniCPM4-8B, 32 layers, 32K
+    history, 64-token known tail; $C=2.87$\,ms/layer (measured) and
+    $D=5.37$\,ms at an assumed 6.25\,GB/s. In (d), 147\,MiB of Peer
+    residency removes preload wait. Totals end at tail-KV reconstruction.
+    The homogeneous, preemptible-copy model excludes detection,
+    queuing, and interference.}
+  \label{fig:design-pipeline}
+  \Description{Four timelines compare token-block transfer, full-layer
+    pipelining, hot preloads with demand fetch, and Peer-resident hot sets.}
+\end{figure}
+
+Figure~\ref{fig:design-pipeline} illustrates the depth tradeoff at one
+fixed tail length: layer pipelining, hot preloads, and seven resident
+hot sets reduce exposed wait from 172 to 83, 44, and 20\,ms.
+This calibrated example does not validate request-specific depth selection
+or make seven layers appropriate for every request and checkpoint state.

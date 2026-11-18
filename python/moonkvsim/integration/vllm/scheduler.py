@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 from collections import Counter, deque
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import asdict, dataclass
 from enum import StrEnum
 from typing import Any, Protocol
@@ -293,6 +293,7 @@ class ContinuousBatchScheduler:
         max_num_running_requests: int,
         long_prefill_token_threshold: int = 0,
         enable_chunked_prefill: bool = True,
+        scheduler_reserve_full_isl: bool = False,
         policy: str = "fcfs",
         block_lifecycle_observer: BlockLifecycleObserver | None = None,
         prefix_hash_seed: str | None = None,
@@ -305,6 +306,8 @@ class ContinuousBatchScheduler:
             raise ValueError("long_prefill_token_threshold must be a non-negative integer")
         if type(enable_chunked_prefill) is not bool:
             raise TypeError("enable_chunked_prefill must be bool")
+        if type(scheduler_reserve_full_isl) is not bool:
+            raise TypeError("scheduler_reserve_full_isl must be bool")
         if policy != "fcfs":
             raise ValueError("only source-locked FCFS policy is modeled at E1")
         if block_pool.enable_caching and not prefix_hash_seed:
@@ -320,6 +323,7 @@ class ContinuousBatchScheduler:
         self.max_num_running_requests = max_num_running_requests
         self.long_prefill_token_threshold = long_prefill_token_threshold
         self.enable_chunked_prefill = enable_chunked_prefill
+        self.scheduler_reserve_full_isl = scheduler_reserve_full_isl
         self.policy = policy
         self.block_lifecycle_observer = block_lifecycle_observer
         self.prefix_hash_seed = prefix_hash_seed
@@ -335,7 +339,11 @@ class ContinuousBatchScheduler:
         self._request_blocks: dict[str, list[int]] = {}
         self._request_prefix_witnesses: dict[str, tuple[BlockHashWitness, ...]] = {}
         self._remote_prefix_ready_tokens: dict[str, int] = {}
+        self._external_kv_waiters: set[str] = set()
+        self._external_page_reservations: dict[str, int] = {}
+        self.waiting_prefix_provider: Callable[[Request, int], bool] | None = None
         self._recovery_priority_request_ids: set[str] = set()
+        self._recovery_priority_keys: dict[str, tuple[int, int, str]] = {}
         self._recovery_prefix_reservations: dict[str, RecoveryPrefixReservation] = {}
         self._terminal_output_request_ids: set[str] = set()
         self._audit_state()
@@ -347,6 +355,22 @@ class ContinuousBatchScheduler:
     @property
     def waiting_request_ids(self) -> tuple[str, ...]:
         return tuple(request.request_id for request in self._waiting)
+
+    @property
+    def running_request_prompt_progress(
+        self,
+    ) -> tuple[tuple[str, int, int], ...]:
+        """Return immutable prompt-growth inputs for the physical HBM authority."""
+
+        self._audit_state()
+        return tuple(
+            (
+                request.request_id,
+                request.prompt_tokens,
+                min(request.prompt_tokens, request.num_computed_tokens),
+            )
+            for request in self._running
+        )
 
     @property
     def queued_tokens(self) -> int:
@@ -363,6 +387,27 @@ class ContinuousBatchScheduler:
     def request_block_ids(self, request_id: str) -> tuple[int, ...]:
         self._require_known_request(request_id)
         return tuple(self._request_blocks.get(request_id, ()))
+
+    def available_logical_pages(self, request_id: str) -> int:
+        """Unassigned page capacity, excluding other in-flight GET owners."""
+        return self.block_pool.num_free_blocks - sum(
+            count for owner, count in self._external_page_reservations.items()
+            if owner != request_id
+        )
+
+    def reserve_external_pages(self, request_id: str, token_count: int) -> None:
+        """Hold logical capacity while the connector owns physical GET bytes.
+
+        Concrete page IDs are assigned at materialization; this capacity hold
+        prevents another request using the slots in the meantime.
+        """
+        self._require_known_request(request_id)
+        count = _ceil_div(token_count, self.block_size_tokens)
+        if request_id in self._external_page_reservations or count <= 0:
+            raise ValueError("invalid or duplicate external page reservation")
+        if count > self.available_logical_pages(request_id):
+            raise ValueError("external GET cannot reserve logical page capacity")
+        self._external_page_reservations[request_id] = count
 
     def recovery_prefix_reservation(self, request_id: str) -> RecoveryPrefixReservation:
         try:
@@ -529,10 +574,26 @@ class ContinuousBatchScheduler:
         self._waiting.append(request)
         self._audit_state()
 
-    def prioritize_waiting_recovery(self, request_id: str) -> None:
-        """Place one failure-requeued request ahead of ordinary waiting work."""
+    def prioritize_waiting_recovery(
+        self,
+        request_id: str,
+        *,
+        priority_key: tuple[int, int, str],
+    ) -> None:
+        """Order failure-requeued work by current residual Slack."""
 
         self._audit_state()
+        if (
+            type(priority_key) is not tuple
+            or len(priority_key) != 3
+            or type(priority_key[0]) is not int
+            or priority_key[0] < 0
+            or type(priority_key[1]) is not int
+            or priority_key[1] < 0
+            or type(priority_key[2]) is not str
+            or not priority_key[2]
+        ):
+            raise ValueError("recovery priority key must be (slack_ns, failure_ns, id)")
         request = self._require_known_request(request_id)
         if request not in self._waiting or request.status not in {
             RequestStatus.WAITING,
@@ -540,11 +601,26 @@ class ContinuousBatchScheduler:
         }:
             raise ValueError("recovery priority requires an admitted waiting request")
         self._recovery_priority_request_ids.add(request_id)
+        self._recovery_priority_keys[request_id] = priority_key
         self._waiting.remove(request)
-        priority_owner_count = sum(
-            item.request_id in self._recovery_priority_request_ids for item in self._waiting
+        recovery_requests = sorted(
+            (
+                item
+                for item in self._waiting
+                if item.request_id in self._recovery_priority_request_ids
+            ),
+            key=lambda item: self._recovery_priority_keys[item.request_id],
         )
-        self._waiting.insert(priority_owner_count, request)
+        recovery_requests.append(request)
+        recovery_requests.sort(
+            key=lambda item: self._recovery_priority_keys[item.request_id]
+        )
+        ordinary_requests = [
+            item
+            for item in self._waiting
+            if item.request_id not in self._recovery_priority_request_ids
+        ]
+        self._waiting = deque((*recovery_requests, *ordinary_requests))
         self._audit_state()
 
     def restore_request_prefix(self, request: Request, *, restored_tokens: int) -> None:
@@ -634,8 +710,8 @@ class ContinuousBatchScheduler:
             raise ValueError("restored prefix cannot exceed the prompt")
         if restored_tokens % self.block_size_tokens != 0:
             raise ValueError("restored prefix must contain whole KV blocks")
-        if request.num_computed_tokens != 0 or request.num_output_tokens != 0:
-            raise ValueError("restored waiting prefix requires fresh request counters")
+        if request.num_computed_tokens != 0:
+            raise ValueError("restored waiting prefix requires zero computed tokens")
         if request_id in self._remote_prefix_ready_tokens:
             raise ValueError("remote prefix completion was already recorded")
         effective_tokens = (
@@ -644,16 +720,11 @@ class ContinuousBatchScheduler:
         if effective_tokens <= 0:
             raise ValueError("full remote prefix must leave a token to recompute")
         self._remote_prefix_ready_tokens[request_id] = effective_tokens
-        self._waiting.remove(request)
-        ready_owner_count = sum(
-            item.request_id in self._recovery_priority_request_ids
-            or item.request_id in self._remote_prefix_ready_tokens
-            for item in self._waiting
-        )
-        self._waiting.insert(ready_owner_count, request)
         self._audit_state()
 
-    def mark_waiting_for_remote_kv(self, request_id: str) -> None:
+    def mark_waiting_for_remote_kv(
+        self, request_id: str, *, external: bool = True
+    ) -> None:
         """Move one admitted fresh request into pinned remote-KV wait state.
 
         The request remains in the FCFS waiting deque so its position is
@@ -665,11 +736,15 @@ class ContinuousBatchScheduler:
         request = self._require_known_request(request_id)
         if request not in self._waiting:
             raise ValueError("remote KV wait requires an admitted waiting request")
-        if request.num_computed_tokens != 0 or request.num_output_tokens != 0:
-            raise ValueError("remote KV wait requires fresh request counters")
+        if request.num_computed_tokens != 0:
+            raise ValueError("remote KV wait requires zero computed tokens")
         if request_id in self._remote_prefix_ready_tokens:
             raise ValueError("remote prefix completion is already recorded")
-        request.wait_for_remote_kv()
+        if request.status not in {RequestStatus.WAITING, RequestStatus.PREEMPTED}:
+            raise ValueError("KV wait requires a waiting or preempted request")
+        request.status = RequestStatus.WAITING_FOR_REMOTE_KVS
+        if external:
+            self._external_kv_waiters.add(request_id)
         self._audit_state()
 
     def rollback_unstarted_request(self, request_id: str) -> Request:
@@ -701,7 +776,10 @@ class ContinuousBatchScheduler:
             )
         self._waiting.remove(request)
         self._remote_prefix_ready_tokens.pop(request_id, None)
+        self._external_kv_waiters.discard(request_id)
+        self._external_page_reservations.pop(request_id, None)
         self._recovery_priority_request_ids.discard(request_id)
+        self._recovery_priority_keys.pop(request_id, None)
         del self._request_blocks[request_id]
         del self._request_prefix_witnesses[request_id]
         del self._requests[request_id]
@@ -757,7 +835,10 @@ class ContinuousBatchScheduler:
         else:
             self._waiting.remove(request)
         self._remote_prefix_ready_tokens.pop(request_id, None)
+        self._external_kv_waiters.discard(request_id)
+        self._external_page_reservations.pop(request_id, None)
         self._recovery_priority_request_ids.discard(request_id)
+        self._recovery_priority_keys.pop(request_id, None)
         self._terminal_output_request_ids.discard(request_id)
         request.finish(status)
         self._audit_state()
@@ -779,50 +860,6 @@ class ContinuousBatchScheduler:
         num_scheduled_tokens: dict[str, int] = {}
         token_budget = self.max_num_scheduled_tokens
 
-        if (
-            self._waiting
-            and self._waiting[0].request_id in self._recovery_priority_request_ids
-            and len(self._running) == self.max_num_running_requests
-        ):
-            victim_index = next(
-                (
-                    index
-                    for index in range(len(self._running) - 1, -1, -1)
-                    if self._running[index].request_id
-                    not in self._terminal_output_request_ids
-                ),
-                None,
-            )
-            if victim_index is not None:
-                victim = self._running.pop(victim_index)
-                free_evidence = self._free_block_evidence(
-                    self._waiting[0].request_id
-                )
-                preemption_details.append(
-                    {
-                        "reason": "RECOVERY_RUNNING_SLOT",
-                        "trigger_request_id": self._waiting[0].request_id,
-                        "victim_request_id": victim.request_id,
-                        "required_blocks": 0,
-                        "free_blocks_before_reclaim": free_evidence["effective_free"],
-                        "free_blocks_after_reclaim": free_evidence["effective_free"],
-                        "logical_blocks_before_reclaim": free_evidence[
-                            "logical_block_pool_free"
-                        ],
-                        "logical_blocks_after_reclaim": free_evidence[
-                            "logical_block_pool_free"
-                        ],
-                        "physical_blocks_before_reclaim": free_evidence[
-                            "physical_authority_free"
-                        ],
-                        "physical_blocks_after_reclaim": free_evidence[
-                            "physical_authority_free"
-                        ],
-                    }
-                )
-                self._preempt_for_recompute(victim)
-                preempted_request_ids.append(victim.request_id)
-
         request_index = 0
         while (
             not preempted_request_ids
@@ -835,12 +872,42 @@ class ContinuousBatchScheduler:
                 request_index += 1
                 continue
             num_new_tokens = self._limited_tokens(remaining_tokens, token_budget)
+            if request.num_computed_tokens < request.prompt_tokens:
+                num_new_tokens = min(
+                    num_new_tokens,
+                    request.prompt_tokens - request.num_computed_tokens,
+                )
+            else:
+                num_new_tokens = 1
             required_blocks = self._new_blocks_needed(request, num_new_tokens)
             current_was_preempted = False
 
             free_before = self._free_block_evidence(request.request_id)
             self._try_reclaim_blocks(request.request_id, required_blocks)
             free_after = self._free_block_evidence(request.request_id)
+            available_blocks = self._num_free_blocks_for_request(request.request_id)
+            if (
+                self.enable_chunked_prefill
+                and request.num_computed_tokens < request.prompt_tokens
+                and required_blocks > available_blocks
+            ):
+                capacity_limited_tokens = (
+                    (
+                        len(self._request_blocks[request.request_id])
+                        + available_blocks
+                    )
+                    * self.block_size_tokens
+                    - request.num_computed_tokens
+                )
+                if capacity_limited_tokens > 0:
+                    num_new_tokens = min(
+                        num_new_tokens,
+                        capacity_limited_tokens,
+                    )
+                    required_blocks = self._new_blocks_needed(
+                        request,
+                        num_new_tokens,
+                    )
             while required_blocks > self._num_free_blocks_for_request(
                 request.request_id
             ):
@@ -867,6 +934,18 @@ class ContinuousBatchScheduler:
                         "reason": "KV_BLOCK_PRESSURE",
                         "trigger_request_id": request.request_id,
                         "victim_request_id": victim.request_id,
+                        "victim_num_computed_tokens_before_preemption": (
+                            victim.num_computed_tokens
+                        ),
+                        "victim_prompt_tokens": victim.prompt_tokens,
+                        "victim_output_tokens_before_preemption": (
+                            victim.num_output_tokens
+                        ),
+                        "victim_phase_before_preemption": (
+                            SchedulingPhase.PREFILL.value
+                            if victim.num_computed_tokens < victim.prompt_tokens
+                            else SchedulingPhase.DECODE.value
+                        ),
                         "required_blocks": required_blocks,
                         "free_blocks_before_reclaim": free_before["effective_free"],
                         "free_blocks_after_reclaim": free_after["effective_free"],
@@ -905,11 +984,27 @@ class ContinuousBatchScheduler:
             request_index += 1
 
         if not preempted_request_ids:
+            # Pinned engine traverses skipped async-KV waiters before ordinary
+            # FCFS work. Local prefix hits never join that external queue.
+            self._waiting = deque(sorted(self._waiting, key=lambda r: (
+                0 if r.request_id in self._recovery_priority_request_ids else
+                1 if r.request_id in self._external_kv_waiters else 2
+            )))
             waiting_index = 0
             while waiting_index < len(self._waiting) and token_budget > 0:
                 if len(self._running) == self.max_num_running_requests:
                     break
                 request = self._waiting[waiting_index]
+                if (
+                    self.waiting_prefix_provider is not None
+                    and request.num_computed_tokens == 0
+                    and request.status is not RequestStatus.WAITING_FOR_REMOTE_KVS
+                    and request.request_id not in self._remote_prefix_ready_tokens
+                    and not self.waiting_prefix_provider(request, token_budget)
+                ):
+                    # As in allocate_slots failure, later ordinary requests
+                    # cannot start new GETs around a capacity-blocked head.
+                    break
                 if (
                     request.status is RequestStatus.WAITING_FOR_REMOTE_KVS
                     and not self._try_promote_remote_prefix(request)
@@ -928,6 +1023,13 @@ class ContinuousBatchScheduler:
                 if not self.enable_chunked_prefill and threshold_limited > token_budget:
                     break
                 num_new_tokens = min(threshold_limited, token_budget)
+                if effective_computed_tokens < request.prompt_tokens:
+                    num_new_tokens = min(
+                        num_new_tokens,
+                        request.prompt_tokens - effective_computed_tokens,
+                    )
+                else:
+                    num_new_tokens = 1
                 required_blocks = (
                     _ceil_div(
                         effective_computed_tokens + num_new_tokens,
@@ -939,12 +1041,21 @@ class ContinuousBatchScheduler:
                 inactive_hit_count = sum(
                     self.block_pool.blocks[block_id].ref_count == 0 for block_id in local_hit_blocks
                 )
+                admission_blocks = required_blocks
+                if self.scheduler_reserve_full_isl:
+                    # Pinned vLLM's full_sequence_must_fit is an admission
+                    # check, not eager allocation of the entire prompt.
+                    admission_blocks = max(admission_blocks, (
+                        _ceil_div(request.num_tokens, self.block_size_tokens)
+                        - len(self._request_blocks[request.request_id])
+                        - len(local_hit_blocks)
+                    ))
                 self._try_reclaim_blocks(
                     request.request_id,
-                    required_blocks + inactive_hit_count,
+                    admission_blocks + inactive_hit_count,
                 )
                 if (
-                    required_blocks
+                    admission_blocks
                     > self._num_free_blocks_for_request(request.request_id)
                     - inactive_hit_count
                 ):
@@ -970,7 +1081,10 @@ class ContinuousBatchScheduler:
                 del self._waiting[waiting_index]
                 self._running.append(request)
                 self._remote_prefix_ready_tokens.pop(request.request_id, None)
+                self._external_kv_waiters.discard(request.request_id)
+                self._external_page_reservations.pop(request.request_id, None)
                 self._recovery_priority_request_ids.discard(request.request_id)
+                self._recovery_priority_keys.pop(request.request_id, None)
                 if origin is SchedulingOrigin.NEW:
                     scheduled_new.append(item)
                 else:
@@ -1039,7 +1153,10 @@ class ContinuousBatchScheduler:
             local_cache_hit_tokens=(len(local_cache_hit_block_ids) * self.block_size_tokens),
             local_cache_hit_block_ids=local_cache_hit_block_ids,
             recompute=origin is SchedulingOrigin.RESUMED,
-            chunked=num_new_tokens < remaining_tokens,
+            chunked=(
+                phase is SchedulingPhase.PREFILL
+                and request.num_computed_tokens < request.prompt_tokens
+            ),
         )
 
     def _preempt_for_recompute(self, request: Request) -> None:
@@ -1051,12 +1168,13 @@ class ContinuousBatchScheduler:
         )
         request.preempt()
         request.num_computed_tokens = 0
-        ready_owner_count = sum(
+        # Native recompute returns to the head of ordinary FCFS waiting.
+        # Explicit failure recovery remains a separate, declared extension.
+        recovery_count = sum(
             item.request_id in self._recovery_priority_request_ids
-            or item.request_id in self._remote_prefix_ready_tokens
             for item in self._waiting
         )
-        self._waiting.insert(ready_owner_count, request)
+        self._waiting.insert(recovery_count, request)
 
     def _free_request_blocks(self, request_id: str, *, cause: str) -> None:
         block_ids = self._request_blocks[request_id]
@@ -1079,12 +1197,10 @@ class ContinuousBatchScheduler:
 
     def _num_free_blocks_for_request(self, request_id: str) -> int:
         observer = self.block_lifecycle_observer
+        logical_free = self.available_logical_pages(request_id)
         if observer is None:
-            return self.block_pool.num_free_blocks
-        return min(
-            self.block_pool.num_free_blocks,
-            observer.num_free_blocks_for_request(request_id),
-        )
+            return logical_free
+        return min(logical_free, observer.num_free_blocks_for_request(request_id))
 
     def _free_block_evidence(self, request_id: str) -> dict[str, int]:
         observer = self.block_lifecycle_observer
@@ -1096,7 +1212,8 @@ class ContinuousBatchScheduler:
         return {
             "logical_block_pool_free": self.block_pool.num_free_blocks,
             "physical_authority_free": physical,
-            "effective_free": min(self.block_pool.num_free_blocks, physical),
+            "effective_free": min(self.available_logical_pages(request_id), physical),
+            "external_reserved_logical_pages": sum(self._external_page_reservations.values()),
         }
 
     def _try_reclaim_blocks(self, request_id: str, required_blocks: int) -> bool:
@@ -1106,11 +1223,13 @@ class ContinuousBatchScheduler:
         if observer is None:
             return False
         reclaimed = observer.try_reclaim_blocks(request_id, required_blocks)
-        if reclaimed and required_blocks > self._num_free_blocks_for_request(request_id):
-            raise SchedulerInvariantError(
-                "physical reclaim reported success without establishing capacity"
-            )
-        return reclaimed
+        # The observer owns physical HBM only. It can establish enough physical
+        # source chunks while the logical BlockPool remains exhausted by other
+        # running requests. In that case the ordinary victim loop must preempt a
+        # logical owner; physical reclaim success alone is not joint admission.
+        return reclaimed and required_blocks <= self._num_free_blocks_for_request(
+            request_id
+        )
 
     def _observe_allocate(
         self,

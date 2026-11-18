@@ -1,0 +1,51 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" version="31.1.5">
+  <diagram id="figure-2-agent-credit" name="附图2：Slack 到 KV 备份收益">
+    <mxGraphModel math="1" grid="1" gridSize="10" page="1" pageWidth="1600" pageHeight="960" background="#FFFFFF">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="canvas" value="&lt;div style=&quot;line-height:1.35&quot;&gt;&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=28;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;text;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="0" y="0" width="1600" height="960" />
+        </mxCell>
+        <mxCell id="title" value="&lt;div style=&quot;line-height:1.35&quot;&gt;Slack 如何映射到 KV 分块的备份收益&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=40;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;text;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="40" y="10" width="1520" height="65" />
+        </mxCell>
+        <mxCell id="symbols" value="&lt;div style=&quot;line-height:1.35&quot;&gt;\(a\)：当前 Agent；\(x\)：第 \(k_a+1\) 个完整块；\(b_x\)：物理字节数&lt;br&gt;\(T_a(k)\)：使用前 k 块备份，恢复当前已生成 KV 所需的总时间&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=31;fontColor=#000000;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;spacing=10;strokeWidth=2;text;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="60" y="95" width="1480" height="100" />
+        </mxCell>
+        <mxCell id="slack" value="&lt;div style=&quot;line-height:1.35&quot;&gt;工作流输入&lt;br&gt;本请求内固定的 Slack&lt;br&gt;\(s_a\)&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=35;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="90" y="250" width="420" height="195" />
+        </mxCell>
+        <mxCell id="recovery" value="&lt;div style=&quot;line-height:1.35&quot;&gt;KV 恢复代价&lt;br&gt;\(T_a(k_a)\)：复用 x 之前的前缀，其后重算&lt;br&gt;\(T_a(k_a+1)\)：复用到 x，其后重算&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=32;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="650" y="250" width="860" height="195" />
+        </mxCell>
+        <mxCell id="gain" value="&lt;div style=&quot;line-height:1.35&quot;&gt;① 计算当前 Agent 的 KV 恢复收益&lt;br&gt;\(G_{a,x}=\min\{T_a(k_a)-T_a(k_a+1),\ \max[T_a(k_a)-s_a,0]\}\)&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=34;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="100" y="560" width="1400" height="150" />
+        </mxCell>
+        <mxCell id="density" value="&lt;div style=&quot;line-height:1.35&quot;&gt;② 输出备份收益与单位字节收益&lt;br&gt;\(G_{a,x},\qquad P_{a,x}=G_{a,x}/b_x\)&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=36;fontColor=#000000;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;strokeWidth=2;strokeColor=#000000;fillColor=#FFFFFF;rounded=1;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="390" y="790" width="820" height="130" />
+        </mxCell>
+        <mxCell id="edge-0" edge="1" parent="1" source="slack" target="gain" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.5;endArrow=block;endFill=1;endSize=10;jettySize=20;exitX=0.5;exitY=1;entryX=0.25;entryY=0;">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="300" y="505" />
+              <mxPoint x="450" y="505" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-1" edge="1" parent="1" source="recovery" target="gain" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.5;endArrow=block;endFill=1;endSize=10;jettySize=20;exitX=0.5;exitY=1;entryX=0.75;entryY=0;">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="1080" y="505" />
+              <mxPoint x="1150" y="505" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-2" edge="1" parent="1" source="gain" target="density" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=2.5;endArrow=block;endFill=1;endSize=10;jettySize=20;exitX=0.5;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,19 @@
+\begin{figure*}[tp]
+\centering
+\includegraphics[width=\textwidth]{figures/sensitivity.pdf}
+\caption{Repeated-failure and concurrency sensitivity. Left: failure counts
+1, 2, 4, and 8 at concurrency 16. Right: concurrency 8, 16, 24, and 32 with
+two failures. Rows show absolute focus mean completion, focus mean and P95
+gains, focus and victim workflow counts, Peer-HBM quota and pressure,
+and selected Peer/Store prompt fractions. Quota is the time-weighted Peer
+fraction; pressure is the fraction of control-window decisions observing
+pressure. Points and whiskers summarize five
+seeds; individual seed marks remain visible. Positive completion gains favor
+AegisKV. Focus P95 is the within-seed maximum for these small focus sets.
+The F2/C16 cell appears in both columns. Lines connect observed means;
+they do not establish monotonicity. Natural targets and collateral victims
+can differ between policies and across failure counts.}
+\Description{Twelve plots showing the paired policies over failure count and
+workflow concurrency, with resource and recovery diagnostics.}
+\label{fig:sensitivity}
+\end{figure*}

@@ -1,0 +1,532 @@
+\section{AegisKV Design}
+\label{sec:design}
+
+AegisKV allocates finite KV storage to reduce workflow completion time
+(WCT) while preserving normal cache reuse. Two observations connect
+workflow-level priorities to the state needed for recovery.
+
+\subsection{Observations}
+\label{sec:design-insights}
+
+\paragraph{1. Workflow dependencies determine recovery urgency.}
+Figure~\ref{fig:motivation-recovery-exposure} shows similar reconstruction
+costs with different effects on WCT: slack absorbs some branches' delays,
+while a critical branch exposes its full pause. Thus request recovery
+time alone is insufficient to rank protection priorities; the request's
+position in the remaining workflow also matters.
+
+\paragraph{2. Historical KV accesses concentrate on a subset of blocks.}
+Figure~\ref{fig:sparse-releases} surveys long-context releases with block,
+token or compressed-entry selection. Figure~\ref{fig:design-insights}
+then examines native access traces: approximately 20\% of historical
+blocks account for 87.64\%, 74.76\% and 56.54\% of accesses across the
+three models. These results distinguish the complete historical state
+from the subset frequently used by computation. The survey does not
+establish a monotonic increase in sparsity, and retrospective concentration
+does not establish future-query prediction accuracy.
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/sparse-models.pdf}
+ \caption{Selected sparse/hybrid model releases and reported context
+ lengths. IDs: 1 MiniCPM4~\cite{minicpm4model};
+ 2 MiniCPM4.1~\cite{openbmb2025minicpm41};
+ 3 DeepSeek-V3.2-Exp~\cite{deepseek2025v32exp};
+ 4 DeepSeek-V3.2~\cite{deepseek2025v32model};
+ 5 GLM-5~\cite{zai2026glm5model};
+ 6 MiniCPM-SALA~\cite{openbmb2026sala};
+ 7 DeepSeek-V4 preview~\cite{deepseek2026v4model};
+ 8 MiniMax-M3~\cite{minimax2026m3};
+ 9 GLM-5.2~\cite{zai2026glm52};
+ 10 LongCat-Flash-Lite-Sparse~\cite{longcat2026sparse}.
+ Dates are announcements, or first official repository dates for
+ IDs 5, 9 and 10. Markers identify the sparse branch's selection unit,
+ including SALA's block branch and V4's compressed sparse branch;
+ they do not imply uniform attention across layers.}
+ \label{fig:sparse-releases}
+ \Description{Ten selected sparse or hybrid attention releases between
+ June 2025 and July 2026, with reported contexts from 32K to 1M.
+ Circles, squares and diamonds distinguish block, token and compressed
+ entry selection. This is a literature survey, not a sparsity-rate curve.}
+\end{figure}
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/kv-access-concentration.pdf}
+ \caption{Native KV access concentration for NOSA-8B~\cite{huang2026nosav2},
+ NSA-8B (MiniCPM-4-8B-NSA)~\cite{fasa2026minicpm4nsa}, and
+ MiniCPM4.1-8B~\cite{openbmb2025minicpm41}. We use the final 512 queries
+ of matched 32,704-token prefixes from three PG19 texts. Each query
+ counts a historical 64-token block once across heads. Rank the 503
+ blocks within each layer/window; average access shares over all
+ 32 layers, then texts. Bands show text min--max; the diagonal denotes
+ uniform access. Compressed/selector state is excluded. This is
+ retrospective concentration, not prediction accuracy or recovery speedup.}
+ \label{fig:design-insights}
+ \Description{Cumulative historical block access curves for NOSA-8B,
+ NSA-8B and MiniCPM4.1-8B, averaged over every layer and three texts.
+ About 20 percent of blocks account for 87.64, 74.76 and 56.54 percent
+ of accesses, respectively; all three curves exceed the uniform baseline.}
+\end{figure}
+
+Together, these observations guide which states to protect and which
+parts to keep immediately accessible.
+
+\subsection{System Overview}
+\label{sec:system-overview}
+
+AegisKV combines workflow priorities with a three-tier KV hierarchy
+(Figure~\ref{fig:system-overview}). Shared DRAM retains complete checkpoints
+for reuse and recovery; shared storage extends retention when DRAM is
+under pressure. Peer HBM keeps selected layers and hot blocks on another
+data-parallel (DP) replica to reduce recovery waiting. This division lets
+the system retain long histories while spending scarce HBM on the state
+whose faster access is most useful to workflow completion.
+
+The Application supplies requests and workflow progress to the Controller.
+\textbf{(1)} Workflow Tracker estimates how much delay each Agent can
+absorb, while \textbf{(2)} Recovery-aware Router selects its execution and
+takeover DPs. Using this urgency and location information, \textbf{(3)} KV
+Master decides where to retain each checkpoint and which hot blocks merit
+Peer space. Within the Engine, \textbf{(4)} Adapter adjusts the available
+Peer capacity as serving demand changes, and \textbf{(5)} Connector executes
+Master's transfer plans and reports their outcomes. If a worker fails, Router redirects its requests to the
+takeover DP, where Connector combines Peer hits with lower-tier reads to
+resume execution.
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/system-overview.pdf}
+ \caption{AegisKV architecture. Callouts (1)--(5) match the text;
+ DP1 mirrors DP0's Adapter/Connector; the Master--Connector exchange is
+ shown on DP1: plans flow down and transfer status returns up.
+ DP0 executes; DP1 hosts Peer replicas and takes over. Blue solid links
+ carry KV, dark dashed links carry control, and red dashes denote retry;
+ orange blocks are unsealed tails. Complete shared
+ backing lies outside both DP failure boundaries.}
+ \label{fig:system-overview}
+ \Description{Compact Application, Controller and Engine layers with
+ numbered components, symmetric DP Local/Peer HBM and shared backing.}
+\end{figure}
+
+\subsection{Workflow Tracker: Remaining Time and Slack}
+\label{sec:workflow-protection}
+
+To make workflow priorities available online, Tracker estimates remaining
+execution before deriving slack. It maintains a residual DAG whose nodes
+are Agent segments between exposed fork/join boundaries or completion.
+A segment can span several LLM calls and tool waits. Child execution
+appears on child paths, not again in the parent; unknown future forks
+are excluded.
+
+A GBDT predicts segment seconds remaining, $d$, from causal features: role/model,
+current input length, elapsed time, completed-call count and previous
+calls' lengths, timings and context growth. Missing history is masked;
+training, calibration and evaluation split whole workflows. Labels end
+at the segment boundary, and future call outcomes are never features.
+
+Algorithm~\ref{alg:workflow-tracker} takes residual DAG $G$ and features
+$X$. Forward/backward critical-path passes~\cite{kelley1959cpm} compute
+earliest finishes $EF$ and latest finishes $LF$ relative to the predicted
+workflow finish. Their difference is nominal slack. The guard $g$ is an
+upper empirical quantile of positive slack overestimation on calibration
+workflows; subtracting it gives advisory slack $s$, not a per-request
+guarantee. Requests in one segment share its margin.
+
+\par\medskip\noindent\begin{minipage}{\columnwidth}
+\raggedright
+ \refstepcounter{designalgorithm}\label{alg:workflow-tracker}
+ \textbf{Algorithm \thedesignalgorithm: Remaining time and slack}
+ \par\smallskip
+ \begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
+ \toprule
+ 1 & $(G,X)\gets\textsc{SnapshotProgress}()$ \\
+ 2 & $\nu\gets\textsc{NextVersion}()$ \\
+ 3 & \textbf{if not} \textsc{Supported}$(G,X)$ \textbf{then} \\
+ 4 & \quad \textsc{PublishInvalid}$(\nu)$; \textbf{return} \\
+ 5 & $d\gets\max(0,\textsc{GBDT}(X));\quad g\gets\textsc{Guard}()$ \\
+ 6 & $EF\gets\textsc{Forward}(G,d)$ \\
+ 7 & $LF\gets\textsc{Backward}(G,d,\max_v EF_v)$ \\
+ 8 & \textbf{for} $v\in V(G)$ \textbf{do} \\
+ 9 & \quad $s_v\gets\max(0,LF_v-EF_v-g_v)$ \\
+ 10 & \textsc{Publish}$(\nu,G,d,g,s)$ \\
+ \bottomrule
+ \end{tabularx}
+\end{minipage}\par\medskip
+
+\textsc{Supported} checks inputs, dependencies, calibration and freshness;
+invalid estimates grant no positive slack credit. Progress events and
+periodic refresh publish versioned durations $d$, guards and slack to
+Master, invalidating older placement costs. The DAG passes cost
+$O(|V|+|E|)$; prediction quality is evaluated in
+Section~\ref{sec:eval-prediction}.
+
+\subsection{Recovery-aware Router}
+\label{sec:recovery-router}
+
+Router establishes where normal and resumed execution run. Normal
+dispatch balances load and compatible prefix locality.
+Figure~\ref{fig:agent-prefix-reuse} reports 97.90\% potential same-agent
+token coverage and 0.37\% additional cross-agent coverage. Agent affinity
+is a preference: shared prefixes can still help another Agent's first call.
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/agent-prefix-reuse.pdf}
+ \caption{Potential prefix reuse over 98,827 requests, 2,090 agents and
+ 393 CC/Weka workflows. Coverage uses earlier completed requests with
+ the same recorded model and workflow. Same/other-agent coverage
+ overlaps; only additional cross-agent coverage extends same-agent
+ reuse. These are token-prefix opportunities, not runtime cache hits.}
+ \label{fig:agent-prefix-reuse}
+ \Description{Same-agent prefixes dominate aggregate reuse; cross-agent
+ history can also help first subagent calls.}
+\end{figure}
+
+At arrival, Router records a versioned takeover binding to a DP with a
+compatible layout outside the source failure domain. Its corresponding
+tensor-parallel (TP) shards host Peer copies. On confirmed failure, Router fences the old epoch and activates
+that target subject to workspace and admission constraints. Rebinding
+preserves a valid backing path and starts with zero assumed Peer coverage
+on the new target. This binding supplies Master with a concrete location
+for evaluating Peer access, transfer paths and target load.
+
+\subsection{KV Master: Three-Tier Renewable Credit}
+\label{sec:kv-master}
+
+Using Tracker's workflow estimates and Router's target binding, Master
+values backing placement, selects Peer layers/blocks, then applies those
+choices through an online admission and eviction loop.
+
+\subsubsection{Valuing complete backing and Peer acceleration}
+\label{sec:placement-value}
+
+Placement must account for both failure recovery and normal reuse.
+The prefix opportunities in Figure~\ref{fig:agent-prefix-reuse} persist
+across calls: repeatedly reconstructing a high-slack Agent's history
+still consumes shared serving capacity. Slack therefore limits the
+workflow benefit of faster recovery, but does not erase normal-reuse value.
+
+\paragraph{Tier-conditional value.}
+Each tier improves on the recovery path beneath it. A complete checkpoint
+in storage avoids using an older checkpoint or reconstructing history.
+DRAM shortens access, or provides retention when no storage copy exists;
+Peer removes exposed read/H2D waiting.
+All checkpoint dependencies remain in the chosen backing tier, including
+blocks absent from Peer. Reclaiming DRAM therefore requires space for
+the complete checkpoint in storage and revaluation of the changed Peer
+miss path. Temporary copies share one retention benefit.
+Figure~\ref{fig:retention-value} illustrates why ranking also requires
+the amount of time saved and the bytes occupied.
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/retention-value.pdf}
+ \caption{Slack alone does not rank retention value. In this isolated-fault
+ example, A uses two capacity units to reduce recovery from 4 to 2\,s;
+ B uses one to reduce 18 to 8\,s. A at slack 0 saves 1\,s/unit, whereas
+ B at slack 6 saves 10\,s/unit. Normal-use value is zero. These constructed
+ profiles motivate cost/size comparison, not a policy-speedup claim.}
+ \label{fig:retention-value}
+ \Description{A higher-slack object can save more workflow time per byte.}
+\end{figure}
+
+\paragraph{Complete-plan objective.}
+A common fault interrupts all requests in its source domain. At a join,
+accelerating only one of two equally delayed branches need not improve
+WCT. Master therefore compares complete placements, including victims
+and moves. For current placement $P$ and candidate $P'$, it evaluates
+\begin{equation}
+ \Delta J=\sum_e p_e\sum_w[T_w(P',e)-T_w(P,e)].
+ \label{eq:value}
+\end{equation}
+$T_w$ is predicted remaining workflow completion time. A fixed scenario
+table covers normal continuation and source-domain faults at given offsets;
+its probabilities sum to one. Both plans use the same queues, service
+profiles, finite workspace and Connector order. Completed copies determine
+the saved prefix and replay tail. Delays enter the residual DAG against
+the same ordinary-execution reference, with joins taking the maximum.
+Copy interference and temporary occupancy are included in this schedule.
+
+The Tracker guard is added once per interrupted segment in both plans.
+Invalid workflow timing falls back to summed normal/recovery request
+completion delays without slack credit; invalid resource profiles pause
+optional moves and use bounded recency order for safe mandatory relief.
+
+\paragraph{Prefix credit for capacity competition.}
+Credit screens candidates before joint evaluation. For a fixed history
+and tail, Master adds groups from the tier's fallback in prefix order:
+complete token extents across all layers, TP shards and auxiliary state
+for backing, or layer/hot-block groups for Peer. Each step can retain
+its previous restore path, keeping gains nonnegative. Credit combines
+normal-use service-time savings and recovery delay saved beyond guarded
+slack under the objective's horizon and scenarios. Reuse forecasts use
+visible history; existing local hits earn no extra backing benefit.
+
+Each increment is split by new object bytes. Distinct Agents contribute
+separate shares; repeated references by one Agent do not duplicate its
+share. Checkpoints can share unchanged blocks, charging capacity once per
+physical copy. For example, restore times
+12, 7 and 5\,s at successive frontiers with slack 6\,s yield failure-value
+increments 5 and 1\,s before probability weighting, rather than assigning
+all 6\,s to the tail. Increments telescope under the Agent's local model;
+their sum across Agents screens competition but does not replace the
+joint WCT objective.
+
+\subsubsection{Choosing per-request layers and hot blocks}
+\label{sec:sparse-placement}
+
+Master next selects the Peer blocks that shorten recovery. A recovering
+request reuses the $M$ tokens covered by its last completed checkpoint
+and replays the $N$ acknowledged tokens generated since that checkpoint.
+The saved prefix avoids historical reconstruction, but its KV still
+requires lower-tier transfer. Computation on the replay tail can overlap
+transfers for later layers. Peer is useful where those transfers would
+otherwise leave the request waiting; its effective depth therefore
+depends on the request's saved history, replay tail and recovery queues.
+
+For request $r$, $L_r$ is the Peer prefix depth and $K_{r,l}$ the number
+of token blocks in layer $l\le L_r$, including required TP objects.
+Mandatory native dependencies come first; remaining blocks are ranked
+by selection frequency over completed queries, counting each physical
+block once per query across heads. Ties favor recency, then block ID.
+A budget below the mandatory set is infeasible. Selection units, engine
+blocks and kernel tiles need not coincide; the measured 64-token unit
+is not a universal requirement. Complete backing supplies misses without
+changing native selections (Figure~\ref{fig:sparse-recovery}).
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/sparse-recovery.pdf}
+ \caption{Complete backing, per-layer Peer budgets and demand misses.
+ (a) The DRAM manifest covers B0--B3 in every layer; the tail is uncommitted.
+ (b) On the bound target, $L=2$, with $K_1=2$ and $K_2=3$; layer 3 has
+ no Peer copy. (c) Layer 1 needs B0/B2: B0 hits Peer and B2 is fetched
+ from backing before computation. B3 was unused. The complete manifest
+ also covers TP shards and selector state. If demoted as a whole,
+ shared storage supplies the miss path before H2D.}
+ \label{fig:sparse-recovery}
+ \Description{Three complete historical layers, an uncommitted tail,
+ different hot-block counts and an explicitly routed layer-1 miss.}
+\end{figure}
+
+Figure~\ref{fig:design-pipeline} isolates Peer's benefit: (c) and (d) share
+complete DRAM backing and the same replay tail; Peer removes 24\,ms of
+exposed waiting in this analytical instance. Its seven-layer depth is
+profile-specific, motivating per-request choices rather than a fixed
+depth for every request.
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/recovery-pipeline.pdf}
+ \caption{Analytical layered recovery with and without Peer.
+ MiniCPM4-8B has 32 layers, 32K history and a
+ 64-token tail. Replay is calibrated at 2.870\,ms/layer; assumed effective
+ H2D bandwidth is 6.25\,GB/s (5.369\,ms per full layer). Trace-derived
+ mean preload and preload-plus-miss fractions are 0.6584/0.7748.
+ (a) waits for bulk restoration; (b) overlaps full-layer restoration;
+ (c) preloads hot blocks and fetches revealed misses; (d) adds 147.5\,MiB
+ of Peer hot sets in the first seven layers. Numbers are tail completion
+ and exposed wait. Cold copies follow replay; the ideal preemptible
+ stream and homogeneous layer costs omit bounded-workspace and queue
+ effects. This is not end-to-end fault-recovery measurement.}
+ \label{fig:design-pipeline}
+ \Description{The same required replay computation with progressively
+ reduced exposed KV waits: 172, 83, 44 and 20 milliseconds.}
+\end{figure}
+
+Master enumerates a finite set of per-layer block-count or fraction
+templates and depths from zero to model depth, plus the current placement.
+This avoids a Cartesian product of all layer budgets. Bounded bundles
+can jointly advance tied join branches; all evaluations share one work
+budget. Each scenario uses current $M$ and its own predicted $N$,
+including commit lag. Unsupported sparse profiles use full demand;
+only computation that must still execute hides transfer.
+Neither $L$ nor $K$ must increase with every token: a fixed budget can
+change block identities, and $L=0$ is valid when no exposed wait is removed.
+The online loop below decides when these candidates replace resident state.
+
+\subsubsection{Online renewal, admission, and eviction}
+\label{sec:placement-plan}
+
+As calls arrive and end, the Agents interested in a prefix and their
+benefits change. A one-time score misses these updates; renewing unchanged
+prefixes at every checkpoint can instead preserve stale credit.
+Master distinguishes actual reuse from value updates through renewable
+credit and byte-proportional pressure aging, inspired by Landlord and
+GreedyDual-Size~\cite{young2002landlord,cao1997greedydual}.
+
+A physical replica $x$ has size $b_x$, each Agent's current grant $g_{a,x}$
+and paid rent $d_{a,x}$. Each pool has its own cumulative rent $\rho_j$;
+$L_r$ denotes only layer depth. Remaining credit and the eviction key are
+\begin{equation}
+ C_x=\sum_a[g_{a,x}-d_{a,x}]^+,
+ \qquad H_x=\rho_j+C_x/b_x.
+ \label{eq:rental-credit}
+\end{equation}
+Clocks and new paid amounts start at zero. Advancing rent by $\delta$
+charges every committed replica $\min(C_x,b_x\delta)$, split proportionally
+among its positive Agent shares and added to their paid amounts. Pinned
+and leased copies also age; eligibility for removal is separate. Settlement
+can be lazy. Rent represents capacity competition, not wall time.
+
+An actual prefix/recovery use settles rent and renews only that Agent's
+share by refreshing its grant and resetting its paid amount. Request/use
+IDs prevent repeated renewal within one use. Value-only changes refresh
+grants but preserve paid rent; checkpoint growth does not renew unchanged
+prefixes. Expired demand removes its grant, not the copy. Figure~\ref{fig:renewable-credit}
+illustrates the distinction.
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/renewable-credit.pdf}
+ \caption{Constructed credit accounting for one shared physical object
+ of unit size. Initial Agent grants are 3 and 2. A rent charge of 2 leaves
+ shares 1.8 and 1.2. Updating A's grant to 4 preserves its paid amount
+ 1.2, leaving 2.8; an actual new use by A then renews its share to 4.
+ B's share remains 1.2 in both updates. Credit is a screening quantity,
+ not measured WCT or duplicated physical capacity.}
+ \label{fig:renewable-credit}
+ \Description{Two Agents contribute to one physical prefix object.
+ A four-row ledger separates pressure aging, value refresh and renewal.}
+\end{figure}
+
+\paragraph{Legal competition.}
+Victims are legal moves: complete-checkpoint demotion or fallback,
+or valid Peer hot-set reduction. Bytes remain occupied while another
+checkpoint references them; bounded owner bundles can release shared objects.
+Ordinary competition respects running requests' logical Peer pins.
+Request end/tool handoff unpins; self replacement and required capacity
+relief may override logical pins, never physical read/copy leases.
+
+For each move, \textsc{RentPlans} refreshes up to $q\ge2$ low-key victims
+and $q$ rotating-scan alternatives, exploring victim chains within a common
+work budget. Releasing objects $Y$ raises the trial clock to at least
+$\max_{x\in Y}H_x$. A group of new bytes must retain positive credit:
+$G_{\rm in}>b_{\rm in}(\rho'_j-\rho_j)$, where $G_{\rm in}$ and
+$b_{\rm in}$ are the new bytes' grant and size, and $\rho'_j$ is the trial
+clock. The trial charge is split by incoming grants; existing replicas neither consume new capacity nor gain
+new credit. Each pool applies its own gate. Plans include transient space
+and recursively secure storage for DRAM demotion; Peer release uses its
+existing backing without redundant D2H.
+
+Prefill offers newly sealed state; decode triggers review every fixed,
+block-aligned $Z$ tokens. Request completion and tool handoff also offer
+a final snapshot, covering short rounds below $Z$.
+Algorithm~\ref{alg:placement} also handles use,
+value, request-end, budget, failure and transfer events $e$.
+Each event uses a state snapshot $S$; $h$ marks required capacity relief.
+Candidates include complete checkpoint extensions (DRAM first, then
+storage), promotion/demotion, last-copy removal with a valid fallback,
+and Peer replacements from Section~\ref{sec:sparse-placement}.
+If neither backing tier admits an extension, $M$ stays unchanged;
+copy lag can make $N$ exceed $Z$.
+
+\par\medskip\noindent\begin{minipage}{\columnwidth}
+\raggedright
+ \refstepcounter{designalgorithm}\label{alg:placement}
+ \textbf{Algorithm \thedesignalgorithm: Three-tier rental event loop}
+ \par\smallskip
+ \begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
+ \toprule
+ 1 & \textsc{Reconcile}$(e)$; \textsc{SettleAffected}$(e)$ \\
+ 2 & \textbf{if} \textsc{NewUse}$(e)$ \textbf{then} \textsc{RenewAgent}$(e)$ \\
+ 3 & \textsc{MarkChangedValues}$(e)$; $S\gets\textsc{Snapshot}()$ \\
+ 4 & $h\gets\textsc{ShrinkRequired}(S)$; $(P^*,d^*)\gets(\varnothing,\infty)$ \\
+ 5 & \textbf{for} $m\in\textsc{Candidates}(S,h)$ \textbf{while} \textsc{WorkLeft}() \\
+ 6 & \quad \textbf{for} $P\in\textsc{RentPlans}(S,m,h)$ \\
+ 7 & \qquad $d\gets\Delta J(P;S)$ \\
+ 8 & \qquad \textbf{if} $d<d^*$ \textbf{then} $(P^*,d^*)\gets(P,d)$ \\
+ 9 & \textbf{if} $P^*=\varnothing$ \textbf{then} \textsc{Defer}$(e)$; \textbf{return} \\
+ 10 & \textbf{if} $\neg h\land d^*\ge-\epsilon$ \textbf{then return} \\
+ 11 & \textbf{if not} \textsc{ReserveIfCurrent}$(S,P^*)$ \textbf{then} \\
+ 12 & \quad \textsc{Requeue}$(e)$; \textbf{return} \\
+ 13 & \textsc{Submit}$(P^*)$ \quad\textit{completion/failure emits a new event} \\
+ \bottomrule
+ \end{tabularx}
+\end{minipage}\par\medskip
+
+\textsc{Reconcile} applies verified commits, unpins and failures;
+value refresh preserves paid rent. Optional
+plans must pass rent screening and $\Delta J<-\epsilon$. Required relief
+bypasses positive-credit admission and chooses the least costly examined
+legal plan, still charging released objects. If no safe plan is found,
+admission pauses until a later event retries the newest pending frontier.
+Periodic budgeted refresh revisits stale keys. Tool waits retain Agent
+interest; terminal progress removes failure demand, and expired inactive
+shares are pruned.
+
+Copies may outlive the decision that scheduled them. Before acting,
+\textsc{ReserveIfCurrent} therefore rechecks versions, leases, bytes and pool clocks.
+Rejected previews change no committed rent or residency. A prepared
+handoff advances rent only after its fallback is published; new replicas
+install their residual trial credit on commit. Failure before handoff
+discards trial rent, whereas failure after handoff cannot undo released
+victims or reduce the clock. Connector completion/failure feeds the next
+event, closing the loop without treating a pending copy as protection.
+This bounded adaptation offers no optimality or inherited competitive guarantee.
+
+\subsection{Adapter: Guarded AIMD for Peer Capacity}
+\label{sec:adapter}
+
+Master selects content within a quota; Adapter adjusts that quota as
+foreground inference demand changes. It uses pressure-driven multiplicative
+decrease and stable-window additive increase~\cite{chiu1989aimd}.
+The total Peer authorization has a physical ceiling
+\begin{equation}
+ C=\max\{0,\min(B_{\mathrm{cap}},
+ B_{\mathrm{pool}}-B_{\mathrm{serve}}-B_{\mathrm{reserve}})\}.
+ \label{eq:peer-ceiling}
+\end{equation}
+The pool excludes weights/fixed allocations; serving high watermark
+excludes Peer, and reserve covers growth/workspace. Existing Peer bytes
+are not subtracted twice. $B_{\rm cap}$ can be a configured pool fraction.
+
+The current quota $B$ and stable-window count $z$ start at zero.
+Pressure (allocation stalls, reserve violations or
+memory-related admission waits) multiplies $B$ by $0<\gamma<1$. After $m$
+stable windows below a lower wait threshold, deferred positive-value Peer
+demand, assessed before quota filtering, permits an additive byte step
+$\Delta$. Intermediate windows reset
+$z$; missing telemetry disables growth. The ceiling clips every update;
+emergencies may decrease within a window, but growth requires completed
+stable windows. Parameters and window length are configurable.
+
+\par\medskip\noindent\begin{minipage}{\columnwidth}
+\raggedright
+ \refstepcounter{designalgorithm}\label{alg:adapter}
+ \textbf{Algorithm \thedesignalgorithm: Windowed Peer quota}
+ \par\smallskip
+ \begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
+ \toprule
+ 1 & $C\gets\textsc{SafeCeiling}();\quad B'\gets B$ \\
+ 2 & \textbf{if} \textsc{Pressure}() \textbf{then} $(B',z)\gets(\gamma B,0)$ \\
+ 3 & \textbf{else if} \textsc{Stable}() \textbf{then} \\
+ 4 & \quad $z\gets z+1$ \\
+ 5 & \quad \textbf{if} $z\ge m$ \textbf{then} \\
+ 6 & \qquad \textbf{if} \textsc{PeerDemand}() \textbf{then} $B'\gets B+\Delta$ \\
+ 7 & \qquad $z\gets0$ \\
+ 8 & \textbf{else} $z\gets0$ \\
+ 9 & $B\gets\textsc{RoundDownPage}(\min(C,B'))$ \\
+ 10 & \textsc{PublishBudget}$(B)$; \textsc{EmitCapacityEvent}() \\
+ \bottomrule
+ \end{tabularx}
+\end{minipage}\par\medskip
+
+Adapter sets the total budget; Master chooses $L/K$ at fixed $Z$ and
+other placement events. If occupancy plus reservations exceeds a reduced
+quota, Master pauses Peer admission and selects replicas to release.
+Serving may wait for ongoing readers and transfers to finish before
+reusing their memory.
+
+\subsection{Connector: Executing KV Transfers}
+\label{sec:connector}
+
+Connector carries out KV Master's placement plans, transferring KV among
+execution HBM, Peer HBM, shared DRAM and storage. It reports completed or
+failed transfers to Master so subsequent decisions use actual residency.
+A new checkpoint becomes available only after all required copies complete;
+the old recovery point remains usable during the transfer. During recovery,
+Connector serves Peer hits directly and fetches missing blocks from backing,
+overlapping reads with tail replay. These operations share bounded transfer
+queues with normal reuse and checkpointing.

@@ -1,0 +1,99 @@
+{
+  "figures": [
+    {
+      "name": "eval-concurrency-workflow",
+      "title": "并发64下同一 Workflow 的 WCT 差值",
+      "caption": "最高并发 C=64 时，同一无故障配置下全部 160 个 Workflow 的配对 WCT 差值：每个系统减去同 ID、同 C64 的 Mooncake WCT，负值更快。横轴为 C16 Mooncake 无故障 WCT 固定排序的 Workflow，不是并发轴；排序与正常开销图一致。三系统每个各执行一次，两轮精确输入复访；连线仅连接对象，无跨重复置信区间。AegisKV 有 65 个 Workflow 更快、95 个更慢，全部正负尾部均保留；CSV 保存绝对 WCT 与差值。",
+      "caption_en": "At maximum concurrency C=64, compare all 160 matched workflows in the same fault-free configuration. Each ordinate subtracts Mooncake WCT at C64 for the same workflow ID; negative is faster. The abscissa is workflow identity in the fixed C16 Mooncake no-failure order used by the healthy-overhead plot, not concurrency. One simulation per system with two exact-input visits; connecting segments are not temporal evolution or replicate intervals. AegisKV is faster on 65 workflows and slower on 95; all positive and negative tails are retained. CSV includes absolute WCTs and paired differences.",
+      "width_in": 7.0,
+      "height_in": 3.1,
+      "evidence": "uncalibrated_frozen_algorithm_paired_workflow_simulation",
+      "files": {
+        "pdf": "865087ed11561e7b04f45dbd7c90d62ad40ef1c6fe162f2103d3813ee8919017",
+        "svg": "5a6668171c53171737579fca35958f89b6c40422834613e854c93e7051a74e4b",
+        "png": "87aa0687b8781dc972366d6be33165a880465c6480d704d717209a5fbd3168f2",
+        "csv": "0719ea77258fe6f5eb32d63c8bf7809e2e99035a3742e0bddc968cceee2ab3db"
+      },
+      "plotted_rows": 480,
+      "paired_workflows": 160,
+      "systems": 3,
+      "complete_runs": 3,
+      "new_experiments_in_renderer": 0,
+      "statistics": {
+        "mooncake": {
+          "faster": 0,
+          "equal": 160,
+          "slower": 0,
+          "minimum_delta_s": 0.0,
+          "maximum_delta_s": 0.0
+        },
+        "dram": {
+          "faster": 75,
+          "equal": 0,
+          "slower": 85,
+          "minimum_delta_s": -401.53349111200004,
+          "maximum_delta_s": 400.97391995500004
+        },
+        "aegis": {
+          "faster": 65,
+          "equal": 0,
+          "slower": 95,
+          "minimum_delta_s": -461.58124856999996,
+          "maximum_delta_s": 298.845499863
+        }
+      },
+      "visual_review": "PASS",
+      "reviewed_exports": [
+        "png",
+        "7_inch_pdf_render"
+      ],
+      "minimum_font_pt": 10,
+      "review_checks": [
+        "Actual final PNG and 7 inch PDF inspected",
+        "All 160 IDs matched at C64, with C16 serving only as order",
+        "CSV absolute values and all 480 differences checked against source",
+        "Entire range -461.581 to +400.974 s retained with padding",
+        "Legend outside curve field; three line styles and marker shapes visible; zero line preserved"
+      ]
+    }
+  ],
+  "inputs": {
+    "output/pdf/aegiskv-revision-20260909/eval-workflow-delay.csv": "192b5fd1e9922568c502a72c8cb7a385ba714b80ad96ef7633a0b0961c9347ea",
+    "output/aegiskv-revision-20260909/scaling/points.json": "45f53b2c06d3bca02572f86459f447d6a0c994defca407d983d5938610f7cef2",
+    "output/aegiskv-revision-20260909/scaling/RUN_AUDIT.json": "83beb0edef5b9b5c195779a70905cea1dabb318811b17fad4240a8c8a8ed132f",
+    "output/aegiskv-revision-20260909/scaling/data/f0-c8/mooncake.json": "3666db5f2f206a46493ea4fac274e4406b15156a7d7c5138f7fc20a65d223fcb",
+    "output/aegiskv-revision-20260909/scaling/data/f0-c8/dram.json": "49bc38f4cd16cb953b7502373b984c0a7a50e277faf30a33974809f3cddbe192",
+    "output/aegiskv-revision-20260909/scaling/data/f0-c8/aegis.json": "e32cb90df39d07c90d711622c41e46b85d2614c7ac4779a0cf9aa6bd08463c66",
+    "output/agent-lease-20260908/data/f0-base/mooncake.json": "8edb575a0918f6a7d1eb5215171e4853062a0d2a361afad3e680f122fe91c638",
+    "output/agent-lease-20260908/data/f0-base/dram.json": "315014a52a8d689f016657ddcc61220c2d1e8f28385174b4b5438209c60ea3e3",
+    "output/agent-lease-20260908/data/f0-base/aegis.json": "e6d32a54e06ff8750f8c4ded42003eb6a4d88c8cb6c45e3e0fce3a36a71da93a",
+    "output/agent-lease-20260908/data/f0-c32/mooncake.json": "cf215dd5771497a014fa48277109be6012b50119a517908b0322d9216eeb1568",
+    "output/agent-lease-20260908/data/f0-c32/dram.json": "836b3a5cf8549b8c475d2a05eb98cdf365ac5bfab17725b4d092d3b7f015a51a",
+    "output/agent-lease-20260908/data/f0-c32/aegis.json": "e8da7f716f0630b521418db3e1ac2edc714980e7c135e1e3fc913d7f94eea5c9",
+    "output/aegiskv-revision-20260909/scaling/data/f0-c64/mooncake.json": "3611856cc35f32c00ffe9f6cdc4c698a69f4daab884da02c8f4bba6e4a1e77a9",
+    "output/aegiskv-revision-20260909/scaling/data/f0-c64/dram.json": "61a6e0cc26e1746a708a63394f029284f5276dfc5a042ae01ec0870c4ec9672d",
+    "output/aegiskv-revision-20260909/scaling/data/f0-c64/aegis.json": "d506ccced128f8d6023ae849039fc26a038cdf0d35645f45cca527a27be95919"
+  },
+  "script_sha256": "b4b9ea830a2ca063366b4cadd5e7e0de1de0e07ff26b1f7f398c254757321823",
+  "additional_csv": {
+    "path": "output/pdf/aegiskv-revision-20260909/eval-concurrency-workflow-all-concurrency.csv",
+    "sha256": "31cc43e6a68d8654333bec47b24dcdd874ee45cc913e3e9d65856f1b41d100ef",
+    "rows": 1920,
+    "concurrency": [
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  "ordering_source": "output/pdf/aegiskv-revision-20260909/eval-workflow-delay.csv",
+  "comparison": "same workflow and same concurrency; C16 values are used only for order",
+  "all_original_p95_columns_preserved_in_source": true,
+  "visual_review": "PASS",
+  "reviewed_export_sha256": {
+    "pdf": "865087ed11561e7b04f45dbd7c90d62ad40ef1c6fe162f2103d3813ee8919017",
+    "png": "87aa0687b8781dc972366d6be33165a880465c6480d704d717209a5fbd3168f2",
+    "svg": "5a6668171c53171737579fca35958f89b6c40422834613e854c93e7051a74e4b"
+  },
+  "reviewed_pdf_preview_sha256": "ca3f5ea61b5cd3f2ceccc2d5a06eb39ccb76a1a50a9a8b2975fdcc23fddf7e7c"
+}

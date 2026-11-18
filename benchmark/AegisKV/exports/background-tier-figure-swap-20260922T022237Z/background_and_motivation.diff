@@ -1,0 +1,166 @@
+--- before/paper/background_and_motivation.tex
++++ paper/background_and_motivation.tex
+@@ -134,6 +134,37 @@
+ HBM offers fast access but has high capacity cost and competes with
+ foreground inference for GPU memory. DRAM and storage-backed shared
+ services can provide cheaper capacity, with additional retrieval latency.
++
++Figure~\ref{fig:motivation-recompute} illustrates the latency difference
++between reconstructing a history and reusing retained KV.
++At 1,010,000 tokens, full prefill takes 571.21\,s even with sparse
++attention; HBM, DRAM and shared-storage reuse take 1.305, 2.663 and
++10.156\,s, respectively. The history occupies 57.92\,GB across two ranks.
++All paths end when the same input's KV is ready: reuse restores the
++preceding history, if needed, and computes one new token.
++HBM is a resident-state reference. These measurements quantify KV
++readiness, excluding checkpoint creation, failure detection and routing.
++
++\begin{figure}[t]
++  \centering
++  \includegraphics[width=\columnwidth]{figures/recovery-cost.pdf}
++  \caption{Measured KV reconstruction and reuse costs for
++    Qwen2.5-7B-Instruct-1M on two A100 PCIe 40\,GB GPUs
++    (TP2, BF16, batch one), with sparse attention above 32K.
++    Full prefill starts from empty KV; reuse starts from $(C-1)$ cached
++    tokens and computes one. DRAM/shared-storage I/O is serialized with
++    computation. HBM/DRAM: median and min--max of three timings;
++    shared storage/full prefill: one timing per length.
++    Protocol: Appendix~\ref{sec:motivation-protocol}.
++    K~=~1,024; M~=~1,000,000.}
++  \label{fig:motivation-recompute}
++  \Description{Four measured Prefill curves for Qwen2.5-7B-Instruct-1M
++    from 8K to 1,010,000 tokens: blue circles for resident HBM reuse,
++    orange squares for DRAM reuse, purple diamonds for shared-storage
++    reuse, and red triangles for full prefill. Both axes are logarithmic.
++    At the longest context, the four paths take 1.305, 2.663, 10.156 and
++    571.21 seconds, respectively.}
++\end{figure}
+ 
+ \subsection{Motivation and Challenges}
+ 
+@@ -170,33 +201,33 @@
+     \vspace{0pt}
+     \begin{minipage}[c][1.65in][c]{\linewidth}
+       \centering
+-      \includegraphics[width=\linewidth]{figures/recovery-cost.pdf}
++      \includegraphics[width=\linewidth]{figures/recovery-exposure.pdf}
+     \end{minipage}
+-    \caption{Context and Prefill cost}
+-    \label{fig:motivation-recompute}
++    \caption{Recovery cost and WCT}
++    \label{fig:motivation-recovery-exposure}
+   \end{subfigure}
+-  \caption{Workflow structure and the cost of reusable KV state.
++  \caption{Workflow timing and conditional recovery impact.
+     (a) Four trace-derived branches with schematic Main stages A0/A5.
+     Bars preserve timing; dashed tails assume an all-branch join.
+     (b) ECDF of maximum branch-duration gaps per workflow: 121 workflows
+     with temporally inferred fan-in; these are not failure-time slack.
+-    (c) Measured Qwen2.5-7B-Instruct-1M Prefill on two A100 PCIe 40\,GB GPUs
+-    (TP2, BF16, batch one), with sparse attention above 32K.
+-    Reuse starts from $(C-1)$ cached tokens and computes one;
+-    DRAM/shared-storage I/O is serialized with computation.
+-    HBM/DRAM: median and min--max of three timings;
+-    shared storage/full prefill: one timing per length.
+-    Protocol: Appendix~\ref{sec:motivation-protocol}.
+-    K~=~1,024; M~=~1,000,000.}
++    (c) Measured Prefill costs at the four branches' trace input-size
++    proxies, using Figure~\ref{fig:motivation-recompute}'s configuration.
++    Bars/whiskers show median/min--max over three timings after warmup.
++    Hatching denotes absorbed delay; solid fill is the calculated WCT
++    increase under an all-branch join with other execution fixed.
++    Each case is a single-branch counterfactual, not a fault-injected WCT
++    measurement. Protocol: Appendix~\ref{sec:motivation-protocol}.}
+ 
+   \label{fig:motivation}
+   \Description{Left: a four-branch workflow with A2 completing last at
+     151.6 seconds. Middle: an ECDF of workflow-maximum branch-duration
+     differences with a median of 138 seconds and a 90th percentile of
+-    1173 seconds. Right: four measured Prefill curves for Qwen2.5-7B-Instruct-1M
+-    from 8K to 1,010,000 tokens: blue circles for HBM reuse, orange squares
+-    for serialized DRAM reuse, purple diamonds for serialized shared-storage
+-    reuse, and red triangles for full prefill. Both axes are logarithmic.}
++    1173 seconds. Right: A1 through A4 have measured median Prefill costs
++    of 33.2, 32.6, 35.4 and 39.9 seconds. Applying each cost separately
++    as an added branch pause gives calculated WCT increases of 0.0, 32.6,
++    16.3 and 18.0 seconds. Hatching identifies the absorbed portion;
++    whiskers show timing minima and maxima, not confidence intervals.}
+ \end{figure*}
+ 
+ \paragraph{Unequal progress across parallel branches.}
+@@ -227,7 +258,7 @@
+ \paragraph{From reconstruction time to workflow delay.}
+ To quantify the consequence of a join, we measure full prefill at the
+ four active requests' input-size proxies. Both this experiment and the
+-tier comparison in Figure~\ref{fig:motivation}(\subref{fig:motivation-recompute})
++tier comparison in Figure~\ref{fig:motivation-recompute}
+ use Qwen2.5-7B-Instruct-1M~\cite{qwen2025qwen25oneM} on two A100 PCIe
+ 40\,GB GPUs, with TP2, BF16 and batch one. Our instrumented SGLang
+ 0.5.10rc0 execution uses MInference vertical/slash
+@@ -239,28 +270,7 @@
+ length, we collect three timings and report their median and min--max.
+ Appendix~\ref{sec:motivation-protocol} gives the complete protocol.
+ 
+-\begin{figure}[t]
+-  \centering
+-  \includegraphics[width=\linewidth]{figures/recovery-exposure.pdf}
+-  \caption{Measured Prefill costs for
+-    Figure~\ref{fig:motivation}(\subref{fig:motivation-workflow}), using
+-    Figure~\ref{fig:motivation}(\subref{fig:motivation-recompute})'s configuration
+-    at trace input-size proxies plus one token.
+-    Bars/whiskers show median/min--max over three timings after warmup.
+-    Hatching denotes absorbed delay; solid fill is the calculated WCT
+-    increase under an all-branch join with other execution fixed.
+-    Each case is a single-branch counterfactual, not a fault-injected
+-    WCT measurement.}
+-  \label{fig:motivation-recovery-exposure}
+-  \Description{A1 through A4 have measured median Prefill costs of
+-    33.2, 32.6, 35.4 and 39.9 seconds.
+-    Applying each cost separately as an added branch pause gives WCT
+-    increases of 0.0, 32.6, 16.3 and 18.0 seconds.
+-    Hatching identifies the absorbed portion; whiskers show the minimum
+-    and maximum of three timings, not confidence intervals.}
+-\end{figure}
+-
+-Figure~\ref{fig:motivation-recovery-exposure} maps these costs to the
++Figure~\ref{fig:motivation}(\subref{fig:motivation-recovery-exposure}) maps these costs to the
+ assumed all-branch join. At 29.5\,s after the fork, each case separately
+ adds a measured reconstruction pause $R_i$ to branch $i$, holding all
+ other execution and queues fixed. With offline slack $\sigma_i$ from
+@@ -299,27 +309,15 @@
+ 
+ \paragraph{The cost of retaining and accessing long histories.}
+ \label{sec:motivation-long-context}
+-Figure~\ref{fig:motivation}(\subref{fig:motivation-recompute}) compares
+-reconstruction with reuse from HBM, DRAM and shared storage under the
+-same execution configuration. For $C=M+1$ tokens, full prefill starts
+-from empty KV; reuse starts from the same $M$-token history and computes
+-one new token. All timers end when the $C$ tokens' KV is ready, before
+-vocabulary projection. HBM is a resident-state reference; DRAM and shared
+-storage serialize restoration with computation. These measurements
+-exclude checkpoint creation, failure detection and recovery routing.
+-
+-At 1,010,000 tokens, full prefill takes 571.21\,s despite sparse attention.
+-HBM, DRAM and shared-storage reuse take 1.305, 2.663 and 10.156\,s,
+-respectively. Retaining the history avoids most reconstruction work;
+-its location determines the additional retrieval delay. Shared storage
+-adds 7.49\,s over DRAM in this run, while the history occupies 57.92\,GB
+-across the two ranks. This separates the value of retaining reusable
+-state from the additional value of making it quickly accessible.
+-HBM/DRAM points report three timings, whereas full-prefill and
+-shared-storage points each report one. They characterize this fixed
+-input and serialized implementation; storage caches and I/O overlap can
+-change the differences. They do not measure the net serving benefit
+-of a protection policy.
++The tier costs in Figure~\ref{fig:motivation-recompute} distinguish
++the value of retaining reusable state from the additional value of
++making it quickly accessible. Retaining the history avoids most
++reconstruction work; its location determines the additional retrieval
++delay. At the longest context, shared storage adds 7.49\,s over DRAM
++in the measured run. Whether reducing this delay advances workflow
++completion depends on the recovering branch's position and progress.
++The measurements characterize fixed inputs and the stated access paths;
++they do not measure the net serving benefit of a protection policy.
+ 
+ \paragraph{Limitation 2: Recovery speed alone omits retention value and
+ resource costs.}

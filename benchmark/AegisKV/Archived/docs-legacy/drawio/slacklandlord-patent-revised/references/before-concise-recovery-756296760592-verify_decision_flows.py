@@ -1,0 +1,97 @@
+#!/usr/bin/env python3
+"""Check the drawn paths and existing accounting primitives; no runtime claims."""
+from pathlib import Path
+import xml.etree.ElementTree as E
+import hashlib,json,re,sys,unittest
+from collections import defaultdict
+
+OUT=Path(__file__).resolve().parent
+SOURCE=OUT/'algorithm-2-patent-revised.drawio'
+BASE=OUT/'references/before-online-review-8f438d425dc7-algorithm-2-patent-revised.drawio'
+hashfile=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+tree=E.parse(SOURCE)
+assert [d.get('id') for d in tree.findall('diagram')]==['agents','flow','cache-hit']
+def clean(node):
+ return [(e.tag,e.attrib,e.text.strip() if e.text else '') for e in node.iter()]
+assert clean(tree.find("diagram[@id='agents']"))==clean(E.parse(BASE).find("diagram[@id='agents']"))
+checks={}
+for key in ['flow','cache-hit']:
+ page=tree.find(f"diagram[@id='{key}']");cs={c.get('id'):c for c in page.iter('mxCell')};assert len(cs)==len(list(page.iter('mxCell')))
+ adj=defaultdict(set)
+ for c in cs.values():
+  for field in ('parent','source','target'):
+   if c.get(field):assert c.get(field) in cs
+  if c.get('edge')=='1':
+   assert c.find('mxGeometry').get('relative')=='1';adj[c.get('source')].add(c.get('target'))
+  label=c.get('value','')
+  assert not any(s in label for s in ['按右侧','按左侧','Q_r','Q_{r}','n_a','n_{a}','Slack 简式适用'])
+  assert not re.search(r'(?<![A-Za-z])E(?![A-Za-z])',label)
+ prefix='sla-'+key+'-'
+ def edge(a,b):assert prefix+b in adj[prefix+a],(key,a,b)
+ def has(n,*tokens):
+  label=cs[prefix+n].get('value','')
+  for token in tokens:assert token in label,(key,n,token)
+ has('recovery',r'\min_{0\le j\le k_a}',r't_a^{\rm recompute}(j)',r't_a^{\rm recompute}(k_a+1)');edge('recovery','ordered');edge('ordered','dag');edge('dag','shares')
+ has('shares',r'W_{a_i,x}',r'\mathbf T^{(i-1)}',r'\mathbf T^{(i)}','上式等价于');assert prefix+'single' not in cs
+ has('priority',r'P_{a,x}=W_{a,x}/b_x')
+ if key=='flow':
+  for a,b in [('fits','build-q'),('tail-dirty','tail-key'),('tail-dirty','tail-time'),('more-tails','refresh-inputs'),('more-tails','collect'),('expose','fits'),('has-tail','bypass'),('accept','validate'),('ack','grant-value'),('new-tail','pause')]:edge(a,b)
+  has('admission-rule',r'G_x\ge0',r'Y=\varnothing',r'G_x&gt;D_Y',r'Y\ne\varnothing')
+  has('refresh-credit',r'\min(c_{a,y},W_{a,y})','首次引用或新轮尚未兑现','去重记录','临时账本');has('recovery','刚生成 x','补备份已有块');has('tail-time','该块之后已生成的 KV 仍需重算')
+  has('debit',r'\frac{b_y\delta}{\mathrm{Credit}_y}','仅推进一次','跳过除法')
+  has('loss',r'\mathbf T^{-y}','当前临时前缀')
+ else:
+  for a,b in [('committed','admit-missing'),('eligible','defer'),('defer','wake'),('wake','versions'),('changed','unchanged'),('changed','recovery'),('validate','restart'),('validate','commit')]:edge(a,b)
+  has('renew',r'\min(c_{a,x},W_{a,x})','首次引用或新轮尚未兑现','去重记录','临时账本');has('recovery','当前已有 KV 的末尾')
+  has('commit','不推进 L','不复制第二份')
+  has('defer','暂不计算 W','不重置 Credit')
+ # Every execution node is reachable; layout nodes are separate native drawings.
+ seen=set();todo=[prefix+('candidate' if key=='flow' else 'request')]
+ while todo:
+  v=todo.pop()
+  if v not in seen:seen.add(v);todo.extend(adj[v])
+ for c in cs.values():
+  ident=c.get('id','')
+  if c.get('vertex')=='1' and not any(tag in ident for tag in ['-canvas','-title','-subtitle','-symbols','-layout','-footer','-label']):assert ident in seen,(key,'unreachable',ident)
+ checks[key]={'cells':len(cs),'reachable_execution_nodes':len(seen),'connected_formulas':'PASS','queue_notation':'Q only'}
+# Run only matching existing accounting primitives. The historical reference's
+# strict admission gate and REUSE shortcut do NOT implement the new drawn paths.
+sys.path.insert(0,str(OUT.parent.parent/'algorithm-2'))
+from test_agent_lease_slacklandlord import AgentLeaseTests
+names=[
+ 'test_one_physical_rent_is_split_without_double_charging',
+ 'test_only_requesting_agent_renews_and_event_is_idempotent',
+ 'test_same_workflow_shared_value_is_not_summed_twice',
+ 'test_pending_rounds_coalesce_without_accumulating_grants',
+ 'test_newly_exposed_tail_preserves_spent_balance_without_new_round',
+ 'test_all_tails_checked_when_an_old_nonminimum_key_drops',
+ 'test_detach_and_reattach_same_round_does_not_reissue_credit',
+ 'test_failed_trial_does_not_collect_rent_or_consume_pending_renewal']
+result=unittest.TextTestRunner(verbosity=1).run(unittest.TestSuite(AgentLeaseTests(n) for n in names))
+assert result.wasSuccessful()
+protected={OUT.parent.parent/'patent/AegisKV专利交底书-final-version.docx':'d80de557e63edfc0d77a860a262470bf3dca666340724e9a6bfe7f34a507ecb9',OUT.parent/'algorithm-3-guarded-aimd/algorithm-3-guarded-aimd.drawio':'f9122c59c70ef0e4f56ae668a8b4fdf70b57117597ef5e50d30ca5263505273c'}
+for p,sha in protected.items():assert hashfile(p)==sha
+# Exact examples check that deleting the length symbol does not erase known work.
+# Values are illustrative cost tables for a fixed observed prefix, not measurements.
+from fractions import Fraction
+
+def evaluate(load,recompute,k):
+ before=min(load[j]+recompute[j] for j in range(k+1))
+ after=min(before,load[k+1]+recompute[k+1])
+ assert after==min(load[j]+recompute[j] for j in range(k+2))
+ return before,after
+new_before,new_after=evaluate([0,1,2,3],[12,9,5,0],2)
+assert (new_before,new_after)==(7,3)
+old_before,old_after=evaluate([0,1,2,3,4],[18,15,11,6,0],1)
+assert (old_before,old_after)==(16,13)
+assert old_after!=2 # Loading the existing second block leaves known suffix work.
+# The single-Agent closed form equals the DAG path-loss reduction for all slacks.
+for slack in range(22):
+ for before,after in [(new_before,new_after),(old_before,old_after)]:
+  assert min(before-after,max(before-slack,0))==max(before-slack,0)-max(after-slack,0)
+horizon_checks={'new_chunk_endpoint':[7,3],'existing_tail_known_suffix':[16,13],
+                'naive_suffix_omission_rejected':True,'single_agent_slack_identity_cases':44,
+                'scope':'exact illustrative arithmetic, not measured recovery latency'}
+report={'status':'PASS','source_sha256':hashfile(SOURCE),'scope':'drawn control paths and eight existing exact-rational accounting checks; not implementation of the new hit/admission paths','first_page_preserved':True,'protected_patent_and_algorithm3':'UNCHANGED','pages':checks,'recovery_scope_checks':horizon_checks,'accounting_checks':names,'not_validated':['new zero-gain admission runtime','Cache hit event integration','concurrent copy/allocator implementation','performance or paper-scale readability']}
+(OUT/'DESIGN_CHECKS.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
+print(json.dumps(report,ensure_ascii=False,indent=2))

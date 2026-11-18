@@ -1,0 +1,17 @@
+% Concise English counterpart of draft/system_design.md.
+\section{AegisKV Design}
+\label{sec:design}
+
+AegisKV combines workflow delay tolerance with each request's KV
+recovery demand. The Tracker estimates slack; the Planner selects
+protection tiers and capacity-bounded layer/block sets; the runtime
+commits replicas and executes concurrent retries. The following design
+separates these decisions from the evidence that motivates them.
+
+\input{sections/design_insights}
+\input{sections/system_overview}
+\input{sections/workflow_protection}
+\input{sections/kv_placement}
+\input{sections/parallel_recovery}
+\input{sections/kv_runtime}
+\input{sections/design_discussion}

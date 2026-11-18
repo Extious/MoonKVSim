@@ -166,6 +166,20 @@ def test_adapter_rejects_multi_token_decode_outside_ordinary_path() -> None:
     scheduler.schedule()
     scheduler.append_output_tokens(request.request_id, count=2)
     output = scheduler.schedule()
+    scheduled = output.scheduled_running_reqs[0]
+    corrupt = replace(
+        scheduled,
+        num_scheduled_tokens=2,
+        num_computed_tokens_after=scheduled.num_computed_tokens_before + 2,
+    )
+    output = replace(
+        output,
+        scheduled_running_reqs=(corrupt,),
+        num_scheduled_tokens={request.request_id: 2},
+        total_num_scheduled_tokens=2,
+        token_budget_remaining=6,
+    )
+    request.num_computed_tokens = corrupt.num_computed_tokens_after
 
     with pytest.raises(VLLMBatchAdapterError, match="one token per decode"):
         VLLMSchedulerBatchAdapter().adapt(

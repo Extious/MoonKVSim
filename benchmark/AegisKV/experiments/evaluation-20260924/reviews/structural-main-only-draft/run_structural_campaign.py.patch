@@ -1,0 +1,185 @@
+--- a/benchmark/AegisKV/experiments/scripts/current_design/run_structural_campaign.py
++++ b/benchmark/AegisKV/experiments/scripts/current_design/run_structural_campaign.py
+@@ -1,7 +1,7 @@
+ #!/usr/bin/env python3
+ """Frozen constructed-intervention campaign, separate from observed trace evidence.
+ 
+-prepare freezes 143 jobs and source inputs; run re-execs the snapshotted runner.
++prepare freezes 143 jobs (135 with --main-only); run re-execs the snapshotted runner.
+ All agents execute one original DAG. No fitting or outcome-based selection occurs.
+ """
+ # ruff: noqa: E501
+@@ -24,7 +24,9 @@
+ from statistics import mean
+ from time import monotonic, process_time
+ 
+-ROOT = Path(__file__).resolve().parents[5]
++ROOT = next(
++    path for path in Path(__file__).resolve().parents if (path / "python/moonkvsim").is_dir()
++)
+ RELATIVE_SCRIPT = Path(__file__).resolve().relative_to(ROOT)
+ sys.path.insert(0, str(ROOT / "python"))
+ 
+@@ -54,7 +56,7 @@
+ _PROFILE_CACHE = {}
+ 
+ 
+-def prepare(out: Path) -> None:
++def prepare(out: Path, main_only: bool = False) -> None:
+     out.mkdir(parents=True, exist_ok=True)
+     if (out / "PLAN.json").exists():
+         raise FileExistsError("refusing to overwrite a frozen plan")
+@@ -65,10 +67,11 @@
+     profile = GridDurationProfile(profile_path)
+     jobs, workloads = [], {}
+     cases = [(name, 8, SEEDS, POLICIES, FAULTS) for name in SCENARIO_NAMES]
+-    cases += [
+-        ("history_reuse", size, (7,), ("dram", "aegiskv"), ("F0", "left.decode"))
+-        for size in (32, 128)
+-    ]
++    if not main_only:
++        cases += [
++            ("history_reuse", size, (7,), ("dram", "aegiskv"), ("F0", "left.decode"))
++            for size in (32, 128)
++        ]
+     for name, count, seeds, policies, faults in cases:
+         for seed in seeds:
+             workload_id = f"{name}-n{count}-s{seed}"
+@@ -122,7 +125,7 @@
+                             "f0_id": f"{workload_id}-{policy}-F0",
+                         }
+                     )
+-    assert len(jobs) == 143
++    assert len(jobs) == (135 if main_only else 143)
+     assert sum(job["retain_detailed_logs"] for job in jobs) == 2
+     source = manifest(out)
+     # Snapshot all Python modules and this runner: workers never import mutable
+@@ -150,11 +153,14 @@
+         {
+             "schema": "aegiskv.structural-campaign.v1",
+             "job_count": len(jobs),
++            "matrix_scope": "main-only" if main_only else "main-plus-scale",
+             "seeds": SEEDS,
+             "policies": POLICIES,
+             "scenarios": SCENARIO_NAMES,
+             "main_matrix": "5 scenarios x 3 seeds x 3 policies x 3 faults x 8 workflows = 135 runs",
+-            "scale_matrix": "history_reuse x {32,128} workflows x seed7 x {dram,aegiskv} x {F0,left.decode} = 8 runs",
++            "scale_matrix": None
++            if main_only
++            else "history_reuse x {32,128} workflows x seed7 x {dram,aegiskv} x {F0,left.decode} = 8 runs",
+             "profile": "profiles/Qwen3-8B.json",
+             "profile_sha256": digest(profile_path),
+             "workloads": workloads,
+@@ -171,12 +177,28 @@
+             ],
+         },
+     )
++    write_json(
++        out / "PLAN_SEAL.json",
++        {
++            "plan_sha256": digest(out / "PLAN.json"),
++            "manifest_sha256": digest(out / "MANIFEST.json"),
++            "scope": "pre-execution plan, source manifest, profile and workload bindings",
++        },
++    )
+     print(f"frozen {len(jobs)} jobs in {out}", flush=True)
+ 
+ 
+ def verify(out: Path) -> dict:
+     plan = json.loads((out / "PLAN.json").read_text())
+     source = json.loads((out / "MANIFEST.json").read_text())
++    seal = json.loads((out / "PLAN_SEAL.json").read_text())
++    if seal["plan_sha256"] != digest(out / "PLAN.json") or seal["manifest_sha256"] != digest(
++        out / "MANIFEST.json"
++    ):
++        raise ValueError("frozen plan/manifest changed")
++    expected_count = 135 if plan["matrix_scope"] == "main-only" else 143
++    if plan["job_count"] != len(plan["jobs"]) or len(plan["jobs"]) != expected_count:
++        raise ValueError("plan scope/count mismatch")
+     for name, expected in source["source_sha256"].items():
+         if digest(out / "source_snapshot" / name) != expected:
+             raise ValueError(f"frozen source changed: {name}")
+@@ -192,10 +214,17 @@
+     complete = target / "COMPLETE.json"
+     if complete.exists():
+         record = json.loads(complete.read_text())
++        if record.get("job_sha256") != hashlib.sha256(encoded(job)).hexdigest():
++            raise ValueError(f"completed result belongs to another job: {job['id']}")
+         if digest(target / "summary.json") != record["summary_sha256"]:
+             raise ValueError(f"completed summary changed: {job['id']}")
+         if digest(target / "config.json") != record["config_sha256"]:
+             raise ValueError(f"completed config changed: {job['id']}")
++        if (
++            json.loads((target / "config.json").read_text()) != job["config"]
++            or json.loads((target / "failure.json").read_text()) != job["failure"]
++        ):
++            raise ValueError(f"completed input identity changed: {job['id']}")
+         return record
+     if target.exists():
+         raise FileExistsError(f"partial run preserved; inspect before retry: {target}")
+@@ -233,6 +262,7 @@
+         raise ValueError("actual failure differs from frozen logical phase trigger")
+     record = {
+         "id": job["id"],
++        "job_sha256": hashlib.sha256(encoded(job)).hexdigest(),
+         "summary_sha256": digest(target / "summary.json"),
+         "config_sha256": digest(target / "config.json"),
+         "wall_seconds": monotonic() - start,
+@@ -282,6 +312,8 @@
+     for job in plan["jobs"]:
+         path = out / "runs" / job["id"]
+         complete = json.loads((path / "COMPLETE.json").read_text())
++        if complete.get("job_sha256") != hashlib.sha256(encoded(job)).hexdigest():
++            raise ValueError(f"summary belongs to another job: {job['id']}")
+         if digest(path / "summary.json") != complete["summary_sha256"]:
+             raise ValueError("summary hash mismatch")
+         result = json.loads((path / "summary.json").read_text())
+@@ -406,9 +438,13 @@
+     )
+     (out / "README.md").write_text(
+         "# Constructed structural campaign v1\n\n"
+-        "143 frozen runs: five prescribed four-Agent DAG interventions, three seeds and three policies; "
+-        "additional history-reuse scale controls use 32 and 128 independent workflows. "
+-        "Each DAG executes once. Workload token IDs, arrivals, role priors and phase-drift patterns are constructed.\n\n"
++        f"{len(plan['jobs'])} frozen runs: five prescribed four-Agent DAG interventions, three seeds and three policies. "
++        + (
++            "Additional history-reuse scale controls use 32 and 128 independent workflows. "
++            if plan["matrix_scope"] == "main-plus-scale"
++            else "Scale extensions are excluded by the predeclared main-only plan. "
++        )
++        + "Each DAG executes once. Workload token IDs, arrivals, role priors and phase-drift patterns are constructed.\n\n"
+         "Qwen3-8B TP1 / DP4 uses the pinned AIC duration grid; no GPU inference is executed. "
+         "All calls declare a fixed 16K output cap for admission. Role priors are hand-set proxies; "
+         "this campaign cannot establish remaining-time prediction accuracy. Long-decode drift combines "
+@@ -433,6 +469,11 @@
+     parser.add_argument("command", choices=("prepare", "run", "summarize"))
+     parser.add_argument("--out", type=Path, required=True)
+     parser.add_argument("--workers", type=int, default=2)
++    parser.add_argument(
++        "--main-only",
++        action="store_true",
++        help="prepare the 135-run main matrix; run/summarize follow the frozen plan",
++    )
+     args = parser.parse_args()
+     out = args.out.resolve()
+     if args.command != "prepare":
+@@ -448,13 +489,18 @@
+                     str(out),
+                     "--workers",
+                     str(args.workers),
++                    *(["--main-only"] if args.main_only else []),
+                 ],
+             )
+     if args.command == "prepare":
+-        prepare(out)
++        prepare(out, args.main_only)
+     elif args.command == "run":
++        if args.main_only and verify(out)["matrix_scope"] != "main-only":
++            raise ValueError("--main-only cannot filter an already-frozen full matrix")
+         run(out, args.workers)
+     else:
++        if args.main_only and verify(out)["matrix_scope"] != "main-only":
++            raise ValueError("--main-only cannot filter an already-frozen full matrix")
+         summarize(out)
+ 
+ 

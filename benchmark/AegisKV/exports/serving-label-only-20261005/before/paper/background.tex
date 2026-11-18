@@ -1,0 +1,42 @@
+\section{Background} \label{sec:background} 
+
+This section describes how DAG-based agent workflows are mapped to an LLM serving system and how the system recovers an agent's KV state after a serving-worker failure.
+
+\subsection{DAG-Based Agent Workflow Serving} \label{sec:background:serving} 
+
+A multi-agent application coordinates role-specialized agents to complete a user task. We consider a fixed Agent-task DAG: each node is one Agent's complete task, which may require multiple model invocations, and each edge requires a predecessor task's completed output. The Agent identities and task dependencies are known when the workflow is registered; internal invocation counts need not be known.
+
+A \textbf{workflow} runtime starts an Agent after its own predecessors complete. Independent ready Agents can execute in parallel; there is no barrier requiring an entire graph level to finish~\cite{lin2024parrot}. A job is one execution of an application template on a particular input. Different jobs have separate Agent histories and can share serving workers.
+%
+An \textbf{agent} makes sequential model calls within its task. Once started, it has all required predecessor outputs and continues its own analysis, evidence checking, and revision without waiting for another Agent between calls. Its input retains the role instruction, supplied materials, prior model outputs, and any measured tool results. The runtime retains this evolving history. This application protocol makes multi-turn history explicit; actual token-prefix reuse still depends on serialization and cache compatibility.
+
+We use two application templates: an evidence-based comparative research report and a repository issue/change review. Research tasks can compare products, technical approaches, or application alternatives; software-market research is one instance. Repository review produces a cause analysis, proposed change, risk assessment, and regression-test plan. Public research tasks and real repository issues provide inputs~\cite{du2025deepresearch,li2026deepresearchii,swebenchverified}; the depicted task decomposition is our application design. The primary experiment measures the analysis and generation stage on frozen source materials, and reports preparation and online-tool variants separately.
+
+
+
+Figure~\ref{fig:serving_model} maps the research-report DAG to an LLM serving system. Its top panel shows Agent tasks; the dispatched requests are particular invocations within those tasks. Ready invocations are submitted as inference requests and scheduled across model workers. A \textbf{worker} contains one model replica, or a distributed replica spanning a tensor-parallel~\cite{shoeybi2019megatron} group, and may concurrently serve agents from multiple workflows. 
+%
+Processing a request consists of prefill and decoding. During prefill, the model processes the input tokens and generates a key-value (KV) cache for each transformer layer. During decoding, newly generated tokens append entries to this cache. When a later invocation reuses a prefix of the same agent history, the corresponding KV entries allow the worker to process only the newly appended input rather than prefill the complete history again~\cite{gao2024cachedattention,zheng2024sglang}. Consequently, an active agent accumulates a KV history across its iterative turns. 
+
+The KV cache is distributed according to the model-parallel~\cite{kwon2023vllm} configuration. Under tensor parallelism, each rank stores its local KV shards together with the metadata required by the attention implementation. Reusing a KV cache therefore requires compatibility in the model version, parallel configuration, numerical format, and KV layout. 
+
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/serving_model.pdf}
+\caption{DAG-based Agent workflow serving, using the research-report dependencies executed in our pilot. Each top-panel node is an Agent task. The Router dispatches model calls to workers that retain each Agent's prefix and append new KV; lower-panel letters identify the Agent owning each KV history. The lower panel illustrates two TP=2 replicas with an eight-head MHA layer; this serving layout is distinct from the pilot's two independent single-GPU replicas.}
+\label{fig:serving_model}
+\Description{Research-report Agent tasks: A, B, and C are ordered top to bottom in the left column; D and E in the next column; F and G follow to the right. A and B precede D; A and C precede E; B and D precede F; E and F precede G. Both dependencies from B leave its right side, and B to F runs straight through the middle. Each task contains sequential local calls. The illustrative Router dispatches model calls to workers; worker 0 holds histories for Agents A and C, and worker 1 holds the history for Agent B. Both workers have two ranks: rank 0 owns heads 0--3 and rank 1 heads 4--7 in an eight-head MHA example. Separate K and V bars show reused prefixes and hatched new suffixes over the same token positions on both ranks. Dashed return paths finish with straight solid arrow stems at the runtime's bottom boundary. The reused-KV legend, new-KV legend, and token-direction arrow share one footer row.}
+\end{figure}
+
+
+\subsection{Worker Failure and KV Recovery} \label{sec:background:recovery} 
+
+
+We consider fail-stop failures that make a model worker, consisting of one model replica or a tensor-parallel group, unavailable. Such failures may originate from an accelerator, serving process, host, or communication fault~\cite{cao2026lumen,jayakody2026ghostserve}. The protected failure domain is deployment-specific and may correspond to a process, a distributed model replica, or an entire host. A recovery copy provides protection only if it remains reachable after the corresponding domain fails. For example, host-local DRAM or SSD may survive a process failure but does not protect against a host failure. 
+
+A worker may hold KV states from multiple agents and workflows. Consequently, one worker failure can simultaneously interrupt several branches of the same workflow, as well as agents from different workflows. We treat all invocations whose KV states become unavailable under the same worker failure as \textit{one failure event}. 
+
+We assume that the workflow DAG, accepted tokens, and completed tool results are retained outside the failed worker. Affected invocations can therefore be reissued to a compatible surviving replica with the same model version, parallel configuration, numerical format, and KV layout. We focus on model-worker failures because they remove large, worker-local KV state while leaving the workflow recoverable from its durable inputs. Failures of the workflow runtime or durable token store are orthogonal and can be handled using conventional replication mechanisms. Unlike these control and durable states, KV caches grow with agent histories, making full replication costly and creating the resource-allocation problem studied in this paper. We assume that at least one advertised recovery domain remains available. 
+
+Without a surviving KV copy, the replacement replica must prefill each affected agent's retained history before generation can resume~\cite{strati2024dejavu}. Alternatively, the system can restore a complete KV checkpoint associated with an accepted token prefix and replay tokens accepted after that prefix~\cite{strati2024dejavu,cao2026lumen}. A complete checkpoint contains the historical KV tensors and attention metadata required by all model layers and model-parallel shards. A partial KV copy may accelerate restoration but cannot independently provide recovery coverage.

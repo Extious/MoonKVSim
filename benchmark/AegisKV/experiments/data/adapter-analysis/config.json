@@ -1,0 +1,42 @@
+{
+  "evidence": "Uncalibrated analytical recovery model and synthetic memory-admission simulation; no hardware execution",
+  "model": {
+    "layers": 32,
+    "committed_history_tokens": 32768,
+    "kv_bytes_per_token_per_layer": 1024,
+    "block_tokens": 64,
+    "hot_blocks_per_layer": 205,
+    "demand_miss_blocks_per_layer": 51,
+    "bandwidth_GB_s": 6.25,
+    "compute_startup_ms_per_layer": 0.5,
+    "compute_ms_per_tail_token_per_layer": 0.006,
+    "next_decode_tokens": 1,
+    "checkpoint_intervals_tokens": [64, 256, 1024],
+    "commit_lag_tokens": 0
+  },
+  "risk": {
+    "useful_decode_tokens_per_s": 50,
+    "fixed_exposed_checkpoint_cost_ms": 0.05,
+    "mean_time_between_failures_hours": [24, 6, 1],
+    "Z_scan_min_tokens": 64,
+    "Z_scan_max_tokens": 8192,
+    "Z_scan_step_tokens": 64
+  },
+  "queue": {
+    "kv_pool_GiB": 48,
+    "foreground_headroom_GiB": 4,
+    "request_kv_GiB": 1,
+    "service_time_s": 1,
+    "arrival_rates_per_s": [12, 19],
+    "peer_residency_GiB": [0, 4, 8, 12, 16, 20, 24],
+    "warmup_requests": 1000,
+    "scored_requests": 5000,
+    "seeds": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+  },
+  "plot": {
+    "width_in": 7.0,
+    "height_in": 6.2,
+    "font_pt": 10.05,
+    "dpi": 220
+  }
+}

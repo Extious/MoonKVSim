@@ -1,0 +1,114 @@
+{
+  "user_correction": "8 or9 layers are initial HBM residency only; real compute and KV transfers proceed one layer at a time",
+  "initial_prefix_layers": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36
+  ],
+  "layers": 36,
+  "history_tokens_for_capacity": 32768,
+  "KV_MiB_per_layer": 128,
+  "ratio_values": [
+    0.5,
+    1.0,
+    1.25,
+    2.0,
+    4.0
+  ],
+  "conditions": [
+    {
+      "replay_tokens": 512,
+      "H2D_GB_s_assumed": 12.5
+    },
+    {
+      "replay_tokens": 512,
+      "H2D_GB_s_assumed": 25
+    },
+    {
+      "replay_tokens": 512,
+      "H2D_GB_s_assumed": 50
+    },
+    {
+      "replay_tokens": 128,
+      "H2D_GB_s_assumed": 25
+    },
+    {
+      "replay_tokens": 256,
+      "H2D_GB_s_assumed": 25
+    },
+    {
+      "replay_tokens": 1024,
+      "H2D_GB_s_assumed": 25
+    },
+    {
+      "replay_tokens": 2048,
+      "H2D_GB_s_assumed": 25
+    }
+  ],
+  "runtime_batch_size": null,
+  "whole_batch_barrier": false,
+  "transfer": "At t=0 start copying first nonresident layer; each next copy starts at previous copy completion",
+  "compute": "Each layer starts after its own historical KV is ready and previous layer compute completes",
+  "baseline": "Exactly the same continuous layer-wise scheduler with zero initial HBM prefix; fixed per condition",
+  "lookahead": "No group limit; one active H2D transfer at a time, already copied KV retained",
+  "saturation": "Smallest prefix with zero exposed wait; subsequent prefixes are dominated at the same maximum benefit",
+  "time_units": "One layer compute for abstract ratios; milliseconds for model-derived bandwidth/replay cases",
+  "assumptions": [
+    "uniform layer costs",
+    "sufficient HBM buffer",
+    "no launch overhead",
+    "no compute/transfer slowdown"
+  ],
+  "time_exclusions": [
+    "failure detection",
+    "takeover queue",
+    "weight loading",
+    "backup maintenance"
+  ],
+  "evidence": "Analytical and uncalibrated, no GPU run",
+  "gain_axis": "increases upward",
+  "figure_sizes_mm": {
+    "ratio": [
+      178,
+      142
+    ],
+    "bandwidth_replay": [
+      178,
+      185
+    ]
+  }
+}

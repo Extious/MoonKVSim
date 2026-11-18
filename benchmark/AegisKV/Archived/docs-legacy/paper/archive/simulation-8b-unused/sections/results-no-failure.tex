@@ -1,0 +1,59 @@
+\subsection{Healthy Serving: Small Aggregate Changes, Unequal Task Effects}
+\label{sec:healthy-results}
+\input{sections/figures/no-failure}
+
+Figure~\ref{fig:no-failure} separates completion effects from protection
+traffic. Across the five paired seeds, the all-workflow mean WCT difference
+is $-0.137$\,s, with a 95\% interval of $[-0.297,0.024]$\,s.
+The corresponding mean makespan change is $+0.008$\%, with an interval of
+$[-0.188,0.205]$\%; individual seeds range from $-0.176$\% to $+0.201$\%.
+Thus, these observations do not resolve a consistent average completion
+benefit or penalty. They also do not constitute an equivalence test. The
+Store-only batch completes in 329.7--331.1\,s, and its mean workflow WCT
+within each seed is 32.3--32.7\,s. Goodput changes track the nearly unchanged
+batch completion time because every execution emits the same prescribed
+output population.
+
+The admission cohorts show why an aggregate alone is insufficient.
+The initial 16 workflows have a mean paired difference of $-0.370$\,s
+($[-2.202,1.462]$\,s), whereas the later 144 have $-0.111$\,s
+($[-0.413,0.191]$\,s). More pronounced redistribution occurs within each
+cohort. Of the 800 paired task-runs, 340 finish sooner with AegisKV, 156
+are unchanged, and 304 finish later. Paired differences
+range from $-53.741$ to $+48.342$\,s. In the largest adverse case, workflow
+\texttt{db12f9be559698b0} under seed 3 rises from 34.388 to 82.731\,s.
+Small mean overhead therefore coexists with substantial task-level harm.
+
+Protection has a substantial byte cost despite the small mean makespan
+change. Store-only submits 2,825.4\,GiB of protection traffic per run.
+AegisKV submits 1,496.5--1,586.7\,GiB to Peer-HBM and
+3,133.0--3,183.8\,GiB to Store-DRAM. Across seeds, the additional submitted
+traffic averages approximately 1,874\,GiB, or 66.3\% of the comparator's
+traffic. These are cumulative copy bytes, not the instantaneous protected
+KV footprint. The two tiers may protect overlapping prompt intervals.
+Aborts account for 0.5625 and 3.9375\,GiB of Peer submissions in seeds 2
+and 4, respectively, and zero bytes in the other cases. Submitted traffic
+and bytes actually transferred are therefore kept separate.
+
+The incremental submitted-byte rate is 5.62--5.75\,GiB/s when divided by
+Store-only's batch makespan. Figure~\ref{fig:no-failure}(d) associates those
+five rates with later-cohort WCT changes of both signs. It does not identify
+a causal response to bandwidth: admission order, cache reuse, placement,
+and resource contention change together. These costs and task-level effects are specific to the declared operating point.
+
+\paragraph{Tracing the largest adverse task.}
+The complete scheduler record explains the 48.342\,s difference without
+attributing it to a cache miss. For this 27-call task, the final fan-in call
+is released 16.961\,s later relative to workflow admission, and its own
+release-to-completion interval increases by 31.381\,s. Both policies reuse
+the same 64-token normal-HBM prefix. The call actually waits less before
+its first scheduler step with AegisKV: 2.258 versus 4.761\,s. However,
+the time in steps containing that call grows from 8.082 to 41.966\,s,
+with no gaps between its participating steps in either execution.
+Its summed ideal participant shares are identical at 0.764\,s. The
+shared batches differ: 108 mixed prefill/decode steps with AegisKV versus
+20 with Store-only. Reconstructing each step's maximum participant share
+recovers the recorded durations exactly. This identifies shared-step
+composition as the immediate source of the longer executing interval
+under this timing model; it does not isolate a causal effect of protection
+traffic from the accompanying changes in routing and batching.

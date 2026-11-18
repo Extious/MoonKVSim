@@ -1,0 +1,53 @@
+{
+  "K": [
+    4,
+    16,
+    64
+  ],
+  "beta": 0.9,
+  "bytes": "logical unique raw-KV footprints only; excludes selector/auxiliary metadata, headers and transfers in flight",
+  "checkpoint_chunk_tokens": 256,
+  "checkpoints": [
+    32000,
+    32256
+  ],
+  "counter_initialization": "zero at query31744; first256 queries warmup",
+  "cumulative_ablation": "same strict admission with beta=1 and epsilon=0; equal counts retain residents",
+  "epsilon": 0.1,
+  "evidence": "CPU causal replay of observed native selector indices, no new model forwards",
+  "first_L_layers": [
+    1,
+    4,
+    8,
+    32
+  ],
+  "limitations": [
+    "PG19 literature, not Agent workloads",
+    "native causal prefill selectors, not measured recovery execution",
+    "two adjacent heldout windows after a short warm start",
+    "three documents per model",
+    "no H2D bandwidth, overlap, latency or WCT claim",
+    "counter/scatter-add overhead not measured"
+  ],
+  "methods": [
+    "decay_hysteresis",
+    "cumulative_no_hysteresis",
+    "frequency_static",
+    "uniform",
+    "recency",
+    "future_oracle"
+  ],
+  "oracle": "future-aware same-K maximum distinct coverage; tie-order prioritizes future query frequency",
+  "physical_block_tokens": 64,
+  "physical_raw_kv_block_bytes": 65536,
+  "query_start": 31744,
+  "query_stop_exclusive": 32512,
+  "script_sha256": "102cf56d8a62d337842c72bd68af594c361471634f12802bca30f08886691770",
+  "selection": "eligible complete historical blocks only; strict > (1+epsilon)*victim for replacement",
+  "source_manifest_sha256": "86f165443750b0e5051ac6b50e9fac8fb4861881eb51a4042f5b37e9ca9eee0d",
+  "synthetic_token_ids": false,
+  "tie_break": "larger block position",
+  "uncertainty": "min/max over 3 documents; correlated layers/checkpoints never independent samples",
+  "uniform": "K evenly spaced historical block positions; deterministic",
+  "update": "counts += just-completed256-query cross-group unions; multiply by beta; rank once at checkpoint"
+}

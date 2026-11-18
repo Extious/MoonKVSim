@@ -1,0 +1,11 @@
+--- 
++++ 
+@@ -72,7 +72,7 @@
+ 
+ ![图 3：KV 重建与复用成本](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/recovery-cost.png)
+ 
+-**图 3：** 在两张 A100 PCIe 40 GB GPU 上实测 Qwen2.5-7B-Instruct-1M 的 KV 重建与复用成本（TP2、BF16、batch 为 1），超过 32K 后使用稀疏注意力。完整 Prefill 从空 KV 开始；复用从 $(C-1)$ 个缓存 token 开始，再计算一个 token。DRAM／共享存储的 I/O 与计算串行。HBM／DRAM：三次计时的中位数与 min–max；共享存储／完整 Prefill：每个长度计时一次。协议见[附录 A](#sec-motivation-protocol)。K = 1,024；M = 1,000,000。
++**图 3：** 在两张 A100 PCIe 40 GB GPU 上实测 Qwen2.5-7B-Instruct-1M 的 KV 重建与复用成本（TP2、BF16、batch 为 1），超过 32K 后使用稀疏注意力。完整 Prefill 从空 KV 开始；复用从 $(C-1)$ 个缓存 token 开始，再计算一个 token。KV 重建时间包括所需的读取与计算，直到全部 $C$ 个 token 的 KV 就绪。DRAM／共享存储的 I/O 与计算串行。HBM／DRAM：三次计时的中位数与 min–max；共享存储／完整 Prefill：每个长度计时一次。协议见[附录 A](#sec-motivation-protocol)。K = 1,024；M = 1,000,000。
+ 
+ ### 2.2　动机与挑战
+ 

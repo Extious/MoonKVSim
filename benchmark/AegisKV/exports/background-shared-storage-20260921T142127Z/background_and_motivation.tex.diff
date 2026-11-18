@@ -1,0 +1,28 @@
+--- before/background_and_motivation.tex
++++ background_and_motivation.tex
+@@ -94,12 +94,20 @@
+ A checkpoint must survive the protected failure; same-host DRAM can
+ survive a GPU-worker failure but not loss of the host.
+ 
+-Hierarchical caches extend GPU HBM with host DRAM and storage to retain
+-more histories~\cite{gao2024cachedattention,qin2025mooncake}.
++Hierarchical caches extend GPU HBM with host DRAM and local or shared
++storage to retain more histories~\cite{gao2024cachedattention,qin2025mooncake}.
++Shared storage, such as a shared filesystem, makes retained KV accessible
++to multiple serving workers. A compatible worker can retrieve this state
++after reassignment or failover, provided the data and storage service
++survive the failure. Sharing describes the access scope, not a specific
++medium such as SSD.
++
+ Location determines the access path: KV already in the executor's HBM
+-is directly available to kernels, DRAM requires host-to-device transfer,
+-and storage adds a read that may traverse a network. Computation and
+-prefetching can overlap some of this work. Retention nevertheless occupies
++is directly available to kernels; local DRAM requires host-to-device
++transfer, and remote DRAM also requires network transfer. With host
++staging, shared storage adds storage and network reads before the
++host-to-device transfer. Computation and prefetching can overlap some
++of this work. Retention nevertheless occupies
+ capacity, and copying or moving KV consumes bandwidth that may also serve
+ foreground requests. Discarding the last reusable KV copy releases space
+ but requires reconstruction if that state is needed again.

@@ -1,0 +1,69 @@
+--- a/python/moonkvsim/aegiskv/current/runtime.py
++++ b/python/moonkvsim/aegiskv/current/runtime.py
+@@ -391,7 +391,10 @@
+         for fid in sorted(group.remaining):
+             if fid in self.flow_model.flows:
+                 canceled = self.flows.cancel_flow(fid, reason="COPY_GENERATION_FENCED")
+-                self.metrics["canceled_copy_transferred_bytes"] += canceled.transferred_bytes
++                rank = int(fid.rsplit(":", 1)[-1])
++                self.metrics["canceled_copy_transferred_bytes"] += (
++                    group.initial_remaining[rank] - canceled.aborted_bytes
++                )
+ 
+     def _cancel_owner(self, owner: str) -> None:
+         for identity, group in list(self.groups.items()):
+@@ -1413,11 +1416,40 @@
+         self._admit(state.worker)
+ 
+     def _complete(self, state: State) -> None:
+-        # A request may finish while cold KV still copies. Keep its read lease
+-        # until that transfer drains, before releasing the execution reservation.
++        # EOS has consumed every KV object needed by this invocation. Cancel
++        # unused prefetch before dropping its source lease or destination bytes.
+         if state.recovering is not None:
+-            state.waiting = lambda: self._complete(state)
+-            return
++            cp = state.recovering
++            old_epoch = state.epoch
++            state.epoch += 1
++            self._cancel_owner(f"restore:{state.spec.key}:{old_epoch}")
++            state.load_queue.clear()
++            state.loading.clear()
++            state.available.clear()
++            state.load_active = False
++            state.load_group = None
++            state.load_current = None
++            state.waiting = None
++            state.recovering = None
++            cp.readers -= 1
++            self._retire(cp)
++            if state.checkpoint is not None:
++                self._retire(state.checkpoint)
++                state.checkpoint = None
++            # A partial restored history must not become a full local-prefix
++            # hit for a later call. This conservative repair forgoes reuse.
++            self._release_primary(state)
++            state.counts.clear()
++            state.count_snapshots.clear()
++            self.metrics["recovery_prefetch_canceled_at_eos"] += 1
++            if state.recovery_row is not None:
++                state.recovery_row["restore_canceled_at_eos_ns"] = self.des.now_ns
++            self._record(
++                "recovery_prefetch_canceled_at_eos",
++                agent=state.spec.key,
++                invocation=state.call,
++                old_epoch=old_epoch,
++            )
+         worker = state.worker
+         elapsed = self.des.now_ns - state.submitted
+         state.durations.append(elapsed)
+@@ -1555,6 +1587,9 @@
+             "recovery_compute_model": (
+                 "selected-reference-proportional hit/miss timing; no numerical LSE kernel"
+             ),
++            "recovery_eos_model": (
++                "cancel unused restore at accepted EOS; invalidate incomplete local history"
++            ),
+             "dma_compute_interference_model": (
+                 "configured slowdown sampled at each compute-event start"
+             ),

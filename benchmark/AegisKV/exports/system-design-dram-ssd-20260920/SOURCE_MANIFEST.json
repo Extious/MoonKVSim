@@ -1,0 +1,398 @@
+{
+  "pdf_sha256": "cbd4d188d49b153686ec77b0839971ae15a1f4a691b0aadaa059ffc5a4073583",
+  "sources": {
+    "sources/checkpoint-lifecycle.drawio": {
+      "bytes": 10384,
+      "sha256": "e3fcabf4310f45bdb4b34399c2bf8d27d175e736c097868a3b235c324453807a"
+    },
+    "sources/rental-competition.drawio": {
+      "bytes": 9853,
+      "sha256": "68cebb628c386c3b9779ef9d6902e30f61e31255c20995227853fa0607306db0"
+    },
+    "sources/sparse-recovery.drawio": {
+      "bytes": 17507,
+      "sha256": "1ecf92f35640ae8ac3b80a398637359085e9c957a6e36de3d0337b66973405e3"
+    },
+    "sources/system-overview.drawio": {
+      "bytes": 16718,
+      "sha256": "845aa31e39b303716630e5ac9522cb238398a3bc9925d46d54d565ecec52300d"
+    },
+    "figures/MANIFEST.json": {
+      "bytes": 925,
+      "sha256": "075af410ff4a5da82578b94a27e38ce4138008f9777ff8b56f4c827ed5617bcf"
+    },
+    "figures/agent-prefix-reuse.pdf": {
+      "bytes": 18742,
+      "sha256": "57acc696728d4bcc7d889c3ffff65ab5c2dfa2bbc20d60e42ab86e91a57f9aae"
+    },
+    "figures/agent-prefix-reuse.png": {
+      "bytes": 65106,
+      "sha256": "65dcf91e78b91c429fc97ba60e0a945d871c1015abd901f045acc948be840d56"
+    },
+    "figures/agent-prefix-reuse.svg": {
+      "bytes": 38331,
+      "sha256": "22ca7aa2d5ccf11097577280ab0cf698ad99df75935a21c17e160f96f2dae05d"
+    },
+    "figures/checkpoint-lifecycle.pdf": {
+      "bytes": 22024,
+      "sha256": "cb03fa3283528703bdc23d0b5bfd9dbae2325e87e80078a313b1a634a8a2c4f5"
+    },
+    "figures/checkpoint-lifecycle.png": {
+      "bytes": 224714,
+      "sha256": "c31c9cbcc771ff4d5ad08a09ede6159e996d1bee5620f0b2dc6c7818e6ef867b"
+    },
+    "figures/overlap-frontier.pdf": {
+      "bytes": 12419,
+      "sha256": "49cc33d5547371ad166e42fde596ebdfd0b4cfd7461752061ed658f6b3bd0993"
+    },
+    "figures/overlap-frontier.png": {
+      "bytes": 39362,
+      "sha256": "4619afed60b1f94d9fbfabf2f64374b890114efa1042efa5108d2a87e23896ed"
+    },
+    "figures/overlap-frontier.svg": {
+      "bytes": 11741,
+      "sha256": "d723dd9acbf04c35709d4845f8f9b4b64db6735ac6d08240472b563f14d8cce7"
+    },
+    "figures/recovery-pipeline.pdf": {
+      "bytes": 15307,
+      "sha256": "90dd6988a2e122963ef681abd27530685734d7a2bc32ec48fd20655f434cec37"
+    },
+    "figures/recovery-pipeline.png": {
+      "bytes": 74709,
+      "sha256": "4e27cb0ceaba4ee280a79277072c3603eb6155b617e6dcaf87858355865cf45f"
+    },
+    "figures/recovery-pipeline.svg": {
+      "bytes": 31884,
+      "sha256": "60ae1eb7b7cf747449a0b545ec475410fec69b43fbbc9883fedf29b64a509791"
+    },
+    "figures/rental-competition.pdf": {
+      "bytes": 21417,
+      "sha256": "c053b68b620cc2b02ba6ba9480e8a369e19e8c05d1795bc9b3b10b4f6cccabc4"
+    },
+    "figures/rental-competition.png": {
+      "bytes": 147062,
+      "sha256": "a2aa6dd5f380283faf744e8688516f806bc27d927ea4f59ea38b53787985e1eb"
+    },
+    "figures/sparse-recovery.pdf": {
+      "bytes": 23976,
+      "sha256": "344c5887630699b93e177d515be3291d6a43e614edcac4390362892adc27c0f0"
+    },
+    "figures/sparse-recovery.png": {
+      "bytes": 180170,
+      "sha256": "23518486d413eab955376a4c0efd3a5565e9898de340ff31b04f357f1681304c"
+    },
+    "figures/system-overview.pdf": {
+      "bytes": 23938,
+      "sha256": "d9034a8f22d64db5b291780c0fe51005528e8ca1cb86e12def1db7b5ee226441"
+    },
+    "figures/system-overview.png": {
+      "bytes": 178219,
+      "sha256": "dd3618159807c23565a0b584afc324ac440d327bf044bcb12c52d7df4190f946"
+    },
+    "data/MODEL.json": {
+      "bytes": 955,
+      "sha256": "513c7d1b0a65b007bea2e5ff5c463583668dc1a709971913d6793f70bc0de3c8"
+    },
+    "data/SPEC_CHECKS.json": {
+      "bytes": 1118,
+      "sha256": "45c586c20a1a9e0d06a38194f5b9789bd1496213940ebdd5a0d31afca87d77f1"
+    },
+    "data/overlap-frontier.csv": {
+      "bytes": 211,
+      "sha256": "78f9465520d01425e9ce0fc101f6486b81c766f9266aea447cd87b1faf360dfc"
+    },
+    "data/pipeline-events.csv": {
+      "bytes": 1242,
+      "sha256": "bc7a81298178cca556c3f548ba269da42c921f9bc2cb7254f61af2d6da4073be"
+    },
+    "experiments/scripts/paper/build_storage_design.py": {
+      "sha256": "91cf488fdaa659c4ecebf8be9bd313d38b2c5c29c4131dc5f902fa0230f16142"
+    },
+    "experiments/scripts/paper/model_storage_overlap.py": {
+      "sha256": "747f78ccbcd33b72d3a844a8fae6c4e5ba51ef5f0e054e64b993f9ca6328dd99"
+    },
+    "experiments/scripts/paper/check_storage_design_model.py": {
+      "sha256": "2bd7a8ecb79a58659f4f63681351c91c371c2546aab9e7c4f174a5257bba8721"
+    },
+    "experiments/scripts/paper/render_agent_prefix_reuse.py": {
+      "sha256": "afa8c23a116e5224cea0b47c84e1022fe15d859b994d0e751f13790c968d561f"
+    }
+  },
+  "upload_files": [
+    {
+      "path": "ACM-Reference-Format.bst",
+      "bytes": 93560,
+      "sha256": "8ec002c927068bfc5b3cfe71b66aa4767b9e485530ac3c67ba5c064df4c2e6ac"
+    },
+    {
+      "path": "abstract.tex",
+      "bytes": 1420,
+      "sha256": "4b4055bf24887b07b756afa0288f9e9561524770f62e1665483c7357e55682fc"
+    },
+    {
+      "path": "acmart.cls",
+      "bytes": 121737,
+      "sha256": "2f949e6e3f2a79f2cdc218b9dcdbaa7dd451adb4ee0be1af6dc7ebe00b318ea7"
+    },
+    {
+      "path": "background_and_motivation.tex",
+      "bytes": 13470,
+      "sha256": "5bda8a0fda2395fe931ea083d10cfbe9f308681ad8c471d1bc6245d444e8e03e"
+    },
+    {
+      "path": "figures/agent-prefix-reuse.pdf",
+      "bytes": 18742,
+      "sha256": "57acc696728d4bcc7d889c3ffff65ab5c2dfa2bbc20d60e42ab86e91a57f9aae"
+    },
+    {
+      "path": "figures/capacity-frontier.pdf",
+      "bytes": 15275,
+      "sha256": "eac9f91795b8a97d51223688e7ea3c6dab6a34c0aafa3b0551363029957da95e"
+    },
+    {
+      "path": "figures/checkpoint-lag.pdf",
+      "bytes": 13732,
+      "sha256": "c28e0904682c67683f88bc208a54dd122338dd9945622eda55fa71123ea64dc5"
+    },
+    {
+      "path": "figures/checkpoint-lifecycle.pdf",
+      "bytes": 22024,
+      "sha256": "cb03fa3283528703bdc23d0b5bfd9dbae2325e87e80078a313b1a634a8a2c4f5"
+    },
+    {
+      "path": "figures/common-fault.pdf",
+      "bytes": 13118,
+      "sha256": "46bd6f5b3d1a10f53e7510b8900b3ce7b58972bbb36239896aaa8d76c2bbcf16"
+    },
+    {
+      "path": "figures/controller-scaling.pdf",
+      "bytes": 12397,
+      "sha256": "a78c7455382c1e7a955006c37ab798f92af8ddf57abefac83c6fec670553b3e4"
+    },
+    {
+      "path": "figures/healthy-io.pdf",
+      "bytes": 13003,
+      "sha256": "0a56113980b68d23725b0bb37bc5a22f6006f47cddf003040ad08a104437518d"
+    },
+    {
+      "path": "figures/overlap-frontier.pdf",
+      "bytes": 12419,
+      "sha256": "49cc33d5547371ad166e42fde596ebdfd0b4cfd7461752061ed658f6b3bd0993"
+    },
+    {
+      "path": "figures/policy-ablation.pdf",
+      "bytes": 26336,
+      "sha256": "f029ac61391fd1ae868d413b27fbbf2f3c5c20c063c47c905e517ae9ceccceba"
+    },
+    {
+      "path": "figures/prediction-robustness.pdf",
+      "bytes": 14809,
+      "sha256": "b55a6381e151b27d5f3d02dd0db449f25ba0fec7d0b81f05fff35b8ce27a6d8c"
+    },
+    {
+      "path": "figures/preview/agent-prefix-reuse.png",
+      "bytes": 61413,
+      "sha256": "68f64ebceb32880e9761e7c112c6684b81c553e8a24522278c74b9b8e7825e50"
+    },
+    {
+      "path": "figures/preview/capacity-frontier.png",
+      "bytes": 57977,
+      "sha256": "92640ef40bb715fc0aa1c43cd57617af4052e574cb4f08bb923c25113263a3a1"
+    },
+    {
+      "path": "figures/preview/checkpoint-lag.png",
+      "bytes": 50592,
+      "sha256": "071dbc22d8a7d1c86b825e1ba21838fcd022baaf67bf2ba4caa6daffbf372861"
+    },
+    {
+      "path": "figures/preview/checkpoint-lifecycle.png",
+      "bytes": 57056,
+      "sha256": "95ada19e2e884c820c04c0a90c431c82ad3fc73e114336e93eeb5a61ec51e304"
+    },
+    {
+      "path": "figures/preview/common-fault.png",
+      "bytes": 47634,
+      "sha256": "34b2d34b314f52b7a14abf8ca580cf688490a9677ff71562fce291dcdf77e75e"
+    },
+    {
+      "path": "figures/preview/controller-scaling.png",
+      "bytes": 63141,
+      "sha256": "9ae945e417b0eac51b3f416a017b4bdebb4521c9c2be1918d87204a75bdfd847"
+    },
+    {
+      "path": "figures/preview/healthy-io.png",
+      "bytes": 62443,
+      "sha256": "bd51454671d78c381db9f39a8e893230aea30715e81281ebac258c523cb613d2"
+    },
+    {
+      "path": "figures/preview/overlap-frontier.png",
+      "bytes": 42666,
+      "sha256": "388879c959c57f128d9916b55ff7908fbc638f243ce2b5b1e59b3a93c10b6944"
+    },
+    {
+      "path": "figures/preview/policy-ablation.png",
+      "bytes": 62984,
+      "sha256": "052f36429666fe7950d3f259bb34681bbadc270674cfd5355ddc3ad79574ee63"
+    },
+    {
+      "path": "figures/preview/prediction-robustness.png",
+      "bytes": 53038,
+      "sha256": "fdda3991cedda23d97bd60d1659e9c1e4442b3e9e63e7c2010cd4ec91c506efd"
+    },
+    {
+      "path": "figures/preview/recovery-cost.png",
+      "bytes": 63856,
+      "sha256": "ede345c969bb5250207df887c40cf20fa3d37476165488a3738f60d1ca589077"
+    },
+    {
+      "path": "figures/preview/recovery-exposure.png",
+      "bytes": 48455,
+      "sha256": "0cc1654d53285975a7b73e5ced3461b9d59f69da0f7512014b998a11171ea621"
+    },
+    {
+      "path": "figures/preview/recovery-pipeline.png",
+      "bytes": 46898,
+      "sha256": "28dcf2cb975f8c348f71728dc6f796e5c1b7c73a2c7844fcd1f1cdafc52ddbb5"
+    },
+    {
+      "path": "figures/preview/rental-competition.png",
+      "bytes": 39884,
+      "sha256": "d8b2c4dac690e729169cf99984396de5db537f98ce26007332c0f85b3d464366"
+    },
+    {
+      "path": "figures/preview/retry-kv-prediction.png",
+      "bytes": 36550,
+      "sha256": "80b8bc6b996010108f4534d5c7dfefb2184807d1524519bbe12be0f74622d91f"
+    },
+    {
+      "path": "figures/preview/safe-demotion.png",
+      "bytes": 43528,
+      "sha256": "e499c5b1f5265c15ae3ee6373d51c9e9c7ad3d25d6311cb5c07b79cbc0d8a723"
+    },
+    {
+      "path": "figures/preview/sparse-models.png",
+      "bytes": 36170,
+      "sha256": "6096a3f629fb5b861a918f05d12af0ae6dec9435e07cec4cc44e2eb334689f8b"
+    },
+    {
+      "path": "figures/preview/sparse-recovery.png",
+      "bytes": 49042,
+      "sha256": "de60bc16d708f8a8bba5faffcfd7fa3a95fb8bfb78b9c8fbfedf000428f4dfcd"
+    },
+    {
+      "path": "figures/preview/storage-bottleneck.png",
+      "bytes": 63586,
+      "sha256": "f4925a661465bc28f94a60ed70386ee8b425e25eadd6146955a07f570f7d7d15"
+    },
+    {
+      "path": "figures/preview/system-overview.png",
+      "bytes": 106743,
+      "sha256": "d5b0a62b74b2b1ea0f72176f8acc951282bbbdf21edbe925fa520d62c53ad6a2"
+    },
+    {
+      "path": "figures/preview/workflow-gaps.png",
+      "bytes": 50619,
+      "sha256": "47e38ae422ae3d1af11990884a8b85e7e0469c91a7ad821505272807687e697e"
+    },
+    {
+      "path": "figures/preview/workflow-outcomes.png",
+      "bytes": 56807,
+      "sha256": "f2d478fd78664d99b9d6892d0c9d1416189e3dacca9253308506490563580ad3"
+    },
+    {
+      "path": "figures/preview/workflow.png",
+      "bytes": 35286,
+      "sha256": "b563724e4f259b266a302514849ebe01306ddce22bd3a298d19a7d037e4d2e21"
+    },
+    {
+      "path": "figures/recovery-cost.pdf",
+      "bytes": 15087,
+      "sha256": "2e316a866c4cbd86c706a01b0b80bf39d1d6b503cdd3ccda1daaaaf2a4da7eea"
+    },
+    {
+      "path": "figures/recovery-exposure.pdf",
+      "bytes": 12637,
+      "sha256": "5a6086433f8a83e7f6e9034b052e448bcdc6d79ddf0d65ace8f7a06753450ca7"
+    },
+    {
+      "path": "figures/recovery-pipeline.pdf",
+      "bytes": 15307,
+      "sha256": "90dd6988a2e122963ef681abd27530685734d7a2bc32ec48fd20655f434cec37"
+    },
+    {
+      "path": "figures/rental-competition.pdf",
+      "bytes": 21417,
+      "sha256": "c053b68b620cc2b02ba6ba9480e8a369e19e8c05d1795bc9b3b10b4f6cccabc4"
+    },
+    {
+      "path": "figures/retry-kv-prediction.pdf",
+      "bytes": 16336,
+      "sha256": "5da0d7c372996beed89f5e7a3c9ab12acb0b48414cb4a1640b77c493bbf325ed"
+    },
+    {
+      "path": "figures/safe-demotion.pdf",
+      "bytes": 12097,
+      "sha256": "f533994aa544b6eaabdb6ed26482099fa2ba63a24c1dcd769cbbcecdd8d62643"
+    },
+    {
+      "path": "figures/sparse-models.pdf",
+      "bytes": 16113,
+      "sha256": "8300e05be9b4641c67af3a41b01e5459e8f96ec904024887960febcf1ccbc772"
+    },
+    {
+      "path": "figures/sparse-recovery.pdf",
+      "bytes": 23976,
+      "sha256": "344c5887630699b93e177d515be3291d6a43e614edcac4390362892adc27c0f0"
+    },
+    {
+      "path": "figures/storage-bottleneck.pdf",
+      "bytes": 15575,
+      "sha256": "f3ec7794ddd75e717fac9551bf64effb03b43f260c23c0190c7a895557f93ee2"
+    },
+    {
+      "path": "figures/system-overview.pdf",
+      "bytes": 23938,
+      "sha256": "d9034a8f22d64db5b291780c0fe51005528e8ca1cb86e12def1db7b5ee226441"
+    },
+    {
+      "path": "figures/workflow-gaps.pdf",
+      "bytes": 16895,
+      "sha256": "7c72a38316937558dbb138be5bc1930db06b8373ff15f207010e27f930f79787"
+    },
+    {
+      "path": "figures/workflow-outcomes.pdf",
+      "bytes": 14904,
+      "sha256": "ddd22447711e9c89c1a748faf68faf7ccd648919aa5253d3f33938b4ddcf4969"
+    },
+    {
+      "path": "figures/workflow.pdf",
+      "bytes": 11985,
+      "sha256": "c5a617d044f4d90d2f9cc48bbff5ce98be1ff9b82680383801dfb2e6f6201a1e"
+    },
+    {
+      "path": "main.pdf",
+      "bytes": 822874,
+      "sha256": "cbd4d188d49b153686ec77b0839971ae15a1f4a691b0aadaa059ffc5a4073583"
+    },
+    {
+      "path": "main.tex",
+      "bytes": 25540,
+      "sha256": "706ddb1b8e8366649da6635aa34fb666d1a67def85396e455a4076724134e64f"
+    },
+    {
+      "path": "paper_draft.md",
+      "bytes": 27692,
+      "sha256": "b370c0aab5a5aa27908e2c402ca8eabfa68c171cb8b7ef10dfafdab3cc478156"
+    },
+    {
+      "path": "references.bib",
+      "bytes": 16656,
+      "sha256": "41c494726dbcf9c30e860111ccb24aeddac336280953a0701b6d8ae4215ce486"
+    },
+    {
+      "path": "system_design.tex",
+      "bytes": 25724,
+      "sha256": "80ec283bf8822ff20916b89f9ff09ace6d6d3b8cfd1e348fceb5839617f0ecbf"
+    }
+  ]
+}

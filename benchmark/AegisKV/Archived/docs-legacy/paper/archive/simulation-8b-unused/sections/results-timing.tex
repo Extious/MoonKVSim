@@ -1,0 +1,17 @@
+\subsection{Dependence on Service Composition}
+\label{sec:timing-results}
+\input{sections/figures/timing}
+
+Figure~\ref{fig:timing} repeats the comparison with fixed logical focus
+requests under maximum-share, intermediate and summed-share step durations.
+For $\beta=0,0.5,1$, the mean normalized focus failure-penalty differences
+are 4.25\%, $-6.76\%$ and 14.08\%; their respective intervals are
+[$-77.19\%$, 85.69\%], [$-47.12\%$, 33.59\%] and
+[$-25.91\%$, 54.07\%]. Whole-workload mean penalty differences are 0.090,
+0.032 and $-0.039$~s, also with intervals crossing zero. The estimated
+direction changes with service composition, and none resolves a policy
+advantage. This supports retaining the model dependence in the conclusion;
+it establishes neither equivalence nor a calibrated hardware bound.
+The focus requests are fixed across these models but differ from the primary
+compatibility-conditioned selection, so $\beta=0$ is not another estimate
+of the primary focus effect.

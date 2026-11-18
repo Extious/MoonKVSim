@@ -11,7 +11,9 @@ import pytest
 import moonkvsim.aegiskv.experiment_suite as suite
 from moonkvsim.aegiskv.experiment import (
     CellSpec,
+    FailureEventSchedule,
     FailureSchedule,
+    ModelParameters,
     Scenario,
     StudyRunResult,
     core_variants,
@@ -118,18 +120,34 @@ def _fake_schedule(
     *,
     bucket: str,
     seed: int,
-    parameters: object,
+    parameters: ModelParameters,
+    failure_count: int = 2,
+    workflow_concurrency: int | None = None,
+    compared_profiles: object = None,
 ) -> FailureSchedule:
-    del parameters
+    del workflow_concurrency, compared_profiles
     return FailureSchedule(
-        failure_id=f"gpu-failure:{bucket}:seed-{seed}",
-        bucket=bucket,
-        seed=seed,
-        focus_span_id="span-0",
-        target_gpu_id="gpu-0",
-        reference_at_ns=100 + seed,
-        detection_delay_ns=5,
-        trigger_progress_per_mille=100,
+        tuple(
+            FailureEventSchedule(
+                failure_id=f"gpu-failure:{bucket}:seed-{seed}:event-{event_index}",
+                event_index=event_index,
+                bucket=bucket,
+                seed=seed,
+                focus_span_id=f"span-{event_index}",
+                target_gpu_id=f"gpu-{event_index}",
+                reference_at_ns=100 + seed + event_index,
+                target_workload_progress_per_mille=(
+                    1_000 * (event_index + 1) + (failure_count + 1) // 2
+                )
+                // (failure_count + 1),
+                reference_completed_workflow_count=event_index + 1,
+                reference_workflow_count=failure_count + 1,
+                detection_delay_ns=parameters.failure_detection_ns,
+                trigger_progress_per_mille=parameters.failure_progress_per_mille,
+                gpu_recovery_time_ns=parameters.gpu_recovery_time_ns,
+            )
+            for event_index in range(failure_count)
+        )
     )
 
 
@@ -143,10 +161,11 @@ def test_protocol_defines_exact_default_cross_products() -> None:
 
     assert core["execution"]["expected_row_count"] == 420
     assert core["execution"]["expected_pair_count"] == 210
-    assert all_suites["execution"]["expected_row_count"] == 2_580
-    assert all_suites["execution"]["expected_pair_count"] == 1_290
+    assert all_suites["execution"]["expected_row_count"] == 2_400
+    assert all_suites["execution"]["expected_pair_count"] == 1_200
     assert all_suites["suite_catalog"]["ablation"]["default_expected_row_count"] == 720
-    assert all_suites["suite_catalog"]["sensitivity"]["default_expected_row_count"] == 1_440
+    assert all_suites["suite_catalog"]["sensitivity"]["default_expected_row_count"] == 1_260
+    assert core["execution"]["failure_count_per_failure_cell"] == 2
     assert core["execution"]["silent_fallback_allowed"] is False
     assert core["evidence"] == EVIDENCE_BOUNDARY
     assert core["model_deployment_contract"] == qwen3_8b_dp_only_contract()
@@ -213,7 +232,7 @@ def test_one_frozen_workload_pair_is_fresh_and_byte_deterministic() -> None:
     assert execution.audit["fresh_global_des_instances"] == 2
 
 
-def test_core_publication_has_420_rows_and_rejects_existing_target(
+def test_core_publication_has_one_two_event_failure_cell_and_rejects_existing_target(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(suite, "derive_failure_schedule", _fake_schedule)
@@ -239,7 +258,8 @@ def test_core_publication_has_420_rows_and_rejects_existing_target(
     statistics = json.loads((output / "statistics.json").read_text(encoding="utf-8"))
     assert len(rows) == 420
     assert len(pairs) == 210
-    assert len(schedules) == 15
+    assert len(schedules) == 105
+    assert all(len(item["used_by_variants"]) == 1 for item in schedules)
     assert rows == sorted(rows, key=lambda row: row["run_id"])
     assert all(row["evidence"] == EVIDENCE_BOUNDARY for row in rows)
     assert all(row["variant_config"] for row in rows)
@@ -296,7 +316,7 @@ def test_core_publication_has_420_rows_and_rejects_existing_target(
         )
 
 
-def test_focused_transport_publication_shares_logical_failure_schedule(
+def test_focused_transport_publication_uses_variant_local_physical_schedules(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(suite, "derive_failure_schedule", _fake_schedule)
@@ -320,13 +340,19 @@ def test_focused_transport_publication_shares_logical_failure_schedule(
     schedules = _jsonl(output / "failure-schedules.jsonl")
     assert manifest["result_count"] == 60
     assert manifest["pair_count"] == 30
-    assert len(schedules) == 5
-    assert all(item["shared_across_variant_parameters"] for item in schedules)
-    failure_bindings: dict[tuple[str, int], set[str]] = {}
+    assert len(schedules) == 15
+    assert all(not item["shared_across_variant_parameters"] for item in schedules)
+    assert all(len(item["used_by_variants"]) == 1 for item in schedules)
+    failure_bindings: dict[tuple[str, str, int, int], set[str]] = {}
     for row in rows:
         if row["scenario"] != "gpu_failure":
             continue
-        key = (row["context_bucket"], row["seed"])
+        key = (
+            row["variant_id"],
+            row["context_bucket"],
+            row["seed"],
+            row["failure_count"],
+        )
         failure_bindings.setdefault(key, set()).add(
             row["bindings"]["failure_binding_fingerprint"]
         )

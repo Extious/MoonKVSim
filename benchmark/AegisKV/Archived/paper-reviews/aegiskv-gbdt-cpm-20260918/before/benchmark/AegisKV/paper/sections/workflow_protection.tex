@@ -1,0 +1,39 @@
+\subsection{Workflow Tracker: Tiers and Priority}
+\label{sec:workflow-protection}
+
+Tracker (1) estimates node duration by the role's P90 over its most
+recent 200 completions or one hour, with a global fallback for unseen
+roles. A running node uses $\max(\widehat T_\rho-\mathrm{elapsed},\tau_{\min})$.
+A forward/backward critical-path pass~\cite{kelley1959cpm} gives request
+slack $\sigma_r=\mathrm{LF}_r-\mathrm{EF}_r$; unknown successors force
+$\sigma_r=0$. Node events and placement windows refresh the estimates,
+with 20\% hysteresis at tier thresholds. These are conservative
+heuristics, not bounds on slack error; optimistic estimates can leave
+a request unprotected in Tier R.
+
+Let $T_{\mathrm{rc}}$ be historical-prefix recomputation cost,
+$T_{\mathrm{rp}}$ known-tail replay cost, and $W_0$ exposed DRAM-loading
+wait without Peer residency (Section~\ref{sec:kv-placement}).
+Detection, rerouting, and readmission contribute $R_{\mathrm{floor}}$.
+The Planner uses
+\begin{equation}
+\begin{aligned}
+ R_{\mathrm{base}}&=R_{\mathrm{floor}}+T_{\mathrm{rp}},\\
+ R_R&=R_{\mathrm{base}}+T_{\mathrm{rc}},\quad
+ R_D=R_{\mathrm{base}}+W_0.
+\end{aligned}
+\label{eq:recovery-base}
+\end{equation}
+Costs are calibrated by model, context, tail length, hardware, and
+representative concurrency, rather than exclusive peak bandwidth.
+
+The three placement tiers are:
+\emph{R}, no required backup when $\sigma_r\ge R_R$;
+\emph{D}, DRAM only when $R_D\le\sigma_r<R_R$;
+and \emph{P}, DRAM coverage plus competition for Peer HBM otherwise.
+Tier-P requests compete by increasing slack; a skipped request retains
+its DRAM path. Slack orders admission but does not scale a request's
+footprint. Admitting whole footprints makes accounting and updates
+predictable under noisy estimates, at the cost of possible unused
+capacity or missed gains from partial protection. It is a policy choice,
+not an optimality claim or a serial recovery order.

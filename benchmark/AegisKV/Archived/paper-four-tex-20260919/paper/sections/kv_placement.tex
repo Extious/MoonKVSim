@@ -1,0 +1,240 @@
+\subsection{KV Master: Request-Specific Backup Decisions}
+\label{sec:kv-placement}
+\label{sec:kv-master}
+
+KV Master (3) selects recovery tiers, each request's Peer depth $L_r$,
+and layer-local hot sets. Recovery Manager fixes the retry/Peer target;
+Adapter publishes its window-level capacity $B_p$. Requests may use
+different depths within the same capacity window.
+
+\paragraph{Decision events.}
+The Master establishes policy at arrival, offers sealed state after prefill,
+and reviews a request every additional $Z$ generated tokens. $Z$ is a
+block-aligned system configuration, not an Adapter output. Significant
+slack, budget, context, or copy-state changes can trigger an earlier review.
+A decision does not imply a completed checkpoint: the replay tail extends
+beyond the latest committed frontier and can exceed $Z$ when copying lags.
+Copy queues have configured byte and operation limits. Coalesce superseded
+unstarted plans, retain dependencies of in-flight or committed versions,
+and skip a new backup attempt if it cannot be reserved. Report the resulting
+commit lag; the trigger interval supplies no durability bound.
+Sealing only updates eligibility. Hot-block statistics use the preceding
+512 decode steps, independently of checkpoint and capacity windows.
+
+\paragraph{Choose protection tiers.}
+Let $T_{\mathrm{rc}}$ denote prefix recomputation, $T_{\mathrm{rp}}$ known-tail
+replay, $W_0$ exposed DRAM-loading wait, and $R_{\mathrm{floor}}$ detection,
+rerouting, and readmission time. Joint context/tail/load profiles give
+\begin{equation}
+\begin{aligned}
+ R_{\mathrm{base}}&=R_{\mathrm{floor}}+T_{\mathrm{rp}},\\
+ R_R&=R_{\mathrm{base}}+T_{\mathrm{rc}},\qquad
+ R_D=R_{\mathrm{base}}+W_0.
+\end{aligned}
+\label{eq:recovery-base}
+\end{equation}
+$R_R$ and $R_D$ use the weighted conditional means of the same
+future-state samples defined below; the tier test is a planning heuristic,
+not a deadline guarantee. Tier R needs no backup if $\sigma_r\ge R_R$.
+Otherwise choose D when $R_D<R_R$ and $\sigma_r\ge R_D$; remaining
+requests compete for Peer as tier P. There is no assumption that loading
+is faster than recomputation. The non-Peer fallback chooses the cheaper
+feasible route, preferring R on equal costs; a denied Peer increment does
+not force a slower DRAM restore. DRAM protection requires its own admission
+and commit (\S\ref{sec:kv-runtime}). Missing profiles request conservative
+DRAM protection when feasible, without claiming it is faster; failed
+admission uses an older valid checkpoint or R. Slack orders protection,
+not retry execution. At recovery, refresh costs and availability; overlapping
+cost intervals retain the feasible current route unless dominance is clear.
+
+\paragraph{K counts resident blocks, not selector outputs.}
+A protection object is an immutable sealed \emph{(layer, block)} including
+all KV heads; the trace study uses 64-token blocks. Let $H_{r,l}$ be
+request $r$'s published, committed Peer set at layer $l$. We define
+\begin{equation}
+ K_{r,l}=|H_{r,l}|.
+ \label{eq:hot-block-count}
+\end{equation}
+Thus $K$ counts Peer-resident blocks of one request and layer. It is not
+the model's per-query top-$k$, a hit-rate guarantee, or a count of copies
+still in flight. Physical allocation also charges retiring buffers,
+reservations, and selector state; shared copies are counted once per pool.
+
+A separately configured quota determines the desired hot-set size.
+The configuration declares either a fixed block limit or
+$\lceil h_l n_r\rceil$ blocks for $n_r$ sealed historical blocks.
+Mandatory sealed sink/window blocks are included in that limit: if they
+alone exceed it, request a larger explicitly charged quota or decline
+that layer's Peer admission, never silently drop native requirements.
+The rule is
+fixed in each comparison; this paper does not claim an optimal quota.
+Remaining slots rank native selection counts, then recency and stable
+block ID. Optional blocks leave after two consecutive statistics windows
+outside the target set. Required auxiliary state is budgeted separately.
+Before 512 steps are available, use the observed prefix; with no observations,
+rank mandatory blocks first and then recency and stable ID. This cold-start
+rule has no demonstrated prediction accuracy.
+For a replay of $N$ tokens, demand is the deduplicated union of native
+selections across queries and KV groups, not $N$ copies of a single top-$k$.
+
+\paragraph{Preview replacement as well as admission.}
+A candidate depth $d$ offers target hot sets in layers $1{:}d$;
+this prefix family restricts the search, rather than proving that arbitrary
+layer placements cannot do better.
+Its plan retains intersections, demotes owned blocks leaving the set,
+and admits new blocks. It cannot evict another request's protected copy.
+A shared object loses only the departing owner's reference.
+Dirty demotions, new transfers, and temporary space all enter the preview;
+slots become reusable only after actual release
+(\S\ref{sec:kv-runtime}). Shrinking $L_r$ can therefore retire the owner's
+deeper copies. An unchanged depth can still replace block identities.
+Uniform, fully admitted layers contain $L_r K$ layer-block objects;
+partial admission is reported through the actual sets $H_{r,l}$.
+
+\paragraph{A reproducible depth objective.}
+All candidates start from the same target snapshot $S$ and use the same
+planning horizon $H$, future-state samples $j$, and normalized weights $w_j$,
+conditional on a source failure within $H$. Current slack is held fixed
+within this local comparison and refreshed at the next policy event.
+A sample specifies committed history $M_j$, replay tail $N_j$, available
+copy time, and foreground/retry load. Samples come from a declared,
+versioned profile, including commit lag; they do not assume $N_j=Z$ or
+a uniform checkpoint phase. Co-located requests share the same source-event
+samples and contended target resources. For a configured Poisson model,
+$\pi_r=1-\exp(-\lambda_r H)$. Other risk models must provide the corresponding
+probability over the same $H$; a failure rate is not itself a probability.
+
+Let $G_d$ be the admitted-and-retired plan from the preview.
+$A_r(d)$ is the predicted aggregate change in foreground request-delay
+seconds, relative to keeping the current placement at $S$. The cohort
+contains active requests and arrivals within $H$, followed to completion
+under matched arrivals and a held policy, including completions after $H$.
+It includes replication, writeback, transient occupancy, and reduced or
+increased admission pressure, and may be negative. Let $R_r(d,j)$ be
+failure-to-ready latency for sample $j$, crediting only replicas predicted
+to commit before its failure. The Master minimizes
+\begin{equation}
+ J_r(d)=A_r(d)+\pi_r\sum_j w_j
+          \max\{0,R_r(d,j)-\sigma_r\}.
+ \label{eq:depth-score}
+\end{equation}
+Both terms have units of delay seconds. This is a local protection
+heuristic in slack order; it neither sums to workflow makespan nor
+optimizes all later requests' allocations.
+For example, two equally critical branches on one failed source each
+need 10\,s to recover. Protecting only one reduces their summed local
+penalties from 20 to 10\,s but leaves workflow delay at 10\,s. Source-event
+DAG replay and a feasible small-DAG oracle are required to assess this gap.
+
+\paragraph{Profile interface and validity.}
+A profile query takes the model/selector and weight revisions, KV layout,
+block size, hardware/link topology, $S$, $G_d$, the shared state samples,
+and the configured copy scheduler. It returns $A_r(d)$ and $R_r(d,j)$
+with uncertainty intervals, a generation ID, support ranges, and expiry.
+$A$ is obtained from matched normal-service traces with identical arrivals;
+$R$ uses matched recovery traces or a declared, calibrated event model.
+Transfer and compute overlap are evaluated on one timeline; adding their
+full durations would double-count hidden transfer. Rows state whether
+they are measured or modeled. Missing measurements are not filled with
+the Figure~\ref{fig:design-pipeline} example.
+
+The finite depth grid includes zero and the current depth, and an explicit
+\emph{keep} plan preserves current block identities. The lowest score wins;
+ties prefer smaller depth, then stable plan ID. Propagating the profile's
+intervals through (\ref{eq:depth-score}) gives lower and upper score bounds.
+A change is accepted only if its upper bound plus a configured margin
+is below the keep plan's lower bound. Unsupported candidates are excluded.
+An invalid generation or missing, expired, or drift-flagged keep profile
+freezes discretionary expansion and replacement; new requests attempt
+DRAM admission, with the stated fallback if it fails.
+Existing protection is retained only while feasible:
+Adapter contraction and correctness-driven retirement still take precedence.
+A generation is invalidated after a configured number of consecutive
+relative-error violations on comparable observed operations; unmatched
+observations do not count as validation. Thresholds, grid, horizon,
+risk model, quota rule, sample weights, and calibration version are
+recorded configuration, not inferred experimental constants.
+At zero failure probability, only $A$ affects the score; costly expansion
+has no recovery justification, while a zero-cost keep plan need not move.
+Uncertain route crossings do not justify an unprofiled migration.
+
+\begin{figure}[t]
+  \raggedright
+  \refstepcounter{designalgorithm}\label{alg:placement}
+  \noindent\textbf{Algorithm \thedesignalgorithm: Per-request backup policy}
+  \par\smallskip
+  \noindent Input: requests, slack, fixed $Z$, profiles, targets, budgets.
+  Output: admitted tiers, Peer plans, and committed $H_{r,l}$.
+  \par\smallskip
+  \begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
+    \toprule
+    1 & Snapshot copies, leases, budgets, and reservations as $S$ \\
+    2 & \textbf{for} affected $r$ in $(\sigma_r,\mathrm{ID}_r)$ order: \\
+    3 & \quad Choose R/D/P and the feasible non-Peer fallback \\
+    4 & \quad For D/P, request DRAM; report coverage/failure \\
+    5 & \quad Rank layer-local candidates under the quota rule \\
+    6 & \quad Form keep and depth plans; R/D target depth is zero \\
+    7 & \quad Preview each plan independently from the same $S$ \\
+    8 & \quad Query valid profiles; score by (\ref{eq:depth-score}) \\
+    9 & \quad Choose a stable improvement, or feasible fallback \\
+    10 & \quad Queue its retains, demotions, and new admissions \\
+    11 & \quad Update $S$ with only this chosen plan \\
+    12 & Atomically recheck reservations before physical execution \\
+    13 & Publish only committed residency and actual released bytes \\
+    \bottomrule
+  \end{tabularx}
+  \Description{The Master chooses per-request layers and hot sets using
+    a shared-sample cost objective. Only chosen plans change the virtual
+    allocation snapshot; execution rechecks space and safe retirement.}
+\end{figure}
+
+The preview is not a reservation. Actual grants may be smaller. The
+directory reports committed $K_{r,l}$ and frontiers; a mismatch triggers
+another review. Sorting $n$ requests takes $O(n\log n)$ time. Candidate
+work scales with the grid, sample count, and affected blocks. Profile
+calibration and accuracy remain evaluation work.
+
+\paragraph{Keep selection and placement separate.}
+Recovery restores model-specific selector state before invoking the
+unchanged native selector. The selector may name any causally eligible
+historical or recomputed KV, including DRAM-only objects. The Connector
+resolves logical IDs to committed replicas, fetches actual misses, and
+returns readiness events; attention waits for every required input.
+Forecast mistakes add traffic or waiting, not a new attention approximation.
+Tier R and missing committed prefixes use dependency-correct recomputation
+of logged tokens. A batched replay is eligible only if its native selector
+and state evolution are equivalent to the original token-wise path under
+the declared numerical contract; otherwise replay token by token. A native
+prefill gate or an unresolved numerical diagnostic does not establish this
+equivalence. Compatible weights, layout, and operators are required;
+future stochastic samples need not be bitwise identical across floating-point
+execution schedules.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/figure5-recovery-pipeline.pdf}
+  \caption{Modeled recovery pipelines: MiniCPM4-8B, 32 layers, 32K
+    history, 64-token known tail; $C=2.87$\,ms/layer (A100-derived average)
+    and $D=5.37$\,ms at an assumed 6.25\,GB/s. In (d), 147\,MiB of Peer
+    residency removes preload wait. Totals end at tail-KV reconstruction.
+    The homogeneous, preemptible-copy model excludes detection,
+    queuing, and interference.}
+  \label{fig:design-pipeline}
+  \Description{Four timelines compare token-block transfer, full-layer
+    pipelining, hot preloads with demand fetch, and Peer-resident hot sets.}
+\end{figure}
+
+Figure~\ref{fig:design-pipeline} illustrates one fixed-tail example:
+layer pipelining, hot preloads, and seven resident hot sets reduce exposed
+wait from 172 to 83, 44, and 20\,ms. It does not calibrate
+(\ref{eq:depth-score}), establish multi-request WCT gains, or make seven
+layers appropriate for every checkpoint state.
+Here $C$ is a five-repeat median of a batch-one, 64-token native-path
+forward over resident history on an A100 80GB PCIe, divided by 32 layers;
+individual layer timings were not measured. The assumed bandwidth is a
+25\,GB/s pool link equally shared by four recoveries, not measured H2D.
+With 1\,KiB/token/layer, the Peer payload is
+$7\times0.65845\times32$\,MiB $\simeq147.49$\,MiB, excluding auxiliary
+state and temporary buffers. Fractions are trace-derived means, not an
+integer per-layer grant. The model leaves 38.69\,ms of cold-copy work
+after tail readiness; subsequent token latency requires separate evaluation.

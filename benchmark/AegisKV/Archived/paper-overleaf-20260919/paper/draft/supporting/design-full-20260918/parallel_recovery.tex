@@ -1,0 +1,27 @@
+\subsection{Recovery Manager: Concurrent Takeover}
+\label{sec:parallel-recovery}
+
+Recovery Manager (3) owns DP availability and the predetermined recovery
+mapping. Adapters report local progress and errors. Process heartbeats,
+device health, and GPU forward progress are distinct signals: a live
+process does not establish that its GPU is progressing. Detection and
+readmission costs belong in $R_{\mathrm{floor}}$.
+The recovery path below assumes a confirmed fail-stop source whose
+subsequent writes have been isolated.
+
+The Manager obtains the affected requests' token prefixes, commit
+frontiers, model/layout identifiers, and replica locations from surviving
+control state, then submits retries to $p(g)$. Only committed objects
+are readable; the uncommitted suffix is replayed. Control-state survival,
+failure-domain separation, and retry deduplication are runtime contracts.
+The overview is not a complete controller-HA, failure-arbitration, or
+fencing protocol.
+
+All affected requests can enter recovery independently. The Manager does
+not wait for one retry to complete before submitting the next in slack
+order. The target still serves its own foreground workload: admission,
+continuous batching, compute, and copy resources determine when retries
+run. Each Adapter advances a request on that request's readiness events.
+Protection tiers determine available replicas, not a serial completion
+barrier. Distributing takeover across more targets requires assigning
+requests and their backups before failure.

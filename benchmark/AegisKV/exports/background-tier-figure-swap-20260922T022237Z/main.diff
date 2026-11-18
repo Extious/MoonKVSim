@@ -1,0 +1,40 @@
+--- before/paper/main.tex
++++ paper/main.tex
+@@ -897,8 +897,8 @@
+ \label{sec:motivation-protocol}
+ 
+ \paragraph{Scope and configuration.}
+-Figures~\ref{fig:motivation}(\subref{fig:motivation-recompute}) and
+-\ref{fig:motivation-recovery-exposure} use the same pinned
++Figures~\ref{fig:motivation-recompute} and
++\ref{fig:motivation}(\subref{fig:motivation-recovery-exposure}) use the same pinned
+ Qwen2.5-7B-Instruct-1M weights, SGLang 0.5.10rc0, PyTorch 2.9.1/CUDA 12.8,
+ TP2, BF16 weights/KV, and batch one on two A100 PCIe 40\,GB GPUs.
+ They use separate allocations of the same GPU type, with one fixed
+@@ -936,7 +936,7 @@
+ KV files are removed after measurement.
+ 
+ \paragraph{Timing samples.}
+-Figure~\ref{fig:motivation}(\subref{fig:motivation-recompute}) uses one
++Figure~\ref{fig:motivation-recompute} uses one
+ allocation for 8,192, 65,536, 262,144 and 1,010,000 tokens. HBM/DRAM have
+ one warmup and three timings per length; full prefill and shared storage
+ have one timing each. Short forwards and operator checks precede timing;
+@@ -944,7 +944,7 @@
+ no extra complete-prefill warmup at 256K/1.01M or storage-read warmup.
+ Consequently, these full-prefill/storage points describe individual
+ runs, not stable latency distributions.
+-Figure~\ref{fig:motivation-recovery-exposure} uses two allocations at
++Figure~\ref{fig:motivation}(\subref{fig:motivation-recovery-exposure}) uses two allocations at
+ $C=100{,}865$, $105{,}921$, $108{,}865$ and $113{,}665$, with one complete
+ warmup and three full-prefill timings at each length. The initial allocation completed three lengths; the last length was
+ resumed after an early termination signal. Its incomplete timings are
+@@ -959,7 +959,7 @@
+ prefills additionally check output agreement, and CUDA-event timelines
+ check serialized copies. These checks validate matched sparse-state
+ execution, not equivalence to dense attention or long-context task quality.
+-For Figure~\ref{fig:motivation-recovery-exposure}, the four history lengths
++For Figure~\ref{fig:motivation}(\subref{fig:motivation-recovery-exposure}), the four history lengths
+ are the active requests' trace hash-block counts multiplied by 64.
+ They are size proxies, not exact original-model token counts or observed
+ KV frontiers at failure. The example was selected for four parallel

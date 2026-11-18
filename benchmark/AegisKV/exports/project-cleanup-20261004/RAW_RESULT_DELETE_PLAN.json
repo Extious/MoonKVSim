@@ -1,0 +1,42 @@
+[
+  {
+    "path": "benchmark/AegisKV/Archived/simulation-qwen3-8b/audits/base-f2-c16-seed0/aegiskv_unified/representative.json",
+    "bytes": 1908599884,
+    "inode": 140678693059,
+    "device": 50,
+    "mtime_ns": 1788201969475575551,
+    "reason": "archived raw simulator event result, not an image or experimental design"
+  },
+  {
+    "path": "benchmark/AegisKV/Archived/simulation-qwen3-8b/audits/base-f2-c16-seed0/vanilla_mooncake_dram/representative.json",
+    "bytes": 68283730,
+    "inode": 82139565380,
+    "device": 50,
+    "mtime_ns": 1788201492329203714,
+    "reason": "archived raw simulator event result, not an image or experimental design"
+  },
+  {
+    "path": "benchmark/AegisKV/Archived/simulation-qwen3-8b/audits/direct-f2-c24-seed0-mooncake-duplicate-step/diagnostic.json",
+    "bytes": 15164779,
+    "inode": 109829939431,
+    "device": 50,
+    "mtime_ns": 1788227819134632791,
+    "reason": "archived raw simulator event result, not an image or experimental design"
+  },
+  {
+    "path": "benchmark/AegisKV/Archived/simulation-qwen3-8b/audits/direct-f2-c32-seed0-mooncake-duplicate-step/diagnostic.json",
+    "bytes": 12811839,
+    "inode": 107617794225,
+    "device": 50,
+    "mtime_ns": 1788226442478309623,
+    "reason": "archived raw simulator event result, not an image or experimental design"
+  },
+  {
+    "path": "benchmark/AegisKV/Archived/simulation-qwen3-8b/audits/direct-f2-c8-seed0-mooncake-duplicate-step/diagnostic.json",
+    "bytes": 3150225,
+    "inode": 124174747460,
+    "device": 50,
+    "mtime_ns": 1788227269338551956,
+    "reason": "archived raw simulator event result, not an image or experimental design"
+  }
+]

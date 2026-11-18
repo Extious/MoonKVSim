@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://moonkvsim.local/schemas/aegiskv-failure.schema.json",
+  "title": "MoonKVSim AegisKV failure experiment configuration v5",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "type",
+    "failure_count",
+    "injection_progress_percent",
+    "gpu_recovery_time_minutes"
+  ],
+  "properties": {
+    "schema": {
+      "const": "moonkvsim.aegiskv.failure.v5"
+    },
+    "type": {
+      "const": "GPU_FAILURE"
+    },
+    "failure_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "injection_progress_percent": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 99
+    },
+    "gpu_recovery_time_minutes": {
+      "type": "integer",
+      "minimum": 1
+    }
+  }
+}

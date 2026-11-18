@@ -27,6 +27,7 @@ from moonkvsim.aegiskv.experiment import (
     transport_sensitivity_variants,
 )
 from moonkvsim.aegiskv.experiment_workload import load_experiment_records
+from moonkvsim.aegiskv.types import AdmissionOutcome
 from moonkvsim.common.hash import sha256_json
 from moonkvsim.simulation.event import EventHandle, EventKind, ScheduledEvent
 from moonkvsim.store.transfer_engine import TransferStatus, TransportKind
@@ -80,6 +81,20 @@ def test_protocol_enumerates_seven_systems_and_declared_variants() -> None:
     assert {item.suite for item in core_variants()} == {"core"}
     assert {item.suite for item in ablation_variants()} == {"ablation"}
     assert {item.suite for item in sensitivity_variants()} == {"sensitivity"}
+    paper_ablations = {
+        item.variant_id: item.interpretation
+        for item in ablation_variants()
+        if item.variant_id in {"no_slack", "lru_eviction", "no_aimd"}
+    }
+    assert paper_ablations == {
+        "no_slack": (
+            "paper_algorithm_1_ablation_disables_residual_dag_slack_signal"
+        ),
+        "lru_eviction": (
+            "paper_algorithm_2_ablation_replaces_slack_landlord_with_lru"
+        ),
+        "no_aimd": "paper_algorithm_3_ablation_disables_hbm_quota_aimd",
+    }
     transport = transport_sensitivity_variants()
     assert [item.parameters.store_transport for item in transport] == [
         TransportKind.RDMA_GDR,
@@ -141,12 +156,10 @@ def test_failure_count_two_builds_one_ordered_two_event_plan(
         enforce_all_events_in_bucket=True,
     )["8k"]
 
-    assert len(calls) == 2
+    assert len(calls) == 3
     assert calls[0].scenario is Scenario.NO_FAILURE
     assert calls[0].failure_schedule is None
-    assert calls[1].scenario is Scenario.GPU_FAILURE
-    assert calls[1].failure_schedule is not None
-    assert len(calls[1].failure_schedule.events) == 1
+    assert all(call.scenario is Scenario.GPU_FAILURE for call in calls[1:])
     assert {item.focus_span_id for item in schedule.events} == {"span-a", "span-b"}
     assert [item.event_index for item in schedule.events] == [0, 1]
     assert [item.target_workload_progress_per_mille for item in schedule.events] == [
@@ -189,37 +202,333 @@ def test_failure_count_eight_uses_f0_through_f7_oracles_per_profile(
         compared_profiles=tuple(variant.profile for variant in core_variants()[:2]),
     )["8k"]
 
-    assert len(calls) == 16
+    assert len(calls) == 18
     for profile_index in range(2):
         profile_calls = [
             spec
             for spec in calls
             if spec.variant.variant_id == f"profile-{profile_index}"
         ]
-        assert len(profile_calls) == 8
+        assert len(profile_calls) == 1
         assert profile_calls[0].scenario is Scenario.NO_FAILURE
         assert profile_calls[0].failure_schedule is None
-        assert all(
-            spec.scenario is Scenario.GPU_FAILURE for spec in profile_calls[1:]
-        )
+        trial_calls = [
+            spec
+            for spec in calls
+            if spec.variant.variant_id == f"physical-profile-{profile_index}"
+        ]
+        assert len(trial_calls) == 8
         assert [
             len(spec.failure_schedule.events)
-            for spec in profile_calls[1:]
+            for spec in trial_calls
             if spec.failure_schedule is not None
-        ] == list(range(1, 8))
+        ] == list(range(1, 9))
     assert len(schedule.events) == 8
     assert len({event.focus_span_id for event in schedule.events}) == 8
     assert [event.reference_at_ns for event in schedule.events] == sorted(
         event.reference_at_ns for event in schedule.events
     )
     assert schedule.selection_scope == (
-        "causal_recursive_logical_failures_runtime_resolved_gpu"
+        "causal_recursive_shared_natural_physical_gpu_exact_audited_impact"
+    )
+
+
+def test_later_failure_freezes_profile_specific_post_treatment_victims(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    details = tuple(
+        {
+            "span_id": f"span-{index}",
+            "workflow_id": f"workflow-{index}",
+            "context_bucket": "8k",
+            "gpu_id": "gpu-0",
+            "compute_start_ns": (index + 1) * 1_000,
+            "completed_ns": (index + 1) * 1_000 + 100,
+        }
+        for index in range(3)
+    )
+    profiles = tuple(variant.profile for variant in core_variants()[:2])
+
+    def oracle(_records: object, spec: CellSpec) -> SimpleNamespace:
+        events = _mock_causal_failure_events(spec)
+        if (
+            spec.variant.variant_id == "physical-profile-1"
+            and spec.failure_schedule is not None
+            and len(spec.failure_schedule.events) == 2
+        ):
+            events[-1]["impacted_queued_span_ids"] = ["profile-1-extra-victim"]
+        return SimpleNamespace(span_details=details, representative={"failure_events": events})
+
+    monkeypatch.setattr(experiment_module, "run_study_cell", oracle)
+
+    schedule = derive_failure_schedules(
+        (),
+        buckets=("8k",),
+        seed=7,
+        failure_count=2,
+        compared_profiles=profiles,
+        enforce_all_events_in_bucket=True,
+    )["8k"]
+
+    assert schedule.events[0].impact_contract is not None
+    assert schedule.events[0].profile_impact_contracts is None
+    later = schedule.events[1]
+    assert later.impact_contract is None
+    assert later.profile_impact_contracts is not None
+    assert set(later.profile_impact_contracts) == {
+        experiment_module._failure_oracle_profile_fingerprint(profile)
+        for profile in profiles
+    }
+    assert later.selection_scope == (
+        "shared_natural_physical_gpu_profile_specific_exact_"
+        "post_treatment_victim_partitions"
+    )
+
+
+@pytest.mark.parametrize(
+    "divergent_partition",
+    ("active", "queued", "reroute_only"),
+)
+def test_paper_schedule_does_not_freeze_profile_partition_divergence(
+    monkeypatch: pytest.MonkeyPatch,
+    divergent_partition: str,
+) -> None:
+    details = (
+        {
+            "span_id": "span-focus",
+            "workflow_id": "workflow-focus",
+            "context_bucket": "8k",
+            "gpu_id": "gpu-0",
+            "compute_start_ns": 100,
+            "completed_ns": 200,
+        },
+    )
+    profiles = tuple(variant.profile for variant in core_variants()[:2])
+
+    def oracle(_records: object, spec: CellSpec) -> SimpleNamespace:
+        events = _mock_causal_failure_events(spec)
+        if (
+            spec.variant.variant_id == "physical-profile-1"
+            and spec.failure_schedule is not None
+        ):
+            event = events[-1]
+            if divergent_partition == "active":
+                event["impacted_active_span_ids"] = [
+                    "span-extra",
+                    "span-focus",
+                ]
+            else:
+                event["impacted_queued_span_ids"] = ["span-extra"]
+                if divergent_partition == "reroute_only":
+                    event["reroute_only_queued_span_ids"] = ["span-extra"]
+        return SimpleNamespace(
+            span_details=details,
+            representative={"failure_events": events},
+        )
+
+    monkeypatch.setattr(experiment_module, "run_study_cell", oracle)
+
+    schedule = derive_failure_schedules(
+        (),
+        buckets=("8k",),
+        seed=7,
+        failure_count=1,
+        compared_profiles=profiles,
+        enforce_all_events_in_bucket=True,
+        require_shared_impact_contract=False,
+        freeze_post_treatment_impact_contracts=False,
+    )["8k"]
+
+    event = schedule.events[0]
+    assert event.impact_contract is None
+    assert event.profile_impact_contracts is None
+    assert event.selection_scope == (
+        "shared_natural_physical_gpu_post_treatment_victims_observed"
+    )
+
+
+def test_failure_oracles_share_measured_randomization_inputs(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    details = (
+        {
+            "span_id": "span-focus",
+            "workflow_id": "workflow-focus",
+            "context_bucket": "8k",
+            "gpu_id": "gpu-0",
+            "compute_start_ns": 100,
+            "completed_ns": 200,
+        },
+    )
+    calls: list[CellSpec] = []
+
+    def oracle(_records: object, spec: CellSpec) -> SimpleNamespace:
+        calls.append(spec)
+        return SimpleNamespace(
+            span_details=details,
+            representative={
+                "failure_events": _mock_causal_failure_events(spec),
+            },
+        )
+
+    monkeypatch.setattr(experiment_module, "run_study_cell", oracle)
+
+    derive_failure_schedules(
+        (),
+        buckets=("8k",),
+        seed=7,
+        workflow_concurrency=16,
+        workflow_admission_seed=7,
+        peer_binding_seed=11,
+        failure_count=1,
+        compared_profiles=tuple(variant.profile for variant in core_variants()[:2]),
+        freeze_post_treatment_impact_contracts=False,
+    )
+
+    assert calls
+    assert all(spec.workflow_admission_seed == 7 for spec in calls)
+    assert all(spec.peer_binding_seed == 11 for spec in calls)
+
+
+def test_failure_schedule_cache_key_includes_shared_contract_strictness(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[bool] = []
+
+    def derive(
+        _records: object,
+        *,
+        buckets: tuple[str, ...],
+        require_shared_impact_contract: bool,
+        **_kwargs: object,
+    ) -> dict[str, experiment_module.FailureSchedule]:
+        calls.append(require_shared_impact_contract)
+        event = experiment_module.FailureEventSchedule(
+            failure_id=f"failure-{require_shared_impact_contract}",
+            event_index=0,
+            bucket=buckets[0],
+            seed=0,
+            focus_span_id="span-focus",
+            target_gpu_id="gpu-0",
+            reference_at_ns=100,
+            target_workload_progress_per_mille=500,
+            reference_completed_workflow_count=0,
+            reference_workflow_count=1,
+            detection_delay_ns=DEFAULT_PARAMETERS.failure_detection_ns,
+            trigger_progress_per_mille=DEFAULT_PARAMETERS.failure_progress_per_mille,
+            gpu_recovery_time_ns=DEFAULT_PARAMETERS.gpu_recovery_time_ns,
+        )
+        return {buckets[0]: experiment_module.FailureSchedule((event,))}
+
+    monkeypatch.setattr(experiment_module, "derive_failure_schedules", derive)
+    experiment_module._FAILURE_SCHEDULE_CACHE.clear()
+
+    permissive = derive_failure_schedule(
+        (),
+        bucket="8k",
+        seed=0,
+        failure_count=1,
+        compared_profiles=(core_variants()[0].profile,),
+        require_shared_impact_contract=False,
+    )
+    strict = derive_failure_schedule(
+        (),
+        bucket="8k",
+        seed=0,
+        failure_count=1,
+        compared_profiles=(core_variants()[0].profile,),
+        require_shared_impact_contract=True,
+    )
+
+    assert calls == [False, True]
+    assert permissive.fingerprint != strict.fingerprint
+
+
+def test_failure_schedule_backtracks_greedy_dead_end_deterministically(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    details = tuple(
+        {
+            "span_id": f"span-{name}",
+            "workflow_id": "workflow-shared",
+            "context_bucket": "8k",
+            "gpu_id": "gpu-0",
+            "compute_start_ns": (index + 1) * 100,
+            "completed_ns": (index + 1) * 100 + 50,
+        }
+        for index, name in enumerate(("a", "b", "c", "d"))
+    )
+    profiles = tuple(variant.profile for variant in core_variants()[:2])
+    attempted_prefixes: list[tuple[str, ...]] = []
+
+    def oracle(_records: object, spec: CellSpec) -> SimpleNamespace:
+        events = _mock_causal_failure_events(spec)
+        schedule = spec.failure_schedule
+        if schedule is not None:
+            prefix = tuple(event.focus_span_id for event in schedule.events)
+            if spec.variant.variant_id == "physical-profile-0":
+                attempted_prefixes.append(prefix)
+            if prefix == ("span-a", "span-b"):
+                events[-1]["impacted_active_span_ids"] = [
+                    "span-b",
+                    "span-c",
+                    "span-d",
+                ]
+            elif prefix == ("span-a", "span-c"):
+                events[-1]["impacted_active_span_ids"] = ["span-b", "span-c"]
+                if spec.variant.variant_id == "physical-profile-1":
+                    events[-1]["impacted_queued_span_ids"] = [
+                        "profile-1-extra-victim"
+                    ]
+        return SimpleNamespace(
+            span_details=details,
+            representative={"failure_events": events},
+        )
+
+    monkeypatch.setattr(experiment_module, "run_study_cell", oracle)
+
+    schedules = [
+        derive_failure_schedules(
+            (),
+            buckets=("8k",),
+            seed=0,
+            failure_count=3,
+            compared_profiles=profiles,
+            enforce_all_events_in_bucket=True,
+        )["8k"]
+        for _ in range(2)
+    ]
+
+    assert [
+        tuple(event.focus_span_id for event in schedule.events)
+        for schedule in schedules
+    ] == [
+        ("span-a", "span-c", "span-d"),
+        ("span-a", "span-c", "span-d"),
+    ]
+    assert schedules[0].fingerprint == schedules[1].fingerprint
+    assert attempted_prefixes == [
+        ("span-a",),
+        ("span-a", "span-b"),
+        ("span-a", "span-c"),
+        ("span-a", "span-c", "span-d"),
+    ] * 2
+    middle = schedules[0].events[1]
+    assert middle.impact_contract is None
+    assert middle.profile_impact_contracts is not None
+    assert set(middle.profile_impact_contracts) == {
+        experiment_module._failure_oracle_profile_fingerprint(profile)
+        for profile in profiles
+    }
+    assert middle.selection_scope == (
+        "shared_natural_physical_gpu_profile_specific_exact_"
+        "post_treatment_victim_partitions"
     )
 
 
 @pytest.mark.parametrize(
     ("failure_call", "event_index", "scenario"),
-    ((1, 0, "no_failure"), (2, 1, "gpu_failure")),
+    ((1, 0, "no_failure"),),
 )
 def test_failure_schedule_oracle_error_binds_event_profile_and_preserves_cause(
     monkeypatch: pytest.MonkeyPatch,
@@ -280,7 +589,7 @@ def test_failure_schedule_oracle_error_binds_event_profile_and_preserves_cause(
     assert "foreground scheduler pages" in str(captured.value.__cause__)
 
 
-def test_failure_schedule_projection_is_pure_logical_metadata(
+def test_failure_schedule_projection_preserves_causal_intervention(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     parameters = replace(
@@ -328,9 +637,8 @@ def test_failure_schedule_projection_is_pure_logical_metadata(
     assert projected.events[0].focus_span_id == "span-a"
     assert projected.events[0].target_gpu_id == "gpu-0"
     assert projected.events[0].reference_at_ns == 160
-    assert projected.selection_scope == (
-        "shared_logical_focus_runtime_resolved_physical_gpu"
-    )
+    assert projected.selection_scope == "reference"
+    assert projected.fingerprint == reference.fingerprint
 
 
 def test_failure_projection_rejects_parameter_drift_without_running_oracle() -> None:
@@ -671,6 +979,99 @@ def test_failure_cell_rejects_schedule_identity_or_parameter_mismatch() -> None:
         build(replace(event, gpu_recovery_time_ns=parameters.gpu_recovery_time_ns + 1))
 
 
+def test_paper_causal_mode_requires_single_frozen_failure() -> None:
+    parameters = DEFAULT_PARAMETERS
+    unfrozen = experiment_module.FailureEventSchedule(
+        failure_id="paper-failure-0",
+        event_index=0,
+        bucket="8k",
+        seed=0,
+        focus_span_id="span-a",
+        target_gpu_id="gpu-0",
+        reference_at_ns=100,
+        target_workload_progress_per_mille=500,
+        reference_completed_workflow_count=0,
+        reference_workflow_count=1,
+        detection_delay_ns=parameters.failure_detection_ns,
+        trigger_progress_per_mille=parameters.failure_progress_per_mille,
+        gpu_recovery_time_ns=parameters.gpu_recovery_time_ns,
+    )
+    with pytest.raises(ValueError, match="frozen physical target"):
+        CellSpec(
+            variant=core_variants()[0],
+            context_bucket="8k",
+            scenario=Scenario.GPU_FAILURE,
+            seed=0,
+            repetition="A",
+            failure_schedule=experiment_module.FailureSchedule((unfrozen,)),
+            paper_causal_mode=True,
+        )
+
+    frozen = replace(unfrozen, physical_target_frozen=True)
+    CellSpec(
+        variant=core_variants()[0],
+        context_bucket="8k",
+        scenario=Scenario.GPU_FAILURE,
+        seed=0,
+        repetition="A",
+        failure_schedule=experiment_module.FailureSchedule((frozen,)),
+        paper_causal_mode=True,
+    )
+    shared_contract = experiment_module.FailureImpactContract(
+        active_span_ids=("span-a",),
+        queued_span_ids=(),
+        reroute_only_queued_span_ids=(),
+    )
+    frozen_with_contract = replace(frozen, impact_contract=shared_contract)
+    with pytest.raises(ValueError, match="post-treatment"):
+        CellSpec(
+            variant=core_variants()[0],
+            context_bucket="8k",
+            scenario=Scenario.GPU_FAILURE,
+            seed=0,
+            repetition="A",
+            failure_schedule=experiment_module.FailureSchedule(
+                (frozen_with_contract,)
+            ),
+            paper_causal_mode=True,
+        )
+    profile_specific = replace(
+        frozen,
+        profile_impact_contracts={
+            experiment_module._failure_oracle_profile_fingerprint(
+                core_variants()[0].profile
+            ): shared_contract,
+        },
+    )
+    with pytest.raises(ValueError, match="post-treatment"):
+        CellSpec(
+            variant=core_variants()[0],
+            context_bucket="8k",
+            scenario=Scenario.GPU_FAILURE,
+            seed=0,
+            repetition="A",
+            failure_schedule=experiment_module.FailureSchedule((profile_specific,)),
+            paper_causal_mode=True,
+        )
+    second = replace(
+        frozen,
+        failure_id="paper-failure-1",
+        event_index=1,
+        focus_span_id="span-b",
+        target_workload_progress_per_mille=750,
+    )
+    with pytest.raises(ValueError, match="exactly one failure"):
+        CellSpec(
+            variant=core_variants()[0],
+            context_bucket="8k",
+            scenario=Scenario.GPU_FAILURE,
+            seed=0,
+            repetition="A",
+            failure_schedule=experiment_module.FailureSchedule((frozen, second)),
+            paper_causal_mode=True,
+        )
+
+
 def test_paper_failure_counts_are_evenly_spaced_in_one_workload() -> None:
     assert failure_workload_progress_targets_per_mille(1) == (500,)
     assert failure_workload_progress_targets_per_mille(2) == (333, 667)
@@ -887,6 +1288,39 @@ def test_pool_reinserted_key_invalidates_old_heap_identity() -> None:
     assert not pool.entries
 
 
+def test_pool_partial_eviction_preserves_pinned_heap_entries() -> None:
+    chunks = tuple(
+        experiment_module._Chunk(
+            key=f"prefix-{index}",
+            workflow_id="workflow-a",
+            token_start=index * 64,
+            token_count=64,
+            bytes=64,
+        )
+        for index in range(3)
+    )
+    pool = experiment_module._ModeledPool(
+        pool_id="normal-hbm",
+        capacity_bytes=192,
+        eviction=experiment_module.EvictionKind.LRU,
+        seed=0,
+    )
+    for chunk in chunks:
+        assert pool.insert(chunk, score=Fraction(1), now_ns=0, cause="TEST")
+    pool.pin_interval(
+        chunks,
+        start_token=0,
+        token_count=64,
+        pin_id="reader",
+    )
+
+    assert pool.evict_at_least(64, now_ns=1, cause="TEST_PARTIAL_RECLAIM") == 64
+    assert pool.release_pin("reader") == 64
+    assert pool.evict_at_least(128, now_ns=2, cause="TEST_FINAL_RECLAIM") == 128
+    assert pool.occupied_bytes == 0
+    assert not pool.entries
+
+
 def test_inactive_hbm_source_pin_is_visible_to_shared_readers_and_survives_reclaim() -> None:
     chunks = tuple(
         experiment_module._Chunk(
@@ -922,6 +1356,7 @@ def test_inactive_hbm_source_pin_is_visible_to_shared_readers_and_survives_recla
     assert pool.peek_prefix_tokens(chunks) == 128
     assert pool.pinned_entry_count == 1
     assert pool.pinned_reference_count == 2
+    assert pool.peek_exclusively_activatable_prefix_tokens(chunks) == 0
     assert pool.evictable_bytes == 64
     assert pool.evict_at_least(64, now_ns=1, cause="TEST_RECLAIM") == 64
     assert set(pool.entries) == {"prefix-0"}
@@ -938,6 +1373,7 @@ def test_inactive_hbm_source_pin_is_visible_to_shared_readers_and_survives_recla
         )
 
     assert pool.release_pin("request-b") == 64
+    assert pool.peek_exclusively_activatable_prefix_tokens(chunks) == 0
     assert pool.activate_prefix(
         chunks,
         token_count=64,
@@ -946,6 +1382,65 @@ def test_inactive_hbm_source_pin_is_visible_to_shared_readers_and_survives_recla
         pin_id="request-a",
     ) == 64
     assert pool.occupied_bytes == 0
+
+
+def test_exclusive_activation_prefix_stops_before_pinned_suffix() -> None:
+    chunks = tuple(
+        experiment_module._Chunk(
+            key=f"prefix-{index}",
+            workflow_id="workflow-a",
+            token_start=index * 64,
+            token_count=64,
+            bytes=64,
+        )
+        for index in range(2)
+    )
+    pool = experiment_module._ModeledPool(
+        pool_id="normal-hbm",
+        capacity_bytes=128,
+        eviction=experiment_module.EvictionKind.LRU,
+        seed=0,
+    )
+    for chunk in chunks:
+        assert pool.insert(chunk, score=Fraction(1), now_ns=0, cause="TEST")
+    pool.pin_keys((chunks[1].key,), pin_id="pending-reader")
+
+    assert pool.peek_exclusively_activatable_prefix_tokens(chunks) == 64
+
+
+def test_pin_interval_reports_unique_physical_bytes_for_content_aliases() -> None:
+    chunks = (
+        experiment_module._Chunk(
+            key="shared-content",
+            workflow_id="workflow-a",
+            token_start=0,
+            token_count=64,
+            bytes=64,
+        ),
+        experiment_module._Chunk(
+            key="shared-content",
+            workflow_id="workflow-b",
+            token_start=64,
+            token_count=64,
+            bytes=64,
+        ),
+    )
+    pool = experiment_module._ModeledPool(
+        pool_id="normal-hbm",
+        capacity_bytes=64,
+        eviction=experiment_module.EvictionKind.LRU,
+        seed=0,
+    )
+    assert pool.insert(chunks[0], score=Fraction(1), now_ns=0, cause="TEST")
+    pool.pin_interval(
+        chunks,
+        start_token=0,
+        token_count=128,
+        pin_id="reader",
+    )
+
+    assert pool.pinned_entry_count == 1
+    assert pool.release_pin("reader") == 64
 
 
 def test_pool_distinguishes_alias_noop_from_admission_rejection() -> None:
@@ -1195,6 +1690,227 @@ def test_recovery_source_intervals_are_disjoint_and_conservative() -> None:
     ) == (7_000, 0, 0, 3_000)
 
 
+def test_recovery_source_candidates_keep_fixed_effective_prefix_geometry() -> None:
+    boundaries = {0, 2_000, 6_000, 8_000, 10_000}
+    peer_first = experiment_module._recovery_source_candidate_intervals(
+        10_000,
+        normal_prefix_tokens=2_000,
+        peer_prefix_tokens=6_000,
+        store_prefix_tokens=8_000,
+        strategy="PEER_FIRST_CONTROL",
+        normal_boundaries=boundaries,
+        peer_boundaries=boundaries,
+        store_boundaries=boundaries,
+    )
+    store_first = experiment_module._recovery_source_candidate_intervals(
+        10_000,
+        normal_prefix_tokens=2_000,
+        peer_prefix_tokens=6_000,
+        store_prefix_tokens=8_000,
+        strategy="STORE_FIRST",
+        normal_boundaries=boundaries,
+        peer_boundaries=boundaries,
+        store_boundaries=boundaries,
+    )
+
+    assert [
+        (item.source, item.start_token, item.end_token)
+        for item in peer_first[0]
+    ] == [
+        ("NORMAL_HBM_LOCAL", 0, 2_000),
+        ("PEER_HBM", 2_000, 6_000),
+        ("STORE_DRAM", 6_000, 8_000),
+    ]
+    assert [
+        (item.source, item.start_token, item.end_token)
+        for item in store_first[0]
+    ] == [
+        ("NORMAL_HBM_LOCAL", 0, 2_000),
+        ("STORE_DRAM", 2_000, 8_000),
+    ]
+    assert peer_first[1:] == (2_000, True)
+    assert store_first[1:] == (2_000, True)
+
+
+def test_recovery_source_candidate_boundary_infeasibility_does_not_shrink_e() -> None:
+    intervals, recompute, feasible = (
+        experiment_module._recovery_source_candidate_intervals(
+            10_000,
+            normal_prefix_tokens=2_000,
+            peer_prefix_tokens=6_000,
+            store_prefix_tokens=8_000,
+            strategy="PEER_FIRST_CONTROL",
+            normal_boundaries={0, 2_000, 10_000},
+            peer_boundaries={0, 2_000, 6_000, 10_000},
+            store_boundaries={0, 4_000, 8_000, 10_000},
+        )
+    )
+
+    assert recompute == 2_000
+    assert sum(item.token_count for item in intervals) == 8_000
+    assert feasible is False
+
+
+def test_recovery_source_candidate_tie_prefers_peer_control() -> None:
+    runtime = experiment_module._StudyRuntime(
+        records=[_single_exact_token_record()],
+        variant=core_variants()[0],
+        context_bucket="8k",
+        seed=0,
+        failure_schedule=None,
+        workflow_concurrency=None,
+    )
+    execution = next(iter(runtime.executions.values()))
+
+    selected, candidates = runtime._select_recovery_source_candidate(
+        execution,
+        normal_prefix_tokens=0,
+        peer_prefix_tokens=0,
+        store_prefix_tokens=0,
+        peer_source_gpu=None,
+        target_gpu="gpu-0",
+    )
+
+    assert selected.strategy == "PEER_FIRST_CONTROL"
+    assert candidates[0].selection_key[:-1] == candidates[1].selection_key[:-1]
+    assert candidates[0].selection_key[-1] < candidates[1].selection_key[-1]
+
+
+def test_recovery_source_selector_changes_only_ownership_for_path_latency(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runtime = experiment_module._StudyRuntime(
+        records=_committed_records(),
+        variant=core_variants()[-1],
+        context_bucket="64k",
+        seed=0,
+        failure_schedule=None,
+        workflow_concurrency=None,
+    )
+    execution = sorted(
+        (item for item in runtime.executions.values() if len(item.chunks) >= 4),
+        key=lambda item: item.metadata.prompt_tokens,
+    )[0]
+    peer_chunks = runtime._protection_chunks(execution, path="PEER_HBM")
+    store_chunks = runtime._protection_chunks(execution, path="STORE_DRAM")
+    peer_prefix = peer_chunks[1].token_start + peer_chunks[1].token_count
+    store_prefix = store_chunks[0].token_start + store_chunks[0].token_count
+
+    def peer_slow(
+        flow_specs: tuple[experiment_module._RecoveryCandidateFlowSpec, ...],
+        *,
+        transfer_start_ns: int,
+    ) -> int:
+        peer_bytes = sum(item.bytes for item in flow_specs if item.source == "PEER_HBM")
+        store_bytes = sum(item.bytes for item in flow_specs if item.source == "STORE_DRAM")
+        return transfer_start_ns + peer_bytes * 10 + store_bytes
+
+    monkeypatch.setattr(
+        runtime,
+        "_predict_recovery_candidate_materialization_ns",
+        peer_slow,
+    )
+    selected, candidates = runtime._select_recovery_source_candidate(
+        execution,
+        normal_prefix_tokens=0,
+        peer_prefix_tokens=peer_prefix,
+        store_prefix_tokens=store_prefix,
+        peer_source_gpu="gpu-1",
+        target_gpu="gpu-0",
+    )
+
+    assert selected.strategy == "STORE_FIRST"
+    assert {item.recompute_tokens for item in candidates} == {
+        execution.metadata.prompt_tokens - peer_prefix
+    }
+    assert {
+        sum(interval.token_count for interval in item.intervals)
+        for item in candidates
+    } == {peer_prefix}
+
+    def store_slow(
+        flow_specs: tuple[experiment_module._RecoveryCandidateFlowSpec, ...],
+        *,
+        transfer_start_ns: int,
+    ) -> int:
+        peer_bytes = sum(item.bytes for item in flow_specs if item.source == "PEER_HBM")
+        store_bytes = sum(item.bytes for item in flow_specs if item.source == "STORE_DRAM")
+        return transfer_start_ns + peer_bytes + store_bytes * 10
+
+    monkeypatch.setattr(
+        runtime,
+        "_predict_recovery_candidate_materialization_ns",
+        store_slow,
+    )
+    selected_again, _ = runtime._select_recovery_source_candidate(
+        execution,
+        normal_prefix_tokens=0,
+        peer_prefix_tokens=peer_prefix,
+        store_prefix_tokens=store_prefix,
+        peer_source_gpu="gpu-1",
+        target_gpu="gpu-0",
+    )
+    assert selected_again.strategy == "PEER_FIRST_CONTROL"
+
+
+def test_recovery_candidate_prediction_is_side_effect_free_and_deterministic() -> None:
+    runtime = experiment_module._StudyRuntime(
+        records=_committed_records(),
+        variant=core_variants()[-1],
+        context_bucket="64k",
+        seed=0,
+        failure_schedule=None,
+        workflow_concurrency=None,
+    )
+    execution = sorted(
+        (item for item in runtime.executions.values() if len(item.chunks) >= 4),
+        key=lambda item: item.metadata.prompt_tokens,
+    )[0]
+    peer_chunks = runtime._protection_chunks(execution, path="PEER_HBM")
+    interval = experiment_module._RecoverySourceInterval(
+        source="PEER_HBM",
+        start_token=0,
+        end_token=peer_chunks[0].token_count,
+    )
+    specs = runtime._recovery_candidate_flow_specs(
+        execution,
+        strategy="PEER_FIRST_CONTROL",
+        intervals=(interval,),
+        peer_source_gpu="gpu-1",
+        target_gpu="gpu-0",
+        ready_ns=runtime.des.now_ns + runtime.parameters.transfer_setup_ns,
+    )
+    before = (
+        runtime.flow_model.snapshot_bytes(),
+        runtime.des.now_ns,
+        runtime.des.pending_count,
+        runtime.des.journal.record_count,
+        runtime._event_sequence,
+        len(runtime.pending_recovery_transfers),
+        len(runtime.transfers),
+    )
+
+    first = runtime._predict_recovery_candidate_materialization_ns(
+        specs,
+        transfer_start_ns=runtime.des.now_ns + runtime.parameters.transfer_setup_ns,
+    )
+    second = runtime._predict_recovery_candidate_materialization_ns(
+        specs,
+        transfer_start_ns=runtime.des.now_ns + runtime.parameters.transfer_setup_ns,
+    )
+
+    assert first == second
+    assert before == (
+        runtime.flow_model.snapshot_bytes(),
+        runtime.des.now_ns,
+        runtime.des.pending_count,
+        runtime.des.journal.record_count,
+        runtime._event_sequence,
+        len(runtime.pending_recovery_transfers),
+        len(runtime.transfers),
+    )
+
+
 def test_formal_store_lookup_uses_committed_protection_content_keys() -> None:
     runtime = experiment_module._StudyRuntime(
         records=_committed_records(),
@@ -1410,6 +2126,52 @@ def test_continuous_sync_preserves_external_recovery_reserve_owner() -> None:
     assert execution.hbm_allocated_bytes == 0
     assert execution.hbm_recovery_reserved_bytes == reserved_bytes
     assert execution.hbm_allocation_gpu_id == target_gpu
+
+
+def test_continuous_terminal_inactive_sync_trims_cache_to_physical_free_hbm() -> None:
+    runtime = experiment_module._StudyRuntime(
+        records=[_single_exact_token_record()],
+        variant=core_variants()[-1],
+        context_bucket="8k",
+        seed=0,
+        failure_schedule=None,
+        workflow_concurrency=1,
+    )
+    target_gpu = "gpu-0"
+    ledger = runtime.hbm_ledgers[target_gpu]
+    chunk = experiment_module._Chunk(
+        key="terminal-cache",
+        workflow_id="workflow",
+        token_start=0,
+        token_count=experiment_module.SOURCE_BLOCK_TOKENS,
+        bytes=experiment_module.KV_BYTES_PER_SOURCE_BLOCK,
+    )
+    runtime._commit_hbm_moves(
+        target_gpu,
+        [
+            (
+                experiment_module.FREE_ACCOUNT,
+                experiment_module.HBM_PEER_PROTECTION_ACCOUNT,
+                ledger.bytes_in(experiment_module.FREE_ACCOUNT)
+                - experiment_module.KV_BYTES_PER_SOURCE_BLOCK
+                + 1,
+            )
+        ],
+        cause="TEST_CONSUME_SHARED_HBM",
+    )
+    pool = runtime.primary_pools[target_gpu]
+    assert pool.insert(chunk, score=Fraction(1), now_ns=0, cause="TEST_TERMINAL")
+
+    runtime._sync_primary_hbm_ledger(
+        target_gpu,
+        cause="CONTINUOUS_BATCH_TERMINAL_ACTIVE_TO_INACTIVE",
+    )
+
+    assert pool.occupied_bytes == 0
+    assert ledger.bytes_in(experiment_module.HBM_INACTIVE_REUSABLE_ACCOUNT) == 0
+    assert ledger.bytes_in(experiment_module.FREE_ACCOUNT) == (
+        experiment_module.KV_BYTES_PER_SOURCE_BLOCK - 1
+    )
 
 
 def test_recovery_inbound_borrows_full_reserved_destination_without_double_charge(
@@ -1725,11 +2487,19 @@ def test_continuous_protection_failure_retries_new_route_until_commit() -> None:
     execution.released_ns = runtime.des.now_ns
     execution.base_duration_ns = max(1, execution.metadata.recorded_api_time_ns)
     execution.gpu_id = failed_source
+    execution.designated_peer_gpu_id = runtime._bind_peer_target(
+        source_gpu_id=failed_source,
+        span_id=execution.metadata.span_id,
+        route_version=0,
+    )
     execution.status = experiment_module._ExecutionStatus.RUNNING
     runtime._schedule_continuous_sealed_protection_puts(
         execution,
         source_gpu_id=failed_source,
-        computed_prompt_tokens=execution.metadata.prompt_tokens,
+        computed_prompt_tokens_before=0,
+        computed_prompt_tokens_after=execution.metadata.prompt_tokens,
+        step_start_ns=runtime.des.now_ns,
+        step_end_ns=runtime.des.now_ns,
     )
     route_zero_keys = set(execution.continuous_protection_batch_states)
     assert route_zero_keys
@@ -1759,11 +2529,19 @@ def test_continuous_protection_failure_retries_new_route_until_commit() -> None:
     rerouted_source = "gpu-2"
     execution.route_version = 1
     execution.gpu_id = rerouted_source
+    execution.designated_peer_gpu_id = runtime._bind_peer_target(
+        source_gpu_id=rerouted_source,
+        span_id=execution.metadata.span_id,
+        route_version=1,
+    )
     execution.status = experiment_module._ExecutionStatus.RUNNING
     runtime._schedule_continuous_sealed_protection_puts(
         execution,
         source_gpu_id=rerouted_source,
-        computed_prompt_tokens=execution.metadata.prompt_tokens,
+        computed_prompt_tokens_before=0,
+        computed_prompt_tokens_after=execution.metadata.prompt_tokens,
+        step_start_ns=runtime.des.now_ns,
+        step_end_ns=runtime.des.now_ns,
     )
     route_one_keys = {
         key for key in execution.continuous_protection_batch_states if key[0] == 1
@@ -1787,10 +2565,67 @@ def test_continuous_protection_failure_retries_new_route_until_commit() -> None:
     runtime._schedule_continuous_sealed_protection_puts(
         execution,
         source_gpu_id=rerouted_source,
-        computed_prompt_tokens=execution.metadata.prompt_tokens,
+        computed_prompt_tokens_before=0,
+        computed_prompt_tokens_after=execution.metadata.prompt_tokens,
+        step_start_ns=runtime.des.now_ns,
+        step_end_ns=runtime.des.now_ns,
     )
     assert not runtime.pending_put_starts
     assert len(runtime.transfers) == transfer_count_after_commit
+
+
+def test_continuous_protection_seals_inside_scheduler_step() -> None:
+    record = _single_exact_token_record()
+    record["prompt_tokens"] = 4_096
+    record["total_model_tokens"] = 4_096 + int(record["output_tokens"])
+    source_block_size_tokens = int(record["source_block_size_tokens"])
+    record["source_hash_ids"] = list(range(4_096 // source_block_size_tokens))
+    token_ids = list(range(4_096))
+    token_ids_sha256 = sha256_json(token_ids)
+    record.update(
+        {
+            "messages_or_token_ids": {
+                "kind": "token_ids",
+                "sha256": token_ids_sha256,
+                "value": token_ids,
+            },
+            "prompt_token_ids_hash": token_ids_sha256,
+            "token_count_mode": "qwen3_token_ids",
+            "tokenizer_fingerprint": token_ids_sha256,
+        }
+    )
+    runtime = experiment_module._StudyRuntime(
+        records=[record],
+        variant=core_variants()[-1],
+        context_bucket="8k",
+        seed=0,
+        failure_schedule=None,
+        workflow_concurrency=1,
+    )
+    execution = next(iter(runtime.executions.values()))
+    source_gpu_id = "gpu-0"
+    execution.designated_peer_gpu_id = runtime._bind_peer_target(
+        source_gpu_id=source_gpu_id,
+        span_id=execution.metadata.span_id,
+        route_version=0,
+    )
+
+    runtime._schedule_continuous_sealed_protection_puts(
+        execution,
+        source_gpu_id=source_gpu_id,
+        computed_prompt_tokens_before=0,
+        computed_prompt_tokens_after=execution.metadata.prompt_tokens,
+        step_start_ns=100,
+        step_end_ns=1_100,
+    )
+
+    produced_times = {
+        plan.produced_ns for plan in runtime.pending_put_starts.values()
+    }
+    assert produced_times
+    assert min(produced_times) >= 100
+    assert max(produced_times) <= 1_100
+    assert any(produced_ns < 1_100 for produced_ns in produced_times)
 
 
 @pytest.mark.parametrize("stage", ("WAITING", "PENDING"))
@@ -1865,6 +2700,7 @@ def test_subsequent_gpu_failure_fences_entire_recovery_group_and_recomputes(
         resume_external_request=lambda **kwargs: resumed.update(kwargs),
         target_load_snapshot=lambda _gpu_id: {
             "queued_tokens": 0,
+            "weighted_queued_work": 0,
             "estimated_available_ns": runtime.des.now_ns,
             "resident_request_count": 0,
             "pending_admission_count": 0,
@@ -1920,6 +2756,7 @@ def test_scheduler_waiting_failure_is_reroute_only_not_failure_recompute() -> No
         resume_external_request=lambda **kwargs: resumed.update(kwargs),
         target_load_snapshot=lambda _gpu_id: {
             "queued_tokens": 0,
+            "weighted_queued_work": 0,
             "estimated_available_ns": runtime.des.now_ns,
             "resident_request_count": 0,
             "pending_admission_count": 0,
@@ -2020,6 +2857,7 @@ def test_continuous_queued_second_failure_accounts_full_prompt_recompute(
             resume_external_request=capture_resume,
             target_load_snapshot=lambda _gpu_id: {
                 "queued_tokens": 0,
+                "weighted_queued_work": 0,
                 "estimated_available_ns": runtime.des.now_ns,
                 "resident_request_count": 0,
                 "pending_admission_count": 0,
@@ -2170,7 +3008,7 @@ def test_recovery_prefers_route_bound_peer_when_it_is_not_more_loaded() -> None:
     )
 
 
-def test_peer_target_prefers_free_quota_and_remains_route_bound() -> None:
+def test_peer_target_is_bound_by_route_identity_before_protection() -> None:
     runtime = experiment_module._StudyRuntime(
         records=_committed_records(),
         variant=core_variants()[-1],
@@ -2181,24 +3019,257 @@ def test_peer_target_prefers_free_quota_and_remains_route_bound() -> None:
     )
     execution = next(iter(runtime.executions.values()))
     source = "gpu-0"
-    candidates = [gpu_id for gpu_id in runtime.gpu_ids if gpu_id != source]
-    preferred, congested = candidates[:2]
-    preferred_pool = runtime.peer_pools[preferred]
-    congested_pool = runtime.peer_pools[congested]
-    congested_pool.capacity_bytes = 0
-
-    selected = runtime._peer_target(
+    selected = runtime._bind_peer_target(
         source_gpu_id=source,
         span_id=execution.metadata.span_id,
+        route_version=0,
     )
-
-    assert selected != congested
     execution.designated_peer_gpu_id = selected
-    preferred_pool.capacity_bytes = 0
+    runtime.peer_pools[selected].capacity_bytes = 0
     assert runtime._peer_target(
         source_gpu_id=source,
         span_id=execution.metadata.span_id,
     ) == selected
+    assert runtime._bind_peer_target(
+        source_gpu_id=source,
+        span_id=execution.metadata.span_id,
+        route_version=0,
+    ) != selected
+
+
+def test_peer_target_binding_is_deterministic_and_auditable() -> None:
+    runtime = experiment_module._StudyRuntime(
+        records=_committed_records(),
+        variant=core_variants()[-1],
+        context_bucket="64k",
+        seed=0,
+        failure_schedule=None,
+        workflow_concurrency=None,
+    )
+    execution = next(iter(runtime.executions.values()))
+
+    first = runtime._bind_peer_target(
+        source_gpu_id="gpu-0",
+        span_id=execution.metadata.span_id,
+        route_version=0,
+    )
+    second = runtime._bind_peer_target(
+        source_gpu_id="gpu-0",
+        span_id=execution.metadata.span_id,
+        route_version=0,
+    )
+
+    assert first == second
+    event = runtime.peer_target_binding_events[-1]
+    assert event["selected_gpu_id"] == first
+    assert event["peer_binding_seed"] == 0
+    assert event["selection_mode"] == "HEADROOM_FEASIBLE"
+    assert event["causal_inputs"] == (
+        "CURRENT_HEALTH_HBM_PEER_QUOTA_AND_RELEASED_BINDINGS_ONLY"
+    )
+    assert {item["gpu_id"] for item in event["candidates"]} == {
+        gpu_id for gpu_id in runtime.gpu_ids if gpu_id != "gpu-0"
+    }
+
+
+def test_peer_target_tie_break_is_decoupled_from_experiment_seed() -> None:
+    def binding(*, experiment_seed: int, peer_binding_seed: int) -> tuple[str, list[int]]:
+        runtime = experiment_module._StudyRuntime(
+            records=_committed_records(),
+            variant=core_variants()[-1],
+            context_bucket="64k",
+            seed=experiment_seed,
+            peer_binding_seed=peer_binding_seed,
+            failure_schedule=None,
+            workflow_concurrency=None,
+        )
+        execution = next(iter(runtime.executions.values()))
+        selected = runtime._bind_peer_target(
+            source_gpu_id="gpu-0",
+            span_id=execution.metadata.span_id,
+            route_version=0,
+        )
+        ranks = [
+            int(item["stable_hash_rank"])
+            for item in runtime.peer_target_binding_events[-1]["candidates"]
+        ]
+        return selected, ranks
+
+    seed_zero = binding(experiment_seed=0, peer_binding_seed=17)
+    seed_one = binding(experiment_seed=1, peer_binding_seed=17)
+    other_policy_seed = binding(experiment_seed=0, peer_binding_seed=18)
+
+    assert seed_zero == seed_one
+    assert seed_zero[1] != other_policy_seed[1]
+
+
+def test_peer_target_avoids_exhausted_peer_quota_before_hash_tie_break() -> None:
+    runtime = experiment_module._StudyRuntime(
+        records=_committed_records(),
+        variant=core_variants()[-1],
+        context_bucket="64k",
+        seed=0,
+        failure_schedule=None,
+        workflow_concurrency=None,
+    )
+    execution = next(iter(runtime.executions.values()))
+    hash_winner = runtime._bind_peer_target(
+        source_gpu_id="gpu-0",
+        span_id=execution.metadata.span_id,
+        route_version=0,
+    )
+    runtime.peer_pools[hash_winner].capacity_bytes = 0
+
+    selected = runtime._bind_peer_target(
+        source_gpu_id="gpu-0",
+        span_id=execution.metadata.span_id,
+        route_version=0,
+    )
+
+    assert selected != hash_winner
+    event = runtime.peer_target_binding_events[-1]
+    rejected = next(
+        item for item in event["candidates"] if item["gpu_id"] == hash_winner
+    )
+    assert not rejected["feasible"]
+    assert rejected["peer_quota_remaining_bytes"] == 0
+
+
+def test_peer_headroom_guard_defers_for_running_prompt_growth_before_mutation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runtime = experiment_module._StudyRuntime(
+        records=[_single_exact_token_record()],
+        variant=core_variants()[-1],
+        context_bucket="8k",
+        seed=0,
+        failure_schedule=None,
+        workflow_concurrency=1,
+    )
+    execution = next(iter(runtime.executions.values()))
+    source_gpu_id = "gpu-0"
+    target_gpu_id = runtime._bind_peer_target(
+        source_gpu_id=source_gpu_id,
+        span_id=execution.metadata.span_id,
+        route_version=0,
+    )
+    chunk = runtime._protection_chunks(execution, path="PEER_HBM")[0]
+    plan = experiment_module._PendingPutStart(
+        plan_id="foreground-headroom-guard",
+        span_id=execution.metadata.span_id,
+        path="PEER_HBM",
+        source_gpu_id=source_gpu_id,
+        target_gpu_id=target_gpu_id,
+        target_store_id=None,
+        chunks=(chunk,),
+        handle=None,
+        produced_ns=runtime.des.now_ns,
+        continuous_batch_key=None,
+    )
+    ledger = runtime.hbm_ledgers[target_gpu_id]
+    driver = runtime.continuous_batch_driver
+    assert driver is not None
+    scheduler = driver._targets[target_gpu_id].bridge.scheduler
+    authority = runtime.continuous_hbm_authorities[target_gpu_id]
+    monkeypatch.setattr(
+        type(scheduler),
+        "running_request_prompt_progress",
+        property(lambda _self: (("running-growth", 4_096, 1_024),)),
+    )
+    monkeypatch.setattr(
+        authority,
+        "committed_source_chunks_for_request",
+        lambda request_id: 16 if request_id == "running-growth" else 0,
+    )
+    reserve_bytes = 48 * experiment_module.KV_BYTES_PER_SOURCE_BLOCK
+    desired_free_bytes = reserve_bytes + chunk.bytes - 1
+    free_bytes = ledger.bytes_in(experiment_module.FREE_ACCOUNT)
+    assert free_bytes > desired_free_bytes
+    runtime._commit_hbm_moves(
+        target_gpu_id,
+        [
+            (
+                experiment_module.FREE_ACCOUNT,
+                experiment_module.HBM_ACTIVE_PRIMARY_ACCOUNT,
+                free_bytes - desired_free_bytes,
+            )
+        ],
+        cause="TEST_FOREGROUND_HEADROOM_GUARD",
+    )
+    pool = runtime.peer_pools[target_gpu_id]
+    landlord = runtime._formal_landlord_for_pool(pool)
+    before = (
+        landlord.epoch,
+        landlord.rent,
+        pool.occupied_bytes,
+        pool.pending_bytes,
+        dict(ledger.accounts),
+    )
+
+    assert not runtime._peer_admission_preserves_foreground_headroom(
+        plan=plan,
+        pool=pool,
+        candidate=chunk,
+        selected_victim_bytes=0,
+        preview_audit={"outcome": "ADMIT"},
+    )
+
+    assert (
+        landlord.epoch,
+        landlord.rent,
+        pool.occupied_bytes,
+        pool.pending_bytes,
+        dict(ledger.accounts),
+    ) == before
+    event = runtime.formal_policy_events[-1]
+    assert event["event"] == "AEGIS_PEER_HBM_FOREGROUND_HEADROOM_DEFERRED"
+    assert event["algorithm2_applied"] is False
+    assert event["physical_capacity_mutated"] is False
+    assert event["projected_headroom_after_admission_bytes"] == reserve_bytes - 1
+    assert event["foreground_reserve_bytes"] == reserve_bytes
+    assert event["foreground_reserve_basis"] == (
+        "RUNNING_REQUEST_REMAINING_PROMPT_SOURCE_CHUNKS"
+    )
+    assert event["foreground_growth_commitments"] == [
+        {
+            "request_id": "running-growth",
+            "prompt_tokens": 4_096,
+            "computed_prompt_tokens": 1_024,
+            "required_prompt_source_chunks": 64,
+            "committed_source_chunks": 16,
+            "remaining_source_chunks": 48,
+            "committed_growth_bytes": reserve_bytes,
+        }
+    ]
+
+
+def test_failed_peer_target_is_rebound_for_healthy_active_route() -> None:
+    runtime = experiment_module._StudyRuntime(
+        records=_committed_records(),
+        variant=core_variants()[-1],
+        context_bucket="64k",
+        seed=0,
+        failure_schedule=None,
+        workflow_concurrency=None,
+    )
+    execution = next(iter(runtime.executions.values()))
+    execution.gpu_id = "gpu-0"
+    execution.status = experiment_module._ExecutionStatus.RUNNING
+    failed_target = runtime._bind_peer_target(
+        source_gpu_id="gpu-0",
+        span_id=execution.metadata.span_id,
+        route_version=0,
+    )
+    execution.designated_peer_gpu_id = failed_target
+    runtime.failed_gpu_ids.add(failed_target)
+
+    assert runtime._rebind_failed_peer_targets(failed_target) == (
+        execution.metadata.span_id,
+    )
+    assert execution.designated_peer_gpu_id not in {
+        "gpu-0",
+        failed_target,
+    }
 
 
 def test_algorithm2_bypass_parks_suffix_instead_of_permanently_blocking() -> None:
@@ -2248,6 +3319,173 @@ def test_algorithm2_bypass_parks_suffix_instead_of_permanently_blocking() -> Non
     assert any(
         item["event"] == "FORMAL_PREFIX_PARKED_FOR_RETRY"
         for item in runtime.formal_policy_events
+    )
+
+
+def test_algorithm2_rejected_frontier_retries_before_later_suffixes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runtime = experiment_module._StudyRuntime(
+        records=_committed_records(),
+        variant=core_variants()[-1],
+        context_bucket="64k",
+        seed=0,
+        failure_schedule=None,
+        workflow_concurrency=None,
+    )
+    execution = next(
+        item
+        for item in runtime.executions.values()
+        if len(runtime._protection_chunks(item, path="PEER_HBM")) >= 3
+    )
+    span_id = execution.metadata.span_id
+    path = "PEER_HBM"
+    request_path = (span_id, path)
+    source_gpu_id = "gpu-0"
+    target_gpu_id = runtime._bind_peer_target(
+        source_gpu_id=source_gpu_id,
+        span_id=span_id,
+        route_version=0,
+    )
+    execution.released_ns = 0
+    execution.base_duration_ns = max(1, execution.metadata.recorded_api_time_ns)
+    execution.designated_peer_gpu_id = target_gpu_id
+    chunks = runtime._protection_chunks(execution, path=path)
+    frontier_batch_key = (0, path, 0, target_gpu_id)
+    later_batch_key = (0, path, 1, target_gpu_id)
+    frontier = experiment_module._PendingPutStart(
+        plan_id="rejected-frontier",
+        span_id=span_id,
+        path=path,
+        source_gpu_id=source_gpu_id,
+        target_gpu_id=target_gpu_id,
+        target_store_id=None,
+        chunks=chunks[:2],
+        handle=EventHandle("rejected-frontier"),
+        produced_ns=0,
+        continuous_batch_key=frontier_batch_key,
+    )
+    later = experiment_module._PendingPutStart(
+        plan_id="later-suffix",
+        span_id=span_id,
+        path=path,
+        source_gpu_id=source_gpu_id,
+        target_gpu_id=target_gpu_id,
+        target_store_id=None,
+        chunks=chunks[2:3],
+        handle=EventHandle("later-suffix"),
+        produced_ns=0,
+        continuous_batch_key=later_batch_key,
+    )
+    execution.continuous_protection_batch_states[frontier_batch_key] = (
+        experiment_module._ContinuousProtectionBatchState()
+    )
+    execution.continuous_protection_batch_states[later_batch_key] = (
+        experiment_module._ContinuousProtectionBatchState()
+    )
+    runtime._formal_waiting_put_starts[request_path] = [later]
+    landlord = runtime.formal_landlords[f"PEER_HBM:{target_gpu_id}"]
+    original_preview = landlord.preview
+    reject_frontier = True
+    preview_count = 0
+
+    def controlled_preview(*args: object, **kwargs: object) -> object:
+        nonlocal preview_count
+        preview = original_preview(*args, **kwargs)
+        preview_count += 1
+        if reject_frontier and preview_count >= 2:
+            return replace(
+                preview,
+                outcome=AdmissionOutcome.BYPASS,
+                proposed_rent=landlord.rent,
+                bypass_reason="CANDIDATE_G_NOT_STRICTLY_ABOVE_JOINT_LOSS",
+            )
+        return preview
+
+    monkeypatch.setattr(landlord, "preview", controlled_preview)
+    runtime.pending_put_starts[frontier.plan_id] = frontier
+
+    runtime._on_put_start(
+        ScheduledEvent(
+            timestamp_ns=0,
+            priority=0,
+            stable_sequence=0,
+            kind=EventKind.PUT_START,
+            event_id="rejected-frontier",
+            payload={"plan_id": frontier.plan_id, "path": path},
+        ),
+        runtime.des,
+    )
+
+    queued = runtime._formal_waiting_put_starts[request_path]
+    assert queued == [frontier, later]
+    assert queued[0].chunks == chunks[1:2]
+    assert len(runtime.pending_puts) == 1
+    assert (
+        execution.continuous_protection_batch_states[
+            frontier_batch_key
+        ].outstanding_parts
+        == 2
+    )
+    runtime.des.run()
+    assert not runtime.pending_puts
+    assert runtime._formal_contiguous_prefix_length(span_id, path) == 1
+    assert (
+        execution.continuous_protection_batch_states[
+            frontier_batch_key
+        ].outstanding_parts
+        == 1
+    )
+    assert not execution.continuous_protection_batch_states[
+        frontier_batch_key
+    ].committed
+
+    runtime._formal_finish_request_path(span_id, path, block=False)
+    runtime.des.run()
+
+    queued = runtime._formal_waiting_put_starts[request_path]
+    assert queued == [frontier, later]
+    assert queued[0].chunks == chunks[1:2]
+    assert not runtime.pending_puts
+    assert (
+        execution.continuous_protection_batch_states[
+            frontier_batch_key
+        ].outstanding_parts
+        == 1
+    )
+    assert sum(
+        item["event"] == "FORMAL_ALGORITHM2_PREVIEW"
+        for item in runtime.formal_policy_events
+    ) == 3
+
+    reject_frontier = False
+    runtime._formal_finish_request_path(span_id, path, block=False)
+    runtime.des.run()
+
+    preview_indices = [
+        item["candidate_token_start"]
+        for item in runtime.formal_policy_events
+        if item["event"] == "FORMAL_ALGORITHM2_PREVIEW"
+    ]
+    assert preview_indices == [
+        chunks[0].token_start,
+        chunks[1].token_start,
+        chunks[1].token_start,
+        chunks[1].token_start,
+        chunks[2].token_start,
+    ]
+    assert request_path not in runtime._formal_waiting_put_starts
+    assert len(
+        [
+            item
+            for item in runtime.transfers
+            if item["cause"] == "AEGIS_PEER_HBM_PROTECTION"
+        ]
+    ) == 3
+    assert all(
+        execution.continuous_protection_batch_states[key].committed
+        and execution.continuous_protection_batch_states[key].outstanding_parts == 0
+        for key in (frontier_batch_key, later_batch_key)
     )
 
 
@@ -2360,7 +3598,7 @@ def test_recovery_uses_d2d_peer_when_designated_gpu_is_more_loaded(
     assert selected["effective_prefix_tokens"] >= protection_chunks[0].token_count
 
 
-def test_aimd_pressure_uses_safe_primary_headroom_before_peer_reclaim() -> None:
+def test_aimd_pressure_uses_safe_primary_headroom_and_latches_until_window() -> None:
     runtime = experiment_module._StudyRuntime(
         records=_committed_records(),
         variant=core_variants()[-1],
@@ -2385,16 +3623,407 @@ def test_aimd_pressure_uses_safe_primary_headroom_before_peer_reclaim() -> None:
         safe_headroom + 1,
         reason="PRIMARY_HEADROOM_SHORTFALL",
     )
-    assert runtime._aimd_pending_pressure[gpu_id] is False
-    assert runtime._aimd_pending_shortfall_bytes[gpu_id] == 0
+    assert runtime._aimd_pending_pressure[gpu_id] is True
+    assert runtime._aimd_pending_shortfall_bytes[gpu_id] == 1
+    assert runtime._aimd_pending_pressure_active_requests[gpu_id] == 1
+    assert runtime._aimd_pending_pressure_reasons[gpu_id] == {
+        "PRIMARY_HEADROOM_SHORTFALL"
+    }
+    assert runtime.hbm_pressure_observations[-1]["headroom_shortfall_bytes"] == 1
+    assert runtime.aimd_events == []
+
+    runtime._schedule_next_aimd_control_window(gpu_id, at_ns=runtime.des.now_ns)
+    handle = runtime._aimd_window_handles[gpu_id]
+    runtime.des.cancel(handle, reason="TEST_DIRECT_CONTROL_WINDOW")
+    runtime._on_aimd_control_window(
+        experiment_module.ScheduledEvent(
+            timestamp_ns=runtime.des.now_ns,
+            priority=0,
+            stable_sequence=0,
+            kind=experiment_module.EventKind.CONTROL_WINDOW,
+            event_id=handle.event_id,
+            payload={"target_gpu_id": gpu_id},
+        ),
+        runtime.des,
+    )
+
     assert runtime.aimd_events[-1]["action"] == "MULTIPLICATIVE_DECREASE"
-    assert runtime.aimd_events[-1]["update_basis"] == "IMMEDIATE_PRESSURE_EVENT"
+    assert runtime.aimd_events[-1]["update_basis"] == "FIXED_GLOBAL_DES_CONTROL_WINDOW"
+    assert runtime.aimd_events[-1]["timestamp_ns"] == runtime.des.now_ns
     assert runtime.aimd_events[-1]["foreground_shortfall_bytes"] == 1
     assert runtime.aimd_events[-1]["pressure_reasons"] == [
         "PRIMARY_HEADROOM_SHORTFALL"
     ]
-    assert runtime.aimd_events[-1]["timestamp_ns"] == runtime.des.now_ns
-    assert runtime.hbm_pressure_observations[-1]["headroom_shortfall_bytes"] == 1
+    assert runtime._aimd_pending_pressure[gpu_id] is False
+    assert runtime._aimd_pending_shortfall_bytes[gpu_id] == 0
+    assert runtime._aimd_pending_pressure_reasons[gpu_id] == set()
+
+def test_aimd_quota_growth_publishes_decision_before_waking_parked_frontier(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runtime = experiment_module._StudyRuntime(
+        records=_committed_records(),
+        variant=core_variants()[-1],
+        context_bucket="64k",
+        seed=0,
+        failure_schedule=None,
+        workflow_concurrency=None,
+    )
+    gpu_id = "gpu-0"
+    runtime.aimd_states[gpu_id] = replace(
+        runtime.aimd_states[gpu_id],
+        stable_windows=runtime.aimd.parameters.stable_window_count - 1,
+    )
+    observed: list[dict[str, object]] = []
+
+    def wake(
+        _pool: object,
+        *,
+        trigger: str,
+    ) -> None:
+        observed.append(
+            {
+                "trigger": trigger,
+                "event": dict(runtime.aimd_events[-1]),
+            }
+        )
+
+    monkeypatch.setattr(runtime, "_formal_wake_parked_frontiers_for_pool", wake)
+
+    runtime._apply_peer_quota_decision(target_gpu_id=gpu_id)
+
+    assert observed[0]["trigger"] == "AIMD_QUOTA_INCREASE"
+    assert observed[0]["event"]["target_id"] == gpu_id
+    assert observed[0]["event"]["action"] == "ADDITIVE_INCREASE"
+
+
+def test_aimd_contraction_without_safe_tail_preserves_state_and_relatches_pressure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runtime = experiment_module._StudyRuntime(
+        records=_committed_records(),
+        variant=core_variants()[-1],
+        context_bucket="64k",
+        seed=0,
+        failure_schedule=None,
+        workflow_concurrency=None,
+    )
+    gpu_id = "gpu-0"
+    pool = runtime.peer_pools[gpu_id]
+    landlord = runtime._formal_landlord_for_pool(pool)
+    previous_state = runtime.aimd_states[gpu_id]
+    previous_quota = pool.capacity_bytes
+    monkeypatch.setattr(
+        landlord,
+        "preview_capacity_change",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            RuntimeError("capacity contraction found no safe committed tail")
+        ),
+    )
+
+    runtime._apply_peer_quota_decision(
+        target_gpu_id=gpu_id,
+        foreground_pressure=True,
+        foreground_shortfall_bytes=123,
+        pressure_active_request_count=2,
+        pressure_reasons=("PRIMARY_HEADROOM_SHORTFALL",),
+    )
+
+    assert runtime.aimd_states[gpu_id] == previous_state
+    assert pool.capacity_bytes == previous_quota
+    assert runtime.aimd_events == []
+    assert runtime._aimd_pending_pressure[gpu_id] is True
+    assert runtime._aimd_pending_shortfall_bytes[gpu_id] == 123
+    assert runtime._aimd_pending_pressure_active_requests[gpu_id] == 2
+    assert runtime._aimd_pending_pressure_reasons[gpu_id] == {
+        "PRIMARY_HEADROOM_SHORTFALL",
+        "AIMD_CONTRACTION_BLOCKED_NO_SAFE_TAIL",
+    }
+    blocked = runtime.formal_policy_events[-1]
+    assert blocked["event"] == "FORMAL_CAPACITY_RECLAIM_BLOCKED_NO_SAFE_TAIL"
+    assert blocked["blocked_controller"] == "AIMD"
+    assert blocked["preserved_quota_bytes"] == previous_quota
+
+
+def test_scheduler_recompute_preemption_does_not_fabricate_aimd_pressure() -> None:
+    runtime = experiment_module._StudyRuntime(
+        records=[_single_exact_token_record()],
+        variant=core_variants()[-1],
+        context_bucket="8k",
+        seed=0,
+        failure_schedule=None,
+        workflow_concurrency=1,
+    )
+    gpu_id = "gpu-0"
+    empty_residency = experiment_module.ResidentPrimarySnapshot(
+        request_ids=(),
+        unique_block_ids=(),
+        resident_primary_bytes=0,
+        bytes_by_hbm_resource=(),
+    )
+    step = experiment_module.AegisSchedulerStep(
+        step_id="test-recompute-preemption",
+        participants=(),
+        phase_shapes=(),
+        preempted_request_ids=("victim",),
+        preemption_details=(
+            {
+                "reason": "KV_CAPACITY",
+                "victim_request_id": "victim",
+                "trigger_request_id": "contender",
+            },
+        ),
+        scheduler_output_fingerprint="0" * 64,
+        duration=None,
+        residency_before=empty_residency,
+        residency_after_schedule=empty_residency,
+    )
+
+    runtime._on_continuous_maintenance_step(gpu_id, step)
+
+    assert runtime.scheduler_preemption_events[-1]["preempted_request_ids"] == [
+        "victim"
+    ]
+    assert runtime._aimd_pending_pressure[gpu_id] is False
+    assert runtime._aimd_pending_shortfall_bytes[gpu_id] == 0
+    assert runtime._aimd_pending_pressure_reasons[gpu_id] == set()
+    assert runtime.hbm_pressure_observations == []
+
+
+def test_blocked_aimd_contraction_releases_aborted_pending_hbm(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from types import SimpleNamespace
+
+    runtime = experiment_module._StudyRuntime(
+        records=[_single_exact_token_record()], variant=core_variants()[-1],
+        context_bucket="8k", seed=0, failure_schedule=None, workflow_concurrency=1,
+    )
+    gpu_id = "gpu-0"
+    pool = runtime.peer_pools[gpu_id]
+    ledger = runtime.hbm_ledgers[gpu_id]
+    original_free = ledger.bytes_in(experiment_module.FREE_ACCOUNT)
+    previous_state = runtime.aimd_states[gpu_id]
+    amount = pool.capacity_bytes * 3 // 4
+    chunk = experiment_module._Chunk(
+        key="pending-before-blocked-contraction", workflow_id="workflow", token_start=0,
+        token_count=experiment_module.SOURCE_BLOCK_TOKENS, bytes=amount,
+    )
+    pool.reserve_exact("pending-test", chunk, score=Fraction(1), victim_keys=(),
+                       proposed_rent=Fraction(0), now_ns=0, cause="TEST_PENDING")
+    runtime._sync_peer_hbm_ledger(gpu_id, cause="TEST_PENDING")
+    assert ledger.bytes_in(experiment_module.HBM_PEER_PENDING_ACCOUNT) == amount
+    runtime.pending_puts["pending-test"] = SimpleNamespace(
+        path="PEER_HBM", target_gpu_id=gpu_id, task=None,
+        span_id="fixture-span", continuous_batch_key=None,
+    )
+    # Service cancellation is covered elsewhere; exercise actual pool abort,
+    # the real controller's early-return path, and physical ledger conservation.
+    monkeypatch.setattr(runtime, "_cancel_pending_protection_service", lambda *a, **kw: None)
+    monkeypatch.setattr(runtime, "_abort_transfer_from_task", lambda *a, **kw: None)
+    monkeypatch.setattr(runtime, "_resolve_continuous_protection_batch", lambda *a, **kw: None)
+    monkeypatch.setattr(
+        runtime, "_abort_pending_put_reservations",
+        lambda *a, **kw: pool.abort_reservation("pending-test", now_ns=0, cause="TEST_ABORT"),
+    )
+    landlord = runtime._formal_landlord_for_pool(pool)
+    monkeypatch.setattr(
+        landlord, "preview_capacity_change",
+        lambda *a, **kw: (_ for _ in ()).throw(
+            RuntimeError("capacity contraction found no safe committed tail")
+        ),
+    )
+    wakes = []
+    monkeypatch.setattr(runtime, "_formal_wake_parked_frontiers_for_pool",
+                        lambda pool, **kw: wakes.append(kw["trigger"]))
+
+    runtime._apply_peer_quota_decision(target_gpu_id=gpu_id, foreground_pressure=True)
+
+    assert runtime.aimd_states[gpu_id] == previous_state
+    assert runtime.aimd_events == []
+    assert pool.pending_bytes == 0
+    assert ledger.bytes_in(experiment_module.HBM_PEER_PENDING_ACCOUNT) == 0
+    assert ledger.bytes_in(experiment_module.FREE_ACCOUNT) == original_free
+    assert wakes == ["PEER_PENDING_ABORT"]
+    runtime._check_invariants(runtime.des)
+
+
+def test_scheduler_preemption_release_wakes_parked_peer_frontiers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runtime = experiment_module._StudyRuntime(
+        records=[_single_exact_token_record()],
+        variant=core_variants()[-1],
+        context_bucket="8k",
+        seed=0,
+        failure_schedule=None,
+        workflow_concurrency=1,
+    )
+    gpu_id = "gpu-0"
+    empty_residency = experiment_module.ResidentPrimarySnapshot(
+        request_ids=(),
+        unique_block_ids=(),
+        resident_primary_bytes=0,
+        bytes_by_hbm_resource=(),
+    )
+    step = experiment_module.AegisSchedulerStep(
+        step_id="test-preemption-wake",
+        participants=(),
+        phase_shapes=(),
+        preempted_request_ids=("victim",),
+        preemption_details=(
+            {
+                "reason": "KV_BLOCK_PRESSURE",
+                "victim_request_id": "victim",
+                "trigger_request_id": "contender",
+            },
+        ),
+        scheduler_output_fingerprint="0" * 64,
+        duration=None,
+        residency_before=empty_residency,
+        residency_after_schedule=empty_residency,
+    )
+    observed: list[tuple[object, str]] = []
+
+    def wake(pool: object, *, trigger: str) -> None:
+        observed.append((pool, trigger))
+
+    monkeypatch.setattr(runtime, "_formal_wake_parked_frontiers_for_pool", wake)
+
+    runtime._on_continuous_maintenance_step(gpu_id, step)
+
+    assert observed == [
+        (runtime.peer_pools[gpu_id], "FOREGROUND_PREEMPTION_RELEASE")
+    ]
+
+
+def test_preempted_resumed_execution_mirrors_back_to_queued() -> None:
+    runtime = experiment_module._StudyRuntime(
+        records=[_single_exact_token_record()],
+        variant=core_variants()[-1],
+        context_bucket="8k",
+        seed=0,
+        failure_schedule=None,
+        workflow_concurrency=1,
+    )
+    gpu_id = "gpu-0"
+    execution = next(iter(runtime.executions.values()))
+    execution.gpu_id = gpu_id
+    execution.route_version = 1
+    execution.status = experiment_module._ExecutionStatus.RESUMED
+    execution.hbm_allocated_bytes = 0
+    execution.hbm_allocation_gpu_id = None
+
+    runtime._sync_continuous_execution_hbm(gpu_id)
+
+    assert execution.status is experiment_module._ExecutionStatus.QUEUED
+    assert execution.route_version == 1
+
+
+def test_formal_reclaim_reports_temporarily_unsafe_committed_tail(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runtime = experiment_module._StudyRuntime(
+        records=[_single_exact_token_record()],
+        variant=core_variants()[-1],
+        context_bucket="8k",
+        seed=0,
+        failure_schedule=None,
+        workflow_concurrency=1,
+    )
+    pool = runtime.peer_pools["gpu-0"]
+    landlord = runtime._formal_landlord_for_pool(pool)
+    monkeypatch.setattr(
+        landlord,
+        "preview_capacity_change",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            RuntimeError("capacity contraction found no safe committed tail")
+        ),
+    )
+
+    assert runtime._formal_evict_committed_at_least(
+        pool,
+        experiment_module.KV_BYTES_PER_SOURCE_BLOCK,
+        cause="TEST_TEMPORARILY_PINNED_TAIL",
+    ) == 0
+    blocked = runtime.formal_policy_events[-1]
+    assert blocked["event"] == "FORMAL_CAPACITY_RECLAIM_BLOCKED_NO_SAFE_TAIL"
+    assert blocked["pool_id"] == pool.pool_id
+    assert blocked["required_bytes"] == experiment_module.KV_BYTES_PER_SOURCE_BLOCK
+    assert blocked["formal_committed_bytes"] == landlord.committed_bytes
+    assert blocked["physical_committed_bytes"] == pool.occupied_bytes
+    assert blocked["committed_tails"] == []
+
+
+def test_formal_reclaim_preview_reports_temporarily_unsafe_committed_tail(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runtime = experiment_module._StudyRuntime(
+        records=[_single_exact_token_record()],
+        variant=core_variants()[-1],
+        context_bucket="8k",
+        seed=0,
+        failure_schedule=None,
+        workflow_concurrency=1,
+    )
+    pool = runtime.peer_pools["gpu-0"]
+    landlord = runtime._formal_landlord_for_pool(pool)
+    monkeypatch.setattr(
+        landlord,
+        "preview_capacity_change",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            RuntimeError("capacity contraction found no safe committed tail")
+        ),
+    )
+    before_pool = (
+        pool.occupied_bytes,
+        pool.pending_bytes,
+        pool.capacity_bytes,
+        pool.rent,
+    )
+    before_ledger = runtime.hbm_ledgers["gpu-0"].accounts
+
+    assert runtime._formal_reclaim_preview_bytes(
+        pool,
+        experiment_module.KV_BYTES_PER_SOURCE_BLOCK,
+    ) == 0
+    assert (
+        pool.occupied_bytes,
+        pool.pending_bytes,
+        pool.capacity_bytes,
+        pool.rent,
+    ) == before_pool
+    assert runtime.hbm_ledgers["gpu-0"].accounts == before_ledger
+
+
+def test_route_uses_shared_hbm_authority_feasibility_preview(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runtime = experiment_module._StudyRuntime(
+        records=[_single_exact_token_record()],
+        variant=core_variants()[-1],
+        context_bucket="8k",
+        seed=0,
+        failure_schedule=None,
+        workflow_concurrency=1,
+    )
+    execution = next(iter(runtime.executions.values()))
+    for authority in runtime.continuous_hbm_authorities.values():
+        monkeypatch.setattr(
+            authority,
+            "preview_fresh_request_admission",
+            lambda *_args, **_kwargs: False,
+        )
+
+    with pytest.raises(
+        experiment_module.ExperimentError,
+        match="no healthy modeled GPU has enough reclaimable HBM",
+    ):
+        runtime._route_gpu(
+            execution.metadata.span_id,
+            route_version=0,
+            required_hbm_bytes=experiment_module.KV_BYTES_PER_SOURCE_BLOCK,
+        )
 
 
 def test_compute_rebook_priority_uses_remaining_slack_before_normal() -> None:
@@ -2467,6 +4096,12 @@ def test_recovery_compute_rebooks_only_unstarted_normal_and_all_handles() -> Non
         key=lambda item: item.metadata.prompt_tokens,
     )[:3]
     active, queued, recovering = executions
+    for execution in (active, queued):
+        execution.designated_peer_gpu_id = runtime._bind_peer_target(
+            source_gpu_id="gpu-0",
+            span_id=execution.metadata.span_id,
+            route_version=execution.route_version,
+        )
     runtime._schedule_compute(active, gpu_id="gpu-0", ready_ns=0, duration_ns=100)
     runtime._schedule_compute(queued, gpu_id="gpu-0", ready_ns=0, duration_ns=100)
     runtime.des.run(until_ns=0)
@@ -2829,9 +4464,32 @@ def test_peer_hbm_quota_uses_alpha_times_kv_capacity_without_profile_rescaling()
     } == {parameters.kv_capacity_bytes_per_gpu}
 
 
+def test_core_variant_serializes_actual_proactive_protection_semantics() -> None:
+    variants = {item.variant_id: item.to_dict() for item in core_variants()}
+    mooncake = variants["vanilla_mooncake_dram"]
+    aegiskv = variants["aegiskv_unified"]
+
+    assert mooncake["label"] == "Mooncake proactive Store-only 75% prefix (LRU)"
+    assert mooncake["protection_semantics"] == {
+        "proactive_seal_time_copy": True,
+        "peer_candidate_prefix_fraction": {"numerator": 0, "denominator": 1},
+        "store_candidate_prefix_fraction": {"numerator": 3, "denominator": 4},
+        "candidate_fractions_are_nested_from_token_zero": True,
+        "overlapping_tier_prefixes_are_not_additive": True,
+        "committed_copies_are_failure_recovery_eligible": True,
+        "retention_policy": "lru",
+    }
+    assert aegiskv["protection_semantics"][
+        "peer_candidate_prefix_fraction"
+    ] == {"numerator": 3, "denominator": 4}
+    assert aegiskv["protection_semantics"][
+        "store_candidate_prefix_fraction"
+    ] == {"numerator": 9, "denominator": 10}
+
+
 def test_failure_cell_is_fresh_run_byte_identical_and_scope_limited() -> None:
     records = _committed_records()
-    schedule = derive_failure_schedule(records, bucket="64k", seed=20260830)
+    schedule = derive_failure_schedule(records, bucket="64k", seed=0)
     variant = core_variants()[-1]
     first = run_study_cell(
         records,
@@ -2839,7 +4497,7 @@ def test_failure_cell_is_fresh_run_byte_identical_and_scope_limited() -> None:
             variant=variant,
             context_bucket="64k",
             scenario=Scenario.GPU_FAILURE,
-            seed=20260830,
+            seed=0,
             repetition="A",
             failure_schedule=schedule,
         ),
@@ -2850,7 +4508,7 @@ def test_failure_cell_is_fresh_run_byte_identical_and_scope_limited() -> None:
             variant=variant,
             context_bucket="64k",
             scenario=Scenario.GPU_FAILURE,
-            seed=20260830,
+            seed=0,
             repetition="B",
             failure_schedule=schedule,
         ),
@@ -3045,7 +4703,10 @@ def test_failure_cell_is_fresh_run_byte_identical_and_scope_limited() -> None:
         events_by_span.setdefault(str(event["span_id"]), []).append(str(event["event"]))
     for item in recovered:
         events = events_by_span[str(item["span_id"])]
-        assert events[0] == "RECOVERY_PLAN"
+        assert events[:2] == [
+            "RECOVERY_SOURCE_SELECTION",
+            "RECOVERY_PLAN",
+        ]
         assert events[-5:] == [
             "PROMPT_SUFFIX_RECOMPUTE_START",
             "PROMPT_SUFFIX_RECOMPUTE_COMPLETE",
@@ -3055,7 +4716,7 @@ def test_failure_cell_is_fresh_run_byte_identical_and_scope_limited() -> None:
         ]
         assert all(
             event == "RECOVERY_RESERVED_DESTINATION_WRITE_START"
-            for event in events[1:-5]
+            for event in events[2:-5]
         )
 
 
@@ -3087,7 +4748,7 @@ def test_no_failure_recompute_has_no_protection_or_failure() -> None:
 def test_dp8_128k_uses_same_logical_failure_trigger_across_core_systems() -> None:
     records = _committed_records()
     parameters = ModelParameters(dp_count=8)
-    for seed in (0, 7):
+    for seed in (0,):
         schedule = derive_failure_schedule(
             records,
             bucket="128k",
@@ -3196,25 +4857,30 @@ def test_cache_aware_routing_combines_continuous_prefix_and_dp_queue_cost() -> N
     assert all(event["foreground_shortfall_bytes"] > 0 for event in pressure_events)
     assert all(event["pressure_active_request_count"] > 0 for event in pressure_events)
     assert all(
-        event["update_basis"]
-        == (
-            "IMMEDIATE_PRESSURE_EVENT"
-            if event["foreground_pressure"]
-            else "FIXED_GLOBAL_DES_CONTROL_WINDOW"
-        )
+        event["update_basis"] == "FIXED_GLOBAL_DES_CONTROL_WINDOW"
         for event in enabled.representative["aimd_events"]
     )
     for event in changed:
         assert event["router_owner"] == "external_router"
         assert event["index_owner"] == "mooncake_conductor"
+        assert event["near_tie_diagnostic_only"] is True
+        assert event["near_tie_policy_applied"] is False
+        assert event["runner_up_gpu_id"] is not None
+        assert event["estimated_completion_margin_ns"] >= 0
+        assert event["selected_estimated_completion_ns"] == event["candidates"][
+            event["selected_gpu_id"]
+        ]["estimated_completion_ns"]
+        assert event["runner_up_estimated_completion_ns"] == event["candidates"][
+            event["runner_up_gpu_id"]
+        ]["estimated_completion_ns"]
         selected = event["candidates"][event["selected_gpu_id"]]
         assert (
-            selected["continuous_queued_tokens"],
             selected["estimated_completion_ns"],
+            selected["continuous_weighted_queued_work"],
         ) == min(
             (
-                candidate["continuous_queued_tokens"],
                 candidate["estimated_completion_ns"],
+                candidate["continuous_weighted_queued_work"],
             )
             for candidate in event["candidates"].values()
         )

@@ -1,0 +1,75 @@
+\subsection{Insights and Design Implications}
+\label{sec:design-insights}
+
+Three premises motivate the design (Figure~\ref{fig:design-insights}).
+Their evidence supports different levels of confidence.
+
+\begin{figure*}[t]
+  \centering
+  \captionsetup[subfigure]{font=normalsize,labelfont=normalfont,
+    textfont=normalfont,justification=centering,singlelinecheck=false,skip=3pt}
+  \begin{subfigure}[t]{0.32\textwidth}
+    \vspace{0pt}
+    \includegraphics[width=\linewidth]{figures/design-insights/agent-time-audit.pdf}
+    \caption{Agent-time prediction}
+    \label{fig:insight-agent-time}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.32\textwidth}
+    \vspace{0pt}
+    \includegraphics[width=\linewidth]{figures/design-insights/sparse-attention-survey.pdf}
+    \caption{Sparse attention adoption}
+    \label{fig:insight-sparse-adoption}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.32\textwidth}
+    \vspace{0pt}
+    \includegraphics[width=\linewidth]{figures/design-insights/retry-kv-prediction.pdf}
+    \caption{Retry KV prediction}
+    \label{fig:insight-retry-kv}
+  \end{subfigure}
+  \caption{Design evidence. (a) Five-fold audit of 1,688 CC agents in
+    174 workflows, with workflows held out. Each agent contributes mean
+    absolute remaining-time error normalized by its duration; the
+    symmetric-log axis retains all errors; Median/P90 are duration priors.
+    (b) Selected releases and
+    native context: 1 MiniCPM4, 2 MiniCPM4.1, 3 DeepSeek-V3.2-Exp,
+    4 DeepSeek-V3.2, 5 GLM-5, 6 MiniCPM-SALA, 7 DeepSeek-V4 preview,
+    8 MiniMax-M3, 9 GLM-5.2, 10 LongCat-Flash-Lite-Sparse.
+    Dates follow announcements/model cards. Gray steps trace the sample
+    maximum; markers denote top-$k$ units in sparse branches.
+    (c) Three native PG19 captures/model: 32K history; queries
+    32,257--32,768 predict distinct historical KV for 32,769--32,832.
+    Both policies include mandatory blocks in the 40\% budget.
+    Bars/whiskers are document means/ranges, not fault-recovery runs.}
+  \label{fig:design-insights}
+  \Description{Three side-by-side panels show a negative agent timing
+    prediction audit, a primary-source survey of sparse model releases,
+    and held-out retry KV coverage. Past-frequency ranking improves
+    coverage substantially for NOSA and only modestly for MiniCPM4.}
+\end{figure*}
+
+\paragraph{Insight 1: estimate delay tolerance from workflow progress.}
+Repeated roles permit profiling~\cite{yu2026pythia}, but predicting a
+multi-round agent also requires tool and serving delays. Our CC-trace
+audit~\cite{semianalysis2026cctraces} yields median normalized error
+51.8\% for progress GBDT versus 49.3\% for a median prior; all role labels
+are \texttt{Subagent}. Thus accurate role-conditioned timing remains
+unvalidated. The Tracker keeps estimation separate from DAG slack
+propagation and conservatively handles unknown successors.
+
+\paragraph{Insight 2: sparse attention changes the recovery objects.}
+Long-context models use sparse mechanisms including InfLLMv2,
+DSA, or compressed/hybrid attention~\cite{minicpm4model,
+openbmb2025minicpm41,deepseek2025v32exp,deepseek2025v32model,
+zai2026glm5model,openbmb2026sala,deepseek2026v4model,minimax2026m3,
+zai2026glm52,longcat2026sparse}.
+The release survey establishes examples, not deployment share.
+The Planner therefore consumes actual layer/block selections and
+model-specific recovery state instead of valuing all KV bytes equally.
+
+\paragraph{Insight 3: past selections predict part of retry demand.}
+At equal byte budgets, historical frequency covers 79.2\%, 77.8\%, and
+53.6\% of distinct needed KV for NOSA-1B, NOSA-3B, and MiniCPM4,
+versus 59.7\%, 59.7\%, and 50.9\% for recency. The gain is
+model-dependent and incomplete. These held-out book-text suffixes
+motivate advance placement with exact demand fetches for misses;
+they do not establish performance on agentic failure retries.

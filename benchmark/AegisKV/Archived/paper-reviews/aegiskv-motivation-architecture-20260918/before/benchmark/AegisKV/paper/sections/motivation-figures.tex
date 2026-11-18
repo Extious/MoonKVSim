@@ -1,0 +1,49 @@
+% One full-width figure with three subfigures; requires subcaption.
+% Each landscape panel is 2.24 x 1.85 in at the EuroSys insertion size.
+% Plot labels are 10.25 pt at this insertion size; do not shrink this row.
+\begin{figure*}[t]
+  \centering
+  \captionsetup[subfigure]{font=normalsize,labelfont=normalfont,
+    textfont=normalfont,justification=centering,singlelinecheck=false}
+  \begin{subfigure}[t]{0.32\textwidth}
+    \vspace{0pt}
+    \includegraphics[width=\linewidth]{figures/motivation-row/motivation-branch-gap.pdf}
+    \caption{Branch-duration gaps}
+    \label{fig:motivation-branch-gap}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.32\textwidth}
+    \vspace{0pt}
+    \includegraphics[width=\linewidth,height=1.85in,keepaspectratio]{figures/motivation-row/motivation-workflow.drawio.pdf}
+    \caption{Four-branch workflow}
+    \label{fig:motivation-workflow}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.32\textwidth}
+    \vspace{0pt}
+    \includegraphics[width=\linewidth]{figures/motivation-row/motivation-recovery-exposure.pdf}
+    \caption{Recovery cost vs. WCT loss}
+    \label{fig:motivation-recovery-exposure}
+  \end{subfigure}
+  \caption{Motivation for workflow-aware KV protection.
+    (a) Each of 121 CC/Weka workflows contributes its largest
+    branch-duration gap across strictly overlapping groups with inferred
+    fan-in (median: 138\,s; P90: 1,173\,s). Inference uses a Main request
+    after all branches finish; Main activity during branches is allowed.
+    (b) Four parallel branches with a 91.2\,s duration gap, drawn from
+    the same retained groups but not the workflow maxima in (a).
+    Time zero is the first branch launch; widths encode durations and
+    the right-hand column reports seconds. Dashed tails show slack to
+    the 151.6\,s join, determined by A2. Main boxes indicate inferred
+    dependencies only. (c) Four independent branch-failure counterfactuals
+    at 29.5\,s after the fork. Hatched time is absorbed by slack;
+    solid time delays WCT. Costs use the Qwen3-14B static configuration
+    in Figure~\ref{fig:motivation-recompute}, including an assumed
+    64-token tail. The example illustrates recovery exposure, not
+    population-average failure impact.}
+  \label{fig:motivation}
+  \Description{The panels show workflow-maximum duration gaps, a time-scaled
+    four-branch fan-in example with a 91.2-second gap, and estimated
+    rebuilding cost decomposed into slack-absorbed time and WCT loss.
+    A2 determines the assumed join and exposes its full 32.2-second
+    rebuilding cost. A1 absorbs its entire cost; A3 and A4 absorb part
+    of theirs, leaving WCT penalties of 17.6 and 17.0 seconds.}
+\end{figure*}

@@ -1,0 +1,18 @@
+\begin{abstract}
+An agent workflow completes when its dependencies complete, so reducing one
+request's recovery time need not reduce task latency. AegisKV uses residual
+workflow Slack to value KV protection and order recovery. Its source workers
+independently copy sealed chunks to a route-bound Peer-HBM target and Mooncake
+Store DRAM. SlackLandlord compares each tier's reduction in recovery harm with
+the joint loss of suffix-safe victims; HBMQuotaAIMD adapts the HBM envelope to
+foreground pressure. We implement this design in Mooncake and align a
+prompt-protection projection in MoonKVSim with the prototype's ownership,
+commit, copying, routing and cleanup semantics. Native differential checks
+cover 260 policy cases. A small two-RTX4090 pilot demonstrates real request
+recovery but provides no evidence of speedup. The simulation study uses 160
+complete FanOutQA-derived tasks and \MeasuredRuns{} executions across five
+paired admission orders. \AbstractResults{}
+The workload, exact sources, raw events and reconstruction checks accompany
+the paper. Simulated latency remains conditional on prescribed service times
+and uncalibrated hardware parameters.
+\end{abstract}

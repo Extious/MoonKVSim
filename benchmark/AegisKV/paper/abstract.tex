@@ -1,0 +1,12 @@
+Multi-agent applications accumulate KV histories across repeated calls.
+A worker failure can lose several Agent states and delay multiple dependent
+jobs. \system uses residual workflow Slack to select Agents for complete
+Peer-DRAM checkpoints, and places a causal Top-$K$ subset of early-layer
+blocks in Peer-HBM to reduce exposed restoration stalls. A guarded quota
+controller shares fast memory with foreground inference. We specify two
+applications based on public research tasks and real repository issues,
+with parallel Agent-task DAGs and consecutive calls within each Agent.
+The evaluation protocol separates application quality, healthy protection
+cost, paired workflow completion under failure, and the incremental value
+of Peer-HBM. New application traces and physical measurements are required
+to quantify these trade-offs.

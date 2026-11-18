@@ -1,0 +1,27 @@
+{
+  "schema": "moonkvsim.aegiskv.requests.v2",
+  "status": "ready_frozen_fanoutqa_workload",
+  "seeds": [0, 1, 2, 3, 4],
+  "dataset": {
+    "name": "FanOutQA",
+    "split": "dev",
+    "source_revision": "989f4c40d9deea1ecb0897d7a17a9c0fe20d5c33",
+    "source_sha256": "b62a9797732c716e6b17ba4086f277d154d747ce2fa01614cb76a3372e7fb88c",
+    "frozen_artifact": {
+      "path": "benchmark/AegisKV/experiments/workloads/fanoutqa-dev-qwen3-8b-160.jsonl",
+      "manifest_path": "benchmark/AegisKV/experiments/workloads/fanoutqa-dev-qwen3-8b-160-manifest.json",
+      "sha256": "caf1a3e95cedbbe7f4a4ff4a9e9fbbb0198488b32392be7b823ec01d55e18354",
+      "manifest_sha256": "1fef2fe694e73c0dd2c96323b2203ec1263b0a885c5a994bda7816084507c913",
+      "normalizer_version": "moonkvsim.fanoutqa.v1",
+      "task_count": 160
+    }
+  },
+  "replay": {
+    "workflow_concurrency": 16
+  },
+  "context": {
+    "max_model_len_tokens": 131072,
+    "minimum_task_count_for_ecdf": 160,
+    "overflow_policy": "split_evidence_if_below_minimum"
+  }
+}

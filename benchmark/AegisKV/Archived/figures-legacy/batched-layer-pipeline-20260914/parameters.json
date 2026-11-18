@@ -1,0 +1,60 @@
+{
+  "evidence": "Deterministic analytical event schedule; not measured or calibrated",
+  "model_geometry": {
+    "model": "Qwen3-8B",
+    "layers": 36,
+    "hidden_size": 4096,
+    "intermediate_size": 12288,
+    "query_heads": 32,
+    "kv_heads": 8,
+    "head_dim": 128,
+    "kv_element_bytes": 2,
+    "tensor_parallelism": 1
+  },
+  "model_geometry_provenance": "Unchanged from 2026-09-13 source parameters.json; no new model run",
+  "effective_compute_TFLOP_s_assumed": 100,
+  "effective_bandwidth_GB_s_assumed": [
+    12.5,
+    25,
+    50
+  ],
+  "history_tokens": [
+    4096,
+    8192,
+    16384,
+    32768
+  ],
+  "replayed_tokens": [
+    128,
+    256,
+    512,
+    1024,
+    2048
+  ],
+  "initial_resident_layers": 6,
+  "batch_layers": 6,
+  "batch_count": 6,
+  "batch_transition_count": 5,
+  "schedule": {
+    "initial_KV_ready_at_time_zero": true,
+    "prefetch_submission": "Next batch at the start of current batch computation",
+    "readiness": "All historical KV of a batch must be ready before its first layer computes",
+    "lookahead": "One batch only; no submission of the batch after next",
+    "transfer": "One serialized H2D stream, overlapping a serialized layer compute stream",
+    "memory": "Keep copied history KV. Sufficient HBM for complete history plus new KV; not a two-buffer memory cap",
+    "failure_relation": "Conditional recovery replay example; the overlap mechanism is not exclusive to failure"
+  },
+  "excluded_costs": [
+    "failure detection",
+    "takeover queue",
+    "model weight loading",
+    "transfer launch latency",
+    "copy/compute contention",
+    "other requests",
+    "norm/activation and non-GEMM kernel overhead"
+  ],
+  "figure_width_mm": 178,
+  "parameter_states": 60,
+  "physical_experiments": 0,
+  "statistical_replicates": null
+}

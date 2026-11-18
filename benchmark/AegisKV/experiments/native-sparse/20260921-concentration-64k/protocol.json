@@ -1,0 +1,36 @@
+{
+  "models": [
+    "NOSA-8B",
+    "NSA-8B",
+    "MiniCPM4.1-8B",
+    "Qwen2.5-7B-Instruct-1M"
+  ],
+  "books": [
+    "10321",
+    "10356",
+    "10762"
+  ],
+  "total_tokens": 65536,
+  "history_tokens": 65024,
+  "suffix_tokens": 512,
+  "evaluation_windows": [
+    512
+  ],
+  "block_tokens": 64,
+  "historical_blocks_per_layer": 1016,
+  "budgets": {
+    "10_percent": 102,
+    "20_percent": 204,
+    "40_percent": 407
+  },
+  "primary_metric": "Query/block references, union across all heads within each Query; repeats across Queries retained",
+  "ranking": "Retrospective per layer, within the same 512-Query window",
+  "averaging": "Per-document per-layer normalized, all-layer mean then equal mean over 3 documents; document min-max is not CI",
+  "nosa_scope": "Published maximum 32768; unchanged weights/RoPE with pooling broadcast length boundary extended to 65536; label extrapolation, not official 64K capability",
+  "text_source": "Same 3 PG19 text prefixes; each model uses own tokenizer, Qwen token IDs and consumed text extent can differ",
+  "native_budgets": "Keep released/native selector budgets, no retuning for concentration",
+  "qwen_scope": "MInference vertical-slash Prefill, native 32K threshold; preserve chunk boundary in provenance",
+  "evidence": "New GPU captures, not prediction or latency results",
+  "nsa_scope": "Published configuration maximum 32768; unchanged native weights/RoPE/kernels evaluated at 65536; extrapolation diagnostic, not validated 64K quality.",
+  "input_change": "Original document 10146 has only 62675 MiniCPM/NOSA tokens. Replaced by next PG19 test document 10762 before collecting full-length results; length verified for both tokenizer families."
+}

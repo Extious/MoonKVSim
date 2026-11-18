@@ -258,6 +258,20 @@ def test_mixed_prefill_decode_step_keeps_one_shape_per_phase() -> None:
     assert after_decode_retire.resident_primary_bytes == 64
 
 
+def test_prompt_boundary_prefill_is_terminal_not_chunked() -> None:
+    scenario = _scenario(max_running=1, token_budget=16)
+    scenario.bridge.admit_request(_request("boundary", output_tokens=2))
+
+    step = scenario.bridge.start_step()
+    [participant] = step.participants
+
+    assert participant.phase.value == "PREFILL"
+    assert participant.num_scheduled_tokens == 4
+    assert participant.num_computed_tokens_after == 4
+    assert participant.chunked is False
+    assert participant.produces_output is True
+
+
 def test_gpu_failure_fence_preserves_rollback_and_pre_loss_residency() -> None:
     scenario = _scenario(max_running=2, token_budget=8)
     for request_id in ("active-0", "active-1", "waiting"):

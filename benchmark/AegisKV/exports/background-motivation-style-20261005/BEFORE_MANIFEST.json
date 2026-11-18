@@ -1,0 +1,38 @@
+[
+  {
+    "file": "benchmark/AegisKV/paper/background.tex",
+    "before_sha256": "03aa01c826b19fec37fa35a7c236c465a46ab20f45667fbc85480f245da6c03a"
+  },
+  {
+    "file": "benchmark/AegisKV/paper/motivation.tex",
+    "before_sha256": "3751eb7aeac56895f9fd728a99f6b5b8d1f2669f7b1bd60a9f3e44228e09f55b"
+  },
+  {
+    "file": "benchmark/AegisKV/paper/main.pdf",
+    "before_sha256": "943cdea465b7870882437f11bb1bb4a5c40c16afb3bca1f7f60b792e186f456d"
+  },
+  {
+    "file": "benchmark/AegisKV/paper/figures/research-report-workflow.pdf",
+    "before_sha256": "6455197de4222f4c0d1234e32a8c6906c8ecc72050e62ed78b3c3089f9de90f9"
+  },
+  {
+    "file": "benchmark/AegisKV/paper/figures/repository-change-review-workflow.pdf",
+    "before_sha256": "f72a1ea325ca1249b42cc173d25f9ba3806d4c3c0ce84c004056951a63c35f92"
+  },
+  {
+    "file": "benchmark/AegisKV/paper/figures/workflow-recovery-exposure.pdf",
+    "before_sha256": "93001a4ddbdd469fb3f04742164a81e4ada0df14bbe1953e6662203a078b4406"
+  },
+  {
+    "file": "benchmark/AegisKV/paper/figures/recovery-demand-placement.pdf",
+    "before_sha256": "cdb4493a68955ba0282d4b3a1ef4a49145db6a6e1a837aa9eb4725af56095e1e"
+  },
+  {
+    "file": "benchmark/AegisKV/paper/figures/foreground-replica-capacity.pdf",
+    "before_sha256": "9887a4bd0df08644aaa195878a168fbebe6bf7acfa491f48b15009f01efe35a6"
+  },
+  {
+    "file": "benchmark/AegisKV/paper/figures/serving_model.pdf",
+    "before_sha256": "11c58542a81c14c6c2488cb51e5b51797983d5169e7114703823f8f72aac2a2f"
+  }
+]

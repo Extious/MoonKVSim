@@ -1,0 +1,39 @@
+{
+  "Qwen3-14B": {
+    "source": "/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/experiments/data/reuse-aiconfigurator-max-context-h100/official/Qwen3-14B/config.json",
+    "source_sha256": "e73c3664ca09b10a673fef0c22e8a6b456201d49bd4713c9691f775720e8857a",
+    "overrides": {
+      "max_position_embeddings": 131072,
+      "rope_scaling": {
+        "rope_type": "yarn",
+        "factor": 4.0,
+        "original_max_position_embeddings": 32768
+      }
+    },
+    "cost_model": "native model class",
+    "config_sha256": "a792e5c88803fac251712f64d31d52f90dc2682fe757f9f099c5032d2169ab0e"
+  },
+  "Llama-3.1-70B": {
+    "source": "/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/experiments/data/reuse-aiconfigurator-architecture-h100/configs/Llama-3.1-70B/config.json",
+    "source_sha256": "5866f0abbb3050fd6948c0afde03651b2445a16480338ff01dc11d4a12ccd3f2",
+    "overrides": {},
+    "cost_model": "native model class",
+    "config_sha256": "37653c55ea907be0dc75070afd416fc77e20981c60b7c7e9521ba343678c5349"
+  },
+  "Qwen3-235B-A22B-Instruct-2507": {
+    "source": "/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/experiments/data/reuse-aiconfigurator-max-context-h100/official/Qwen3-235B-A22B-Instruct-2507/config.json",
+    "source_sha256": "ad59a339665ee1c68cbff06ac72c9e59f5183ebfaf3698c98737e003a870e9e2",
+    "overrides": {
+      "max_position_embeddings": 1010000
+    },
+    "cost_model": "standard full GQA attention; no DCA positional or sparse-kernel speedup modeled",
+    "config_sha256": "802b84e4c8ce20dc8fee3512ff3560b506c1b2f798193920ee21eb2b33bafa5d"
+  },
+  "DeepSeek-V3.2": {
+    "source": "/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/experiments/data/reuse-aiconfigurator-max-context-h100/official/DeepSeek-V3.2/config.json",
+    "source_sha256": "c7fa8b191e9936d8e6a57d864baab82b792fae16a116416cdd3a75ba76bc5af1",
+    "overrides": {},
+    "cost_model": "native model class",
+    "config_sha256": "c7fa8b191e9936d8e6a57d864baab82b792fae16a116416cdd3a75ba76bc5af1"
+  }
+}

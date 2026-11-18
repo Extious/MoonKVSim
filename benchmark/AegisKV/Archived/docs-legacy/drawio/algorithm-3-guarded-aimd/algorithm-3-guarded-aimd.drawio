@@ -1,0 +1,93 @@
+<mxfile host="65bd71144e">
+    <diagram id="window-aimd" name="算法三 · 双输入单窗口决策">
+        <mxGraphModel dx="2390" dy="1383" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1830" background="#FFFFFF" math="1" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="&lt;div style=&quot;line-height:1.55&quot;&gt;算法三  ·  HBMQuotaAIMD&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=37;fontColor=#19334A;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;spacing=14;strokeWidth=2;text;strokeColor=none;fillColor=none;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="34" y="464" width="511" height="65" as="geometry"/>
+                </mxCell>
+                <mxCell id="feedback" value="&lt;div style=&quot;line-height:1.55&quot;&gt;K+1 新窗口&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=26;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=14;strokeWidth=2;rounded=1;arcSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="778" y="453" width="264" height="112" as="geometry"/>
+                </mxCell>
+                <mxCell id="decrease" value="&lt;div style=&quot;line-height:1.55&quot;&gt;用于备份的显存容量&lt;b&gt;乘性减少&lt;/b&gt;&lt;br&gt;\(\widetilde Q_{t+1}=\beta Q_t,\quad 0&amp;lt;\beta&amp;lt;1\)&lt;br&gt;&lt;span style=&quot;color: rgb(63, 63, 63); font-size: 26px;&quot;&gt;T &amp;lt;= 0.5s&amp;nbsp;&lt;/span&gt;窗口计数归零&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=25;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=14;strokeWidth=2;rounded=1;arcSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="140" y="970" width="410" height="170" as="geometry"/>
+                </mxCell>
+                <mxCell id="grow" value="&lt;div style=&quot;line-height:1.55&quot;&gt;连续&lt;span style=&quot;color: rgb(63, 63, 63); font-size: 26px; background-color: transparent;&quot;&gt; T &amp;lt;= 0.5s &lt;/span&gt;&lt;span style=&quot;color: rgb(63, 63, 63); background-color: transparent;&quot;&gt;达到 m 个窗口&lt;/span&gt;&lt;span style=&quot;color: rgb(63, 63, 63); background-color: transparent;&quot;&gt;？&lt;/span&gt;&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=25;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=14;strokeWidth=2;rhombus;fontStyle=0;" parent="1" vertex="1">
+                    <mxGeometry x="650" y="965" width="520" height="190" as="geometry"/>
+                </mxCell>
+                <mxCell id="increase" value="&lt;div style=&quot;line-height:1.55&quot;&gt;&lt;span style=&quot;color: rgb(63, 63, 63); background-color: transparent;&quot;&gt;用于备份的显存容量&lt;/span&gt;&lt;b&gt;加性增加&lt;/b&gt;&lt;br&gt;\(\widetilde Q_{t+1}=Q_t+\Delta\)&lt;br&gt;\(\Delta\) 为固定字节步长&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=25;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=14;strokeWidth=2;rounded=1;arcSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="1281" y="975" width="410" height="170" as="geometry"/>
+                </mxCell>
+                <mxCell id="hold" value="&lt;div style=&quot;line-height:1.55&quot;&gt;保持额度&lt;br&gt;\(\widetilde Q_{t+1}=Q_t\)&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=27;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=14;strokeWidth=2;rounded=1;arcSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="700" y="1290" width="420" height="115" as="geometry"/>
+                </mxCell>
+                <mxCell id="output" value="&lt;div style=&quot;line-height:1.55&quot;&gt;发布下一窗口额度&lt;br&gt;\(\displaystyle Q_{t+1}=\min\!\left\{C,\widetilde Q_{t+1}\right\}\)&lt;br&gt;&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=29;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=14;strokeWidth=2;rounded=1;arcSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="470" y="1520" width="880" height="187" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=3;endArrow=block;endFill=1;endSize=11;jettySize=25;exitX=0;exitY=0.5;entryX=0.5;entryY=0;entryPerimeter=1;exitDx=0;exitDy=0;" parent="1" source="2" target="decrease" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="692" y="743"/>
+                            <mxPoint x="345" y="743"/>
+                        </Array>
+                        <mxPoint x="665" y="742.5" as="sourcePoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="edge-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=3;endArrow=block;endFill=1;endSize=11;jettySize=25;exitX=0.5;exitY=1;entryX=0.5;entryY=0;entryPerimeter=1;exitDx=0;exitDy=0;" parent="1" source="2" target="grow" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="910" y="835" as="sourcePoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="edge-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=3;endArrow=block;endFill=1;endSize=11;jettySize=25;exitX=1;exitY=0.5;entryX=0;entryY=0.5;exitPerimeter=1;entryPerimeter=1;" parent="1" source="grow" target="increase" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=3;endArrow=block;endFill=1;endSize=11;jettySize=25;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitPerimeter=1;entryPerimeter=1;" parent="1" source="grow" target="hold" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-5-label" value="&lt;div style=&quot;line-height:1.55&quot;&gt;否&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=24;fontColor=#617488;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=14;strokeWidth=2;text;strokeColor=none;fillColor=none;fillColor=#FFFFFF;spacing=2;" parent="1" vertex="1">
+                    <mxGeometry x="925" y="1195" width="70" height="45" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=3;endArrow=block;endFill=1;endSize=11;jettySize=25;exitX=0;exitY=0.5;entryX=0.15;entryY=0;exitPerimeter=1;entryPerimeter=1;" parent="1" source="decrease" target="output" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="110" y="1055"/>
+                            <mxPoint x="110" y="1460"/>
+                            <mxPoint x="602" y="1460"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="edge-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=3;endArrow=block;endFill=1;endSize=11;jettySize=25;exitX=1;exitY=0.5;entryX=0.85;entryY=0;exitPerimeter=1;entryPerimeter=1;" parent="1" source="increase" target="output" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1760" y="1070"/>
+                            <mxPoint x="1760" y="1460"/>
+                            <mxPoint x="1218" y="1460"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="edge-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=3;endArrow=block;endFill=1;endSize=11;jettySize=25;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitPerimeter=1;entryPerimeter=1;" parent="1" source="hold" target="output" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="2" value="&lt;div style=&quot;line-height:1.55&quot;&gt;&lt;span style=&quot;color: rgb(63, 63, 63); font-weight: 400;&quot;&gt;K窗口内，请求平均等待时间&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;line-height:1.55&quot;&gt;&lt;span style=&quot;color: rgb(63, 63, 63); font-weight: 400;&quot;&gt;&amp;nbsp;T &amp;gt; 0.5s&amp;nbsp;&lt;/span&gt;&lt;/div&gt;" style="fontFamily=Noto Sans CJK SC;fontSize=26;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=14;strokeWidth=2;rhombus;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="665" y="635" width="490" height="215" as="geometry"/>
+                </mxCell>
+                <mxCell id="3" value="是" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=24;" parent="1" vertex="1">
+                    <mxGeometry x="474" y="702" width="42" height="41" as="geometry"/>
+                </mxCell>
+                <mxCell id="4" value="否" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=24;" parent="1" vertex="1">
+                    <mxGeometry x="918" y="878" width="42" height="41" as="geometry"/>
+                </mxCell>
+                <mxCell id="5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#000000;strokeWidth=3;endArrow=block;endFill=1;endSize=11;jettySize=25;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" parent="1" source="feedback" target="2" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="909.62" y="579" as="sourcePoint"/>
+                        <mxPoint x="909.62" y="694" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="6" value="是" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=24;" parent="1" vertex="1">
+                    <mxGeometry x="1195" y="1002" width="42" height="41" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

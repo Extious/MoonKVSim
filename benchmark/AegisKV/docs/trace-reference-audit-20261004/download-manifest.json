@@ -1,0 +1,229 @@
+{
+  "retrieved_date": "2026-10-04",
+  "scope": "Public external source reference samples; no model or experiment execution",
+  "sources": [
+    {
+      "file": "MAST_2048.prompt",
+      "url": "https://raw.githubusercontent.com/multi-agent-systems-failure-taxonomy/MAST/main/traces/programdev/chatdev/2048/2048.prompt",
+      "final_url": "https://raw.githubusercontent.com/multi-agent-systems-failure-taxonomy/MAST/main/traces/programdev/chatdev/2048/2048.prompt",
+      "bytes": 349,
+      "sha256": "9bdf688ada0a23485233f4c8784ede3d5a6eca4d681ebc69c3df212b891a716e"
+    },
+    {
+      "file": "MAST_2048.log",
+      "url": "https://raw.githubusercontent.com/multi-agent-systems-failure-taxonomy/MAST/main/traces/programdev/chatdev/2048/2048_DefaultOrganization_20250329233429.log",
+      "final_url": "https://raw.githubusercontent.com/multi-agent-systems-failure-taxonomy/MAST/main/traces/programdev/chatdev/2048/2048_DefaultOrganization_20250329233429.log",
+      "bytes": 347687,
+      "sha256": "f21ab0c72badfc6f83898836973b3cc73cbab194193c0bad67d86a6c1e4ea3ae"
+    },
+    {
+      "file": "MAST_ChatChainConfig.json",
+      "url": "https://raw.githubusercontent.com/multi-agent-systems-failure-taxonomy/MAST/main/traces/programdev/chatdev/2048/ChatChainConfig.json",
+      "final_url": "https://raw.githubusercontent.com/multi-agent-systems-failure-taxonomy/MAST/main/traces/programdev/chatdev/2048/ChatChainConfig.json",
+      "bytes": 3192,
+      "sha256": "6447ae5a4c6ff24effd2bd13f17d320d74c36c70c40f50dd13fd8b03eaea8dd9"
+    },
+    {
+      "file": "MAST_metagpt.txt",
+      "url": "https://raw.githubusercontent.com/multi-agent-systems-failure-taxonomy/MAST/main/traces/programdev/metagpt/programdev_0.txt",
+      "final_url": "https://raw.githubusercontent.com/multi-agent-systems-failure-taxonomy/MAST/main/traces/programdev/metagpt/programdev_0.txt",
+      "bytes": 8157,
+      "sha256": "1658259d3e20163834204f54497f146f890d59bd290e9e2cb49fb9d7e0cd39d7"
+    },
+    {
+      "file": "AgentTrace_README.md",
+      "url": "https://raw.githubusercontent.com/GeoffreyWang1117/AgentTrace/main/README.md",
+      "final_url": "https://raw.githubusercontent.com/GeoffreyWang1117/AgentTrace/main/README.md",
+      "bytes": 6794,
+      "sha256": "d7df182d24ffc2fbc2b3beedecb825109716fb039f21b2b95ea22ca063d6768a"
+    },
+    {
+      "file": "AgentTrace_trace_builder.py",
+      "url": "https://raw.githubusercontent.com/GeoffreyWang1117/AgentTrace/main/experiments/benchmark/trace_builder.py",
+      "final_url": "https://raw.githubusercontent.com/GeoffreyWang1117/AgentTrace/main/experiments/benchmark/trace_builder.py",
+      "bytes": 15162,
+      "sha256": "9e91df98f33585919091f264b9af78b46057d1d790a8fb3952b9995d9eb64c34"
+    },
+    {
+      "file": "AgentTrace_real_customer.json",
+      "url": "https://raw.githubusercontent.com/GeoffreyWang1117/AgentTrace/main/data/real_traces/customer_39885f33_real_trace.json",
+      "final_url": "https://raw.githubusercontent.com/GeoffreyWang1117/AgentTrace/main/data/real_traces/customer_39885f33_real_trace.json",
+      "bytes": 5310,
+      "sha256": "2f0d407c802ee0a18654862af6ace9c2e0ea3091b2c597f3c81dc9b7a06a1226"
+    },
+    {
+      "file": "AgentTrace_real_collector.py",
+      "url": "https://raw.githubusercontent.com/GeoffreyWang1117/AgentTrace/main/experiments/real_traces/trace_collector.py",
+      "final_url": "https://raw.githubusercontent.com/GeoffreyWang1117/AgentTrace/main/experiments/real_traces/trace_collector.py",
+      "bytes": 24653,
+      "sha256": "b1d72490990f8f9d9a368555cf7da97f61a1083bd6325498276b41d2a315247c"
+    },
+    {
+      "file": "NVIDIA_agentic_serving.md",
+      "url": "https://raw.githubusercontent.com/NVIDIA/TensorRT-LLM/main/docs/source/blogs/tech_blog/blog27_Evaluating_Agentic_Serving_with_Trace_Replay_and_Job_Level_Metrics.md",
+      "final_url": "https://raw.githubusercontent.com/NVIDIA/TensorRT-LLM/main/docs/source/blogs/tech_blog/blog27_Evaluating_Agentic_Serving_with_Trace_Replay_and_Job_Level_Metrics.md",
+      "bytes": 28734,
+      "sha256": "6fcb73fc49db8e602cdb6f3db8d1cb41f2c1696005d45a3980c79b525cc8be3f"
+    },
+    {
+      "file": "SyFI_README.md",
+      "url": "https://raw.githubusercontent.com/uw-syfi/TraceLab/main/README.md",
+      "final_url": "https://raw.githubusercontent.com/uw-syfi/TraceLab/main/README.md",
+      "bytes": 19265,
+      "sha256": "a3c6d004a2c66eb5e059fb392fab4cafc23923fc4b7b6bacb2de8b736ba52bce"
+    },
+    {
+      "file": "agent-scaling_README.md",
+      "url": "https://raw.githubusercontent.com/ybkim95/agent-scaling/main/README.md",
+      "final_url": "https://raw.githubusercontent.com/ybkim95/agent-scaling/main/README.md",
+      "bytes": 11302,
+      "sha256": "a488710f7ef1d42bf0cc12eb4e76973be5ae10c2e1c2500fca437a4592c42b72"
+    },
+    {
+      "file": "agent-scaling_tree.json",
+      "url": "https://api.github.com/repos/ybkim95/agent-scaling/git/trees/HEAD?recursive=1",
+      "final_url": "https://api.github.com/repos/ybkim95/agent-scaling/git/trees/HEAD?recursive=1",
+      "bytes": 49858,
+      "sha256": "33086228bf7c78a161c5c9a28c0d7cb6edbc3c9ffb58c9256d6e2c2bc2672641"
+    },
+    {
+      "file": "TraceLab_tree.json",
+      "url": "https://api.github.com/repos/uw-syfi/TraceLab/git/trees/HEAD?recursive=1",
+      "final_url": "https://api.github.com/repos/uw-syfi/TraceLab/git/trees/HEAD?recursive=1",
+      "bytes": 122135,
+      "sha256": "f225363505b4732250edd2ac91ff2dc14463c8824a47e779f092e4c34e197aff"
+    },
+    {
+      "file": "NVIDIA_trace_replay_contents.json",
+      "url": "https://api.github.com/repos/NVIDIA/TensorRT-LLM/contents/examples/scaffolding/trace_replay",
+      "final_url": "https://api.github.com/repos/NVIDIA/TensorRT-LLM/contents/examples/scaffolding/trace_replay",
+      "bytes": 6709,
+      "sha256": "6b848cf48bf5375ade9822bb5efb188e56917071751c692b6ae988ac6ffd9959"
+    },
+    {
+      "file": "NVIDIA_trace_replay_README.md",
+      "url": "https://raw.githubusercontent.com/NVIDIA/TensorRT-LLM/main/examples/scaffolding/trace_replay/README.md",
+      "final_url": "https://raw.githubusercontent.com/NVIDIA/TensorRT-LLM/main/examples/scaffolding/trace_replay/README.md",
+      "bytes": 21139,
+      "sha256": "70c5fc9c6a7c408f23f7b80ac1d796e23f65726b2aea1d8f1a7c9eca46c96b99"
+    },
+    {
+      "file": "TraceLab_release_v002.json",
+      "url": "https://api.github.com/repos/uw-syfi/TraceLab/releases/tags/v0.0.2",
+      "final_url": "https://api.github.com/repos/uw-syfi/TraceLab/releases/tags/v0.0.2",
+      "bytes": 6272,
+      "sha256": "a026a6fa9313db3f4ca63f678db74e1eef6b9ecba09749b24dd4672fc409c982"
+    },
+    {
+      "file": "agent-scaling_plancraft_run_trace.txt",
+      "url": "https://raw.githubusercontent.com/ybkim95/agent-scaling/main/example_traces/plancraft-test/multi-agent-centralized/run_trace.txt",
+      "final_url": "https://raw.githubusercontent.com/ybkim95/agent-scaling/main/example_traces/plancraft-test/multi-agent-centralized/run_trace.txt",
+      "bytes": 82685,
+      "sha256": "3b7dc12046b8a62d85d4ea2fba2cac8f5d590b32c82cfab0c0e9d9ef8cb22ed8"
+    },
+    {
+      "file": "agent-scaling_plancraft_run_config.yaml",
+      "url": "https://raw.githubusercontent.com/ybkim95/agent-scaling/main/example_traces/plancraft-test/multi-agent-centralized/run_config.yaml",
+      "final_url": "https://raw.githubusercontent.com/ybkim95/agent-scaling/main/example_traces/plancraft-test/multi-agent-centralized/run_config.yaml",
+      "bytes": 705,
+      "sha256": "c03704dbb725841f84e59053f8ba87aef944e0f4011086a2b15495a261d2e841"
+    },
+    {
+      "file": "agent-scaling_mas_subagent.py",
+      "url": "https://raw.githubusercontent.com/ybkim95/agent-scaling/main/agent_scaling/agents/multiagent_components/mas_subagent.py",
+      "final_url": "https://raw.githubusercontent.com/ybkim95/agent-scaling/main/agent_scaling/agents/multiagent_components/mas_subagent.py",
+      "bytes": 14211,
+      "sha256": "f9f4ff63e7157727820f0df0c7ad9b3c81e5c723f20ce356e59235642ed6239e"
+    },
+    {
+      "file": "agent-scaling_multiagent_centralized.py",
+      "url": "https://raw.githubusercontent.com/ybkim95/agent-scaling/main/agent_scaling/agents/multiagent_centralized.py",
+      "final_url": "https://raw.githubusercontent.com/ybkim95/agent-scaling/main/agent_scaling/agents/multiagent_centralized.py",
+      "bytes": 8180,
+      "sha256": "5692c89838ab8c1bcf4363c181adf33b927474e603220c95f6e8d794f9e7f259"
+    },
+    {
+      "file": "TraceLab_DB_SCHEMA.md",
+      "url": "https://raw.githubusercontent.com/uw-syfi/TraceLab/main/artifacts/utils/DB_SCHEMA.md",
+      "final_url": "https://raw.githubusercontent.com/uw-syfi/TraceLab/main/artifacts/utils/DB_SCHEMA.md",
+      "bytes": 9124,
+      "sha256": "036abc20eec0ea6a52647f90175b4ed9612de1543c159571d91456e0ed581ac1"
+    },
+    {
+      "file": "NVIDIA_trace_example_contents.json",
+      "url": "https://api.github.com/repos/NVIDIA/TensorRT-LLM/contents/examples/scaffolding/trace_replay/trace_example",
+      "final_url": "https://api.github.com/repos/NVIDIA/TensorRT-LLM/contents/examples/scaffolding/trace_replay/trace_example",
+      "bytes": 1028,
+      "sha256": "fbb133a294e24abb918cb22708ffe2a0dab7625aee33beb9a15d2c3a5f37a287"
+    },
+    {
+      "file": "NVIDIA_open_deep_research_contents.json",
+      "url": "https://api.github.com/repos/NVIDIA/TensorRT-LLM/contents/examples/scaffolding/contrib/OpenDeepResearch",
+      "error": "HTTP Error 404: Not Found"
+    },
+    {
+      "file": "MAST_commit.json",
+      "url": "https://api.github.com/repos/multi-agent-systems-failure-taxonomy/MAST/commits/main",
+      "final_url": "https://api.github.com/repos/multi-agent-systems-failure-taxonomy/MAST/commits/main",
+      "bytes": 5346,
+      "sha256": "3a67084ba872ac4b8df5d4d0d364f92cc1ab1be00eccdb8e8fc4355464766cd4"
+    },
+    {
+      "file": "NVIDIA_commit.json",
+      "url": "https://api.github.com/repos/NVIDIA/TensorRT-LLM/commits/main",
+      "final_url": "https://api.github.com/repos/NVIDIA/TensorRT-LLM/commits/main",
+      "bytes": 23525,
+      "sha256": "f0ead433fad9355897c39c52604e9145eb0cec1331708843275739583ef5a9e1"
+    },
+    {
+      "file": "TraceLab_commit.json",
+      "url": "https://api.github.com/repos/uw-syfi/TraceLab/commits/main",
+      "final_url": "https://api.github.com/repos/uw-syfi/TraceLab/commits/main",
+      "bytes": 26391,
+      "sha256": "2ba836d7bcdf232c70f5e7aaa107da1a955ee509b97ce2d684155500b17f3397"
+    },
+    {
+      "file": "agent-scaling_commit.json",
+      "url": "https://api.github.com/repos/ybkim95/agent-scaling/commits/main",
+      "final_url": "https://api.github.com/repos/ybkim95/agent-scaling/commits/main",
+      "bytes": 7698,
+      "sha256": "4d22e29b80a0981b1905fa41897cade10f3d180893d2981df5815440d9a52775"
+    },
+    {
+      "file": "TraceLab_v002_first100.jsonl",
+      "url": "https://github.com/uw-syfi/TraceLab/releases/download/v0.0.2/syfi_coding_trace.jsonl.gz",
+      "bytes": 191363,
+      "sha256": "753c73c43696ffa60853bd59aa68bca7cff9e64fba2b845cf81435c22d3b5362",
+      "scope": "Only first 100 physical rows streamed from release gzip; not full-download integrity verification",
+      "rows": 100
+    },
+    {
+      "file": "NVIDIA_coder_example_contents.json",
+      "url": "https://api.github.com/repos/NVIDIA/TensorRT-LLM/contents/examples/scaffolding/trace_replay/trace_example/matplotlib__matplotlib-23412",
+      "final_url": "https://api.github.com/repos/NVIDIA/TensorRT-LLM/contents/examples/scaffolding/trace_replay/trace_example/matplotlib__matplotlib-23412",
+      "bytes": 1417,
+      "sha256": "b1d0f3c018b37f07b61f9f2a4e817dfd6d6de207aff1130528bbb94b2c609b49"
+    },
+    {
+      "file": "NVIDIA_contrib_contents.json",
+      "url": "https://api.github.com/repos/NVIDIA/TensorRT-LLM/contents/examples/scaffolding/contrib",
+      "final_url": "https://api.github.com/repos/NVIDIA/TensorRT-LLM/contents/examples/scaffolding/contrib",
+      "bytes": 6731,
+      "sha256": "31e85bf64097976411b0d4f233a2075a28d7d4322e6a6a855bf346501295bd3a"
+    },
+    {
+      "file": "NVIDIA_coder_example.trace.json",
+      "url": "https://raw.githubusercontent.com/NVIDIA/TensorRT-LLM/main/examples/scaffolding/trace_replay/trace_example/matplotlib__matplotlib-23412/matplotlib__matplotlib-23412.trace.json",
+      "final_url": "https://raw.githubusercontent.com/NVIDIA/TensorRT-LLM/main/examples/scaffolding/trace_replay/trace_example/matplotlib__matplotlib-23412/matplotlib__matplotlib-23412.trace.json",
+      "bytes": 16092,
+      "sha256": "44198de820b82901790a552ca16f3c6be1b2b3020a41a7c59c428397139cbceb"
+    },
+    {
+      "file": "NVIDIA_open_deep_research_contents.json",
+      "url": "https://api.github.com/repos/NVIDIA/TensorRT-LLM/contents/examples/scaffolding/contrib/open_deep_research",
+      "final_url": "https://api.github.com/repos/NVIDIA/TensorRT-LLM/contents/examples/scaffolding/contrib/open_deep_research",
+      "bytes": 3275,
+      "sha256": "4fa7acc686dfed488bec0bce2e28b8046a8b5c8511953c93b9c92ff90621a668"
+    }
+  ]
+}

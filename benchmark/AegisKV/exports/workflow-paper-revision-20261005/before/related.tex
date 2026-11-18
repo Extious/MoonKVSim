@@ -1,0 +1,49 @@
+\section{Related Work}
+\label{sec:related}
+
+\textbf{KV recovery after a serving failure.}
+D\'ej\`aVu streams KV checkpoints so a failed generative replica can resume
+from a recent prefix instead of recomputing it \cite{strati2024dejavu}.
+LUMEN coordinates recovery across a distributed serving deployment
+\cite{cao2026lumen}. GhostServe keeps a lightweight shadow checkpoint for
+fault-tolerant serving \cite{jayakody2026ghostserve}. These systems answer
+how to restore a KV cache that has already been selected for protection.
+\system asks which Agents and which blocks are worth that copy, using workflow slack and
+a Top-$K$ set over the first $L$ layers. Our experiments compare internal
+variants of that policy. They are not reproductions of D\'ej\`aVu, LUMEN, or
+GhostServe, and they do not claim a lower recovery time than those systems.
+
+\textbf{Live KV reuse.}
+PagedAttention and vLLM manage KV as pages so a live worker can share and
+schedule it \cite{kwon2023vllm}. SGLang and CachedAttention reuse prefixes
+across structured calls and later turns \cite{zheng2024sglang,gao2024cachedattention}.
+That reuse disappears when the worker holding the cache fails. A peer copy is
+a different object: it must survive the protected failure domain, and it
+competes with foreground state for memory. Section~\ref{sec:background}
+states the compatibility rules a restored cache still has to satisfy.
+
+\textbf{Agent workflows.}
+Parrot treats an LLM application as a program with semantic variables and
+schedules dependent calls together \cite{lin2024parrot}. Workflow slack in
+\system is the same kind of dependence, used for protection rather than for
+batch formation. The block-selection experiment uses single long prefixes, so
+it does not exercise the cross-turn history those runtimes are built to
+retain.
+
+\textbf{Sparse attention.}
+MInference, NOSA, and related native sparse attention select a subset of
+historical blocks at inference time \cite{jiang2024minference,huang2026nosav2}.
+\system reuses those selection indices as checkpoint counters. It does not
+change the kernel's choice. $K$ is the number of blocks kept per layer, and
+$L$ is how many early layers receive that copy. Section~\ref{sec:eval-native}
+finds that $K=16$ covers 4--8\% of distinct blocks and ties or loses to
+recency on that denominator. The online run in Section~\ref{sec:evaluation}
+places those blocks and moves workflow completion by at most 0.217\,ms
+beyond the DRAM checkpoint.
+
+\textbf{Quota control.}
+Additive increase and multiplicative decrease is the classic rule for sharing
+a congested resource \cite{chiu1989aimd}. The Adapter uses a guarded form of
+that rule to change total peer-HBM capacity only. This evaluation does not
+vary that quota; the comparison fixes $K$ and $L$ and asks whether the
+selected blocks are the right ones.

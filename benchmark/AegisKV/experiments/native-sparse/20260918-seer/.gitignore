@@ -1,0 +1,9 @@
+# Large reconstructible runtime inputs, not the capture/verification records.
+checkpoint/*.safetensors
+checkpoint/*.safetensors.*
+xet-probe/
+triton-cache/
+upstream/
+qwen3-review/CompactAttention/
+__pycache__/
+checkpoint/__pycache__/

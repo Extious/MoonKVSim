@@ -1,0 +1,16 @@
+\subsection{Recovery Manager: Concurrent Takeover}
+\label{sec:parallel-recovery}
+
+Recovery Manager (3) combines membership, device errors, and GPU progress
+reported by Adapters; a process heartbeat alone does not prove GPU
+progress. After confirming and isolating a failed source, it obtains
+request token prefixes, commit frontiers, model/layout IDs, and replica
+locations from surviving control state, then submits retries to their
+predetermined targets. Control-state survival, fencing, failure-domain
+separation, and retry deduplication are runtime contracts.
+
+Retries enter independently, subject to foreground admission, continuous
+batching, and shared compute/copy capacity. Each request advances on its
+own layer-readiness events. Slack determines protection, not a request-level
+completion barrier; the Manager never waits for earlier retries merely
+because they had higher placement priority.

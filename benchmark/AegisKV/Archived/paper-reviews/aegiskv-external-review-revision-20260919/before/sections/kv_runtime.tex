@@ -1,0 +1,51 @@
+\subsection{Adapter: Windowed Peer Capacity Control}
+\label{sec:kv-runtime}
+\label{sec:capacity-allocation}
+
+The Adapter (4) controls the total Peer HBM budget $B_p$ on each
+target DP. At a control-window boundary it publishes the next budget;
+that target stays fixed within the window while every allocation checks
+current physical space. KV Master owns backup decisions at the configured
+checkpoint interval, request tiers,
+and request-specific depths $L_r$. These depths can differ and change
+at policy events inside the same capacity window.
+
+\paragraph{Reserve memory for foreground inference.}
+The next budget is the managed KV pool minus estimated foreground
+KV demand and admission headroom, clamped between zero and half of
+the pool. The pool excludes weights and fixed runtime state, but includes
+existing Peer copies. Thus $B_p$ is a total target, not newly free space.
+KV watermarks and memory-related admission stalls inform demand;
+compute utilization alone does not imply insufficient KV capacity.
+Increased foreground demand reduces the Peer target; sustained relief
+permits expansion. The Adapter reports available, referenced, in-flight,
+and reclaimable bytes so the Master can assess request-specific plans.
+
+\begin{figure}[t]
+  \raggedright
+  \refstepcounter{designalgorithm}\label{alg:adapter}
+  \noindent\textbf{Algorithm \thedesignalgorithm: Windowed Peer budget update}
+  \par\smallskip
+  \noindent Input: KV pool, foreground demand, headroom, copy state.
+  Output: next-window total Peer budget $B_p$ for each target.
+  \par\smallskip
+  \begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
+    \toprule
+    1 & \textbf{for each} target DP $p$ at the window boundary: \\
+    2 & \quad Snapshot pool, occupancy, references, and copies \\
+    3 & \quad Estimate next-window foreground KV demand \\
+    4 & \quad$B_p\gets$ pool $-$ demand $-$ admission headroom \\
+    5 & \quad Clamp $B_p$ to $[0,\ \text{half of pool}]$ \\
+    6 & \quad Publish $B_p$ and capacity state to KV Master \\
+    7 & \quad Pause new space reservations above the budget \\
+    8 & \quad Reclaim safe zero-reference copies as needed \\
+    9 & \quad Count bytes until physical release completes \\
+    \bottomrule
+  \end{tabularx}
+  \Description{Each Adapter updates only its Peer capacity budget at
+    a window boundary, reserving space for foreground inference and
+    preserving live references during reclamation. KV Master selects
+    each request's layer depth separately.}
+\end{figure}
+
+\input{sections/capacity_allocation}

@@ -1,0 +1,97 @@
+\subsection{KV Master: Backup Decisions}
+\label{sec:kv-placement}
+\label{sec:kv-master}
+
+KV Master (3) chooses backup timing, the recovery tier (recomputation,
+DRAM, or Peer HBM), and historical blocks eligible for Peer residency.
+It uses the Recovery Manager's fixed
+target assignment; the target Adapter supplies capacity and layer-count
+control (\S\ref{sec:kv-runtime}).
+
+\paragraph{Decision triggers.}
+The Master establishes a policy at request arrival, before any KV is
+available to copy. It revisits affected requests on block sealing,
+significant slack or DAG changes, request completion, and each control
+window (default 1\,s). Sealing adds eligible objects; completion removes
+that request's demand while preserving objects needed by others.
+Unchanged decisions produce no new transfer. Hot-block statistics use
+the preceding 512 decoding steps, independently of the wall-clock window.
+
+\paragraph{Choose protection tiers.}
+Let $T_{\mathrm{rc}}$ be historical-prefix recomputation cost,
+$T_{\mathrm{rp}}$ known-tail replay cost, and $W_0$ exposed DRAM-loading
+wait without Peer residency. Detection, rerouting, and readmission
+contribute $R_{\mathrm{floor}}$. The Master uses
+\begin{equation}
+\begin{aligned}
+ R_{\mathrm{base}}&=R_{\mathrm{floor}}+T_{\mathrm{rp}},\\
+ R_R&=R_{\mathrm{base}}+T_{\mathrm{rc}},\quad
+ R_D=R_{\mathrm{base}}+W_0.
+\end{aligned}
+\label{eq:recovery-base}
+\end{equation}
+Costs are calibrated by model, context, tail length, hardware, and
+representative concurrency; \S\ref{sec:kv-runtime} models $W_0$.
+Tier \emph{R} requires no backup when $\sigma_r\ge R_R$;
+tier \emph{D} retains DRAM when $R_D\le\sigma_r<R_R$;
+tier \emph{P} retains DRAM and requests Peer protection otherwise.
+Tier changes use 20\% hysteresis around these nominal boundaries.
+Peer is an additional fast copy, with actual residency reported by
+the Adapter. A tier-P request with no Peer grant retains DRAM recovery.
+Slack orders requests competing for Peer; it does not scale their
+per-layer hot sets or impose a serial retry order.
+
+\paragraph{Define and rank protection objects.}
+A protection object is a \emph{(layer, block)} containing all KV heads;
+the profiled selectors use 64-token blocks. Sealing makes a full block
+eligible for copying; the commit frontier determines the prefix that
+survives failure. Known uncommitted tokens, including sealed but
+uncommitted blocks, are replayed without resampling.
+
+The historical blocks needed by a length-$n$ replay form the union
+$U_l(n)=\bigcup_{q=1}^{n}\bigcup_g S_{l,q,g}$, where $S_{l,q,g}$ is the
+native selector output. Repeated reads count once. A slowly refreshed
+table indexed by model, layer, context bin, and tail length estimates
+$h_l=|U_l|/B_l$, giving $K_l=\lceil h_lB_l\rceil$ for $B_l$ historical
+blocks. The Master first reserves mandatory sealed sink/window blocks
+\emph{within} $K_l$, then fills remaining slots by the Adapter's actual
+selection counts, breaking ties by recency. An optional block becomes
+replaceable after two successive decoding windows outside the top set;
+replacement reuses its slot. These per-layer sets are candidates: the
+Adapter selects how many leading layers reside in Peer each window.
+For both D and P, the sets are retained in recovery metadata as preload
+hints; only P requests compete for Peer capacity.
+
+\begin{figure}[t]
+  \raggedright
+  \refstepcounter{designalgorithm}\label{alg:placement}
+  \noindent\textbf{Algorithm \thedesignalgorithm: KV backup policy}
+  \par\smallskip
+  \noindent Input: live requests, slack, profiles, counts, targets $p_r$.
+  Output: DRAM set $D_s$, hot sets $H$, and ordered Peer lists $Q_p$.
+  \par\smallskip
+  \begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
+    \toprule
+    1 & $D_s,H\gets\varnothing$; $Q_p\gets[\,]$ for each target $p$ \\
+    2 & \textbf{for} $r$ in $(\sigma_r,\mathrm{ID}_r)$ order: \\
+    3 & \quad$\tau_r\gets\mathrm{Tier}(r,R_R,R_D,\sigma_r)$ \\
+    4 & \quad\textbf{if} $\tau_r=R$: \textbf{continue} \\
+    5 & \quad$D_s\gets D_s\cup\mathrm{sealed}(r)\cup\mathrm{state}(r)$ \\
+    6 & \quad$H_{r,l}\gets\mathrm{HotSet}(r,l,K_l)$ for each layer $l$ \\
+    7 & \quad\textbf{if} $\tau_r=D$: \textbf{continue} \\
+    8 & \quad Append $(r,\{H_{r,l}\},\mathrm{profile}(r))$ to $Q_{p_r}$ \\
+    9 & \textbf{return} $D_s,H,\{Q_p\}$ \\
+    \bottomrule
+  \end{tabularx}
+  \Description{The KV Master chooses a tier with hysteresis, requires
+    DRAM for tiers D and P, and sends ordered per-layer hot sets to each
+    preassigned target Adapter. Capacity and resident layer counts are
+    decided by the Adapter.}
+\end{figure}
+
+Algorithm~\ref{alg:placement} emits policy, not readable replicas.
+\textsc{Tier} applies hysteresis to an existing tier and uses the nominal
+thresholds at arrival. Sorting costs $O(n\log n)$ for $n$ requests;
+physical shared objects are deduplicated during allocation. Adapters
+reconcile changed policy with committed copies and return their actual
+residency, commit status, and loading estimates for the next policy refresh.

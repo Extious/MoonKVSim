@@ -1,0 +1,51 @@
+\subsection{Adapter: Safe Copies and Demand-Driven Recovery}
+\label{sec:kv-runtime}
+
+\paragraph{Independent copies and publication.}
+Adapter (4) applies the Planner's decisions through the Connector, which
+performs allocation, transfer, and completion notification. It does not
+choose tiers, destinations, or hot sets. Peer and fault-independent DRAM
+copies have separate allocation, transfer, and commit paths. Failure of
+one path does not invalidate the other's committed objects. A Peer copy
+that is the only valid surviving replica cannot be discarded before
+DRAM commit. Shared prefixes occupy one physical copy and can share
+the ordinary prefix cache's DRAM representation.
+
+A proposed placement is not a readable replica. Publication follows
+transfer completion and validation of model, layout, and shard identity.
+Selector state is copied with the initial layer and made available before
+selection. Bytes in copying, committed, or reclaiming states count
+toward physical occupancy until release is complete.
+
+\paragraph{Foreground protection.}
+When foreground KV exceeds the watermark, the Adapter reclaims Peer
+footprints in reverse admission priority: larger-slack requests first,
+and later layers first within a footprint being removed. The policy
+withdraws a request's complete footprint; the layer order controls the
+physical release sequence. The request competes again at the next window.
+DRAM coverage makes this downgrade safe. Low-priority copy streams are
+rate-limited (default: 20\% of link capacity), with target HBM bandwidth
+also accounted for. For scale, a 64-token seal across all MiniCPM4 layers
+produces 2\,MiB; 100 requests at 50 tokens/s generate about 160\,MiB/s
+of new KV. These are byte-rate calculations, not throughput measurements.
+
+\paragraph{Per-request loading and readiness.}
+For each retry the Adapter preloads by increasing layer and decreasing
+hotness, skipping locally resident Peer blocks. When a selector reveals
+exact demand, missing blocks receive higher priority than remaining
+preloads. The analytic model assumes preemption; whether an in-flight
+DMA can actually be preempted depends on the transfer implementation.
+Once a request's needed KV for layer $l$ is ready, that layer may compute
+without waiting for another request. Later preloads overlap current
+computation. Cold KV is filled in the background, and subsequent decode
+can demand-fetch still-absent blocks. Tier R recomputes the history.
+No retry waits solely for all historical KV to arrive.
+
+\paragraph{Recovery invariant.}
+AegisKV changes placement and loading order, not the selector's output.
+Every required attention input must be available before the corresponding
+attention operation executes. With the same weights, compatible layout
+and operators, and the known token prefix, recovery reconstructs the
+same logical KV state without adding an attention approximation.
+Floating-point ordering can still change with batching; this mechanism
+does not by itself guarantee token-identical future stochastic sampling.

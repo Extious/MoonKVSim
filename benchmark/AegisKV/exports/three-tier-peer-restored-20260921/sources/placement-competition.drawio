@@ -1,0 +1,68 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" version="31.1.5">
+  <diagram id="placement-competition" name="placement-competition">
+    <mxGraphModel page="1" pageScale="1" pageWidth="480" pageHeight="460" background="#FFFFFF">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" value="Mechanism" />
+        <mxCell id="canvas" value="" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#FFFFFF;strokeColor=none;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="480" height="460" as="geometry" />
+        </mxCell>
+        <mxCell id="title" value="Revalue the complete replacement" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="8" y="4" width="464" height="29" as="geometry" />
+        </mxCell>
+        <mxCell id="incoming" value="" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#DDEBF3;strokeColor=#23688D;strokeWidth=1.4;container=1;collapsible=0;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry x="18" y="46" width="444" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="incoming-name" value="Peer x · size 1" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;fontStyle=1;" vertex="1" parent="incoming">
+          <mxGeometry x="4" y="3" width="436" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="incoming-value" value="Current saving: 6 s" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;" vertex="1" parent="incoming">
+          <mxGeometry x="4" y="31" width="436" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="assumptions" value="Equal-size groups · migration cost 1 s" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="12" y="114" width="456" height="27" as="geometry" />
+        </mxCell>
+        <mxCell id="safe" value="" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#F7F9FA;strokeColor=#23688D;strokeWidth=1.4;container=1;collapsible=0;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry x="15" y="154" width="298" height="128" as="geometry" />
+        </mxCell>
+        <mxCell id="safe-title" value="Unpinned victims Q" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;fontStyle=1;" vertex="1" parent="safe">
+          <mxGeometry x="7" y="3" width="284" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="y-name" value="Release y" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;fontStyle=1;" vertex="1" parent="safe">
+          <mxGeometry x="7" y="40" width="132" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="y-loss" value="Loss: 2 s" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#F3E5D1;strokeColor=#9B6428;strokeWidth=1.4;" vertex="1" parent="safe">
+          <mxGeometry x="9" y="71" width="128" height="27" as="geometry" />
+        </mxCell>
+        <mxCell id="z-name" value="Release z" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;fontStyle=1;" vertex="1" parent="safe">
+          <mxGeometry x="152" y="40" width="132" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="z-loss" value="Loss: 5 s" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#F1F3F4;strokeColor=#70808A;strokeWidth=1.4;" vertex="1" parent="safe">
+          <mxGeometry x="154" y="71" width="128" height="27" as="geometry" />
+        </mxCell>
+        <mxCell id="reader-name" value="Read lease" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="328" y="194" width="132" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="reader-loss" value="Loss: 1 s" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#F1F3F4;strokeColor=#70808A;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="330" y="225" width="128" height="27" as="geometry" />
+        </mxCell>
+        <mxCell id="excluded" value="Not in Q" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="328" y="259" width="132" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="compare" value="Complete-plan cost change" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="12" y="301" width="456" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="plan-y" value="x in, y out: 1 + 2 − 6 = −3 s" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#DDEBF3;strokeColor=#23688D;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="20" y="340" width="440" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="plan-z" value="x in, z out: 1 + 5 − 6 = 0 s" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#FFFFFF;strokeColor=#70808A;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="20" y="375" width="440" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="commit" value="Select → reserve → commit → release" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="14" y="423" width="452" height="29" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,54 @@
+\subsection{Adapter: Windowed Peer Capacity Control}
+\label{sec:kv-runtime}
+\label{sec:capacity-allocation}
+
+Adapter (4) sets the total Peer budget $B_p$ on its target DP at each
+control-window boundary. The target remains fixed within the window;
+every allocation also checks physical space. The Master owns fixed-$Z$
+backup decisions and per-request $L_r$ and hot sets. Adapter controls
+capacity, not a common depth or an adaptive checkpoint interval.
+
+\paragraph{Reserve memory for foreground inference.}
+Subtract predicted foreground KV demand and admission headroom from the
+managed KV pool, clamping the result to zero through half the pool.
+The pool excludes weights and fixed runtime state but includes existing
+Peer copies; $B_p$ is total permitted occupancy, not newly available space.
+KV watermarks and memory-related admission stalls inform demand.
+Increased pressure shrinks the budget; sustained relief allows expansion.
+Report physical occupancy, ownership references, I/O leases, pending
+copies, and safely reclaimable bytes separately.
+
+\begin{figure}[t]
+  \raggedright
+  \refstepcounter{designalgorithm}\label{alg:adapter}
+  \noindent\textbf{Algorithm \thedesignalgorithm: Windowed Peer budget update}
+  \par\smallskip
+  \noindent Input: pool, foreground demand, headroom, replica/lease state.
+  Output: budget $B_p$, retirement work, and actual capacity reports.
+  \par\smallskip
+  \begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
+    \toprule
+    1 & \textbf{for each} target DP $p$ at the window boundary: \\
+    2 & \quad Snapshot occupancy, owners, leases, and reservations \\
+    3 & \quad Estimate foreground KV demand and headroom \\
+    4 & \quad$B_p\gets\mathrm{pool}-\mathrm{demand}-\mathrm{headroom}$ \\
+    5 & \quad Clamp $B_p$ to $[0,\mathrm{pool}/2]$ \\
+    6 & \quad Publish $B_p$; block reservations exceeding it \\
+    7 & \quad Reclaim safe zero-reference copies first \\
+    8 & \quad If needed, select protected copies for demotion \\
+    9 & \quad Commit DRAM; redirect; retire the old generation \\
+    10 & \quad Drain old users before releasing each buffer \\
+    11 & \quad Publish actual coverage and released/pending bytes \\
+    \bottomrule
+  \end{tabularx}
+  \Description{Adapter controls only Peer capacity. When safe unreferenced
+    victims are insufficient, protected copies may be demoted to committed
+    DRAM, with a directory transition and I/O lease drain before release.}
+\end{figure}
+
+The migration steps are asynchronous and continue after the control tick;
+a later budget update reconciles their outstanding reservations.
+Algorithm~\ref{alg:adapter} does not wait for all migrations before allowing
+unrelated ready requests to run.
+
+\input{sections/capacity_allocation}

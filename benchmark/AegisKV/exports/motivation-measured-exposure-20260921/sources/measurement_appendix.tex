@@ -1,0 +1,79 @@
+% BEGIN MOTIVATION MEASUREMENT APPENDIX
+\appendix
+\section{Motivation Measurement Protocol}
+\label{sec:motivation-protocol}
+
+\paragraph{Scope and configuration.}
+Figures~\ref{fig:motivation}(\subref{fig:motivation-recompute}) and
+\ref{fig:motivation-recovery-exposure} use the same pinned
+Qwen2.5-7B-Instruct-1M weights, SGLang 0.5.10rc0, PyTorch 2.9.1/CUDA 12.8,
+TP2, BF16 weights/KV, and batch one on two A100 PCIe 40\,GB GPUs.
+They use separate allocations of the same GPU type, with one fixed
+repeated synthetic text tokenized by the model tokenizer. The traces
+supply workflow positions and length proxies, not benchmark prompts.
+Our adapter uses the pinned MInference vertical/slash configuration and
+DCA position handling, with sparse attention above 32,768 tokens,
+including the final one-token EXTEND. The SM80 sparse-kernel build and
+model/attention sources are archived with hashes. GQA K/V are shared;
+prefix execution groups at most two query heads, and a single query
+batches all heads. These are instrumented worker measurements, rather
+than throughput measurements of an unmodified serving frontend.
+
+\paragraph{Common endpoint.}
+For $C=M+1$, full prefill computes $M$ tokens from empty KV in chunks of
+at most 8,192, then executes one token separately. Reuse consumes exactly
+the same sparse-generated $M$-token state, including partial pages, and
+executes that final token. Synchronized wall time is reduced by maximum
+across the TP ranks and ends at model-body completion with all $C$ tokens'
+KV resident, before the output vocabulary projection. Model loading,
+backup creation, and correctness checks are outside the timer. Detection,
+rerouting, serving-queue delay and an injected failure are absent.
+
+\paragraph{Restore paths.}
+HBM begins with resident KV. DRAM copies all historical layers from
+pinned host buffers before computation. Shared storage opens, reads and
+closes per-rank KV files on the compute node's DPC shared filesystem,
+then performs the same H2D copy and computation. These stages do not
+overlap; there is no compression or selective loading. The 1,010,000-token
+case restores 57,917,382,656 logical history bytes across both ranks;
+files additionally contain recorded alignment padding. Direct I/O and
+page-residency checks exclude Linux file-page hits, but DPC server and
+internal caches are uncontrolled. The curve is a shared-storage path
+measurement, not cold-device latency or an identified SSD measurement.
+KV files are removed after measurement.
+
+\paragraph{Timing samples.}
+Figure~\ref{fig:motivation}(\subref{fig:motivation-recompute}) uses one
+allocation for 8,192, 65,536, 262,144 and 1,010,000 tokens. HBM/DRAM have
+one warmup and three timings per length; full prefill and shared storage
+have one timing each. Short forwards and operator checks precede timing;
+64K also runs a complete original all-head sparse reference. There is
+no extra complete-prefill warmup at 256K/1.01M or storage-read warmup.
+Consequently, these full-prefill/storage points describe individual
+runs, not stable latency distributions.
+Figure~\ref{fig:motivation-recovery-exposure} uses two allocations at
+$C=100{,}865$, $105{,}921$, $108{,}865$ and $113{,}665$, with one complete
+warmup and three full-prefill timings at each length. The initial allocation completed three lengths; the last length was
+resumed after an early termination signal. Its incomplete timings are
+retained in the artifact but excluded as a whole. The figure reports
+medians and min--max ranges. Repetitions are timing samples of the same input,
+not independent workflows or confidence intervals. Original timings and
+all samples are retained in the artifact.
+
+\paragraph{Validation and workflow mapping.}
+Complete-history hashes, final hidden states, all-layer new KV and greedy
+outputs are checked across reconstruction/reuse paths. Repeated full
+prefills additionally check output agreement, and CUDA-event timelines
+check serialized copies. These checks validate matched sparse-state
+execution, not equivalence to dense attention or long-context task quality.
+For Figure~\ref{fig:motivation-recovery-exposure}, the four history lengths
+are the active requests' trace hash-block counts multiplied by 64.
+They are size proxies, not exact original-model token counts or observed
+KV frontiers at failure. The example was selected for four parallel
+branches and a gap near 100\,s; it is not its workflow's maximum-gap group.
+Each counterfactual separately inserts a measured full-prefill duration
+as an additional branch pause at 29.5\,s after the fork. The all-branch
+join, other execution and queues stay fixed. Thus only reconstruction
+cost is measured: the plotted WCT increment is a conditional calculation,
+not observed fault recovery in the Claude Code workflow.
+% END MOTIVATION MEASUREMENT APPENDIX

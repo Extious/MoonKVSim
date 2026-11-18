@@ -1,0 +1,50 @@
+{
+  "frozen_before_new_capture": true,
+  "task": "Native sparse raw-KV access concentration, not predictive hit rate",
+  "models": [
+    "NOSA-8B",
+    "NSA-8B",
+    "MiniCPM4.1-8B"
+  ],
+  "books": [
+    "10146",
+    "10321",
+    "10356"
+  ],
+  "text_source": "PG19 test, identical document prefixes with model-specific tokenization",
+  "history_tokens": 32192,
+  "suffix_tokens": 512,
+  "total_tokens": 32704,
+  "evaluation_windows": [
+    256,
+    512
+  ],
+  "window_relationship": "Nested windows, not independent samples",
+  "layers_per_model": 32,
+  "block_tokens": 64,
+  "historical_blocks_per_layer": 503,
+  "placement_unit": "one request/layer/64-token block including all KV heads",
+  "primary_metric": "For each query, union native selected historical block IDs across heads/groups; one count per query and block",
+  "secondary_metric": "Native per-group selector occurrences; not physical memory transactions",
+  "ranking": "Retrospective per-document, per-layer, within the same evaluation window",
+  "averaging": "Equal layer mean within document, then equal mean over three documents; document min/max",
+  "budgets": {
+    "10_percent": 51,
+    "20_percent": 101,
+    "40_percent": 202
+  },
+  "native_budgets": "Unmodified public checkpoint selector configuration; fixed sink/local blocks included",
+  "nosa_source": "New pinned NOSA-8B native GPU capture at M32192/N512",
+  "nsa_scope": "Raw/main KV selection including sink/local; compressed KV branch state reported separately",
+  "limitations": [
+    "Three long literary documents are diagnostic, not an agent-workload benchmark",
+    "Full causal prefill selection traces, not a decode latency experiment",
+    "Retrospective ranking does not establish advance predictability",
+    "Raw block selection frequency is neither attention mass nor physical HBM traffic",
+    "Different native selector budgets and architectures are preserved"
+  ],
+  "reused_sources": "NSA and MiniCPM4.1 use causal crop [32192,32704) from their complete 32768-token captures",
+  "protocol_change_reason": "Pinned NOSA-8B cis_pooling.py requires max_seqlen strictly below 32768; shift all three evaluation windows by one 64-token block without changing model/kernel source",
+  "previous_protocol_sha256": "279aca717e0fb234ce95ef391437e9ab67ca85b556c4241cfd463edf5b8b281f",
+  "reference_comparison": "20260921-concentration-new-models, retained unchanged"
+}

@@ -1,0 +1,109 @@
+{
+  "figures": [
+    {
+      "name": "native-forward-b1",
+      "evidence": "physical_microbenchmark",
+      "note": "Real Qwen3-8B BF16 SDPA; batch=1, extra allocated backup=8 GiB; median and min/max of five paired randomized blocks in one exclusive 2xL40S allocation. Not a system-level WCT benchmark.",
+      "width_in": 3.3333333333333335,
+      "height_in": 2.9,
+      "sources": [
+        "output/agent-lease-20260908/native-l40s/samples.jsonl"
+      ],
+      "files": {
+        "pdf": "88735310c89f74eba89044e89606c8ff95b2b7515e95dbd5d1a63239317558ad",
+        "svg": "732619f1ed115ffa5f01a010d2f5a495c4a68f06eb868aebe0790da8772f0f69",
+        "png": "93dfc164e9426ff8304c3c3073e7630b163e09b67ecca6a69b0066487ec45b85",
+        "csv": "551cfacecdf218da3a80f217c4c49e8b3fb5c14703ae68f83cb300ef0d2e0ecc"
+      }
+    },
+    {
+      "name": "native-forward-b4",
+      "evidence": "physical_microbenchmark",
+      "note": "Real Qwen3-8B BF16 SDPA; batch=4, extra allocated backup=8 GiB; median and min/max of five paired randomized blocks in one exclusive 2xL40S allocation. Not a system-level WCT benchmark.",
+      "width_in": 3.3333333333333335,
+      "height_in": 2.9,
+      "sources": [
+        "output/agent-lease-20260908/native-l40s/samples.jsonl"
+      ],
+      "files": {
+        "pdf": "62e47d5b2eb5f45fd25e7ed4f245c40280210d9e489dd88807ae81cefe86d39d",
+        "svg": "409d63c52b0b53b21434b5091f4c3760a3e2c2b6712d5d2a28e5d0a83f220587",
+        "png": "78f025b0f64add89c306218833883e0edcb3339a268676e78a12b5146fe4cb70",
+        "csv": "7b5762a765cdfe7a5cd46b63e9726b293edef7d0ad04e9ea1b7791e6f9fa9e0c"
+      }
+    },
+    {
+      "name": "native-memory-occupancy",
+      "evidence": "physical_microbenchmark",
+      "note": "Batch 4, prompt 4096; extra allocation is actually touched on the foreground GPU; median and min/max, five blocks; zero OOM here is not a general admission or latency guarantee.",
+      "width_in": 3.3333333333333335,
+      "height_in": 2.9,
+      "sources": [
+        "output/agent-lease-20260908/native-l40s/samples.jsonl"
+      ],
+      "files": {
+        "pdf": "29ac998d62185a47ad4ac5a8ec18f7b363bbb5881160c939cd7c537d0e22ec8d",
+        "svg": "f61caf44813291acde5266e2c235fe11b2e1dc50d0c73e465108cfcf26627474",
+        "png": "6d4c1fd1e939e468634365db56175a83b2e1efbbfee673db1d6fb519e00f799a",
+        "csv": "73d05e5bc7f83d72f616b05a8ebf5639d6baeb0f9282909d88a7d4f260c77840"
+      }
+    },
+    {
+      "name": "native-concurrent-copy",
+      "evidence": "physical_microbenchmark",
+      "note": "256 MiB copies, batch-1 foreground, extra 8 GiB allocation; per measurement block sum(bytes)/sum(completion wall time), then median and range of five blocks. Copy chunks are not independent repeats.",
+      "width_in": 3.3333333333333335,
+      "height_in": 2.9,
+      "sources": [
+        "output/agent-lease-20260908/native-l40s/samples.jsonl"
+      ],
+      "files": {
+        "pdf": "15f8d8a91fa49444e30fedc300a5f99ada5b30477d4458fc4afb3acd2e214663",
+        "svg": "0d9878a7f30122e335f381e50ede2b22f3b398d62d565ce83275dc6c258d1448",
+        "png": "4b7959b2b7bac3929506317b11292a599af6724ea3e79b8eb347f60118b0d078",
+        "csv": "515402430a5463526449808cfb19006dda0b46ecbe0f26de648bf669d3989ea9"
+      }
+    },
+    {
+      "name": "native-copy-cpu",
+      "evidence": "physical_microbenchmark",
+      "note": "Batch 1, extra 8 GiB, measured process CPU divided by elapsed forward time. Includes the benchmark's copy thread and CUDA synchronization behavior. It is not native AegisKV admission CPU or whole-server utilization; five-block median and min/max.",
+      "width_in": 3.3333333333333335,
+      "height_in": 2.9,
+      "sources": [
+        "output/agent-lease-20260908/native-l40s/samples.jsonl"
+      ],
+      "files": {
+        "pdf": "31057039f471afa279bf093d26046d000b5b1df8406f925a28851fdbd4635ef4",
+        "svg": "f4fc486ad0ea46aca32c10f5d6ae5bee7cda07ee04f7f10ae3f1c4df33cc7d82",
+        "png": "6d583471324406a9d83d03a0d2e63d75205ab6c1afc239adac954e5163f7ce86",
+        "csv": "00a7ee21d3f0dd68d343127831815ab57479c3e188539dad9eeb1bdb55024f40"
+      }
+    },
+    {
+      "name": "native-release-ack",
+      "evidence": "physical_microbenchmark",
+      "note": "Twenty measurements per size in one allocation; median and min/max. Fence waits for a real asynchronous GPU write; allocator release includes del, empty_cache and device synchronization. This is not a native AegisKV eviction measurement.",
+      "width_in": 3.3333333333333335,
+      "height_in": 2.9,
+      "sources": [
+        "output/agent-lease-20260908/native-l40s/reclaim.json"
+      ],
+      "files": {
+        "pdf": "989d5b354fb35dc8282804c0f63ac3829141c478ac2a36accd95f3f607fbb243",
+        "svg": "6ceeea0929488157705d8db2131e838799f8759ff4481961b82a299e1b0b88b0",
+        "png": "b9ce96f60a25dfa9665f142137628e1cc14fde5a72b8f630d8f8e304e57fd62d",
+        "csv": "6a5c1cf5eca01d6bb4179c0565bcc6c3bd7686ed90c7e550b26053ba54bc9717"
+      }
+    }
+  ],
+  "input_bindings": {
+    "output/agent-lease-20260908/native-l40s/manifest.json": "ff7e6838ba0b3a4805f7cfffb18073cc9da1d03d191616549979fc91049efb09",
+    "output/agent-lease-20260908/native-l40s/samples.jsonl": "35b1167e78215d55187a184c8911a23b6762f90f839de1f47bcfa8f2c8dfccd0",
+    "output/agent-lease-20260908/native-l40s/reclaim.json": "08395936fa877475c8d249049d4df15af5c70b1d5e59fe6a5c8ae62389b5cdd3",
+    "benchmark/AegisKV/experiments/scripts/paper/render_agent_lease_native.py": "f3c5a0d5c43cc2b04ffbc8a78ade50e059a867b0e5662ed3fca97b6ea7312bcb",
+    "benchmark/AegisKV/experiments/scripts/paper/render_paper_story.py": "25843355b039b9a82de1903153b34cc32e24a27197cff937766f71decf57a1dd",
+    "benchmark/AegisKV/experiments/scripts/paper/figure_style.py": "743622d900aea4adc0d02a2510f6037a0042ab416243b8bd283c25dbe67f6488",
+    "benchmark/AegisKV/experiments/scripts/paper/three_system_data.py": "1108a7d80b1b4665b3bea0bd566b380a94b61e515d0184947c768d447ec8ae61"
+  }
+}

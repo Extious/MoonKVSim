@@ -1,0 +1,26 @@
+[
+  {
+    "model": "Qwen/Qwen3-4B",
+    "revision": "1cfa9a7208912126459214e8b04321603b3df60c",
+    "url": "https://huggingface.co/Qwen/Qwen3-4B/resolve/1cfa9a7208912126459214e8b04321603b3df60c/config.json",
+    "sha256": "8ba006f74fecfaaeb392872a60f4a480e7ec9860153d2e1b769ec81f9a147f8a",
+    "path": "benchmark/AegisKV/experiments/data/reuse-aiconfigurator-multifamily-a100/configs/Qwen3-4B/config.json"
+  },
+  {
+    "model": "meta-llama/Llama-3.1-8B",
+    "source_kind": "AIConfigurator bundled configuration, copied verbatim; not a newly fetched HF revision",
+    "revision": "4b9d9dc51e02b5e9d4acc3688f3edf41693834c6",
+    "url": "https://github.com/ai-dynamo/aiconfigurator/blob/4b9d9dc51e02b5e9d4acc3688f3edf41693834c6/src/aiconfigurator/model_configs/meta-llama--Meta-Llama-3.1-8B_config.json",
+    "upstream_model_card": "https://huggingface.co/meta-llama/Llama-3.1-8B",
+    "sha256": "398adf8b93f20e64932517492099d4e471e36a1723b5bf4e1311638f6a13f909",
+    "source_path": "/home/comp/zhanzhao/aiconfigurator/src/aiconfigurator/model_configs/meta-llama--Meta-Llama-3.1-8B_config.json",
+    "path": "benchmark/AegisKV/experiments/data/reuse-aiconfigurator-multifamily-a100/configs/Llama-3.1-8B/config.json"
+  },
+  {
+    "model": "Qwen/Qwen3-14B",
+    "revision": "40c069824f4251a91eefaf281ebe4c544efd3e18",
+    "url": "https://huggingface.co/Qwen/Qwen3-14B/resolve/40c069824f4251a91eefaf281ebe4c544efd3e18/config.json",
+    "sha256": "e73c3664ca09b10a673fef0c22e8a6b456201d49bd4713c9691f775720e8857a",
+    "path": "benchmark/AegisKV/experiments/data/reuse-aiconfigurator-multifamily-a100/configs/Qwen3-14B/config.json"
+  }
+]

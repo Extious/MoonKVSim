@@ -1,0 +1,274 @@
+\section{Evaluation}
+\label{sec:evaluation}
+
+The endpoint in this section is workflow completion time (WCT).  We do not
+run a new experiment for this paper revision.  Instead, we re-analyze three
+frozen SGLSim result sets produced by an earlier AegisKV prototype.  This
+choice recovers an end-to-end metric and preserves unfavorable outcomes, but
+creates an important evidence boundary: the WCT results do \emph{not} validate
+the current source-owned, independent-tier implementation in
+\S\ref{sec:design}.  We ask: (RQ1) does the legacy prototype reduce WCT after
+faults; (RQ2) how does it compare with simple backup controls; and (RQ3) do
+larger-scale and heavier-failure legacy studies show the same direction?
+
+\subsection{Legacy WCT Methodology}
+
+\begin{table*}[t]
+  \centering
+  \caption{Frozen historical WCT evidence.  Replotting reads these artifacts
+  but launches no simulator, serving runtime, GPU, or scheduler job.}
+  \label{tab:legacy-wct-setup}
+  \begin{tabular}{@{}p{0.18\textwidth}p{0.37\textwidth}p{0.38\textwidth}@{}}
+    \toprule
+    Result set & Configuration & Statistical and validity boundary \\
+    \midrule
+    DP8 policy comparison & Generated shared-prefix workload; 24 workflows,
+      651 request records per policy; three soft failures; one seed/trial;
+      fixed $\alpha=0.30$; no backup, host-only, peer-GPU, and legacy AegisKV. &
+      Direct discrete-event WCT samples with paired workflows.  Small,
+      single-trial evidence from a superseded protection policy. \\
+    DP64 projection & Qwen3-8B; TP1/PP1/system-DP64; at most 128K context;
+      160 workflows and 405 projected retries per policy. & Model projection,
+      not measured WCT: CDF shape is quantile-interpolated from 20 DP8
+      samples, while a 128K clean run supplies context-time and retry-token
+      scales.  It omits correlated outage, co-failure, and queue spillover. \\
+    Heavy-failure stress & Qwen3-32B; logical TP1/PP4/system-DP4; 20 workflows;
+      offered concurrency 8 or 16; 16 injected failures. & Direct logical-time
+      simulator smoke, tagged offline-unvalidated.  It is neither sparse-fault
+      evidence nor a physical 16-process deployment; its alpha/beta pressure
+      check did not pass. \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+The DP8 comparison is the only frozen data set that places multiple backup
+policies on the same paired workload.  For each workflow we report the
+empirical WCT CDF and the paired difference from no backup.  A negative
+difference favors protection.  The DP64 artifact extrapolates the WCT
+distribution and retry-token source at a larger logical deployment.  We
+report it only as a projection.  The heavy-failure artifact provides two
+direct simulator stress points, but no confidence interval or generalization
+beyond its 20 workflows.  We did not combine these heterogeneous result sets,
+fit a new model, discard workflows, or select a new operating point after
+observing outcomes.  The paper-only renderer binds every source and output by
+SHA-256 in \texttt{legacy-wct-submission.manifest.json}.
+
+\subsection{End-to-End WCT Results}
+
+\paragraph{The legacy prototype helps over no backup, but loses to simple
+backup controls in the paired DP8 trial.}
+Figure~\ref{fig:legacy-wct-policy}a shows the complete 24-workflow WCT
+distributions.  Mean WCT is 91.695~s with no backup, 79.734~s with host
+backup, 81.731~s with a peer-GPU replica, and 87.756~s with legacy AegisKV.
+Thus, legacy AegisKV reduces mean WCT by 3.939~s (4.3\%) and wins 15 of 24
+paired workflows, but HostBackup and GPUReplica reduce the mean by 11.961~s
+(13.0\%) and 9.964~s (10.9\%), respectively.  The p99 values are 113.733,
+99.339, 97.382, and 104.269~s in the same order.  Figure~\ref{fig:legacy-wct-policy}b
+also exposes substantial per-workflow dispersion.  This result supports
+fault-recovery usefulness relative to recomputation, not baseline dominance.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/legacy-wct-policy-comparison.pdf}
+  \caption{Historical direct WCT comparison for one DP8, fixed-$\alpha$
+  legacy trial.  (a) Empirical CDF.  (b) Paired policy-minus-no-backup WCT;
+  negative is better and every workflow is shown.  The adaptive current
+  design was not executed for this artifact.}
+  \Description{A WCT CDF compares no backup, host backup, peer GPU replica,
+  and legacy AegisKV. A paired-difference panel shows that all three backup
+  policies often beat no backup, while host and peer GPU have larger mean
+  reductions than legacy AegisKV.}
+  \label{fig:legacy-wct-policy}
+\end{figure*}
+
+\paragraph{A larger legacy projection predicts an 11.8\% mean-WCT reduction.}
+For the projected DP64 Qwen3-8B setting, mean WCT is 4,193.35~s for legacy
+AegisKV and 4,753.03~s for no backup, an 11.78\% reduction
+(Figure~\ref{fig:legacy-wct-projection}a).  Projected p99 falls from
+6,676.35~s to 5,705.16~s (14.55\%).  Of 21.36 million retry tokens, the
+projection attributes 26.2\% to legacy L1 reuse, 37.2\% to legacy L2 reuse,
+and 36.6\% to recomputation; no backup recomputes all retry tokens
+(Figure~\ref{fig:legacy-wct-projection}b).  These values are useful for
+capacity planning, but they are generated by the stated extrapolation rather
+than 160 observed workflows and therefore are not an empirical scale result.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/legacy-wct-dp64-projection.pdf}
+  \caption{Historical \emph{model projection}, not measured WCT, for
+  Qwen3-8B at logical DP64 and at most 128K context.  (a) Projected WCT CDF.
+  (b) Projected retry-token source.  The projection inherits a 20-sample DP8
+  CDF shape and omits correlated failures and shared-queue spillover.}
+  \Description{A projected WCT CDF places legacy AegisKV to the left of no
+  backup. A stacked bar attributes legacy AegisKV retry tokens to two reuse
+  levels and recomputation, while no backup uses only recomputation.}
+  \label{fig:legacy-wct-projection}
+\end{figure*}
+
+\paragraph{The direction persists in a heavy-failure logical stress smoke.}
+At offered concurrency 8, legacy AegisKV reduces simulated mean WCT from
+6,259.11 to 5,077.74~s (18.9\%); at concurrency 16, it reduces the mean from
+20,794.95 to 14,473.89~s (30.4\%)
+(Figure~\ref{fig:legacy-wct-heavyfail}).  The growing gap is consistent with
+avoided recomputation becoming more valuable under congestion.  It is not,
+however, proof of that causal mechanism: each panel contains only 20
+workflows, uses logical PP timing and 16 injected failures, and the artifact's
+pressure-validation flag is false.  We therefore classify both panels as
+directional stress evidence rather than a formal sensitivity curve.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/legacy-wct-heavyfail-stress.pdf}
+  \caption{Historical direct simulator WCT under a heavy-failure logical-PP
+  stress smoke (20 workflows per panel).  The apparent larger reduction at
+  concurrency 16 is descriptive; these two points are not a calibrated
+  scaling law and do not validate the current design.}
+  \Description{Two empirical WCT CDFs compare legacy AegisKV and no backup at
+  offered concurrency 8 and 16. Legacy AegisKV has lower mean WCT in both
+  panels, with a larger descriptive gap at concurrency 16.}
+  \label{fig:legacy-wct-heavyfail}
+\end{figure*}
+
+\subsection{What the Legacy WCT Data Establish}
+
+Across all three frozen lineages, the earlier AegisKV prototype has lower WCT
+than no backup, with mean reductions of 4.3\% in the paired DP8 trial,
+11.8\% in the DP64 projection, and 18.9--30.4\% in the heavy-failure smoke.
+Only the first and third lineages directly simulate workflow WCT; only the
+first compares multiple backup controls; none executes the current design.
+Most importantly, the only paired multi-baseline result favors simple host
+and peer-GPU backup over legacy AegisKV.  The defensible conclusion is
+therefore narrow: preserving reusable KV can reduce end-to-end recomputation
+delay, while the incremental WCT value of Slack-aware admission and adaptive
+tiering remains unverified for the current implementation.
+
+\subsection{Current-Design Mechanism Telemetry}
+\label{sec:current-mechanisms}
+
+We next report a separate evidence track from the frozen current-design
+SGLSim campaign.  These are mechanism counters, not WCT and not Estimand~B.
+The campaign contains 33 scenarios, 311 policy--scenario cells, ten matched
+outer seeds, and 3,110 completed runs over 393 Weka workflows and 98,827
+requests.  It spans offered concurrency 32--224; Qwen3-8B TP1/PP1 and
+Qwen3-32B TP1/PP4 layouts; 16--128 simulated GPUs; 1--40~GB/s effective
+source-to-tier rates; 2--8~GiB Peer-HBM and 16--256~GiB Store-DRAM quotas per
+physical GPU/model shard; and 0--41.667 failures per 1,000 physical
+GPU-shard-hours.  All values below are bound to lineage
+\texttt{4a99c306e8f9}; the paper supplement manifest records that no new run
+was launched and that these values make no physical or WCT claim.
+
+\paragraph{Alpha responds to load and available scale.}
+Table~\ref{tab:alpha-pressure} reports ten-seed scenario aggregates at the
+primary Qwen3-8B configuration.  Raising offered concurrency at 64 simulated
+GPUs increases mean foreground pressure from 0.018 to 0.590 and decreases
+mean alpha from 0.868 to 0.129.  Holding concurrency at 128 while increasing
+the simulated cluster from 16 to 128 GPUs produces the complementary trend:
+pressure falls from 0.860 to 0.077 and alpha rises from 0.012 to 0.492.  At
+16 GPUs, 27.3\% of steady windows reach alpha zero.  A Qwen3-32B TP1/PP4,
+64-GPU stress cell similarly has pressure 0.863, mean alpha 0.019, and 27.6\%
+zero-alpha windows.  Thus alpha can collapse to zero under sustained
+pressure, rather than being artificially lower-bounded.
+
+\begin{table*}[t]
+  \centering
+  \caption{Current-design SGLSim Algorithm~3 telemetry.  The concurrency
+  sweep fixes 64 GPUs; the cluster sweep fixes $C=128$.  These are mechanism
+  aggregates, not WCT or physical measurements.}
+  \label{tab:alpha-pressure}
+  \begin{tabular}{@{}llrrrrr@{}}
+    \toprule
+    Sweep & Setting & Pressure & Alpha & Zero $\alpha$ & HBM occ. & DRAM occ. \\
+    \midrule
+    Concurrency & $C=32$  & 0.018 & 0.868 & 0.0\% & 0.339\% & 0.037\% \\
+                & $C=64$  & 0.049 & 0.665 & 0.0\% & 0.666\% & 0.092\% \\
+                & $C=128$ & 0.173 & 0.280 & 0.0\% & 0.856\% & 0.253\% \\
+                & $C=224$ & 0.590 & 0.129 & 0.0\% & 2.102\% & 0.542\% \\
+    \midrule
+    Cluster & 16 GPUs  & 0.860 & 0.012 & 27.3\% & 0.115\% & 0.894\% \\
+            & 32 GPUs  & 0.411 & 0.089 & 0.0\% & 0.427\% & 0.508\% \\
+            & 64 GPUs  & 0.173 & 0.280 & 0.0\% & 0.856\% & 0.253\% \\
+            & 128 GPUs & 0.077 & 0.492 & 0.0\% & 0.815\% & 0.126\% \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+Figure~\ref{fig:current-alpha-occupancy} retains one descriptive central-hazard
+seed rather than only the aggregates.  Its trajectory contains both
+pressure-triggered multiplicative decreases and stable-window additive
+increases; $t=0$ is an initialization snapshot, not an AIMD update.  Failure
+rate is not an Algorithm~3 input: at $C=128$, changing the declared hazard
+from 0 to 41.667 per 1,000 shard-hours leaves mean alpha near 0.28, with only
+small differences caused by realized state history.  The occupancy panel also
+shows why alpha is not a cache-fill fraction: it is a protection quota
+envelope, while actual admitted bytes remain much lower.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/sim-fig05_alpha_occupancy_timeline.pdf}
+  \caption{Current-design SGLSim mechanism telemetry.  Top: a descriptive
+  lowest-ID central-hazard seed showing alpha, foreground pressure, and
+  protection occupancy.  Bottom: rate-zero central full-policy workload reuse
+  and intended admission residency.  HBM-only admission is zero in this cell;
+  prefix reuse does not deduplicate protection copies.  This figure reports
+  neither WCT nor Estimand~B.}
+  \Description{Four panels show an alpha and pressure trajectory, Peer-HBM
+  and DRAM occupancy, request and token reuse bins, and intended tier
+  admission by reuse bin.}
+  \label{fig:current-alpha-occupancy}
+\end{figure*}
+
+\paragraph{Reuse is abundant, but does not automatically become copy
+deduplication.}
+Across the trace, 92.63\% of requests have workflow-local prefix reuse and
+98.31\% of prompt tokens are reused 64-token hash-ID blocks.  The near-complete
+bin contains 52.30\% of requests and 78.46\% of prompt tokens
+(Table~\ref{tab:reuse-bins}).  Higher reuse correlates with more DRAM-only
+admission in the rate-zero central cell, but the bins are descriptive and the
+policy uses Slack, feasibility, capacity, and transfer deadline as well as
+reuse.  Therefore this association is not a causal reuse effect.
+
+\begin{table*}[t]
+  \centering
+  \caption{Current-design rate-zero central reuse detail, pooled over ten
+  seeds.  Residency fractions are among intended chunks in each bin; the
+  restored-token fraction comes from fixed K64 conditioned probes and is not
+  an IID or WCT sample.  HBM-only is 0\% in every row.}
+  \label{tab:reuse-bins}
+  \begin{tabular}{@{}lrrrrrr@{}}
+    \toprule
+    Input reuse bin & Requests & Prompt tokens & DRAM-only & HBM+DRAM & Bypass &
+      Restored tokens \\
+    \midrule
+    None          & 7.37\% & 0.39\% & 25.69\% & 74.23\% & 0.08\% & 87.56\% \\
+    Partial       & 5.17\% & 1.78\% & 35.69\% & 63.84\% & 0.47\% & 94.93\% \\
+    High          & 35.16\% & 19.36\% & 42.22\% & 57.53\% & 0.25\% & 90.17\% \\
+    Near-complete & 52.30\% & 78.46\% & 59.41\% & 40.33\% & 0.26\% & 85.78\% \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/sim-fig06_reuse_and_recovery.pdf}
+  \caption{Current-design SGLSim reuse and recovery detail for the rate-zero
+  central full policy.  Left: all-request workload composition.  Middle:
+  intended residency by reuse bin.  Right: conditioned-probe restored-token
+  fraction; strata are descriptive rather than IID.  This is mechanism
+  coverage, not a WCT result.}
+  \Description{Three panels show request and prompt-token fractions by reuse
+  bin, intended DRAM-only and joint HBM-DRAM residency, and restored-token
+  fractions for conditioned recovery probes.}
+  \label{fig:current-reuse-recovery}
+\end{figure*}
+
+\paragraph{The matrix reveals both useful coverage and missing stress.}
+At the central point, mean HBM/DRAM occupancy is only 0.856\%/0.253\% and
+copy amplification is 1.443$\times$.  Across all 33 full-policy scenarios
+(330 seed runs), HBM-only admissions and DRAM evictions are both zero.  Thus,
+the campaign exercises independent paths and all outcomes through mechanism
+gates, but does not outcome-cover HBM-only retention or DRAM eviction under
+tier saturation.  Conditioned restored-token coverage rises from 0\% at
+1~GB/s to 87.09\%, 90.92\%, and 93.28\% at 10, 20, and 40~GB/s.  These rates
+show transfer-deadline sensitivity, not observed online recovery probability:
+they come from fixed live-state probes, copy traffic does not backpressure
+foreground inference, and no worker replacement is executed.

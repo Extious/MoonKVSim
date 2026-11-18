@@ -1,0 +1,76 @@
+\section{Discussion and Limitations}
+\label{sec:discussion}
+
+\paragraph{A deliberate evidence-lineage mismatch.}
+The system description is the current source-owned independent-tier design,
+whereas the WCT artifacts were produced by a superseded prototype.  We chose
+not to relabel the old results or translate their legacy L1/L2 states into
+Peer HBM/Store DRAM.  Consequently, the reported WCT answers whether earlier
+KV protection reduced recomputation delay, but not whether the present
+admission, two-level victim indexes, independent ACKs, or HBMQuotaAIMD improve
+WCT.  The separate current-design campaign verifies control direction,
+occupancy, intended residency, reuse, and conditioned coverage only.  A
+current-design WCT campaign must rerun the same workload and baselines from
+one frozen source/config manifest before making an end-to-end claim.
+
+\paragraph{Small samples, projection, and incomplete inference.}
+The DP8 comparison has 24 paired workflows from one seed/trial.  Its paired
+points are more informative than treating request records as independent, but
+there are too few independent trials for a robust confidence interval.  The
+DP64 result is a model projection, not an observed scale-out run.  The
+heavy-failure panels contain 20 workflows each, no replication interval, and
+an unsuccessful alpha/beta pressure check.  We report all three because they
+answer complementary WCT questions, but we do not pool them, attach a common
+confidence interval, or infer a scaling law.
+
+\paragraph{Prediction and online control.}
+Slack is a priority signal, not a correctness condition.  Unseen branches or
+an incomplete visible frontier can zero or reorder priorities; capacity,
+chunk validity, version checks, and output fences remain independent of
+prediction quality.  SlackLandlord is a bounded-overhead online policy, not a
+global optimum: variable chunks, prefix constraints, independent tiers,
+joint residency, and asynchronous copies preclude Landlord's original
+competitive ratio.  None of the historical WCT artifacts isolates prediction
+error or the present Algorithms~1--3, so their individual contribution to WCT
+is unknown.
+
+\paragraph{Interpreting alpha.}
+Algorithm~3 reacts to foreground HBM pressure and stable windows, not directly
+to failure rate.  Lower load can raise alpha and sustained pressure can drive
+the effective quota to zero, but more failures alone need not raise it.  The
+legacy fixed-$\alpha$ DP8 comparison cannot establish adaptation benefit, and
+the heavy-failure artifact explicitly fails its pressure-validity check.  The
+current-design telemetry does establish the intended feedback direction:
+pressure grows 0.018$\rightarrow$0.590 and mean alpha falls
+0.868$\rightarrow$0.129 across the concurrency sweep, while two high-pressure
+scale/model cells spend about 27\% of steady windows at alpha zero.  It still
+does not quantify the controller's WCT benefit.
+
+\paragraph{Simulator and fault envelope.}
+Every quantitative result is from SGLSim.  The legacy WCT and current
+mechanism campaigns are separate lineages and are not pooled.  Service curves, failure timing,
+logical PP lanes, and transfer rates are controlled abstractions, not
+measurements of deployed Mooncake.  The artifacts omit or simplify physical
+worker replacement, correlated Store/Router failure, shared-NIC queueing,
+CUDA overlap, kernel interference, and healthy-path copy contention.  The
+DP64 projection additionally omits correlated outage, co-failure, and queue
+spillover.  Thus, these results neither establish physical fail-stop recovery
+nor quantify deployed latency, throughput, bandwidth, or availability.
+
+\paragraph{Mechanism coverage.}
+The current campaign's 92.63\% request reuse and 98.31\% prompt-token reuse are
+workflow-local prefix properties; the simulator explicitly does not
+deduplicate protection copies using reuse.  Low central mean occupancy
+(0.856\% HBM and 0.253\% DRAM), zero HBM-only admissions, and zero DRAM
+evictions across the full-policy scenario matrix mean the results do not
+stress every storage-control branch.  Conditioned restored-token fractions
+likewise describe fixed live-state probes, not IID failures or online
+availability.
+
+\paragraph{Baseline scope.}
+The paired DP8 data provide direct no-backup, host-only, peer-GPU, and legacy
+AegisKV comparisons.  They are prototype controls rather than faithful
+reproductions of DejaVu, RaidServe, KevlarFlow, or GhostServe.  The fact that
+host-only and peer-GPU backup beat legacy AegisKV in this trial is a material
+negative result.  It motivates, rather than validates, the current design's
+independent tier admission and pressure-aware quota control.

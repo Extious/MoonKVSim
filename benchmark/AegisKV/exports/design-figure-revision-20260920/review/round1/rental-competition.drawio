@@ -1,0 +1,68 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" version="31.1.5">
+  <diagram id="rental-competition" name="rental-competition">
+    <mxGraphModel page="1" pageScale="1" pageWidth="480" pageHeight="366" background="#FFFFFF">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" value="Mechanism" />
+        <mxCell id="canvas" value="" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#FFFFFF;strokeColor=none;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="480" height="366" as="geometry" />
+        </mxCell>
+        <mxCell id="title" value="One byte-unit of DRAM required" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="10" y="4" width="460" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="incoming" value="" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#DDEBF3;strokeColor=#23688D;strokeWidth=1.4;container=1;collapsible=0;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry x="19" y="45" width="442" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="incoming-name" value="Incoming x · size 1" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;fontStyle=1;" vertex="1" parent="incoming">
+          <mxGeometry x="5" y="3" width="432" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="incoming-credit" value="Trial credit: 6 → 4" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;" vertex="1" parent="incoming">
+          <mxGeometry x="5" y="31" width="432" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="price" value="Trial rent +2 per byte-unit" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="20" y="113" width="440" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="q" value="" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#F7F9FA;strokeColor=#23688D;strokeWidth=1.4;container=1;collapsible=0;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry x="15" y="146" width="298" height="143" as="geometry" />
+        </mxCell>
+        <mxCell id="qtitle" value="Safe victims Q" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;fontStyle=1;" vertex="1" parent="q">
+          <mxGeometry x="7" y="4" width="284" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="yt" value="Resident y" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;fontStyle=1;" vertex="1" parent="q">
+          <mxGeometry x="8" y="42" width="133" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="ycredit" value="2 → 0" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#F3E5D1;strokeColor=#9B6428;strokeWidth=1.4;" vertex="1" parent="q">
+          <mxGeometry x="11" y="77" width="127" height="29" as="geometry" />
+        </mxCell>
+        <mxCell id="yend" value="Propose" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;" vertex="1" parent="q">
+          <mxGeometry x="8" y="113" width="133" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="zt" value="Resident z" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;fontStyle=1;" vertex="1" parent="q">
+          <mxGeometry x="152" y="42" width="133" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="zcredit" value="5 → 3" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#F1F3F4;strokeColor=#70808A;strokeWidth=1.4;" vertex="1" parent="q">
+          <mxGeometry x="155" y="77" width="127" height="29" as="geometry" />
+        </mxCell>
+        <mxCell id="zend" value="Keep" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;" vertex="1" parent="q">
+          <mxGeometry x="152" y="113" width="133" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="readert" value="Read lease" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="327" y="188" width="133" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="readercredit" value="1 → 0" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#F1F3F4;strokeColor=#70808A;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="330" y="223" width="127" height="29" as="geometry" />
+        </mxCell>
+        <mxCell id="readerend" value="Not in Q" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="327" y="259" width="133" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="size" value="All groups have size 1" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="28" y="301" width="424" height="23" as="geometry" />
+        </mxCell>
+        <mxCell id="commit" value="Check value → reserve → demote y" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#FFFFFF;strokeColor=#70808A;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="16" y="335" width="448" height="28" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

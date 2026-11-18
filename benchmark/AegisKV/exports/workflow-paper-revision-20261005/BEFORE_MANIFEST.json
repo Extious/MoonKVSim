@@ -1,0 +1,126 @@
+[
+  {
+    "path": "benchmark/AegisKV/paper/main.tex",
+    "sha256": "b9a5e052cf73f6e3381cfe2e178cee1b5fcd60c87ab54bea2ad44dc4055db12e"
+  },
+  {
+    "path": "benchmark/AegisKV/paper/background.tex",
+    "sha256": "26b4e3096c43861ebec7139fc32df6ec520d0a73bcba08bfc414b99add041aaa"
+  },
+  {
+    "path": "benchmark/AegisKV/paper/motivation.tex",
+    "sha256": "80702fefae6be4bf0a0f950803a52d5745a9c4cd6eb8d46030548bb7b3b77269"
+  },
+  {
+    "path": "benchmark/AegisKV/paper/system_design.tex",
+    "sha256": "707812b1efc3813d80ec2ebdedbd3f7097670d813bd8fe2d55ceca501a141e71"
+  },
+  {
+    "path": "benchmark/AegisKV/paper/evaluation.tex",
+    "sha256": "5786f1a432d011accc970aeac79cddcf6297455449698a4122623470686611f9"
+  },
+  {
+    "path": "benchmark/AegisKV/paper/abstract.tex",
+    "sha256": "1571bd2b1adcddaf452f7eba0d825539f745a2b4b04341336a9f94bbdf635f16"
+  },
+  {
+    "path": "benchmark/AegisKV/paper/introduction.tex",
+    "sha256": "56a9ffdcc810aaa7382461caa9de52c2b0cc231f1cdd472fa608b10efddb7708"
+  },
+  {
+    "path": "benchmark/AegisKV/paper/related.tex",
+    "sha256": "f832adb293a44e9960b1b4c0f7771d4e0c6a25776cc19bd3d2a58fb05b264a7b"
+  },
+  {
+    "path": "benchmark/AegisKV/paper/conclusion.tex",
+    "sha256": "4f35c25ad34ba7f02032437cffa2ab5a0ce5cbba1280070f4af32b40aacdeb5b"
+  },
+  {
+    "path": "benchmark/AegisKV/paper/references.bib",
+    "sha256": "7b4281820503f720e1347b0b2d1ab96cbfdf744af4830e6c4b5c858f7186603c"
+  },
+  {
+    "path": "benchmark/AegisKV/paper/evaluation-references.bib",
+    "sha256": "1592989ff0351031bac5d51c978b9187194748b62ece479a9889df17e436cc7b"
+  },
+  {
+    "path": "benchmark/AegisKV/paper/main.pdf",
+    "sha256": "3cf05c658f97f2c0b84ee54ca135ffcc4f53dfc3e1db877f23c501eae7a3ac65"
+  },
+  {
+    "path": "benchmark/AegisKV/paper/figures/kv_value.pdf",
+    "sha256": "9604c2a8d60b91803cfdd77d74e1ee445ab00eb2176291f987ae98c10cc39179"
+  },
+  {
+    "path": "benchmark/AegisKV/paper/figures/agent_value_a.pdf",
+    "sha256": "64efc54157b391950b91f71b4ff3f190cd258886ed38fdd38e3f7c282407395f"
+  },
+  {
+    "path": "benchmark/AegisKV/paper/figures/agent_value_b.pdf",
+    "sha256": "fe4bcddd480072b70564e5f5c0b997ebdca2630ac23e0ffd86eb35cfaec6fc96"
+  },
+  {
+    "path": "benchmark/AegisKV/paper/figures/serving_model.pdf",
+    "sha256": "11c58542a81c14c6c2488cb51e5b51797983d5169e7114703823f8f72aac2a2f"
+  },
+  {
+    "path": "benchmark/AegisKV/paper/figures/eval-sparse-recovery.pdf",
+    "sha256": "f0a4dec153aeee9240c6429d7ad473baf8bc8a50ffe89b79671363899d33f5e0"
+  },
+  {
+    "path": "benchmark/AegisKV/paper/figures/eval-sparse-bandwidth.pdf",
+    "sha256": "801a729e47d37b5c30bea4544997139f9591c8812aeda68395ce23558c6160d3"
+  },
+  {
+    "path": "benchmark/AegisKV/paper/figures/eval-sparse-k.pdf",
+    "sha256": "6f867b5224a8c07c42eb564c9fdde00048229b522cf480dd04302d72b437b1aa"
+  },
+  {
+    "path": "benchmark/AegisKV/paper/figures/eval-sparse-l.pdf",
+    "sha256": "7a3bad5e54fe9932d7462797f2b16b27964f9d73633e2faa1849967b0fe1b90d"
+  },
+  {
+    "path": "benchmark/AegisKV/paper/figures/eval-online-wct.pdf",
+    "sha256": "10aae0289f74590396626f1e0a6ae7bd15ae99c20709ecdf48a5c21a9f9b497f"
+  },
+  {
+    "path": "benchmark/AegisKV/paper/figures/eval-retry-length.pdf",
+    "sha256": "37505b321eda58dd7101c228d5f36b9d65b5a3cb68498aa7521450eabaa0567a"
+  },
+  {
+    "path": "benchmark/AegisKV/paper/figures/eval-fault-downtime.pdf",
+    "sha256": "ef66070999055e17c405f7abb87261608a077e66a768f1f716bbec0e7682c46f"
+  },
+  {
+    "path": "benchmark/AegisKV/paper/figures/master-selection.pdf",
+    "sha256": "2c6d7c4b7593cae77713c260f91e8d31625b3c499b3b822d18835afe60ee8d5e"
+  },
+  {
+    "path": "benchmark/AegisKV/paper/figures/recovery-pipeline.pdf",
+    "sha256": "3870754c7a1638cd36108447dcdf1232ae3825e4a4e56edefc50c10bc2a6cc8f"
+  },
+  {
+    "path": "benchmark/AegisKV/paper/figures/depth-bandwidth.pdf",
+    "sha256": "092092a1f1062ba6527fbf585ea3669bfc5cf77c87ca87002306b85e1f39425f"
+  },
+  {
+    "path": "benchmark/AegisKV/paper/figures/eval-native-topk.pdf",
+    "sha256": "b12fee2f9454ba533c9579220e9ceb41a27e1867e77481b1c6716ccf33690ba2"
+  },
+  {
+    "path": "benchmark/AegisKV/paper/figures/eval-structural-wct.pdf",
+    "sha256": "8ce08c7e313e756be00e0136c9b15f579cf971e823d8835a323cf3562da1b63a"
+  },
+  {
+    "path": "benchmark/AegisKV/paper/figures/eval-resource-sensitivity.pdf",
+    "sha256": "5ba832c01132c34f820a67b8c2b43d731f8129dd9af89442ddb95b43709a16fc"
+  },
+  {
+    "path": "benchmark/AegisKV/paper/figures/eval-primary-wct.pdf",
+    "sha256": "0b21e76863249f6231ae159d856d50ee8510bd25b0e8c9b1a8539d724b2ba8ee"
+  },
+  {
+    "path": "benchmark/AegisKV/paper/figures/system-overview.pdf",
+    "sha256": "13141d672317471d43afffe79463bf67d0dea436d4fc42e0b76076157ad76961"
+  }
+]

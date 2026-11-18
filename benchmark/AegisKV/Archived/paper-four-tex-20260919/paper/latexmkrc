@@ -1,0 +1,4 @@
+# Portable pdfLaTeX/BibTeX build, also read by Overleaf.
+$pdf_mode = 1;
+$bibtex_use = 2;
+$max_repeat = 5;

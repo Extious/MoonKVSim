@@ -1,0 +1,89 @@
+\documentclass[sigplan,10pt,anonymous,balance=false]{acmart}
+\setcopyright{none}\settopmatter{printacmref=false,printccs=false}
+\acmConference[Figure proof]{AegisKV figure placement proof}{}{}\acmYear{2026}\copyrightyear{2026}\acmDOI{}\acmISBN{}
+\renewcommand\footnotetextcopyrightpermission[1]{}\usepackage{graphicx}\raggedbottom
+\begin{document}\title{AegisKV: Agent Subleases and Guarded AIMD}\author{Anonymous}\affiliation{\institution{Anonymous}\country{Anonymous}}\maketitle\pagestyle{plain}
+Placement proof at the manuscript's actual column and text widths. Evidence classes are stated in captions. Quantitative results use frozen source-v3 experiments. Algorithm 2 is under revision; this proof reviews figure presentation only.
+\clearpage
+\begin{figure*}[t]
+\begin{minipage}[t]{0.47619\textwidth}\vspace{0pt}\centering
+\includegraphics[width=\linewidth]{/home/comp/zhanzhao/MoonKVSim/output/pdf/aegiskv-evaluation-20260909/motivation-branch-gap.pdf}
+\caption{Maximum overlapping-branch duration gap per workflow in 124 CC/Weka workflows. The horizontal axis is logarithmic. Observed duration imbalance is not itself an estimate of usable slack.}\label{fig:lease-motivation-branch-gap}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.47619\textwidth}\vspace{0pt}\centering
+\includegraphics[width=\linewidth]{/home/comp/zhanzhao/MoonKVSim/output/pdf/aegiskv-evaluation-20260909/motivation-recovery-exposure.pdf}
+\caption{Recovery cost versus workflow delay in five separate branch-fault counterfactuals of one trace fan-out at 349.5 s. Bars partition modeled recomputation into absorbed and exposed delay. Frozen AIConfigurator Qwen3-235B-A22B, A100-80GB, TP8/PP4/EP8; other branches are unchanged. This is neither a measured failure nor the later Qwen3-8B evaluation.}\label{fig:lease-motivation-recovery-exposure}
+\end{minipage}
+\end{figure*}
+
+\clearpage
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{/home/comp/zhanzhao/MoonKVSim/output/pdf/aegiskv-evaluation-20260909/motivation-kv-capacity.pdf}
+\caption{Analytical Qwen3-8B BF16 KV footprint (Ki=1024). The reference subtracts model weights and 2 GiB runtime from 40 GiB, before dynamic foreground KV. It is not a lendable backup quota.}
+\label{fig:lease-motivation-kv-capacity}
+\end{figure}
+
+\clearpage
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{/home/comp/zhanzhao/MoonKVSim/output/pdf/aegiskv-evaluation-20260909/system-overview.pdf}
+\caption{AegisKV overview. The source independently copies sealed C0/C1 to Peer HBM and DRAM; each tier publishes after its own copy acknowledgement. Workflow value and per-tier admission choose shared physical objects. An independent controller constrains Peer borrowing. Either committed tier can restore C0/C1 into a new primary before recomputing C2. P0/P1 belong to unrelated foreground work. Solid arrows carry KV; dashed arrows carry control.}
+\label{fig:lease-system-overview}
+\end{figure*}
+
+\clearpage
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{/home/comp/zhanzhao/MoonKVSim/output/pdf/aegiskv-evaluation-20260909/eval-healthy-workflow.pdf}
+\caption{Historical source-v3 simulation: WCT change relative to matched Mooncake for all 160 workflows. Zero is the Mooncake baseline; negative is faster. IDs follow the frozen Mooncake F0 order. Segments connect objects, not time. One execution per system; no replicate confidence intervals.}
+\label{fig:lease-eval-healthy-workflow}
+\end{figure*}
+
+\clearpage
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{/home/comp/zhanzhao/MoonKVSim/output/pdf/aegiskv-evaluation-20260909/eval-healthy-reuse.pdf}
+\caption{Change in DRAM prompt-token hit rate for the same workflow IDs and order, in percentage points. The denominator includes cold and revisit prompt tokens and excludes recovery tokens. Aggregate hit rate is token-weighted, not the mean of these points.}
+\label{fig:lease-eval-healthy-reuse}
+\end{figure*}
+
+\clearpage
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{/home/comp/zhanzhao/MoonKVSim/output/pdf/aegiskv-evaluation-20260909/eval-healthy-resources.pdf}
+\caption{Each resource metric is independently normalized to Mooncake on a log axis. Python reference CPU is measured; the other rows are uncalibrated simulation. Cumulative wait, queue percentiles and traffic are not additive. Successful GET populations differ. Native process CPU and per-GPU peak HBM remain unmeasured.}
+\label{fig:lease-eval-healthy-resources}
+\end{figure*}
+
+\clearpage
+\begin{figure*}[t]
+\begin{minipage}[t]{0.47619\textwidth}\vspace{0pt}\centering
+\includegraphics[width=\linewidth]{/home/comp/zhanzhao/MoonKVSim/output/pdf/aegiskv-evaluation-20260909/eval-failure-wct.pdf}
+\caption{Historical cases C1-C3 each compare the same focal workflow across three systems. WCT is normalized to Mooncake F1 within that case. Logical request and token progress were matched, but the complete affected population was not fixed. These are not measurements of the redesigned protocol.}\label{fig:lease-eval-failure-wct}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.47619\textwidth}\vspace{0pt}\centering
+\includegraphics[width=\linewidth]{/home/comp/zhanzhao/MoonKVSim/output/pdf/aegiskv-evaluation-20260909/eval-failure-increment.pdf}
+\caption{Each point is 100 times (own F1 minus own F0) divided by the same case's Mooncake F0 WCT. Negative increments are retained and may arise from scheduling changes. The three prespecified cases are not independent repetitions; no trend or confidence interval is fitted.}\label{fig:lease-eval-failure-increment}
+\end{minipage}
+\end{figure*}
+
+\clearpage
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{/home/comp/zhanzhao/MoonKVSim/output/pdf/aegiskv-evaluation-20260909/eval-failure-recovery.pdf}
+\caption{Two adjacent intervals for the same focal requests: fault to prefix ready (including detection, routing and materialization), then prefix ready to resumed decode (including suffix work and queuing). Operations within each interval are not separated. The endpoint is resumed decode, not workflow completion; a shorter bar alone does not establish a WCT benefit.}
+\label{fig:lease-eval-failure-recovery}
+\end{figure*}
+
+\clearpage
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{/home/comp/zhanzhao/MoonKVSim/output/pdf/aegiskv-evaluation-20260909/eval-failure-kv.pdf}
+\caption{Historical token counts for the same three focal requests, with systems aligned to the recovery-stage view. Ki=1024. Bars include restored Peer tokens, restored DRAM tokens and recomputed tokens, not all context tokens. All Peer restoration counts are zero.}
+\label{fig:lease-eval-failure-kv}
+\end{figure*}
+
+\end{document}

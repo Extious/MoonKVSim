@@ -1,0 +1,15 @@
+\begin{figure*}[tp]
+\centering
+\includegraphics[width=\textwidth]{figures/timing-robustness.pdf}
+\caption{Sensitivity to modeled service composition. Increasing $\beta$
+changes a shared step from the maximum participant share toward their sum.
+(a) Focus failure-penalty difference, normalized by that seed and service
+model's Store-only F0 focus completion time. (b) Whole-workload mean
+failure-penalty difference. Negative values favor AegisKV. Each model uses
+five paired seeds, matched logical focus requests, and separate F0 controls;
+bars show 95\% Student-$t$ intervals ($df=4$).
+The three assumptions are uncalibrated models, not measured hardware bounds.}
+\Description{Paired policy differences under three assumptions about how
+participant service shares compose within a scheduler step.}
+\label{fig:timing}
+\end{figure*}

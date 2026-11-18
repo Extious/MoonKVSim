@@ -1,0 +1,136 @@
+\section{Simulation Results}
+\label{sec:results}
+All 170 measured executions complete the frozen workload and pass the
+independent raw-evidence audit. This section separates protection traffic,
+recovery preparation and whole-workflow completion. Figures show all five
+paired admission orders and 95\% intervals where applicable.
+\begin{table}[t]
+\centering
+\caption{Base-setting absolute endpoints (seconds), averaged over five seeds.
+These descriptive means do not replace paired penalty contrasts.}
+\label{tab:endpoints}
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Arm & F0 WCT & F1 WCT & F1 batch \\
+\midrule
+Unprotected & 41.565 & 42.686 & 441.871 \\
+DRAM-only & 41.565 & 42.453 & 439.506 \\
+Full AegisKV & 41.488 & 42.407 & 439.038 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\subsection{Healthy protection cost}
+Figure~\ref{fig:healthy} shows substantial copying with little resolved
+WCT change. Full transfers 5,497 GiB per workload, versus
+2,867 GiB for DRAM-only (91.8\% more). Its paired mean
+WCT difference is -0.078 s (95\% CI [-0.229, +0.073] s);
+unprotected has the same healthy control times. The interval includes zero.
+Background copies can overlap compute, while memory and closed-loop batching
+change schedules. These modeled timings exclude real controller/kernel costs.
+
+\begin{figure*}[t]
+\centering\includegraphics[width=\textwidth]{figures/aligned-healthy.pdf}
+\caption{Healthy execution. (a) Full minus control mean WCT, aggregated within
+each seed before comparison. (b) Bytes actually transferred for protection
+across the complete workload, including work on later-aborted copies.
+Traffic is in TiB ($2^{40}$ bytes). Open circle, square, up/down triangle
+and plus markers identify seeds 0--4; filled diamonds and bars show means
+and 95\% Student-$t$ intervals. Modeled zero latency cost would not imply zero physical
+controller or kernel overhead.}
+\Description{Paired healthy workflow-latency differences and protection
+traffic for unprotected, DRAM-only and full treatments.}
+\label{fig:healthy}
+\end{figure*}
+
+\subsection{Failure impact on complete workflows}
+The raw ECDFs largely overlap (Figure~\ref{fig:failure} and
+Table~\ref{tab:endpoints}). Relative to DRAM-only, full's mean failure-penalty
+contrast is +0.032 s (95\% CI [-0.159, +0.222] s);
+the focus contrast is +1.661 s (95\% CI [-2.931, +6.254] s).
+Against unprotected recomputation, the whole-workload contrast is
+-0.201 s (95\% CI [-0.669, +0.267] s).
+None establishes a stable advantage across these admission orders.
+
+\begin{figure*}[t]
+\centering\includegraphics[width=\textwidth]{figures/aligned-failure.pdf}
+\caption{Base-setting failure outcomes. (a) Descriptive WCT ECDFs over 160
+workflows in each of five runs per arm; the 800 values are not independent
+replicates. (b,c) Paired F1-minus-F0 penalty contrasts for the whole-workload
+mean and the prespecified focus workflow. Negative values favor full.
+Intervals use five admission orders, not workflow-level pseudo-replicates.}
+\Description{Raw workflow completion distributions and controlled contrasts
+against unprotected recomputation and DRAM-only protection.}
+\label{fig:failure}
+\end{figure*}
+
+\subsection{Recovery state and preparation}
+Full copies HBM for four of five focus requests; one uses DRAM alone
+(Figure~\ref{fig:recovery}). In seed 0, both arms restore 36,864 prompt tokens,
+but full reaches prefix-ready 0.711 s sooner. The corresponding workflow
+penalty contrast is still +0.029 s.
+In the largest adverse focus contrast (seed 4), full's workflow penalty
+exceeds DRAM-only by 8.278 s despite faster
+focus-request recovery. The trace shows a different branch sharing the
+recovery worker becoming the last branch before the join; the final request
+also waits longer. This post-hoc example explains why a restored prefix or
+faster preparation cannot establish workflow-level benefit.
+
+\begin{figure*}[t]
+\centering\includegraphics[width=\textwidth]{figures/aligned-recovery.pdf}
+\caption{The five prespecified focus requests. (a) DRAM/full bars partition each
+prompt into HBM copy, DRAM load and recomputation. (b) Paired prefix-ready
+times include queueing and preparation; lines connect treatments within a
+seed. (c) Prefix-ready saving against the F0-corrected focus-WCT penalty
+contrast; numbers identify seeds (1--3 nearly coincide). Seed 4 prepares
+faster yet finishes its workflow later. No regression is fitted.}
+\Description{Per-seed recovery-source proportions, paired prefix preparation times,
+and their relationship to corrected workflow completion penalties.}
+\label{fig:recovery}
+\end{figure*}
+
+\subsection{Mechanism ablations}
+Every whole-workload and focus interval in Figure~\ref{fig:ablations}
+includes zero; the zero-Slack focus contrast is exactly zero in all five
+seeds. There is no resolved latency benefit for an individual mechanism here.
+Retention nevertheless changes healthy traffic: removing Slack raises it to
+6,873 GiB and LRU to 7,175 GiB, versus
+5,497 GiB for full. Fixing the initial quota uses
+5,107 GiB. These byte costs are mechanism observations,
+not evidence of a failure-latency or hardware-throughput improvement.
+
+\begin{figure*}[t]
+\centering\includegraphics[width=\textwidth]{figures/aligned-ablations.pdf}
+\caption{Ablation minus full: (a,b) failure penalties corrected by each arm's
+own F0 run; (c) healthy copy traffic. Positive values favor full. Slack
+sets the signal to zero; AIMD fixes the initial quota; LRU replaces retention.
+All keep request ownership, copying and cleanup. Each estimate uses five
+paired admission orders; the byte effect does not establish a WCT gain.}
+\Description{Whole-workload, focus-workflow and healthy-byte effects of removing
+Slack, fixing quota control, and replacing retention with LRU.}
+\label{fig:ablations}
+\end{figure*}
+
+\subsection{Sensitivity to modeled conditions}
+All fourteen whole-workload/focus intervals across the seven settings
+include zero (Figure~\ref{fig:sensitivity}). At 5 GB/s, the focus estimate is
+-2.239 s (95\% CI [-12.889, +8.410] s),
+showing substantial uncertainty. With two sequential faults, the whole-workload
+contrast is +0.046 s (95\% CI [-0.249, +0.341] s).
+Service composition and admission order can change signs and dispersion;
+these experiments support a conditional mechanism study, not a universal
+performance ranking.
+
+\begin{figure*}[t]
+\centering\includegraphics[width=\textwidth]{figures/aligned-sensitivity.pdf}
+\caption{Full minus DRAM failure-penalty contrasts across the declared
+settings. $C$ is workflow concurrency and $\beta$ the serialized fraction of
+modeled batch service. Two faults use their two prespecified focus workflows
+and reuse base F0 controls. Open markers show all seeds; intervals are exploratory,
+unadjusted comparisons. Negative values favor full.}
+\Description{Paired sensitivity to concurrency, batch service composition,
+path bandwidth and two sequential failures.}
+\label{fig:sensitivity}
+\end{figure*}

@@ -1,0 +1,27 @@
+\begin{abstract}
+Multi-agent applications accumulate reusable context while executing
+interdependent LLM requests. A worker failure can lose this state and delay
+several branches at once, yet protecting every context in fast memory is
+expensive. We propose AegisKV, a workflow-aware manager for KV checkpoints
+across Peer HBM, shared DRAM and shared storage. Exclusive managed objects
+across the three tiers cover a committed checkpoint. AegisKV combines
+normal reuse, guarded workflow slack and causal sparse demand to set
+protection priorities. Fixed layer/block quotas accelerate selected
+requests on a compatible takeover DP; lower-tier renewable credit and
+bounded lazy updates manage capacity pressure.
+Versioned transitions preserve recovery validity during migration and
+explicit fallback. A per-DP Adapter changes total Peer capacity while the
+Master updates request membership and hot-block identities without
+changing the calibrated quotas or native attention semantics. We connect
+physical reconstruction microbenchmarks and held-out trace diagnostics
+to reproducible analytical controls and a matched experimental protocol.
+In 36 declared Peer-disabled scenarios, the placement model improves on
+LRU in 17 and ties in 19. Matched analytical schedules illustrate Peer's
+incremental overlap benefit; neither model measures a three-tier system. Historical outage timing drives a separate recovery-load model in which
+a lower mean coexists with worse tail latency. Historical analytical
+controls expose placement--overlap interactions and a rental regression;
+the protocol tests how contention, prediction error, and commit lag affect
+the current controller. End-to-end fault injection and normal
+service measurements remain necessary to establish the proposed system's
+performance.
+\end{abstract}

@@ -1,0 +1,60 @@
+{
+  "evidence": "Uncalibrated analytical recovery model and synthetic memory-admission simulation; no hardware execution",
+  "layout": "one row, three panels; old a/c/d",
+  "generator": "benchmark/AegisKV/experiments/scripts/paper/render_adapter_analysis_compact.py",
+  "generator_sha256": "7ef2b069dae5d542009dd99bf3f91e3dd3e9d7701ce474a5280f89ecd5f30add",
+  "shared_generator_sha256": "270ba551df804007a586de1135c8edd50d84dce787668dd6a8a03e7d40903772",
+  "typography": {
+    "family": "Linux Libertine O",
+    "font_pt": 10.05,
+    "regular_path": "/home/comp/zhanzhao/miniforge3/envs/latex/tinytex/texmf-dist/fonts/opentype/public/libertine/LinLibertine_R.otf",
+    "font_sha256": {
+      "regular": "6332761e4fc08e30bce6f47e4a08e7d5332abe000ab6ca06c8e86bd88f456114",
+      "bold": "5a7e41f3610e8b2ed91e53a2d0db975ce31dc81477217702728bfec3c3933d84"
+    },
+    "helper_sha256": "65ffa4eafa395de238caca43704dafdb05f422f89c0abe4be1b9468e44485290"
+  },
+  "parent_manifest_sha256": "dbd676456567e3c6194f5c1397e8f735e55289c6f45dad547924ea7f03e60d95",
+  "source_csv_sha256": {
+    "example-layer-events.csv": "98efd7be61e07a59dc78dfc252bc09e9770148b848d74c8c223cae2fb5b1ebcc",
+    "queue-runs.csv": "f236ecdc9fb2e90269be2bad9164a1e2629142b4ac1588a7707ae1f167e991c0",
+    "queue-summary.csv": "78046a4ebd1ace29132e647f3bcec301d976b9c151386a7c68bb1be69396b368",
+    "recovery-curves.csv": "bf638e73448f7de7358c87c8c00f3ce44f37c56a59aaa7715c7f8327c95a7f19",
+    "risk-curves.csv": "c89f547306259254f74aebfe3c04a41cad7fb31671f384b000db6bd5c9e80357",
+    "sensitivity.csv": "5e2beeca967bca267352b8af257d1d79cfe528eac9962d2bc79c3f3fdc5666d0"
+  },
+  "figure": {
+    "width_in": 7.0,
+    "height_in": 3.4000000423855252,
+    "minimum_pdf_font_pt": 10.050000190734863,
+    "exported_sha256": {
+      "pdf": "065d599bc3521e30c1e63efcb402ccab6dc33efb2126f42f818fe8cf515cc39c",
+      "svg": "428c6529eb2f47fa8792bf2de67b1047f2ecfa1da798aae0d20e3398fec48723",
+      "png": "113f8995b646cc69a733758bd62ffb327afe7443d00b6b9d51e03101a594cef2"
+    }
+  },
+  "data_reused_without_regeneration": true,
+  "new_simulation_runs": 0,
+  "physical_runs": 0,
+  "panel_mapping": {
+    "a": "old a: risk cost",
+    "b": "old c: total recovery",
+    "c": "old d: foreground queue"
+  },
+  "main_curve_values_unchanged": true,
+  "visual_review": {
+    "status": "reviewed final PNG, rendered PDF and grayscale",
+    "placed_width_mm": 177.8,
+    "minimum_font_pt": 10.050000190734863,
+    "data_reused_without_new_runs": true,
+    "labels": "Old c retained as new b; explicit L=0 DRAM-only baseline",
+    "figure_note": "Recovery includes known tail plus one resumed decode",
+    "preview_sha256": {
+      "adapter-analysis-compact.png": "113f8995b646cc69a733758bd62ffb327afe7443d00b6b9d51e03101a594cef2",
+      "adapter-analysis-compact-pdf-preview.png": "3d5ba2230c009ab5dbb5c24460cc27e6eb4bfdac4405ff46a2b14c3eae863060",
+      "adapter-analysis-compact-gray.png": "32bdac8adcfdc83cbc534362d93083492aa8485a67f7b3262fbdb6fa0c746faf"
+    },
+    "actual_manuscript_insertion": false,
+    "new_correction": "Keep total recovery in this candidate and explain common replay vs exposed loading under the same committed frontier"
+  }
+}

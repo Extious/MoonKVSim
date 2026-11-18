@@ -1,0 +1,18 @@
+% Source: Mooncake application/algorithm1.py:update_slack, inspected 2026-09-06.
+\begin{algorithm}[t]
+\caption{Causal GBDT--CPM update with calibrated Slack}
+\label{alg:slack-update}
+\begin{tabular}{@{}r@{\hspace{0.5em}}>{\raggedright\arraybackslash}p{\dimexpr\columnwidth-2.5em\relax}@{}}
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{\columnwidth}@{}}{\textit{Input:} event $e$, time $t$, causal predictor $f_\theta$, workflow-disjoint margin $m\ge0$. $A$: active nodes; $v$: event version.}\\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{\columnwidth}@{}}{\textbf{UpdateSlack}$(e,t)$}\\
+1 & $(G=(V,E),A,\phi,v)\gets\operatorname{Observe}(e,t)$; $\pi\gets\operatorname{Topo}(G)$.\\
+2 & \textbf{if} graph or node metadata is incomplete: publish invalid zero tickets for all $i\in A$; \textbf{return}.\\
+3 & For each $u\in V$, set $w_u\gets f_\theta(\phi_u)$ for agent nodes and $w_u\gets0$ for control nodes.\\
+4 & \textbf{if} any prediction is unavailable: publish invalid zero tickets for all $i\in A$; \textbf{return}.\\
+5 & For $u\in\pi$, set $ES_u\gets0$ at roots, otherwise $ES_u\gets\max_{z\in\operatorname{pred}(u)}(ES_z+w_z)$.\\
+6 & $C\gets\max_{u:\operatorname{succ}(u)=\varnothing}(ES_u+w_u)$.\\
+7 & For $u\in\operatorname{rev}(\pi)$, set $LS_u\gets C-w_u$ at sinks, otherwise $LS_u\gets\min_{z\in\operatorname{succ}(u)}LS_z-w_u$.\\
+8 & For each $i\in A$, set $s_i^{raw}\gets[LS_i-ES_i]^+$ and $s_i\gets[s_i^{raw}-m]^+$.\\
+9 & Publish valid tickets $(i,s_i,s_i^{raw},t,v)$ with prediction and calibration provenance.\\
+\end{tabular}
+\end{algorithm}

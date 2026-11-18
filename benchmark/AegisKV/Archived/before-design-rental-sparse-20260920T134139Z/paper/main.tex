@@ -1,0 +1,447 @@
+% Complete DRAM/storage research draft. Evaluation curves are analytical.
+% Compile this directory independently with pdfLaTeX and BibTeX.
+\documentclass[sigplan,10pt,anonymous,nonacm]{acmart}
+\setkeys{acmart.cls}{balance=false}
+\usepackage{subcaption}
+\usepackage{tabularx}
+\setcopyright{none}
+\settopmatter{printacmref=false,printccs=false,printfolios=true}
+\acmConference[EuroSys '27]{European Conference on Computer Systems}
+ {April 19--23, 2027}{Rabat, Morocco}
+\acmYear{2027}
+\acmDOI{}
+\acmISBN{}
+\title{AegisKV: Workflow-Aware KV Checkpoint Management\texorpdfstring{\\}{ }Across DRAM and Storage}
+\renewcommand{\bibfont}{\normalfont\normalsize}
+\newcounter{designalgorithm}
+\captionsetup[subfigure]{font=normalsize,labelfont=normalfont,textfont=normalfont}
+\AtBeginDocument{\typeout{AEGISKV-GEOMETRY: width=\the\textwidth;
+ height=\the\textheight; columnsep=\the\columnsep; baseline=\the\baselineskip}}
+\begin{document}
+\fancypagestyle{aegispreview}{\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+ \renewcommand{\footrulewidth}{0pt}\fancyfoot[C]{\normalsize\thepage}}
+\pagestyle{aegispreview}
+\input{abstract}
+\maketitle
+\thispagestyle{aegispreview}
+\raggedbottom
+
+\section{Introduction}
+\label{sec:introduction}
+
+A user of a multi-agent application waits for a completed task: a tested
+patch, a synthesized report, or an answer assembled from parallel searches.
+The service sees many LLM requests, but their value depends on how their
+outputs connect. A delay on a critical branch postpones the final result;
+an equally long delay on another branch may be absorbed before the join.
+Application-aware serving already exploits such structure during normal
+execution~\cite{lin2024parrot,pan2025kvflow,ni2026topas}. Failures expose a
+different resource-allocation problem: which reusable state should remain
+quickly recoverable when one worker interrupts several requests together?
+
+Long contexts make this question consequential. An agent's successive
+calls append reasoning, code, and tool results. Losing GPU-resident KV
+can force the service to reconstruct a large history before it resumes.
+KV checkpointing avoids this work~\cite{strati2024dejavu,jayakody2026ghostserve},
+and load-aware recovery distributes requests among surviving
+workers~\cite{cao2026lumen}. However, storing every history in fast memory
+competes with other contexts. Hierarchical caches already span DRAM and
+storage~\cite{qin2025mooncake,xie2026strata}; the remaining question is how
+to allocate that hierarchy according to the effect of recovery on the
+complete workflow.
+
+Neither recency nor recovery latency alone resolves this question. A
+recent, long history can belong to a branch with enough slack to tolerate
+storage access, while a smaller, less recent history is on the critical
+path. Conversely, high slack does not make a history worthless: evicting
+its last copy can cause repeated reconstruction at each normal invocation.
+A common worker failure further couples requests through both the DAG and
+shared storage, network, and target GPUs. Summing isolated request penalties
+can choose a placement that accelerates one branch without advancing its
+join. Finally, a placement change is asynchronous: releasing DRAM before
+its storage replacement commits can invalidate the very checkpoint the
+policy intends to protect.
+
+We propose AegisKV, an online KV checkpoint manager over shared DRAM and
+SSD or shared storage. It separates fast-tier retention from last-copy
+preservation. The Tracker estimates remaining workflow time; the KV Master
+compares complete migration plans using normal reuse and failure-domain
+recovery episodes. The Router selects compatible surviving execution
+targets, and versioned manifests and reader leases preserve recovery
+validity during demotion. Ordinary inference HBM remains available for
+execution; the design adds no dedicated Peer-HBM backup region.
+
+The contributions are threefold. First, we formulate tier placement in
+terms of the workflow consequences of both normal reuse and common-domain
+failure, distinguishing DRAM demotion from final deletion. Second, we
+specify a bounded online controller and an asynchronous checkpoint protocol
+that account for physical reservations, commit lag, and shared ownership.
+Third, we provide reproducible analytical scenarios and a matched
+experimental protocol that isolates dependency information, capacity,
+storage performance, and normal-service cost. The model exhibits gains,
+ties, and nonzero regret against a feasible oracle; it is not evidence of
+an implemented system's speedup. Our intended system claim is that
+workflow-aware protection improves the allocation of finite recovery
+resources, which the planned fault-injection experiments must test.
+
+\input{background_and_motivation}
+\input{system_design}
+
+\section{Evaluation}
+\label{sec:evaluation}
+
+We ask whether workflow information improves finite-tier allocation,
+where that benefit disappears, and what it costs during normal service.
+This version contains \emph{analytical results and an experimental design}.
+It does not claim completed end-to-end deployment or failure experiments.
+Existing trace observations and worker microbenchmarks in
+Section~\ref{sec:background-motivation} retain their distinct evidence levels.
+
+\subsection{Methodology and Reproducible Model}
+\label{sec:eval-method}
+
+\paragraph{Metrics and controls.}
+For workflow $w$ under policy $p$, define the paired failure penalty
+$D_{w,p}=\mathrm{WCT}^{\mathrm{fault}}_{w,p}-\mathrm{WCT}^{\mathrm{healthy}}_{w,p}$.
+Each policy has its own matched no-failure run. Comparing policies uses
+$D_{w,b}-D_{w,p}$, where positive values favor $p$; absolute healthy and
+faulty WCT are also reported. The observation cohort includes directly
+interrupted workflows and unaffected workflows sharing recovery resources.
+Normal-service metrics include TTFT, inter-token delay, SLO goodput,
+GPU-seconds, and per-tier request- and token-hit rates. Transfer bytes,
+checkpoint age, management CPU time, and failed admissions expose costs
+hidden by WCT alone.
+
+\paragraph{Analytical assumptions.}
+Four branches have 4, 8, 12, and 16\,GiB checkpoint groups and remaining
+times 12, 10, 5, and 1\,s. Their next-use weights are 0.15, 0.35, 0.60,
+and 0.85, normalized within a next-use episode. We assume two surviving
+targets, a 16\,GiB DRAM budget, and sufficient finite storage (160\,GiB).
+DRAM, storage, shared-network, and per-target H2D rates are respectively
+20, 4, 12, and 20\,GiB/s. A common 0.25\,s recovery floor and 0.4\,s tail
+replay complete the base profile. These are declared generic parameters,
+not measurements or calibration of a named GPU or SSD.
+
+An event calendar schedules 0.25\,GiB chunks through a shared DRAM or
+storage reader, a shared network, and target-local H2D engines. Equal
+chunks enter in round-robin request order. Ready operations take the
+earliest available resource, with stable submission order breaking ties.
+Tail replay waits for the request's state and shares target compute.
+Transport stages overlap; this model does not claim layer-wise
+transfer--compute overlap. Recovered branch times propagate through the
+join. Placement completes before the modeled fault, so commit lag and
+migration are studied separately rather than silently credited as zero.
+
+The scenario grid has three state-size factors (0.5, 1, 2), four slack
+factors (0, 0.3, 1, 3), and three storage rates (1, 4, 12\,GiB/s): 36
+configurations, not 36 independent physical repetitions. DRAM scales with
+state size. The scalar placement score uses failure-episode probability
+0.05 and next-use-episode probability 0.02 over a 60\,s horizon; no-event
+probability is the remainder. These illustrative probabilities are not a
+production failure-rate estimate. The \emph{AegisKV model} greedily admits
+whole groups by marginal score reduction per byte. It evaluates the
+static value component, not the full asynchronous online algorithm.
+
+\paragraph{Baselines.}
+Storage-only retains all state in the capacity tier. LRU fills DRAM in
+a declared most-recent order, A3 to A0; reuse-only prioritizes the assumed
+next-use probabilities. The feasible oracle enumerates all 16 group
+subsets under the same byte budget and minimizes the same score with true
+durations. It is an allocation oracle within this restricted group family,
+not a globally optimal online system. All-DRAM is an explicitly
+capacity-relaxed latency reference. Recompute is separately available in
+the model and required in physical tests. Named research systems receive
+no fabricated performance curves.
+
+\subsection{Workflow Outcomes and Capacity}
+\label{sec:eval-workflow}
+
+\begin{figure*}[t]
+ \centering
+ \begin{subfigure}{\columnwidth}
+  \includegraphics[width=\linewidth]{figures/workflow-outcomes.pdf}
+  \caption{Distribution across 36 configurations}
+  \label{fig:eval-wct}
+ \end{subfigure}\hfill
+ \begin{subfigure}{\columnwidth}
+  \includegraphics[width=\linewidth]{figures/capacity-frontier.pdf}
+  \caption{Finite DRAM, fixed 40\,GiB state}
+  \label{fig:eval-capacity}
+ \end{subfigure}
+ \caption{Analytical placement outcomes. (a) Each point is a deterministic
+ scenario from the declared grid; the ECDF is not workload uncertainty.
+ (b) Whole checkpoint groups explain discrete capacity transitions.
+ All policies use the same queues, byte budget, and surviving targets.
+ No confidence intervals or physical repetitions are implied.}
+ \label{fig:eval-outcomes}
+ \Description{An empirical distribution over enumerated analytical
+ configurations and a capacity sweep compare LRU, reuse, workflow value,
+ and a capacity-feasible allocation oracle.}
+\end{figure*}
+
+Figure~\ref{fig:eval-outcomes} shows the model's workflow penalties.
+The AegisKV model improves on LRU in 17 configurations and ties in 19.
+Mean penalties are 9.518\,s and 10.892\,s, respectively; these grid means
+do not estimate a production improvement. The oracle's mean is 9.386\,s.
+The largest greedy regret in the weighted placement objective is
+0.204\,s, demonstrating that marginal admission does not solve the
+non-additive problem exactly. LRU and reuse-only coincide under the
+chosen recency and reuse order; this is a property of these scenarios,
+not equivalence of the policies.
+
+The capacity sweep provides two essential controls. With zero DRAM,
+policies have the same storage path. Once all 40\,GiB fits, retention
+policies converge. Between these endpoints, group sizes, shared queues,
+and join sensitivity determine the result. Physical experiments must
+sweep the working-set/DRAM ratio, include a no-contention region, and
+retain per-workflow negative differences instead of reporting only a
+favorable aggregate.
+
+\subsection{Storage, Commit Lag, and Prediction Error}
+
+\begin{figure*}[t]
+ \centering
+ \begin{subfigure}{\columnwidth}
+  \includegraphics[width=\linewidth]{figures/storage-bottleneck.pdf}
+  \caption{Storage path sensitivity}
+ \end{subfigure}\hfill
+ \begin{subfigure}{\columnwidth}
+  \includegraphics[width=\linewidth]{figures/checkpoint-lag.pdf}
+  \caption{Checkpoint lag and review interval}
+ \end{subfigure}
+ \caption{Analytical recovery sensitivity. Left: all-DRAM relaxes the
+ 16\,GiB limit and is only a reference. Right: the ideal phase is enumerated
+ over $N=0,\ldots,Z-1$, with 100 generated tokens/s and 2.5\,ms replay/token;
+ an additional commit lag adds acknowledged tokens to replay. Other
+ parameters are fixed. Neither bandwidth nor replay rate is measured here.}
+ \label{fig:eval-storage}
+ \Description{Storage bandwidth and checkpoint lag sweeps expose I/O
+ bottlenecks and the difference between a review trigger and commitment.}
+\end{figure*}
+
+Faster storage narrows the value of DRAM residency until another shared
+resource dominates (Figure~\ref{fig:eval-storage}). This is why the main
+comparison requires a tuned, pipelined DRAM/storage baseline rather than
+only empty-cache recomputation. A shared filesystem must be labeled by
+its actual mount, cache state, and network path; a directory name cannot
+establish local NVMe behavior. Both client and server caching can change
+the apparent bandwidth.
+
+Review interval $Z$ is not a recovery bound. Under the idealized uniform
+phase law, the mean uncommitted tail is $(Z-1)/2$ tokens; copying backlog
+adds further acknowledged tokens. The right panel explicitly varies that
+lag. Actual experiments sample observed commit frontiers and fail at
+identical logical progress, with the same Workflow/Agent IDs. They must
+also include failures during initial prefill, pending copies, and demotion.
+
+\begin{figure*}[t]
+ \centering
+ \begin{subfigure}{\columnwidth}
+  \includegraphics[width=\linewidth]{figures/prediction-robustness.pdf}
+  \caption{Placement under duration perturbations}
+ \end{subfigure}\hfill
+ \begin{subfigure}{\columnwidth}
+  \includegraphics[width=\linewidth]{figures/healthy-io.pdf}
+  \caption{Background I/O interference}
+ \end{subfigure}
+ \caption{Analytical robustness, with no measured predictor or serving
+ latency. Left: alternating signs perturb branch duration estimates;
+ outcomes use true durations. Right: an M/D/1 queue with 10\,ms service
+ quanta and independent Poisson arrivals; curves vary foreground
+ utilization while backup adds load. The queue model is separate from
+ the restore scheduler and does not predict measured TTFT.}
+ \label{fig:eval-robustness}
+ \Description{Prediction perturbations affect which groups are placed;
+ a separate queueing model illustrates nonlinear interference near saturation.}
+\end{figure*}
+
+Prediction error can change which branch is considered critical. The
+perturbation study isolates this mechanism; it does not synthesize an
+accuracy CDF for the proposed GBDT. Physical validation uses held-out
+workflows and causal landmarks, reports absolute seconds-scale errors,
+false-positive slack, fallback frequency, and placement regret, and
+compares zero-slack, historical, learned, and oracle predictions. Both
+systematic bias and out-of-distribution workloads are necessary controls.
+
+\subsection{Attribution, Normal Service, and Safe Migration}
+
+\begin{figure*}[t]
+ \centering
+ \includegraphics[width=\textwidth]{figures/policy-ablation.pdf}
+ \caption{Analytical ablations, averaged equally over 12 size/slack
+ configurations at 4\,GiB/s storage bandwidth. No DAG makes all branches
+ equally critical; no reuse removes the normal-use term. Fault penalty
+ and next-use restore delay are separate outcomes. Bars have no
+ uncertainty intervals because the configurations are enumerated,
+ not experimental repeats.}
+ \label{fig:eval-ablation}
+ \Description{Policy ablations compare workflow penalty with normal
+ next-use restoration cost, retaining the tradeoff between the two objectives.}
+\end{figure*}
+
+Figure~\ref{fig:eval-ablation} removes dependencies and normal-use value
+separately. The required physical comparison holds cache capacities,
+checkpoint intervals, chunk sizes, transport scheduling, and failure
+handling fixed. It changes only the decision rule. A separate comparison
+against ordinary hierarchical caching plus a strong load-aware recovery
+policy tests whether the combined system improves on an existing stack.
+The design currently uses direct marginal revaluation; rental credit is
+an optional maintenance alternative whose incremental value must be
+isolated under the same score and migration rules.
+
+Normal service is a first-class outcome. Figure~\ref{fig:eval-robustness}
+shows, through a separate queueing example, why a 20\% backup bandwidth
+cap cannot imply 20\% latency overhead. At higher utilization, queueing
+amplifies contention. Full-system runs must therefore report healthy
+WCT and SLO goodput as well as injected-failure improvements, including
+long-context bursts, repeated Agent calls, and finite storage exhaustion.
+A fault-free pass runs each original DAG once, without manufactured reuse
+from repeated DAGs or clipping its initial calls.
+
+\begin{figure*}[t]
+ \centering
+ \begin{subfigure}{\columnwidth}
+  \includegraphics[width=\linewidth]{figures/safe-demotion.pdf}
+  \caption{A capacity contraction timeline}
+ \end{subfigure}\hfill
+ \begin{subfigure}{\columnwidth}
+  \includegraphics[width=\linewidth]{figures/common-fault.pdf}
+  \caption{A common-failure counterexample}
+ \end{subfigure}
+ \caption{Protocol and objective illustrations. Left: an assumed
+ 8\,GiB copy at 2\,GiB/s starts at 1\,s; commit/reader drain completes
+ at 5.5\,s. The 16\,GiB target does not free physical DRAM early.
+ Right: two critical branches each incur 10\,s recovery; retaining
+ each one reduces its recovery to 2\,s. The join advances only when
+ both are protected. These are exact constructed examples, not runtime tests.}
+ \label{fig:eval-safety}
+ \Description{A demotion timeline separates capacity targets from actual
+ release; a two-branch example separates summed penalties from workflow delay.}
+\end{figure*}
+
+Figure~\ref{fig:eval-safety} makes two testable invariants visible. Capacity
+reports must follow physical release, and common-failure evaluation must
+follow the DAG. Neither example validates concurrent code. The fault
+campaign injects failures before/after reserve, copy completion, commit,
+redirect, and lease release, plus full storage, duplicate callbacks, and
+stale epochs. It checks exact checkpoint bytes and model-state parity,
+recovery completion, duplicate-output suppression, and bounded queues.
+Correctness failures are reported alongside latency and never dropped.
+
+\subsection{Physical Experiment Plan and Statistical Analysis}
+\label{sec:eval-plan}
+
+The planned prototype integrates the controller with pinned SGLang and
+Mooncake revisions. A minimum deployment has two failure-separated model
+replicas and an accessible backing store; 4/8-replica runs evaluate load
+redistribution. Candidate models are Qwen2.5-7B-Instruct-1M, Qwen3-8B, and
+MiniCPM4-8B, with exact weight/kernel/layout revisions recorded per cell.
+Dense and sparse paths are evaluated separately. Context sweeps cover
+32K--1M only where the model, kernel, and physical memory support them;
+unsupported cells are recorded, not extrapolated as measurements.
+
+Workloads include an instrumented coding workflow, an explicit fan-out QA
+workflow~\cite{zhu2024fanoutqa}, and controlled fork/join and sequential
+DAGs. CC/Weka supplies locality/timing distributions, not recoverable
+prompts or ground-truth dependency edges. Tests vary DRAM/state ratio,
+storage capacity and bandwidth, arrivals at 30/60/85\% of the common
+baseline's measured saturation point, and failures at 20/50/80/95\% of a
+fixed Agent's logical token progress. One source-domain failure interrupts
+all colocated requests; request-only interruption is reported separately.
+
+Each primary cell starts with ten independently launched paired campaigns.
+A campaign fixes workflow IDs, prompt/tool data, arrival schedule, and
+logical failure event across policies, randomizes run order, and includes
+a healthy mate for each policy. Report the number of campaigns, workflows,
+and requests separately. Use a campaign-level paired bootstrap for mean
+differences; hierarchical workload resampling is a secondary analysis.
+Tail quantiles require enough completed workflows and remain descriptive
+when support is inadequate. Timeouts remain explicit outcomes: report
+completion rates and restricted completion time at the same horizon,
+without silently deleting censored workflows. Report all planned cells,
+confidence intervals, failures, and zero/negative effects. More seeds do
+not manufacture additional independent workloads.
+
+The accompanying protocol fixes per-experiment controls, log schemas,
+required baselines, and falsification conditions. Identical CSV schemas
+and plotting code accept either analytical or measured data; measured
+mode additionally checks raw-source hashes and statistical provenance.
+Changing data does not require changing figure geometry, but the text and
+captions must be revised to match the resulting evidence.
+
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Fault-tolerant LLM serving.}
+D\'ej\`aVu streams KV for disaggregation, memory management, and replicated
+state recovery~\cite{strati2024dejavu}. GhostServe protects streaming KV
+with host-memory erasure-coded parity~\cite{jayakody2026ghostserve}.
+RaidServe addresses resilience and imbalance in tensor-parallel serving
+through cyclic placement, hybrid attention, and load-aware
+routing~\cite{xu2026raidserve}. LUMEN coordinates checkpoint placement,
+interrupted-request distribution, and capacity restoration during model
+reload~\cite{cao2026lumen}. These works establish that KV state and
+recovery load both matter. AegisKV targets a complementary decision:
+which contexts deserve finite fast-tier capacity when their restoration
+has different workflow consequences. A convincing comparison must pair
+its placement with the same load-aware recovery substrate; generic LRU
+alone is insufficient as the final systems baseline.
+
+\paragraph{Hierarchical context caching.}
+Mooncake pools KV across memory and storage and schedules around cache
+locality~\cite{qin2025mooncake}; its SSD offload supports memory-pressure
+spill and storage retrieval~\cite{mooncake2026ssdoffload}. CachedAttention
+uses hierarchical caching, layer-wise preload, and asynchronous
+saving~\cite{gao2024cachedattention}. Strata addresses fragmented I/O,
+delay hits, and cache-aware scheduling in long-context
+serving~\cite{xie2026strata}. HCache restores states using intermediate
+activations and balances I/O with computation~\cite{gao2025hcache}.
+AegisKV does not claim hierarchical KV storage or prefetching as new.
+Its proposed addition is failure-domain and dependency-aware valuation,
+with separate costs for safe demotion and deletion of the last replica.
+
+\paragraph{Workflow-aware serving and prediction.}
+Parrot exposes application dataflow to optimize end-to-end
+execution~\cite{lin2024parrot}. KVFlow prioritizes prefixes using future
+Agent activation distance~\cite{pan2025kvflow}; Pythia and Cortex exploit
+workflow semantics for efficient Agent serving~\cite{yu2026pythia,pagonas2025cortex}.
+TOPAS jointly chooses prefix retention and execution using remaining
+service paths, reuse, and movement costs~\cite{ni2026topas}. This is close
+prior work: adding a critical-path score to a cache is not by itself our
+novelty claim. The intended distinction is recovery under a common worker
+failure, potentially stale checkpoints, and tier transitions that must
+preserve a valid recovery state. Heddle's trajectory
+prediction~\cite{zhang2026heddle} also does not validate the accuracy of our
+wall-clock estimator. These distinctions must survive the ablations in
+Section~\ref{sec:evaluation}.
+
+\paragraph{Placement and replacement mechanisms.}
+Critical-path analysis~\cite{kelley1959cpm} and cost/size-based online
+caching~\cite{young2002landlord} supply useful ingredients. AegisKV's
+state-dependent joint-failure value is non-additive and changes with the
+DAG, queues, and replicas. The classical Landlord competitive guarantee
+therefore does not transfer to this controller. The small-instance oracle
+measures approximation loss without claiming a new bound.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+AegisKV treats KV protection as an online decision about workflow progress
+across finite DRAM and storage. It preserves normal reuse, values common
+failures through dependencies, and separates desired placement from
+committed recoverable state. The analytical study identifies a useful
+operating region and clear limits: abundant DRAM, faster storage, inaccurate
+predictions, and shared queues can reduce the gain. The provided experiment
+and plotting artifacts make those hypotheses directly testable. Establishing
+system-level benefits still requires the specified implementation,
+correctness campaign, and paired physical measurements.
+
+\paragraph{AI assistance.}
+Generative AI assisted the drafting, experimental planning, and artifact
+code in this working version. Analytical results are explicitly labeled;
+author verification of the final implementation and measurements remains
+part of completing the study.
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{references}
+\end{document}

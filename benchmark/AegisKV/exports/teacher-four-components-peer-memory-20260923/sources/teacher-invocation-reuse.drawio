@@ -1,0 +1,62 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" version="31.1.5">
+  <diagram id="teacher-invocation-reuse" name="teacher-invocation-reuse">
+    <mxGraphModel page="1" pageScale="1" pageWidth="624" pageHeight="303" background="#FFFFFF">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" value="Mechanism" />
+        <mxCell id="canvas" value="" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Linux Libertine O;fontSize=21;fontColor=#243746;fillColor=#FFFFFF;strokeColor=none;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="624" height="303" as="geometry" />
+        </mxCell>
+        <mxCell id="title" value="One Agent, three invocation nodes" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Linux Libertine O;fontSize=26.5;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="8" y="2" width="608" height="33" as="geometry" />
+        </mxCell>
+        <mxCell id="a1" value="A(1)" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Linux Libertine O;fontSize=26.5;fontColor=#243746;fillColor=#DDEBF3;strokeColor=#23688D;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="122" y="51" width="92" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="a2" value="A(2)" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Linux Libertine O;fontSize=26.5;fontColor=#243746;fillColor=#DDEBF3;strokeColor=#23688D;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="308" y="51" width="92" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="a3" value="A(3)" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Linux Libertine O;fontSize=26.5;fontColor=#243746;fillColor=#DDEBF3;strokeColor=#23688D;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="494" y="51" width="92" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="next1" style="rounded=0;strokeColor=#243746;strokeWidth=1.7;endArrow=block;endFill=1;endSize=5;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" parent="1" source="a1" target="a2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="next2" style="rounded=0;strokeColor=#243746;strokeWidth=1.7;endArrow=block;endFill=1;endSize=5;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" parent="1" source="a2" target="a3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="history1-label" value="After A(1)" style="html=0;whiteSpace=wrap;align=left;verticalAlign=middle;spacing=1;fontFamily=Linux Libertine O;fontSize=26.5;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="8" y="113" width="147" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="history1" value="H1" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Linux Libertine O;fontSize=26.5;fontColor=#243746;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="158" y="113" width="180" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="input2-label" value="A(2) input" style="html=0;whiteSpace=wrap;align=left;verticalAlign=middle;spacing=1;fontFamily=Linux Libertine O;fontSize=26.5;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="8" y="159" width="147" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="prefix2" value="H1" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Linux Libertine O;fontSize=26.5;fontColor=#243746;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="158" y="159" width="180" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="new2" value="U2" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Linux Libertine O;fontSize=26.5;fontColor=#243746;fillColor=#F1F3F4;strokeColor=#70808A;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="338" y="159" width="105" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="input3-label" value="A(3) input" style="html=0;whiteSpace=wrap;align=left;verticalAlign=middle;spacing=1;fontFamily=Linux Libertine O;fontSize=26.5;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="8" y="205" width="147" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="prefix3" value="H1" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Linux Libertine O;fontSize=26.5;fontColor=#243746;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="158" y="205" width="180" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="extension2" value="E2" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Linux Libertine O;fontSize=26.5;fontColor=#243746;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="338" y="205" width="150" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="new3" value="U3" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Linux Libertine O;fontSize=26.5;fontColor=#243746;fillColor=#F1F3F4;strokeColor=#70808A;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="488" y="205" width="113" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="extension-note" value="E2 = U2 + accepted A(2) output" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Linux Libertine O;fontSize=26.5;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="8" y="257" width="608" height="33" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

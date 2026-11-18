@@ -1,0 +1,157 @@
+\section{System Overview and Design}
+\label{sec:design}
+Application predicts Slack, the Router owns request execution, and workers
+independently copy sealed KV to Peer-HBM and Store DRAM (Figure~\ref{fig:system}).
+Algorithms 2/3 specify revision 3; the deployed prototype and workload results
+use the earlier revision (Section~\ref{sec:implementation}).
+
+\begin{figure*}[tp]
+\centering\includegraphics[width=\textwidth]{figures/system-overview.pdf}
+\caption{Revision-3 architecture: independent source-owned HBM/DRAM paths
+(blue/orange), with metadata in purple. Each tier reserves and acknowledges
+separately. Earlier native policy resides in Store Master; revision 3 has an
+event reference. Backup, staging and recovery-primary memory are separately
+charged. SSD is excluded.}
+\Description{Application Slack and Router ownership feed a protection controller;
+source workers independently copy to HBM and DRAM, subject to allocator and
+shared-path resource limits.}
+\label{fig:system}
+\end{figure*}
+
+\subsection{Failure model and compatibility}
+Fail-stop worker KV loss leaves Application, Router and Controller alive.
+Replicas must match model, KV ABI/dtype and parallel layout, with every shard.
+Rendezvous hashing binds compatible anti-colocated primary/standby workers;
+source failure fences the route before recovery. Evaluated configurations use
+TP=PP=1; partitions, control-plane failure and cross-layout recovery are outside
+scope. Backup HBM must be copied into separate recovery-primary allocations.
+
+\subsection{Algorithm 1: causal residual-workflow Slack}
+The Application updates the causally visible residual DAG at request/tool
+returns. GBDT predicts remaining active-node and full known-unstarted-node
+durations; structural nodes have zero weight. Forward/backward CPM yields
+$s_i=\pos{LS_i-ES_i-m}$ for calibrated margin $m$. Tickets age as
+$s_i(t)=\pos{s_i-(t-t_i)}$. Unknown branches are excluded; missing structure or
+predictions invalidate active sibling tickets to zero. Calibration uses
+disjoint workflows. Predicted float does not guarantee future Slack; graph
+processing is $O(|V|+|E|)$ with a fixed predictor.
+\input{sections/algorithm-slack-update}
+
+\subsection{Algorithm 2: current prefix value and group admission}
+\paragraph{Credit is not ordered by insertion.}
+The earlier key $H_c=L+A_c/b_c$ can decrease across insertions: $(L,A/b)=(0,10)$
+and $(1,1)$ give 10 and 2. Revision 3 removes historical credit and evaluates
+current recovery loss under prefix dependencies.
+
+\paragraph{Objects, consumers and value.}
+Immutable completed page groups bind parent hash, tokens, tenant, model,
+adapter, ABI/layout and non-token identity~\cite{vllmPrefixCaching,zheng2024sglang}.
+Committed set $C_r$ is parent-closed; $f_i(C_r)$ is active call $i$'s compatible
+frontier. Shared bytes count once; each unique call contributes once to
+\begin{equation}
+\Phi_r(C,t)=\sum_{i\in\mathcal A(t)}w_i
+ \pos{T_i^r(f_i(C),t)-s_i(t)}.
+\end{equation}
+$T_i^r$ minimizes loading/recompute/replay cost including full recomputation;
+$w_i=1$ by default. Ended rounds retain only evictable zero-weight TTL references;
+future calls receive no value. This tier-local proxy is not DAG makespan or
+long-run expected benefit. Tiers share source/link budgets, not value accounting.
+
+\paragraph{Groups and deletion closures.}
+Enumerate bounded, sealed, source-readable groups $X$ from the first gap,
+within staging, permits and lifetime. Group gain can cross a zero-gain first
+chunk. Deletion removes committed descendant closures, affecting all shared
+consumers; candidate ancestors and read-pinned objects are excluded. In
+tentative state $C'$, each closure's current density is
+\begin{equation}
+\rho(Z)=\frac{\Phi_r((C'\setminus Z)\cup X,t)-\Phi_r(C'\cup X,t)}{b(Z)},
+\end{equation}
+where $b$ counts distinct bytes. Greedily remove minimum-density closures
+until the final state fits $\max(0,Q_r-S_r)$. Admit only if
+\begin{equation}
+\Phi_r(C_r,t)-\Phi_r((C_r\setminus Y)\cup X,t)>\eta\ge0.
+\end{equation}
+Choose minimum final harm, then fewer copied bytes. Bounded groups and greedy
+closures can miss better combinations; no optimality or competitive ratio follows.
+
+\input{sections/algorithm-prefix-admission}
+
+Rejection pauses only protection. KV, value/reference, capacity or permit
+changes retry from the first gap; missing source KV requires regeneration.
+There is no permanent continuation ban. New rounds attach compatible resident
+prefixes without copying; completing one user preserves other users' state.
+
+\subsection{Commit, reclamation and recovery}
+Algorithm~\ref{alg:slack-landlord} stages \emph{inside} $Q_r$ and revalidates
+all-shard ACKs, epochs, layout, deadline, leases, quota and improvement before
+atomically replacing the prefix. Failed copies retain old protection;
+insufficient staging pauses admission. Physical accounting is
+\begin{equation}
+B_{physical}=B_{committed}+B_{copying}+B_{reclaiming}.
+\end{equation}
+Reclaim IDs retry until DMA/reads finish or cancel and physical free ACKs;
+stale ACKs cannot free newer allocations. The reference permits one pending
+group per pool and no further admission while reclaim is unacknowledged.
+
+\begin{figure*}[tp]
+\centering\includegraphics[width=\textwidth]{figures/commit-recovery.pdf}
+\caption{Commit and recovery semantics common to both revisions. Failure
+between tier ACKs leaves HBM chunks 0--1 and DRAM chunk 0. Recovery copies HBM
+into primary buffers and recomputes suffix 2. C/X/dash mean committed/aborted/absent.
+This schematic does not depict replacement or bound pressure races.}
+\Description{A logical ACK timeline, distinct tier frontiers, and a physical
+backup-to-primary copy followed by suffix recomputation.}
+\label{fig:commit}
+\end{figure*}
+
+Recovery reserves primary destinations before source-read leases. Expiry
+requests cancellation; it cannot free active DMA. Committed state is loaded
+(Figure~\ref{fig:commit}); uncovered prompt/output positions are recomputed/replayed
+before visible output resumes. Pending state is unrecoverable. Hard foreground
+revocation may force fallback and is excluded from normal-replacement preservation.
+
+\subsection{Algorithm 3: foreground-constrained HBM allowance}
+\paragraph{Memory reservations.}
+Before request/step/recovery reservations and watchdog events, account for
+disjoint fixed memory $M_f$, primary reservations $M_a$, next incremental
+allocation $M_n$, burst reserve $R_b$ and allocator margin $R_a$. For actual
+allocator-lendable bytes $L_p$,
+\begin{align}
+H_p &= \pos{M_{physical}-M_f-M_a-M_n-R_b-R_a},\\
+Q_{mem} &= \min(M_{registered},Q_{policy},L_p,H_p).
+\end{align}
+Unlendable arenas report $L_p=0$; CUDA free is insufficient. $R_b$ bounds growth
+during stop/cancel/free ACK, using scheduler token/batch bounds; historical
+quantiles give only empirical reserves. Display $\alpha=Q/M_{registered}$.
+
+\paragraph{Interference constraint.}
+Memory headroom does not isolate engines, bandwidth or locks. Each bounded
+DMA batch checks expiring tokens for its source, target and links; both tiers
+share bottleneck budgets. Batch size bounds non-preemptible service.
+
+The default configurable target is $\epsilon=1\%$ overhead in no-failure p99
+TTFT, p99 per-request TPOT and goodput loss versus matched backup-disabled
+runs. One-sided confidence bounds must meet the target. Calibration needs
+independent matched arrivals/tokens, cache and platform controls, correlation
+and multiplicity handling, and held-out load regions. Certificates bind tested
+joint quota/rate/batch domains and expiry, not arbitrary future bursts.
+
+Unknown domains, stale samples, expired permits or foreground violations
+revoke HBM allowance; free ACK still gates reuse. Production rejects modeled
+certificates. Online monitoring triggers revocation without observing a
+simultaneous no-backup counterfactual.
+
+\paragraph{Enforcement.}
+Quota is bounded by memory, certification and useful residency/copy demand.
+Foreground events shrink it immediately; growth requires sustained valid
+headroom, demand and completed reclaim, with a bytes-per-second limit.
+Observation gaps reset stable time; epoch/sequence IDs make retries idempotent.
+Actual foreground allocation checks physical feasibility, not published quota.
+\input{sections/algorithm-foreground-budget}
+
+Under truthful disjoint reservations, atomic allocator enforcement and a
+valid bound on demand during cancellation, backup allocations cannot consume
+reserved foreground capacity. This memory invariant is distinct from the
+statistical interference target. Unbounded arrivals, missing cancellation
+ACKs, or an allocator that cannot lend memory invalidate availability claims;
+they do not authorize reusing an address before release.

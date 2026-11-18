@@ -1,0 +1,75 @@
+\section{Introduction}
+\label{sec:introduction}
+
+LLM serving systems increasingly execute \emph{workflows}, not isolated
+requests.  An agent may invoke several model replicas and tools in parallel,
+join their outputs, and issue another round of long-context requests.  The KV
+cache accumulated along this execution is expensive to regenerate; after a
+worker failure, token replay delays both the interrupted request and downstream
+nodes waiting for it.
+
+Existing systems reduce this cost by streaming, checkpointing, or offloading KV
+state to peer GPUs, host memory, or storage
+~\cite{strati2024dejavu,jayakody2026ghostserve,qin2025mooncake,xie2025hicache}.
+They answer how to move and restore KV, but not which live state most reduces
+workflow completion delay under scarce protection capacity.  Size, recency,
+and reuse cannot distinguish equal-size requests on different parallel
+branches, where one recovery pause blocks a join and another is hidden.
+
+A branch's remaining \emph{Slack} is the delay it can absorb before extending
+the next mandatory join.  Recovery below that Slack does not change workflow
+completion time; delay beyond it is exposed.  The application can derive this
+request-level value from visible dependencies, whereas a KV manager cannot.
+Slack also changes after every model or tool result, making a static critical
+label too coarse.
+
+\system{} applies Slack twice.  At each boundary, a GBDT predicts visible
+remaining branch time and CPM computes Slack
+~\cite{friedman2001gbdt,kelley1959criticalpath}; the next request carries one
+scalar.  During normal operation, the Controller compares the Slack-exposed
+harm removed by a complete protected chunk with the harm of evictions.  After
+failure, the same Slack orders Peer-HBM adoption, DRAM loading, and
+recomputation, aligning protection value and recovery urgency.
+
+Two constraints make this nontrivial.  Slack changes faster than KV should
+move, so \textsc{SlackLandlord} updates metadata lazily and each pool globally
+sorts only one safe suffix tail per request.  Peer protection must also yield
+to inference: \textsc{HBMQuotaAIMD} changes only a target's shadow-HBM quota,
+while the Worker allocator remains the capacity authority
+~\cite{chiu1989aimd}.
+
+\system{} is designed to handle one fail-stop serving domain at a time and to
+recover on a Router-selected, same-layout target using only complete,
+version-compatible KV.  Missing or stale state falls back to recomputation;
+Slack affects priority, never correctness or capacity.  Our evaluation models
+this design with single-worker-shard fail-now counterfactuals rather than
+executed worker replacement.
+
+This paper makes four contributions:
+
+\begin{itemize}
+  \item It proposes causal workflow Slack as a value signal for KV fault
+  tolerance and quantifies the opportunity in a public agent trace
+  (\S\ref{sec:background}).
+
+  \item It designs \textsc{SlackLandlord}, which uses one fail-now model for
+  independent HBM/DRAM credits and recovery order while maintaining continuous
+  prefixes with a two-level victim index (\S\ref{sec:design}).
+
+  \item It separates policy from safety: source-owned paths commit
+  independently, \textsc{HBMQuotaAIMD} adapts only the Peer-HBM envelope, and
+  Workers enforce capacity and output fencing
+  (\S\ref{sec:control-plane}--\S\ref{sec:end-to-end}).
+
+  \item It reports end-to-end WCT from three frozen legacy SGLSim lineages:
+  one paired multi-baseline trial, one explicitly labeled DP64 model
+  projection, and one heavy-failure logical stress smoke.  The results retain
+  unfavorable comparisons and are separated from current-design validation
+  (\S\ref{sec:evaluation}).
+
+  \item It separately audits the current design over a frozen 3,110-run
+  simulation matrix, reporting pressure--alpha dynamics, zero-alpha stress,
+  HBM/DRAM occupancy, reuse-bin admission, copy amplification, and conditioned
+  restored-token coverage without presenting those diagnostics as WCT
+  (\S\ref{sec:current-mechanisms}).
+\end{itemize}

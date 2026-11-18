@@ -1,0 +1,43 @@
+% Target-local capacity with a common window-level depth, part of section 3.6.
+\paragraph{Control Peer capacity each window.}
+For a target DP $p$ in window $t$, its Adapter grants
+\begin{equation}
+ \begin{aligned}
+ B_{p,t}=\bigl[\min\bigl(&B_{\mathrm{cap},p,t},\\
+ &\mathrm{pool}_{p,t}-\mathrm{watermark}_{p,t}
+              -\mathrm{headroom}_{p,t}\bigr)\bigr]^+,
+ \end{aligned}
+ \label{eq:peer-budget}
+\end{equation}
+where $B_{\mathrm{cap},p,t}=\tfrac12\mathrm{pool}_{p,t}$ limits Peer
+backups to half of the managed KV pool, after model weights and fixed
+runtime allocations. Foreground demand and headroom can reduce the
+grant further. The pool includes bytes already occupied by Peer replicas;
+$B_{p,t}$ is a total target, not additional free space. Foreground demand,
+admission headroom, and transfer/compute estimates are refreshed each window.
+
+Let $A_r(L_t)$ contain the KV Master's current hot sets in layers
+$1\ldots L_t$ and their required selector state. The Adapter processes
+$Q_p$ in the Master's priority order. Starting with $P_s=\varnothing$,
+it admits a request's complete footprint only if
+\begin{equation}
+ \mathrm{bytes}\bigl(P_s\cup A_r(L_t)\bigr)\le B_{p,t},
+ \label{eq:resident-prefix}
+\end{equation}
+then adds $A_r(L_t)$ to $P_s$. Shared physical objects count once.
+If it does not fit, the request retains its DRAM path and the Adapter
+considers the next candidate. All admitted requests use the same $L_t$;
+their hot-block counts and byte footprints can differ. This greedy
+admission has no global optimality claim and does not search over
+request-specific depths.
+
+Within a window, $L_t$ is fixed, while sealing can enlarge a request's
+hot sets. Growth reserves additional bytes before copying. If capacity
+is insufficient, admission is reconsidered in the Master's priority
+order; emergency foreground pressure withdraws whole Peer footprints
+from the lowest-priority requests, preserving DRAM recovery. Neither
+case changes $L_t$. Copying, committed, and reclaiming bytes remain
+physically charged until release completes. New copies wait for physical
+headroom, readers retain their pins, and growth transfers only newly
+required objects. Target changes do not instantly free addresses or
+make new replicas readable.

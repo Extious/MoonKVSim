@@ -1,0 +1,7 @@
+Make only two tiny arrow-endpoint corrections to the attached three-tier AegisKV architecture diagram. Preserve every other pixel-level layout choice, text, color, panel, module, and arrow.
+
+1. The solid blue Peer copy L-shaped arrow points upward OUTSIDE the blue Peer Region, under the HBM text. Shift only its vertical segment roughly 30 image pixels RIGHT, shortening the horizontal segment as appropriate, so its UPWARD arrowhead meets the BOTTOM border of the BLUE Peer Region rectangle, about 20 pixels inside that rectangle's LEFT edge. In normalized coordinates the upward arrow tip should be around x=64.6% of the full image width, y=69.5% of the full image height. This remains an L-shaped blue arrow starting from Backup Agent's right edge, running right then UP directly INTO the blue Peer Region. It must not terminate under the HBM label or touch Recovery Loader. Keep the separate downward Direct read arrow from Peer Region to Recovery Loader unchanged.
+
+2. Ensure the gray dashed line labeled Plan, from Placement Planner downward to Backup Agent, has ONE clear downward-pointing gray triangular arrowhead exactly where it enters Backup Agent's TOP border. Its upper end at Planner has no arrowhead. Do not change the adjacent UPWARD Block ranking or UPWARD Peer Budget arrows.
+
+No other changes. Keep the three broad architectural tiers and the white publication-diagram style unchanged.

@@ -1,0 +1,89 @@
+{
+  "K": [
+    4,
+    16,
+    64
+  ],
+  "beta": 0.9,
+  "bytes": {
+    "initial_fill_bytes": "K-block capacity fill reported once at first evaluated checkpoint",
+    "lifetime": "separate CSV; static/oracle have no continuously resident warmup placement",
+    "preceding_checkpoint_entering_bytes": "current checkpoint set additions; includes M0 vs31744 for warm methods",
+    "replacement_entering_bytes": "only set additions from evaluated M0=32000 to M1=32256",
+    "units": "logical raw-KV bytes; not physical traffic or latency"
+  },
+  "checkpoint_chunk_tokens": 256,
+  "checkpoints": [
+    32000,
+    32256
+  ],
+  "count_rule": "per-query union across KV groups; at each checkpoint C=(C+new256)*beta",
+  "counter_updates_at_evaluation": [
+    125,
+    126
+  ],
+  "cumulative_no_hysteresis": "lifetime checkpoint evolution with beta=1,epsilon=0; strict ties",
+  "deployed_policy": {
+    "path": "python/moonkvsim/aegiskv/current/policy.py",
+    "sha256": "d0e57197bca66facf2ec57351706a42cf58f6eef9a28854e76a627a6bd0013a4"
+  },
+  "deployed_runtime": {
+    "path": "python/moonkvsim/aegiskv/current/runtime.py",
+    "sha256": "99250879835c64209a2ff7e5d668f2c44cc5c838ba671f6aef32b1803008c98b"
+  },
+  "epsilon": 0.1,
+  "evidence": "CPU replay of native full causal prefill selections; no new model forwards",
+  "first_L_layers": [
+    1,
+    4,
+    8,
+    32
+  ],
+  "frequency_static": "rank full past cumulative frequency at M=32000, then freeze; not update-only ablation",
+  "frozen_cold_script_sha256": "102cf56d8a62d337842c72bd68af594c361471634f12802bca30f08886691770",
+  "future_oracle": "same-K future-frequency rank; maximum distinct coverage; future-aware",
+  "limitations": [
+    "PG19 documents, not Agent workload or measured recovery execution",
+    "one full native sparse model forward; not rerun incremental/chunked model dispatch",
+    "MiniCPM full request exceeds dense_len; short separate forwards can be dense",
+    "continuous q0 lifecycle; deployment counts only protected/recovering requests",
+    "excludes auxiliary state, compression branch, selector overhead, H2D latency and WCT",
+    "two adjacent future256 windows and only three documents per model",
+    "NOSA early selectors lack saved packed-mask identity validation"
+  ],
+  "methods": [
+    "decay_hysteresis",
+    "cumulative_no_hysteresis",
+    "frequency_static",
+    "uniform",
+    "recency",
+    "future_oracle"
+  ],
+  "nosa_scope": "native selectors for all q; saved packed-mask identity only q31680..32703",
+  "paired_cold_reset": {
+    "query_start": 31744,
+    "tie_rule": "same deployed earlier-index tie rule"
+  },
+  "physical_block_tokens": 64,
+  "physical_raw_kv_block_bytes": 65536,
+  "placement_rule": "update each checkpoint from 256; min(K, complete blocks); strict hysteresis",
+  "query_start": 0,
+  "query_stop_exclusive": 32512,
+  "recency": "last K complete historical blocks, every checkpoint",
+  "runtime_comparison": "independent reimplementation checked against actual runtime top_blocks",
+  "runtime_sample_checkpoints": [
+    256,
+    4096,
+    8192,
+    31744,
+    32000,
+    32256
+  ],
+  "schema": "moonkvsim.aegiskv.native_topk_complete_history.v1",
+  "script_sha256": "a1791f822c4850c7666075cb466042404a25c34e18b597d8f3d6c78a1c774ef4",
+  "single_case": false,
+  "source_manifest_sha256": "86f165443750b0e5051ac6b50e9fac8fb4861881eb51a4042f5b37e9ca9eee0d",
+  "statistics": "3 documents/model; document ratios first, then equal-document means and min/max; layers not n",
+  "tie_rule": "larger counter then earlier block index; equal candidates retain resident",
+  "uniform": "K evenly spaced complete historical blocks, every checkpoint"
+}

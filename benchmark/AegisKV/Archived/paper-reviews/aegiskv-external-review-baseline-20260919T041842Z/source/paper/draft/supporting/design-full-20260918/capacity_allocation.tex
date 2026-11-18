@@ -1,0 +1,71 @@
+\subsection{KV Placement Planner: Budgeted Admission}
+\label{sec:capacity-allocation}
+
+\paragraph{A foreground-bounded budget.}
+The Peer region borrows capacity from the target's KV pool. At each
+placement window, the Adapter reports a recent foreground high-water
+mark and headroom for possible admissions within the next window.
+With configured cap $B_{\mathrm{cap}}$ (default 4\,GiB), the budget is
+\begin{equation}
+ B=\max\{0,\min(B_{\mathrm{cap}},\ \mathrm{pool}-\mathrm{watermark}
+                      -\mathrm{headroom})\}.
+ \label{eq:peer-budget}
+\end{equation}
+The planned budget stays fixed within the window; an emergency pressure
+event can trigger immediate reclamation (Section~\ref{sec:kv-runtime}).
+
+\paragraph{Whole-footprint admission.}
+Algorithm~\ref{alg:placement} processes requests by increasing slack,
+breaking ties by stable request ID. Tier-D/P requests retain all sealed
+KV and required selector state in DRAM. For Tier P, the Planner constructs
+the entire front-layer hot-set footprint, including selector state.
+It admits the set if its incremental physical bytes fit; otherwise it
+skips that request and continues to later requests, which may be smaller.
+Shared objects are counted once. This greedy rule need not maximize total
+WCT improvement or fill every free byte.
+
+\begin{figure}[t]
+  \refstepcounter{designalgorithm}\label{alg:placement}
+  \noindent\textbf{Algorithm \thedesignalgorithm: Whole-footprint placement}
+  \par\smallskip
+  \noindent Inputs: requests on source $g$, slack snapshots, calibrated
+  profiles, cached rankings, and total window budget $B$.\\
+  Outputs: desired DRAM set $D_s$ and Peer set $P_s$.
+  \par\smallskip
+  \begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
+    \toprule
+    1 & $D_s\gets\varnothing$; $P_s\gets\varnothing$ \\
+    2 & \textbf{for} $r$ in $(\sigma_r,\mathrm{ID}_r)$ order: \\
+    3 & \quad\textbf{if} $\sigma_r\ge R_R(r)$: \textbf{continue} \\
+    4 & \quad$D_s\gets D_s\cup\mathrm{sealed}(r)\cup\mathrm{state}(r)$ \\
+    5 & \quad\textbf{if} $\sigma_r\ge R_D(r)$: \textbf{continue} \\
+    6 & \quad$L\gets$ smallest prefix reaching $F^\star(r)$ \\
+    7 & \quad$A\gets\mathrm{state}(r)$ \\
+    8 & \quad\textbf{for} $l=1,\ldots,L$: \\
+    9 & \qquad$A\gets A\cup\mathrm{selectKsealed}(r,l)$ \\
+   10 & \quad$\Delta\gets\mathrm{bytes}(A\setminus P_s)$ \\
+   11 & \quad\textbf{if} $\Delta>B$: \textbf{continue} \\
+   12 & \quad$P_s\gets P_s\cup A$; $B\gets B-\Delta$ \\
+   13 & \textbf{return} $D_s,P_s$ \\
+    \bottomrule
+  \end{tabularx}
+  \par\smallskip
+  \noindent\texttt{selectKsealed} includes mandatory blocks \emph{within}
+  $K_l$ and applies bounded replacement hysteresis.
+  \Description{Pseudocode for slack-ordered admission. It retains DRAM
+    coverage, admits a complete Peer footprint only when its unique bytes
+    fit, and continues after a skipped request.}
+\end{figure}
+
+Sorting costs $O(n\log n)$ for $n$ active requests. The layer-prefix
+calculation is $O(N)$; per-layer rankings are cached after the ranking
+window. Physical occupancy is checked separately during reconciliation:
+copying, committed, and reclaiming bytes remain charged until release
+completes. A lower target budget does not immediately free addresses.
+
+Across windows, slack changes tiers/order, context and available capacity
+change admission, and rankings change object identities. The Adapter
+executes only the difference from the committed plan. Existing committed
+objects are not recopied. Planner estimates use representative-concurrency
+costs; bandwidth and concurrency sweeps remain necessary to test their
+accuracy under simultaneous retries.

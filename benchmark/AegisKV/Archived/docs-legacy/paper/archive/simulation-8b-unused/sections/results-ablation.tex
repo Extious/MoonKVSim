@@ -1,0 +1,36 @@
+\subsection{Which Policy Components Matter?}
+\label{sec:ablation-results}
+\input{sections/figures/cost-ablation}
+
+The four-arm ablation holds candidate envelopes fixed and pairs every arm
+with its own failure-free run. Replacing the full retention subsystem with
+LRU increases the focus failure penalty by 7.377~s on average (95\% interval
+[1.953, 12.800]~s); all five seed contrasts favor full. This supports the
+full retention subsystem for these selected interventions. It does not
+isolate the landlord score from the safe-tail lifecycle changed by this arm,
+and the interval is an exploratory, unadjusted comparison.
+
+Disabling slack increases the mean focus penalty by 6.818~s, but its interval
+is wide: [$-14.298$, 27.935]~s. Four seeds favor full and one favors disabled
+slack. Fixing the quota by disabling AIMD gives a 5.511~s mean contrast with
+interval [$-8.676$, 19.699]~s; three seeds favor full and two favor fixed
+quota. These five repetitions do not resolve a consistent incremental benefit
+for either component.
+
+The focus result does not establish a whole-workload advantage. The
+ablation-minus-full mean failure-penalty contrasts for disabled slack, LRU,
+and disabled AIMD are $-0.073$, $-0.111$, and $-0.132$~s, respectively; all
+three intervals cross zero. Mean F1 protection traffic is 4,724~GiB for full,
+4,952~GiB without slack, 6,192~GiB with LRU, and 4,248~GiB without AIMD.
+Full and disabled AIMD recover the same selected prefix fraction in every
+seed despite their mixed completion effects. Together, these observations
+distinguish retention efficiency and focus completion from aggregate benefit;
+they do not establish dominance of all three components across workloads.
+
+Figure~\ref{fig:cost-ablation}(a,b) relates the seven sensitivity settings to
+their protection cost and recovered fraction. Each point changes concurrency
+or failure exposure as well as resource use, so these associations do not
+isolate a cost-effect tradeoff. Panel~(d) preserves the five lowest exact
+focus-workflow gains. The worst case is seed~4, F4/C16: Store-only completes
+the workflow in 14.08~s and AegisKV in 43.38~s. Such regressions remain visible
+even when a setting's mean or within-focus maximum favors AegisKV.

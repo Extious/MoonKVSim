@@ -1,0 +1,35 @@
+Use case: infographic-diagram.
+Create ONE conceptual scientific diagram for the Background section of the AegisKV computer-systems research paper. This is a clean explanatory figure, suitable as a layout study for a single-column paper figure. White background, slightly wider than tall, aspect ratio about 4:3. Flat vector-like geometry, thin precise dark gray connectors, no perspective, no decorative illustrations. Refined regular serif typography similar to Libertine; section labels selectively semibold. Large readable labels and enough whitespace.
+
+Communication purpose, in order of importance:
+1. A workflow runtime maintains DAG dependencies and accepted agent histories.
+2. Ready agent invocations become inference requests dispatched to model workers; a worker can serve agents from different workflows.
+3. Each worker retains the corresponding per-agent KV across iterative turns; later turns reuse a matching prefix and append new KV.
+This is a serving-background diagram, with restrained detail. It is not the AegisKV proposed architecture or a scheduling algorithm.
+
+COMPOSITION
+Use two broad ownership regions joined by a short dispatch bridge. Upper region: "Workflow runtime", roughly the upper half. Lower region: two equally sized model-worker boxes side by side. Avoid a long vertical chain of small process boxes.
+
+UPPER REGION
+Inside the runtime show two compact, readable DAG examples side by side, labeled "Workflow 1" and "Workflow 2". Blue identifies Workflow 1 and muted purple identifies Workflow 2, redundantly supported by direct labels.
+Workflow 1: nodes "A1", "B1", "Tool", "B2", "C1", "A2". Exact directed dependencies: A1 branches into B1 and C1; B1 -> Tool -> B2; B2 and C1 both join at A2. Draw B1, Tool, B2 across the upper branch, C1 on a lower branch. Do not draw an arrow directly from B1 to A2. B1 and B2 are successive requests by the SAME agent B. A1/A2 are two requests of the same coordinator A. The Tool is a small neutral outlined box, not an agent.
+Workflow 2: nodes "D1", "E1", "F1", "D2". D1 branches into E1 and F1; both join at D2. E1 upper, F1 lower. D1/D2 are turns of one coordinator D.
+Keep the DAGs acyclic; all their arrows go left to right.
+At the base INSIDE the runtime, add ONE shallow storage strip labeled "Accepted histories" with the brief subordinate text "tokens + tool results". Do not expand into four input-field tables.
+
+DISPATCH AND RESULTS
+One compact bridge, labeled "Ready requests", leads down from the runtime and branches to the two worker boxes. Label the Worker 0 incoming branch "B2, E1"; label the Worker 1 incoming branch "C1, F1". This illustrates mixed-workflow service. Use thin orthogonal solid arrows and short routing paths. Do not draw a separate queue table or a full scheduler component. A single unobtrusive dashed return path, labeled "Accepted outputs", collects results from the worker boxes and points BACK INTO the runtime's Accepted histories strip. Route it outside the DAGs; do not turn it into a dependency-cycle arrow.
+
+LOWER REGION
+Left box title "Worker 0", right box title "Worker 1". Inside EACH, a modest subtitle "Model replica / TP group" establishes a worker as a model replica, potentially tensor parallel. Show the main contents as "KV cache".
+Worker 0 contains two clearly labeled horizontal cache rows: "B" in blue and "E" in purple.
+Worker 1 contains two clearly labeled horizontal cache rows: "C" in blue and "F" in purple.
+Thus both workers visibly mix workflows. Colors and agent labels stay consistent from DAG to request label to KV row.
+The B row is the ONE emphasized local detail: a long blue prefix segment labeled "Reuse" followed by a shorter warm amber segment labeled "Append". Add a small nearby note "B1 to B2". This schematically explains retained history and newly appended state across turns. Other KV rows are simple colored block strips without internal text. No numerical block counts, no physical size scale.
+Use color, direct labels, simple block geometry, and whitespace; the B reuse/append example should be the only magnified idea. Keep all labels legible at an approximately 85 mm printed width. Every required label should be spelled correctly. Do not add body paragraphs, a caption, or a giant overall title.
+
+SCIENTIFIC CONSTRAINTS
+A1/B1/B2/etc. are individual inference requests, not hardware objects. The same agent may have multiple requests. Accepted text/tool history stays in the runtime, separate from the workers' KV tensors. Worker assignment is illustrative; there is no one-to-one workflow-to-worker mapping. Prefix reuse is conditional on compatible, available KV; add the concise note "Reuse matching, available KV" near the B-row detail if space permits. A TP group is ONE model replica, not two independent replicas. Do not show worker-to-worker KV transfer.
+
+OMIT
+No weights tiles, no block tables, no per-layer matrices, no detailed rank duplication, no long input-builder pipeline, no failure crosses, no checkpoint restore arrows, no Peer HBM/DRAM/SSD hierarchy, no AegisKV controller modules, no measurements, no gradients, no shadows, no 3-D servers or robot icons, no watermark. Prioritize the teacher's three communication goals over decorative or implementation detail.

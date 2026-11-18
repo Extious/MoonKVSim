@@ -1,0 +1,252 @@
+--- a/benchmark/AegisKV/experiments/scripts/current_design/plot_structural_campaign.py
++++ b/benchmark/AegisKV/experiments/scripts/current_design/plot_structural_campaign.py
+@@ -20,9 +20,8 @@
+ from matplotlib import font_manager
+ from matplotlib.lines import Line2D
+ 
+-ROOT = Path(__file__).resolve().parents[5]
+-SOURCE = ROOT / "benchmark/AegisKV/experiments/evaluation-20260924/structural-campaign-v1"
+-OUT = SOURCE / "figures"
++SOURCE = None
++OUT = None
+ WIDTH = 178 / 25.4
+ FONT = 10.3
+ SCENARIOS = (
+@@ -98,16 +97,24 @@
+     prefix = "main-" if main_only else ""
+     audit_path = SOURCE / audit_name
+     audit = json.loads(audit_path.read_text())
+-    assert audit["all_passed"] and len(audit["run_bindings"]) == (135 if main_only else 143)
++    plan = json.loads((SOURCE / "PLAN.json").read_text())
++    planned = len(plan["jobs"])
++    assert planned in (135, 143)
++    assert audit["all_passed"] and len(audit["run_bindings"]) == (135 if main_only else planned)
+     assert audit["plan_sha256"] == sha(SOURCE / "PLAN.json")
+     assert audit["manifest_sha256"] == sha(SOURCE / "MANIFEST.json")
+     for name, expected in audit["source_sha256"].items():
+         assert sha(SOURCE / name) == expected
+     if main_only:
+-        assert audit["paired_failure_runs"] == 90 and audit["campaign_status"] == "PARTIAL"
++        assert audit["paired_failure_runs"] == 90
++        assert audit["campaign_status"] == ("PARTIAL" if planned == 143 else "COMPLETE")
+     else:
+         valid = json.loads((SOURCE / "VALIDATION.json").read_text())
+-        assert valid["all_passed"] and valid["runs"] == 143 and valid["pairs"] == 94
++        assert (
++            valid["all_passed"]
++            and valid["runs"] == planned
++            and valid["pairs"] == (90 if planned == 135 else 94)
++        )
+     paired = read_csv(SOURCE / f"{prefix}paired-workflows.csv")
+     recoveries = read_csv(SOURCE / f"{prefix}recovery-events.csv")
+     target = {
+@@ -250,7 +257,7 @@
+     }
+ 
+ 
+-def wct_figure(target):
++def wct_figure(target, name="structural-target-wct", ylabel="Target workflow ΔWCT (s)"):
+     fig, axes = plt.subplots(1, 2, figsize=(WIDTH, 2.95), sharey=True)
+     fig.subplots_adjust(left=0.095, right=0.985, bottom=0.24, top=0.79, wspace=0.12)
+     values = []
+@@ -259,10 +266,44 @@
+     ):
+         values += points(ax, target, fault)
+         ax.set_title(title, pad=8)
+-    axes[0].set_ylabel("Target workflow ΔWCT (s)")
++    axes[0].set_ylabel(ylabel)
+     common_limits(axes, values)
+     legend(fig)
+-    return save(fig, "structural-target-wct")
++    return save(fig, name)
++
++
++def endpoint_tables(paired):
++    """One row per run/seed; workflows within a run are not independent repeats."""
++    groups = {}
++    for row in paired:
++        if int(row["workflows"]) == 8:
++            key = row["scenario"], row["fault"], row["policy"], int(row["seed"])
++            groups.setdefault(key, []).append(row)
++    rows, all_workflow_means = [], {}
++    for key, group in sorted(groups.items()):
++        assert len(group) == len({row["workflow"] for row in group}) == 8
++        targets = [row for row in group if row["target_workflow"] == "True"]
++        assert len(targets) == 1
++        deltas = np.array([float(row["delta_wct_s"]) for row in group])
++        all_workflow_means[key] = float(np.mean(deltas))
++        rows.append(
++            dict(
++                scenario=key[0],
++                fault=key[1],
++                policy=key[2],
++                seed=key[3],
++                workflow_count=8,
++                target_delta_wct_s=float(targets[0]["delta_wct_s"]),
++                all_workflow_mean_delta_wct_s=float(np.mean(deltas)),
++                all_workflow_p95_paired_delta_s=float(np.percentile(deltas, 95, method="higher")),
++                all_workflow_p99_paired_delta_s=float(np.percentile(deltas, 99, method="higher")),
++                all_workflow_max_paired_delta_s=float(max(deltas)),
++                negative_workflow_delta_count=int(sum(deltas < 0)),
++            )
++        )
++    assert len(rows) == 90
++    write_csv(OUT / "wct-endpoints-per-run.csv", rows)
++    return all_workflow_means
+ 
+ 
+ def recovery_figure(queue, service):
+@@ -283,6 +324,7 @@
+ 
+ 
+ def tables(target, queue, service, paired, main_only=False):
++    planned = len(json.loads((SOURCE / "PLAN.json").read_text())["jobs"])
+     figure_rows, headlines = [], []
+     for scenario in SCENARIOS:
+         for fault in FAULTS:
+@@ -336,7 +378,7 @@
+             )
+     write_csv(OUT / "figure-data.csv", figure_rows)
+     write_csv(OUT / "headline-results.csv", headlines)
+-    if not main_only:
++    if not main_only and planned == 143:
+         raw = read_csv(SOURCE / "raw-runs.csv")
+         scale = [
+             row
+@@ -347,7 +389,9 @@
+             and row["fault"] in {"F0", "left.decode"}
+         ]
+         assert len(scale) == 12
+-        plan_jobs = {job["id"]: job for job in json.loads((SOURCE / "PLAN.json").read_text())["jobs"]}
++        plan_jobs = {
++            job["id"]: job for job in json.loads((SOURCE / "PLAN.json").read_text())["jobs"]
++        }
+         assert all(not plan_jobs[row["id"]]["retain_detailed_logs"] for row in scale)
+         write_csv(OUT / "scale-resource-results.csv", scale)
+         scale_lines = [
+@@ -373,9 +417,7 @@
+             "whole lifetime; a worker can retain prior input caches, so this is not a fresh-process or per-run-only peak. "
+             "Raw values and all modeled WCT/resource metrics are retained in scale-resource-results.csv.",
+             "",
+-            "This frozen summary-only implementation still computes policy_sample estimates before discarding those "
+-            "detailed records. A later optimization was tested separately but is not applied to any of these 143 runs. "
+-            "These measurements characterize this simulator implementation, not GPU serving throughput or AegisKV's "
++            "These measurements characterize their pinned simulator implementation, not GPU serving throughput or AegisKV's "
+             "hardware overhead; modeled HBM/DRAM peaks have separate CSV columns. No cases or sizes were reduced.",
+         ]
+         (OUT / "SCALE_RESOURCES.md").write_text("\n".join(scale_lines) + "\n")
+@@ -399,13 +441,18 @@
+         (
+             "The complete 135-run main matrix is independently audited; the full 143-run campaign remains PARTIAL. "
+             "The 90 main F1/F0 pairs produce 720 workflow observations. "
+-            if main_only
+-            else "All 143 frozen runs completed; 94 F1/F0 pairs produce 1,040 workflow observations. "
+-        )
+-        + "Main figures use only the fault-target workflow of each of the 90 eight-workflow failure runs. "
++            if main_only and planned == 143
++            else (
++                "All 135 frozen main runs completed; 90 F1/F0 pairs produce 720 workflow observations. "
++                if planned == 135
++                else "All 143 frozen runs completed; 94 F1/F0 pairs produce 1,040 workflow observations. "
++            )
++        )
++        + "Target and all-workflow figures use the same 90 eight-workflow failure runs; "
++        "the all-workflow view first averages all eight same-ID paired deltas within each run. "
+         "Independent constructed seeds are 7, 19 and 41; workflows within a run share resources.",
+         "",
+-        "| Scenario | Fault | No backup ΔWCT (s) | DRAM ΔWCT (s) | AegisKV ΔWCT (s) | AegisKV vs DRAM gain (ms) |",
++        "| Scenario | Fault | Restart ΔWCT (s) | DRAM ΔWCT (s) | AegisKV ΔWCT (s) | AegisKV vs DRAM gain (ms) |",
+         "|---|---|---:|---:|---:|---:|",
+     ]
+     for row in headlines:
+@@ -430,14 +477,18 @@
+         "",
+         (
+             "Eight added scale cases are still pending final audit; main figures exclude them. "
+-            if main_only
+-            else "Scale resource results retain all 12 seed-7 history cases at 8/32/128 workflows. "
++            if main_only and planned == 143
++            else (
++                "No scale extensions are included in this 135-run plan. "
++                if planned == 135
++                else "Scale resource results retain all 12 seed-7 history cases at 8/32/128 workflows. "
++            )
+         )
+         + "Runtime wall/CPU "
+         "seconds begin after input loading; peak RSS is the worker-process lifetime high-water mark, including "
+         "cached workloads and log serialization, not a per-run engine-only peak. Simulated HBM/DRAM byte peaks "
+-        "are separate columns. Every scale run uses summary logs; this frozen version still computes discarded "
+-        "policy_sample estimates. No later performance optimization is applied, and there is no scale reduction.",
++        "are separate columns. Every included scale run uses summary logs and its pinned source identity. "
++        "Historical and revised implementations must not be pooled into one execution-cost series.",
+         "",
+         "Integrated evidence remains simulation: the AIC grid mixes empirical and silicon-derived operators; "
+         "there is no physical model execution, native-kernel timing validation, continuous batching or measured "
+@@ -450,11 +501,16 @@
+     target, queue, service, paired = verify_inputs(main_only)
+     OUT.mkdir(parents=True, exist_ok=True)
+     font_path, family = setup()
+-    exports = [wct_figure(target), recovery_figure(queue, service)]
++    all_workflow_means = endpoint_tables(paired)
++    exports = [
++        wct_figure(target),
++        wct_figure(all_workflow_means, "structural-all-workflow-wct", "All-workflow mean ΔWCT (s)"),
++        recovery_figure(queue, service),
++    ]
+     tables(target, queue, service, paired, main_only)
+     captions = """# Figure captions and placement
+ 
+-Both figures have 178 mm canvases and Linux Libertine 10.3 pt text. Insert at that width.
++All figures have 178 mm canvases and Linux Libertine 10.3 pt text. Insert at that width.
+ 
+ **structural-target-wct.pdf.** Fault-target workflow completion penalty in five constructed
+ four-Agent scenarios, with eight workflows per run. Each point is F1 minus its own-policy
+@@ -465,6 +521,15 @@
+ DRAM and AegisKV points may coincide at this scale. These are simulated interventions, not
+ observed Agent serving traces; the two panels use distinct logical progress points.
+ 
++**structural-all-workflow-wct.pdf.** The same per-workflow F1 minus own-policy F0 endpoint,
++averaged over all eight original workflow IDs within each run before plotting one point
++per seed. Target and all-workflow panels use the same 90 failure runs; no workflow is
++discarded for avoiding the fault or receiving an adverse effect. Three seed points,
++min/max and means have the same descriptive interpretation; eight workflows are not
++treated as eight independent seed replicates. Raw same-ID pairs and descriptive p95/p99
++of paired deltas are retained separately; a percentile of paired deltas is not the
++difference between unpaired percentile WCTs.
++
+ **structural-recovery-breakdown.pdf.** Recovery delay of the directly faulted Agent in the
+ same 90 failure runs. Top panels show waiting between retry enqueue and admission; bottom
+ panels show admitted recovery service until the first new output token. Detection adds a
+@@ -473,7 +538,7 @@
+ Separate ordinate units preserve visibility of service cost when queueing dominates.
+ Recovery service improvement does not imply the same workflow completion improvement.
+ 
+-scale-resource-results.csv is an external 12-run resource table, not another main-paper plot.
++Scale-resource tables exist only for a separately included full 143-run plan.
+ Final compiled-paper placement must be checked when these PDFs are integrated.
+ """
+     (OUT / "CAPTIONS.md").write_text(captions)
+@@ -495,8 +560,10 @@
+                 "inputs": {name: sha(SOURCE / name) for name in input_names},
+                 "exports": exports,
+                 "statistical_units": "three constructed workload seeds; no population inference",
+-                "source": "135 main snapshot-executed DES runs; 90 target-workflow points per plotted metric",
+-                "entire_campaign_status": "PARTIAL" if main_only else "COMPLETE",
++                "source": "135 main snapshot-executed DES runs; 90 seed/run points per endpoint, with target and all-eight-workflow mean derived from the same paired deltas",
++                "entire_campaign_status": "PARTIAL"
++                if main_only and len(json.loads((SOURCE / "PLAN.json").read_text())["jobs"]) == 143
++                else "COMPLETE",
+             },
+             indent=2,
+         )
+@@ -507,5 +574,9 @@
+ 
+ if __name__ == "__main__":
+     parser = argparse.ArgumentParser()
++    parser.add_argument("--source", type=Path, required=True)
+     parser.add_argument("--main-only", action="store_true")
+-    main(parser.parse_args().main_only)
++    args = parser.parse_args()
++    SOURCE = args.source.resolve()
++    OUT = SOURCE / "figures"
++    main(args.main_only)

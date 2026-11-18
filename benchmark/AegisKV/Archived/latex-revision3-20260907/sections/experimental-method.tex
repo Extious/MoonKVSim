@@ -1,0 +1,118 @@
+\section{Experimental Method}
+\label{sec:experimental-method}
+\paragraph{Evaluated policy version.}
+All workload-scale tables, plots and the physical pilot below use the frozen
+earlier SlackLandlord and HBMQuotaAIMD policy, with shared ordinals and request salts. These
+semantics do not implement revision-3 prefix sharing, staged replacement
+or the foreground controller. Revision-3 evidence is limited to the event
+reference tests in Section~\ref{sec:implementation}.
+\subsection{Workload and modeled platform}
+FanOutQA questions, human decompositions and evidence~\cite{zhu2024fanoutqa}
+deterministically produce 160 complete tasks and 1,304 calls. A pinned
+Qwen3-8B tokenizer~\cite{qwen2025technical} preserves prompt identities;
+durations and outputs are prescribed. Context reaches 86,214 tokens without
+truncation or padding; the 128K bucket is empty. The 131,072-token proposed-YaRN
+capacity validates neither extended-context numerics nor agent answer quality.
+
+\begin{table}[t]
+\centering
+\caption{Declared simulation inputs; no row is an A100 measurement.}
+\label{tab:configuration}
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Parameter & Value \\
+\midrule
+Model / DP / TP / PP & Qwen3-8B / 8 / 1 / 1 \\
+HBM / weights per GPU & 40 GiB / 16,381,470,720 B \\
+Fixed runtime reserve & 2 GiB per GPU \\
+Registered HBM capacity $M$ & 40 GiB per target \\
+DRAM Store & $10^{12}$ B, one colocated node \\
+Effective path service rate & 25 GB/s (decimal) \\
+Transfer setup / reroute & 250 $\mu$s / 1 ms \\
+Protected prompt chunk & 4,096 tokens \\
+Physical allocation unit & 64 tokens \\
+Workflow concurrency $C$ & 16 (also 8, 32) \\
+Initial / maximum $\alpha$ & 0.20 / 0.50 \\
+AIMD $\gamma$ / $\delta$ / $K$ & 0.50 / 0.05 / 4 \\
+Control interval & 1 s \\
+Detection delay / repair & 0 / 120 s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Figure~\ref{fig:workload} describes the workload. The arms are unprotected
+recomputation, AegisKV DRAM-only and full HBM+DRAM. DRAM-only retains
+SlackLandlord; it represents neither vanilla Mooncake nor GhostServe.
+Every enabled tier sees every sealed prompt candidate. Salts, routing,
+service models, workload and physical capacities are common.
+
+\begin{figure*}[tp]
+\centering\includegraphics[width=\textwidth]{figures/aligned-workload.pdf}
+\caption{The frozen workload. Prompt sizes
+and calls per workflow are descriptive ECDFs. Context coverage uses exact
+prompt tokens plus prescribed outputs; the 128K bucket contains no requests.}
+\Description{Workload size distributions and context bucket counts.}
+\label{fig:workload}
+\end{figure*}
+
+\subsection{Pairing and interventions}
+Closed-loop admission keeps at most $C$ workflows active and admits the next
+one when a workflow completes. Five SHA-256-based admission permutations
+(seeds 0--4) are paired across treatments and no-failure controls. Routing
+uses a fixed seed of zero. WCT begins at a workflow's first request release,
+excluding its wait for a workflow-admission slot. Complete-workload makespan
+also exposes that waiting through the final completion time.
+
+Before measured runs, an unprotected reference selects eligible 96K-bucket
+requests near 50\% workflow progress (one fault) or one-third/two-thirds
+(two faults). Sequential plans incorporate previously selected faults;
+selection never conditions on protection hits or benefit. Each fault targets
+the GPU naturally serving the selected request when it crosses 60\% of
+prompt-plus-output progress. The event interpolates within the crossing
+scheduler step, but only earlier completed forwards expose KV. Physical
+routes, fault times and collateral victims can differ across policies.
+This estimates a matched logical-request intervention, not an identical
+wall-clock shock. Repair takes 120 modeled seconds.
+
+The base plan is reused for bandwidth and service-model sensitivities.
+Concurrency and repeated-fault settings derive their own reference plans.
+The complete prespecified matrix contains 170 measured executions:
+60 base runs (six arms, F0/F1, five seeds), 40 concurrency runs, 40 service-model
+runs, 20 bandwidth runs and 10 two-fault runs. The latter reuse the base F0
+controls for subtraction. Selection runs are excluded from the result count.
+
+\subsection{Ablations, timing and outcomes}
+The three ablations remove the Slack signal, replace retention with LRU, or
+disable AIMD while keeping the initial HBM quota. They retain request ownership,
+copy/commit semantics, full candidate scope and completion cleanup. LRU uses
+ordinary retention in place of Algorithm 2; it is not described as native
+SlackLandlord or credited with that algorithm's suffix-victim guarantee.
+
+Baseline batches compose participant service ideally. Sensitivities
+interpolate toward serialization ($\beta=0.5,1$), preserving scheduler and
+token sequences, or reduce path bandwidth from 25 to 5 GB/s. These vary
+uncalibrated assumptions; exact timing equations accompany the artifact.
+
+For seed $s$, treatment $a$, workflow $i$ and condition $F$, let
+$W_{s,a,i}^{F}$ be WCT. We report healthy cost, raw F1 completion and the
+paired difference in failure penalties:
+\begin{equation}
+\begin{split}
+\Gamma_{s,i}={}&(W_{s,\mathrm{full},i}^{1}-W_{s,\mathrm{full},i}^{0})\\
+ &-(W_{s,\mathrm{dram},i}^{1}-W_{s,\mathrm{dram},i}^{0}).
+\end{split}
+\end{equation}
+Negative $\Gamma$ favors full. For an ablation, the contrast is its penalty
+minus full, so positive values favor full. We first aggregate all 160
+workflows within a seed. Focus-workflow contrasts use the prespecified
+failure requests' workflows; collateral cohorts remain descriptive
+post-treatment populations.
+
+Two-sided 95\% Student-$t$ intervals use the five seed estimates ($df=4$).
+The independent unit is an admission permutation of this fixed workload,
+not each request or workflow. Intervals are exploratory and unadjusted for
+multiple comparisons. All five observations remain visible. ECDFs describe
+the finite workload; nearest-rank percentiles use $\lceil qn\rceil$. Restore breakdowns conserve
+prompt tokens across local primary, copied HBM, DRAM and recomputation.
+Physical pilot observations are analyzed separately.

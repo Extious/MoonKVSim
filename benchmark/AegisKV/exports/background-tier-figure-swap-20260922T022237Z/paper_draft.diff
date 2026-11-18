@@ -1,0 +1,120 @@
+--- before/paper/paper_draft.md
++++ paper/paper_draft.md
+@@ -66,53 +66,55 @@
+ 
+ 为减少重建工作，*KV checkpoint* 保留已经计算完成的前缀。如果该前缀在故障后仍然可用，恢复时即可取回它，只重放尚未保存的尾部[[14]](#ref-14)、[[33]](#ref-33)。KV 可以保存在 GPU HBM、主机 DRAM 或共享存储中[[11]](#ref-11)、[[28]](#ref-28)。这些层级的存储成本与恢复延迟不同。HBM 访问快，但容量成本高，且备份会与前台推理竞争 GPU 内存；DRAM 和使用存储设备作为后端的共享服务可以提供更低成本的容量，但会增加读取延迟。
+ 
++[图 3](#fig-motivation-recompute)展示重建历史与复用已保留 KV 之间的延迟差异。在 1,010,000 tokens 处，即使采用稀疏注意力，完整 Prefill 仍需 571.21 s；HBM、DRAM 和共享存储复用分别需要 1.305、2.663 和 10.156 s。该历史在两个 rank 上共占用 57.92 GB。所有路径均以同一输入的 KV 就绪为终点：复用路径在需要时取回已有历史，再计算一个新 token。HBM 是状态已驻留的参考。这些测量量化 KV 就绪成本，不包含 checkpoint 创建、故障检测和路由。
++
++<a id="fig-motivation-recompute"></a>
++
++![图 3：KV 重建与复用成本](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/recovery-cost.png)
++
++**图 3：** 在两张 A100 PCIe 40 GB GPU 上实测 Qwen2.5-7B-Instruct-1M 的 KV 重建与复用成本（TP2、BF16、batch 为 1），超过 32K 后使用稀疏注意力。完整 Prefill 从空 KV 开始；复用从 $(C-1)$ 个缓存 token 开始，再计算一个 token。DRAM／共享存储的 I/O 与计算串行。HBM／DRAM：三次计时的中位数与 min–max；共享存储／完整 Prefill：每个长度计时一次。协议见[附录 A](#sec-motivation-protocol)。K = 1,024；M = 1,000,000。
++
+ ### 2.2　动机与挑战
+ 
+ 有限容量要求系统决定保留哪些 KV 历史，以及哪些历史值得更快访问。我们使用 Agent 执行 trace 和实测 KV 就绪成本，考察这些选择对工作流的影响。Trace 描述分支时序；模型测量在统一终点下量化重建与复用成本。两者共同引出保护资源分配中的两项挑战。
+ 
+ <a id="fig-motivation"></a>
+ 
+-**图 3**
++**图 4**
+ 
+ <a id="fig-motivation-workflow"></a>
+ 
+-![图 3(a)：四分支工作流](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/workflow.png)
++![图 4(a)：四分支工作流](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/workflow.png)
+ 
+ **(a) 四分支工作流**
+ 
+ <a id="fig-motivation-branch-gap"></a>
+ 
+-![图 3(b)：各工作流的最大差值](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/workflow-gaps.png)
++![图 4(b)：各工作流的最大差值](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/workflow-gaps.png)
+ 
+ **(b) 各工作流的最大差值**
+ 
+-<a id="fig-motivation-recompute"></a>
+-
+-![图 3(c)：上下文与 Prefill 成本](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/recovery-cost.png)
+-
+-**(c) 上下文与 Prefill 成本**
+-
+-**图 3：** 工作流结构与可复用 KV 状态的成本。(a) 四个来自 trace 的分支，以及示意性的 Main 阶段 A0/A5。条形保留真实时序；虚线尾部假定所有分支均需汇合。(b) 各工作流最大分支时长差的 ECDF：121 个工作流，fan-in 根据时序推断；这些差值不是故障时刻的 slack。(c) 在两张 A100 PCIe 40 GB GPU 上实测 Qwen2.5-7B-Instruct-1M 的 Prefill（TP2、BF16、batch 为 1），超过 32K 后使用稀疏注意力。复用从 $(C-1)$ 个缓存 token 开始，再计算一个 token；DRAM／共享存储的 I/O 与计算串行。HBM／DRAM：三次计时的中位数与 min–max；共享存储／完整 Prefill：每个长度计时一次。协议见[附录 A](#sec-motivation-protocol)。K = 1,024；M = 1,000,000。
++<a id="fig-motivation-recovery-exposure"></a>
++
++![图 4(c)：恢复成本与 WCT](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/recovery-exposure.png)
++
++**(c) 恢复成本与 WCT**
++
++**图 4：** 工作流时序与条件性恢复影响。(a) 四个来自 trace 的分支，以及示意性的 Main 阶段 A0/A5。条形保留真实时序；虚线尾部假定所有分支均需汇合。(b) 各工作流最大分支时长差的 ECDF：121 个工作流，fan-in 根据时序推断；这些差值不是故障时刻的 slack。(c) 使用[图 3](#fig-motivation-recompute)的配置，在四个分支的 trace 输入长度代理处实测 Prefill 成本。条形／误差线表示预热后三次计时的中位数／min–max。纹理表示被吸收的延迟；实色表示假定所有分支均需汇合、且其他执行固定时计算得到的 WCT 增量。每个案例都是单分支反事实计算，并非通过故障注入测得的 WCT。协议见[附录 A](#sec-motivation-protocol)。
+ 
+ **并行分支的进度差异。**
+ 
+ <a id="sec-motivation-workflow"></a>
+ 
+-[图 3(a)](#fig-motivation-workflow)展示四个来自 trace 的分支。A2 最晚完成，在 fork 后 151.6 s 结束；A1 在 60.4 s 结束。若后续 Main 阶段需要全部四个输出，A1 可以吸收 91.2 s 的额外延迟而不推迟汇合，A2 上的任何延迟则都会推迟汇合。我们把一个分支在不推迟必要输出的情况下能够吸收的额外延迟称为 *slack*。
+-
+-公开的 SemiAnalysis CC/Weka trace 包含 393 个经过筛选的 Claude Code session[[31]](#ref-31)。我们保留执行有重叠、所有分支均已完成、且最后一个分支结束后存在 Main 请求的 subagent 组；期间允许 Main 活动。这一时序 fan-in 代理保留了 121 个工作流中的 286 个组。对每组计算最长与最短分支的时长差，再取各工作流的最大差值。[图 3(b)](#fig-motivation-branch-gap)的中位数为 138 s，90 分位数为 1,173 s。这些统计显示，保留的工作流内部存在较大的时长差异。Trace 没有记录显式结果消费边，因此这些统计既不能验证所有分支均需汇合，也不能测量故障时刻的 slack。四分支示例是一个符合条件的组，不能代表工作流最大差值的典型水平。
++[图 4(a)](#fig-motivation-workflow)展示四个来自 trace 的分支。A2 最晚完成，在 fork 后 151.6 s 结束；A1 在 60.4 s 结束。若后续 Main 阶段需要全部四个输出，A1 可以吸收 91.2 s 的额外延迟而不推迟汇合，A2 上的任何延迟则都会推迟汇合。我们把一个分支在不推迟必要输出的情况下能够吸收的额外延迟称为 *slack*。
++
++公开的 SemiAnalysis CC/Weka trace 包含 393 个经过筛选的 Claude Code session[[31]](#ref-31)。我们保留执行有重叠、所有分支均已完成、且最后一个分支结束后存在 Main 请求的 subagent 组；期间允许 Main 活动。这一时序 fan-in 代理保留了 121 个工作流中的 286 个组。对每组计算最长与最短分支的时长差，再取各工作流的最大差值。[图 4(b)](#fig-motivation-branch-gap)的中位数为 138 s，90 分位数为 1,173 s。这些统计显示，保留的工作流内部存在较大的时长差异。Trace 没有记录显式结果消费边，因此这些统计既不能验证所有分支均需汇合，也不能测量故障时刻的 slack。四分支示例是一个符合条件的组，不能代表工作流最大差值的典型水平。
+ 
+ **从重建时间到工作流延迟。**
+ 
+-为量化汇合的影响，我们在四个活跃请求的输入长度代理上测量完整 Prefill。该实验与[图 3(c)](#fig-motivation-recompute)的层级对比均使用 Qwen2.5-7B-Instruct-1M[[29]](#ref-29)，在两张 A100 PCIe 40 GB GPU 上以 TP2、BF16、batch 为 1 执行。插桩后的 SGLang 0.5.10rc0 使用 MInference vertical/slash 注意力[[15]](#ref-15)与 dual chunk attention（DCA）位置处理，超过 32K 后采用稀疏注意力。四个历史长度代理来自 trace 的 hash-block 数乘以 64，范围为 100,864 至 113,664 tokens。每个测量输入均为固定合成历史加一个 token。每个长度完整预热一次后采集三次计时，报告中位数与 min–max。完整协议见[附录 A](#sec-motivation-protocol)。
+-
+-<a id="fig-motivation-recovery-exposure"></a>
+-
+-![图 4](/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/paper/figures/preview/recovery-exposure.png)
+-
+-**图 4：** 针对[图 3(a)](#fig-motivation-workflow)的实测 Prefill 成本：使用[图 3(c)](#fig-motivation-recompute)的配置，在 trace 输入长度代理加一个 token 的条件下测量。条形／误差线表示预热后三次计时的中位数／min–max。纹理表示被吸收的延迟；实色表示假定所有分支均需汇合、且其他执行固定时计算得到的 WCT 增量。每个案例都是单分支反事实计算，并非通过故障注入测得的 WCT。
+-
+-[图 4](#fig-motivation-recovery-exposure)将这些成本映射到假定的全分支汇合。在 fork 后 29.5 s，每个案例分别向分支 $i$ 加入实测重建暂停 $R_i$，其他执行与队列保持不变。利用 trace 完成时刻得到离线 slack $\sigma_i$，WCT 增量为：
++为量化汇合的影响，我们在四个活跃请求的输入长度代理上测量完整 Prefill。该实验与[图 3](#fig-motivation-recompute)的层级对比均使用 Qwen2.5-7B-Instruct-1M[[29]](#ref-29)，在两张 A100 PCIe 40 GB GPU 上以 TP2、BF16、batch 为 1 执行。插桩后的 SGLang 0.5.10rc0 使用 MInference vertical/slash 注意力[[15]](#ref-15)与 dual chunk attention（DCA）位置处理，超过 32K 后采用稀疏注意力。四个历史长度代理来自 trace 的 hash-block 数乘以 64，范围为 100,864 至 113,664 tokens。每个测量输入均为固定合成历史加一个 token。每个长度完整预热一次后采集三次计时，报告中位数与 min–max。完整协议见[附录 A](#sec-motivation-protocol)。
++
++[图 4(c)](#fig-motivation-recovery-exposure)将这些成本映射到假定的全分支汇合。在 fork 后 29.5 s，每个案例分别向分支 $i$ 加入实测重建暂停 $R_i$，其他执行与队列保持不变。利用 trace 完成时刻得到离线 slack $\sigma_i$，WCT 增量为：
+ 
+ $$
+ \Delta\mathrm{WCT}_i=\max(0,R_i-\sigma_i).
+@@ -132,9 +134,7 @@
+ 
+ <a id="sec-motivation-long-context"></a>
+ 
+-[图 3(c)](#fig-motivation-recompute)在相同执行配置下比较重建与 HBM、DRAM、共享存储复用。对于 $C=M+1$ 个 token，完整 Prefill 从空 KV 开始；复用从相同的 $M$-token 历史开始，并计算一个新 token。所有计时均在全部 $C$ 个 token 的 KV 就绪时结束，位于词表投影之前。HBM 是状态已驻留的参考；DRAM 和共享存储将状态恢复与计算串行执行。这些测量不包含 checkpoint 创建、故障检测和恢复路由。
+-
+-在 1,010,000 tokens 处，即使采用稀疏注意力，完整 Prefill 仍需 571.21 s。HBM、DRAM 和共享存储复用分别需要 1.305、2.663 和 10.156 s。保留历史可以避免大部分重建工作；其位置决定额外读取延迟。本次运行中，共享存储比 DRAM 多 7.49 s，而该历史在两个 rank 上共占用 57.92 GB。这区分了保留可复用状态的价值，以及使其能够快速访问的额外价值。HBM／DRAM 各数据点报告三次计时，完整 Prefill 和共享存储各数据点则各报告一次。结果描述这一固定输入与串行实现中的成本；存储缓存和 I/O 重叠可能改变差异。它们并未测量某种保护策略对整体服务性能的净收益。
++[图 3](#fig-motivation-recompute)中的层级成本区分了保留可复用状态的价值，以及使其能够快速访问的额外价值。保留历史可以避免大部分重建工作；其位置决定额外读取延迟。在最长上下文处，共享存储在本次实测中比 DRAM 多 7.49 s。缩短这段延迟是否能够提前工作流完成，取决于恢复分支的位置与进度。这些测量描述固定输入和所述访问路径的成本，并未测量某种保护策略对整体服务性能的净收益。
+ 
+ **局限 2：只看恢复速度会遗漏保留价值与资源代价。**
+ 
+@@ -160,7 +160,7 @@
+ 
+ **1. 工作流依赖决定恢复紧迫性。**
+ 
+-[图 4](#fig-motivation-recovery-exposure)展示了相近的重建成本对 WCT 产生的不同影响：slack 吸收部分分支的延迟，而关键分支暴露全部暂停时间。因此，仅凭请求恢复时间不足以排序保护优先级；请求在剩余工作流中的位置同样重要。
++[图 4(c)](#fig-motivation-recovery-exposure)展示了相近的重建成本对 WCT 产生的不同影响：slack 吸收部分分支的延迟，而关键分支暴露全部暂停时间。因此，仅凭请求恢复时间不足以排序保护优先级；请求在剩余工作流中的位置同样重要。
+ 
+ **2. 历史 KV 访问集中于部分块。**
+ 
+@@ -878,7 +878,7 @@
+ 
+ **范围与配置。**
+ 
+-[图 3(c)](#fig-motivation-recompute)与[图 4](#fig-motivation-recovery-exposure)使用相同的固定 Qwen2.5-7B-Instruct-1M 权重、SGLang 0.5.10rc0、PyTorch 2.9.1/CUDA 12.8，在两张 A100 PCIe 40 GB GPU 上以 TP2、BF16 权重／KV 和 batch 为 1 执行。两组实验分别申请同型号 GPU，使用由模型 tokenizer 编码的同一固定重复合成文本。Trace 提供工作流位置与长度代理，不提供基准测试 prompt。我们的 adapter 使用固定 MInference vertical/slash 配置与 DCA 位置处理，在超过 32,768 tokens 后采用稀疏注意力，包括最后一个 token 的 EXTEND。SM80 稀疏 kernel 构建和模型／注意力源码均附哈希存档。GQA 的 K/V 共享；前缀执行每组最多包含两个 Query head，单 Query 则将全部 head 一起批处理。这些是插桩 worker 测量，而非未修改服务前端的吞吐测量。
++[图 3](#fig-motivation-recompute)与[图 4(c)](#fig-motivation-recovery-exposure)使用相同的固定 Qwen2.5-7B-Instruct-1M 权重、SGLang 0.5.10rc0、PyTorch 2.9.1/CUDA 12.8，在两张 A100 PCIe 40 GB GPU 上以 TP2、BF16 权重／KV 和 batch 为 1 执行。两组实验分别申请同型号 GPU，使用由模型 tokenizer 编码的同一固定重复合成文本。Trace 提供工作流位置与长度代理，不提供基准测试 prompt。我们的 adapter 使用固定 MInference vertical/slash 配置与 DCA 位置处理，在超过 32,768 tokens 后采用稀疏注意力，包括最后一个 token 的 EXTEND。SM80 稀疏 kernel 构建和模型／注意力源码均附哈希存档。GQA 的 K/V 共享；前缀执行每组最多包含两个 Query head，单 Query 则将全部 head 一起批处理。这些是插桩 worker 测量，而非未修改服务前端的吞吐测量。
+ 
+ **统一终点。**
+ 
+@@ -890,8 +890,8 @@
+ 
+ **计时样本。**
+ 
+-[图 3(c)](#fig-motivation-recompute)在一次资源分配中测量 8,192、65,536、262,144 和 1,010,000 tokens。HBM／DRAM 每个长度预热一次、计时三次；完整 Prefill 与共享存储各计时一次。计时前执行短前向与算子检查；64K 还执行完整的原始全 head 稀疏参考。256K/1.01M 没有额外的完整 Prefill 预热，也没有存储读取预热。因此，这些完整 Prefill／存储数据点描述单次运行，而非稳定延迟分布。[图 4](#fig-motivation-recovery-exposure)使用两次资源分配，在 $C=100{,}865$、$105{,}921$、$108{,}865$ 和 $113{,}665$ 处测量，每个长度完整预热一次并进行三次完整 Prefill 计时。首次分配完成了三个长度；最后一个长度在提前终止信号后恢复测量。其不完整计时保留在实验材料中，但整组排除。图中报告中位数与 min–max。重复是同一输入的计时样本，不是独立工作流或置信区间。原始计时与全部样本都保留在实验材料中。
++[图 3](#fig-motivation-recompute)在一次资源分配中测量 8,192、65,536、262,144 和 1,010,000 tokens。HBM／DRAM 每个长度预热一次、计时三次；完整 Prefill 与共享存储各计时一次。计时前执行短前向与算子检查；64K 还执行完整的原始全 head 稀疏参考。256K/1.01M 没有额外的完整 Prefill 预热，也没有存储读取预热。因此，这些完整 Prefill／存储数据点描述单次运行，而非稳定延迟分布。[图 4(c)](#fig-motivation-recovery-exposure)使用两次资源分配，在 $C=100{,}865$、$105{,}921$、$108{,}865$ 和 $113{,}665$ 处测量，每个长度完整预热一次并进行三次完整 Prefill 计时。首次分配完成了三个长度；最后一个长度在提前终止信号后恢复测量。其不完整计时保留在实验材料中，但整组排除。图中报告中位数与 min–max。重复是同一输入的计时样本，不是独立工作流或置信区间。原始计时与全部样本都保留在实验材料中。
+ 
+ **校验与工作流映射。**
+ 
+-在重建／复用路径之间检查完整历史哈希、最终 hidden state、所有层的新 KV 和贪心输出。重复完整 Prefill 额外检查输出一致性，CUDA 事件时间线检查串行复制。这些检查验证所比较稀疏状态执行的一致性，不验证其与 dense attention 等价或长上下文任务质量。对于[图 4](#fig-motivation-recovery-exposure)，四个历史长度是活跃请求 trace hash-block 数乘以 64。它们是大小代理，不是原模型准确 token 数或故障时观测到的 KV 前沿。该示例按四个并行分支和约 100 s 的差值选取；它不是该工作流的最大差值组。每个反事实分别在 fork 后 29.5 s，将一段实测完整 Prefill 时长作为额外分支暂停插入。全分支汇合假设、其他执行与队列保持固定。因此，只有重建成本是实测；图中的 WCT 增量是条件计算，而非 Claude Code 工作流中实际观测的故障恢复。
++在重建／复用路径之间检查完整历史哈希、最终 hidden state、所有层的新 KV 和贪心输出。重复完整 Prefill 额外检查输出一致性，CUDA 事件时间线检查串行复制。这些检查验证所比较稀疏状态执行的一致性，不验证其与 dense attention 等价或长上下文任务质量。对于[图 4(c)](#fig-motivation-recovery-exposure)，四个历史长度是活跃请求 trace hash-block 数乘以 64。它们是大小代理，不是原模型准确 token 数或故障时观测到的 KV 前沿。该示例按四个并行分支和约 100 s 的差值选取；它不是该工作流的最大差值组。每个反事实分别在 fork 后 29.5 s，将一段实测完整 Prefill 时长作为额外分支暂停插入。全分支汇合假设、其他执行与队列保持固定。因此，只有重建成本是实测；图中的 WCT 增量是条件计算，而非 Claude Code 工作流中实际观测的故障恢复。

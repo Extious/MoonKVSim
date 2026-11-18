@@ -1,0 +1,94 @@
+\paragraph{Multi-agent Execution.}
+With the development of LLM applications, more and more tasks require the design of multi-agent collaboration to be completed. These multi-Agent applications divide user tasks into multiple subtasks and assign them to several Agents for parallel execution. Each Agent maintains its own conversation, advancing tasks through LLM requests and tool invocations: the model generates responses or initiates tool calls, with the returned results becoming input for subsequent requests. **Request** is a single model call, and an **Agent** can initiate multiple requests to complete subtasks, while **Workflow** connects these tasks through serial dependencies, parallel branches, and merge points. The application is responsible for workflow orchestration, and the inference service layer is responsible for executing model requests.
+Figure~\ref{fig:agent-workflow-examples} illustrates this structure. In code generation, the main Agent assigns the CSV export function to the API, UI, test writing, and documentation Agents. The branches execute in parallel, alternating between model requests and file reading, editing, or checking. The main Agent then integrates the changes and runs tests. In deep research, the lead Agent assigns technical, cost, security, and supply investigations, and then combines the collected evidence into a report~\cite{anthropic2025multiagent}. The number of requests and tool calls required by each branch may vary. Therefore, after a model request is completed, its associated Agent and the entire workflow may still not be finished.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/agent-workflow-examples.pdf}
+  \caption{Multi-Agent Workflow Examples.
+    Each row is one agent: $R_i$ denotes its $i$th LLM request, with
+    intervening tool results carried into the next request.
+    Branches may have different request counts.
+    The coordinator resumes after their results join.}
+  \label{fig:agent-workflow-examples}
+\end{figure}
+
+
+
+\paragraph{Workflow completion time.}
+Let $w$ represent a workflow, $a_w$ the time the workflow arrives at the system, and $c_w$ the time when all necessary outputs are ready. The total time from arrival to completion of the workflow is defined as the *Workflow Completion Time* (WCT), i.e., $\mathrm{WCT}_w=c_w-a_w$. It includes model execution, tool execution, queuing, and dependency waiting. In the code example, integration needs to wait for all necessary modifications. Delays on the last incomplete branch will delay integration, while branches that are completed earlier may absorb the same delay before merging. Request delays affect the WCT through these dependencies.
+
+
+
+
+\paragraph{KV reuse in multi-agent workflows.}
+During \emph{prefill}, an LLM processes input tokens and computes
+per-layer keys and values (KV); \emph{decoding} extends this state as
+output tokens are generated. With compatible model and position semantics,
+requests with an identical token prefix can reuse its KV and compute
+only the remaining suffix~\cite{zheng2024sglang}.
+
+Multi-agent workflows create reuse both within and across agents.
+Within an agent, successive requests often append model outputs and
+tool results to the existing conversation, allowing earlier turns'
+KV to be reused~\cite{gao2024cachedattention}. Across agents, branches
+can inherit a common prompt before adding their own tasks. For example,
+the API, UI and test agents in Figure~\ref{fig:agent-workflow-examples}
+can share KV for common project instructions and repository context
+when these form the same initial token sequence. Reuse extends only
+through the matching prefix; different role prompts or context edits
+can shorten it~\cite{zheng2024sglang}.
+
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/gpu-server-availability.pdf}
+  \caption{GPU-server availability reconstructed from InfiniteHBD's
+    production-training trace~\cite{shou2025infinitehbd}: 400 servers minus
+    those within recorded outage intervals. Records include GPU, network,
+    power/cooling, and software faults; unknown causes, tests,
+    troubleshooting, and changes are also retained. Overlapping intervals
+    per server are merged. Availability is measured at the node level.}
+  \label{fig:gpu-server-availability}
+\end{figure}
+
+\paragraph{Failures and KV reconstruction.}
+Failures are a recurring concern in large-scale LLM serving deployments:
+hardware faults and software crashes can interrupt workers and make
+their GPU-resident KV unavailable~\cite{cao2026lumen,jayakody2026ghostserve}.
+Redirecting an interrupted request to a worker with the model loaded
+does not restore this state. Even when the application retains the
+conversation's tokens, the model must reconstruct the missing KV before
+it can resume generation. Without a usable KV copy, recovery requires
+processing the retained history again~\cite{strati2024dejavu}.
+
+This reconstruction is particularly costly for agents that accumulate
+long contexts over many requests~\cite{jayakody2026ghostserve}.
+Coding agents retain source files, edits and test outputs; research
+agents collect retrieved documents, intermediate findings and tool
+results. A failure late in execution can therefore require rebuilding
+KV for the accumulated history, not just the latest user input.
+In a multi-agent workflow, one failed worker may interrupt several
+co-located agents, leaving the surviving workers to reconstruct multiple
+histories while also handling normal traffic~\cite{cao2026lumen}.
+Reconstruction delays the affected branches and can postpone downstream
+integration or synthesis, increasing workflow completion time.
+
+Figure~\ref{fig:gpu-server-availability} provides production infrastructure
+context using the public InfiniteHBD training-cluster
+trace~\cite{shou2025infinitehbd}. Its 584 fault records affect 231 of
+400 GPU servers over approximately 349 days. Reconstructing the number
+of servers outside recorded fault intervals yields a minimum of 365
+available servers. These records characterize infrastructure
+unavailability; they do not measure KV reconstruction or serving latency.
+
+\paragraph{KV retention across storage tiers.}
+A \emph{KV checkpoint} saves an already computed prefix. If that copy
+survives a failure, recovery can retrieve it and recompute only the
+remaining tail~\cite{strati2024dejavu,jayakody2026ghostserve}.
+Hierarchical caches extend GPU HBM with host DRAM and local or shared
+storage to retain more histories~\cite{gao2024cachedattention,qin2025mooncake}.
+Shared storage, such as a shared filesystem, makes retained KV accessible
+to multiple serving workers. A compatible worker can retrieve this state
+after reassignment or failover, provided the data and storage service
+survive the failure.

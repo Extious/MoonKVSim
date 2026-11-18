@@ -1,0 +1,49 @@
+\documentclass[sigplan,10pt,review,anonymous,balance=false]{acmart}
+\setcopyright{none}
+\settopmatter{printfolios=true,printacmref=false,printccs=false}
+\renewcommand\footnotetextcopyrightpermission[1]{}
+\pagestyle{plain}
+\raggedbottom
+\acmConference[EuroSys '27]{European Conference on Computer Systems}{}{}
+\acmYear{2027}\copyrightyear{2027}\acmDOI{}\acmISBN{}
+\usepackage{amsmath,booktabs,graphicx,array,float}
+\floatstyle{ruled}\newfloat{algorithm}{tbp}{loa}\floatname{algorithm}{Algorithm}
+\renewcommand{\bibliofont}{\normalsize}
+\microtypesetup{expansion=false}
+\setlength{\emergencystretch}{1.5em}
+\renewcommand{\topfraction}{0.95}
+\renewcommand{\textfraction}{0.05}
+\renewcommand{\dbltopfraction}{0.85}
+\renewcommand{\dblfloatpagefraction}{0.75}
+\newcommand{\pos}[1]{\left[#1\right]^+}
+\input{sections/result-values}
+\begin{document}
+\title{AegisKV: Slack-Aware KV Protection for Agent Workflows}
+\author{Anonymous Author(s)}
+\affiliation{\institution{Anonymous Institution}\country{Anonymous}}
+\ccsdesc[500]{Computer systems organization~Reliability}
+\ccsdesc[300]{Software and its engineering~Software fault tolerance}
+\keywords{KV cache, agent workflows, fault tolerance, discrete-event simulation}
+\input{sections/abstract}
+\maketitle
+\makeatletter
+\fancyhead[LE]{\ACM@linecountL\@headfootfont\footnotesize EuroSys '27}
+\fancyhead[RO]{\@headfootfont EuroSys '27\ACM@linecountR}
+\makeatother
+
+\input{sections/introduction}
+
+\input{sections/motivation}
+\input{sections/system-design}
+\input{sections/implementation}
+\input{sections/experimental-method}
+\renewcommand{\dbltopfraction}{0.90}
+\input{sections/results}
+\input{sections/physical-pilot}
+\input{sections/limitations}
+\input{sections/related-work}
+\input{sections/conclusion}
+\clearpage
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{references}
+\end{document}

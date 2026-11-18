@@ -1,0 +1,23 @@
+{
+  "file": "/home/comp/zhanzhao/sglang/benchmark/AegisKV/paper/figures/evaluation-protocol.pdf",
+  "sha256": "2a47c46603631d712b371f55c2ee7498379aad073b3e5c54c094da8aaadad025",
+  "status": "metadata_checked",
+  "visual_review": "required",
+  "scientific_review": "not_performed",
+  "pages": [
+    {
+      "page": 1,
+      "native_width_mm": 167.99999525282118,
+      "placed_width_mm": 168.0,
+      "placed_height_mm": 103.27369490089967,
+      "placement_scale": 1.0000000282570176,
+      "text_span_count": 19,
+      "effective_min_font_pt": 10.366640383872715,
+      "small_text": [],
+      "possible_outside_text": [],
+      "embedded_rasters": []
+    }
+  ],
+  "findings": [],
+  "limits": "Metadata extraction can miss fully clipped or overlapping content; inspect rendered files and manuscript placement. No analysis of input data, statistical validity, or scientific claims is performed."
+}

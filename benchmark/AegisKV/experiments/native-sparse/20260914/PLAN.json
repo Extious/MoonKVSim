@@ -1,0 +1,22 @@
+{
+  "evidence": "actual trained NOSA-1B native sparse CUDA prefill selections",
+  "model": "openbmb/NOSA-1B",
+  "checkpoint_revision": "7bdc33fbc1bc80b76b29689ba35ff6a7991b7dee",
+  "book_selection_rule": "first three .txt files in lexicographic order of the official PG19 test split, fixed before model execution",
+  "book_ids": ["10146", "10321", "10356"],
+  "histories_M": [16384, 32768],
+  "suffix_N": 512,
+  "independent_input_documents": 3,
+  "planned_full_prompt_forwards": 6,
+  "measurement_repeats_per_document_length": 1,
+  "extra_observer_validation_forwards": 2,
+  "model_changes": "none; bind original native imports and attach passive observers",
+  "attention_parameters": "published defaults, no sparsity sweep or hotspot tuning",
+  "main_statistic": "number of selected-block events for Query positions [M,M+N), restricted to history blocks [0,M/64)",
+  "physical_backup_granularities": ["layer x KV group x 64-token block", "layer x all KV groups x 64-token block", "all layers x all KV groups x 64-token span"],
+  "plot_layers_chosen_in_advance": [1, 14, 28],
+  "plot_document_chosen_in_advance": "10146",
+  "separate_nonlocal_analysis": "remove native sink and moving local-window events using the actual kernel criterion",
+  "claim_boundaries": ["no attention-mass claim", "no physical HBM-traffic measurement", "no actual reroute or recovery latency", "offline ranking does not by itself validate an online policy"],
+  "evidence_policy": "retain every completed input-length result, including weak concentration"
+}

@@ -1,0 +1,93 @@
+--- before/background_and_motivation.tex
++++ background_and_motivation.tex
+@@ -145,30 +145,17 @@
+ KVFlow uses upcoming agent steps to guide eviction and
+ prefetching~\cite{lin2024parrot,pan2025kvflow}. LUMEN coordinates
+ checkpoint placement and recovery routing with worker
+-load~\cite{cao2026lumen}. These capabilities provide a basis for
+-workflow-aware recovery. Allocating finite protection resources also
+-requires addressing two limitations of the decision criteria.
+-
+-\paragraph{Limitation 1: Request-level priorities incompletely express
+-workflow benefit.}
+-Recency, proximity to the next use and reconstruction cost describe when
+-state may be needed and how expensive it is to recover. Taken alone,
+-they do not determine how restoring a request sooner advances the
+-workflow's required outputs. An expensive history can belong to a branch
+-with time to spare, while a shorter recovery can delay the branch that
+-gates completion. Protection priorities must account for dependencies
+-and the branches' remaining progress.
+-
+-\paragraph{Limitation 2: Recovery speed alone omits retention value and
+-resource costs.}
+-A branch that can tolerate recovery delay may still reuse its history
+-on the next normal request. Removing its last KV copy forfeits that reuse;
+-moving the copy to a slower tier preserves it but adds retrieval work.
+-Conversely, keeping every recoverable history in fast memory consumes
+-space needed by other histories and foreground execution. Minimizing
+-recovery latency in isolation therefore does not resolve which state
+-to retain, where to retain it, or how much protection the serving system
+-can afford.
++load~\cite{cao2026lumen}.
++
++\subsection{Motivation and Challenges}
++
++The mechanisms above provide a basis for workflow-aware recovery.
++Allocating finite protection resources also requires addressing two
++limitations of the decision criteria. We examine these limitations using
++agent execution traces and measured KV readiness costs. The traces
++characterize branch timing; the model measurements quantify reconstruction
++and reuse under a common endpoint. Together they motivate two requirements
++for workflow-aware protection.
+ 
+ \begin{figure*}[t]
+   \centering
+@@ -225,13 +212,6 @@
+     reuse, and red triangles for full prefill. Both axes are logarithmic.}
+ \end{figure*}
+ 
+-\subsection{Motivation and Challenges}
+-
+-We examine these limitations using agent execution traces and measured
+-KV readiness costs. The traces characterize branch timing; the model
+-measurements quantify reconstruction and reuse under a common endpoint.
+-Together they motivate two requirements for workflow-aware protection.
+-
+ \paragraph{Unequal progress across parallel branches.}
+ \label{sec:motivation-workflow}
+ Figure~\ref{fig:motivation}(\subref{fig:motivation-workflow}) shows four
+@@ -309,6 +289,16 @@
+ calculations using synthetic inputs and assumed dependencies, not
+ fault-injected measurements of the original workflows.
+ 
++\paragraph{Limitation 1: Request-level priorities incompletely express
++workflow benefit.}
++Recency, proximity to the next use and reconstruction cost describe when
++state may be needed and how expensive it is to recover. Taken alone,
++they do not determine how restoring a request sooner advances the
++workflow's required outputs. An expensive history can belong to a branch
++with time to spare, while a shorter recovery can delay the branch that
++gates completion. Protection priorities must account for dependencies
++and the branches' remaining progress.
++
+ \paragraph{Challenge 1: Estimating the workflow impact of recovery.}
+ A protection decision must connect the delay it avoids to the required
+ workflow outputs. The example uses completed traces to obtain slack,
+@@ -344,6 +334,17 @@
+ change the differences. They do not measure the net serving benefit
+ of a protection policy.
+ 
++\paragraph{Limitation 2: Recovery speed alone omits retention value and
++resource costs.}
++A branch that can tolerate recovery delay may still reuse its history
++on the next normal request. Removing its last KV copy forfeits that reuse;
++moving the copy to a slower tier preserves it but adds retrieval work.
++Conversely, keeping every recoverable history in fast memory consumes
++space needed by other histories and foreground execution. Minimizing
++recovery latency in isolation therefore does not resolve which state
++to retain, where to retain it, or how much protection the serving system
++can afford.
++
+ \paragraph{Challenge 2: Balancing fast recovery, reuse and resource use.}
+ Finite capacity prevents every long history from remaining near
+ execution. Protection must decide both which histories retain reusable

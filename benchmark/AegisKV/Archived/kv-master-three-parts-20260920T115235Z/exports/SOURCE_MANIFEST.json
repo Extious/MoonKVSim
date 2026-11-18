@@ -1,0 +1,153 @@
+{
+  "upload_source_directory": "paper/",
+  "main_document": "main.tex",
+  "compiler": "pdfLaTeX",
+  "compiled_pdf": "paper/main.pdf",
+  "generated_pdf_sha256": "00b7b42db7e1c26b31d6297525289d34dc0ad9b445fc0a883b21bb203ff83e12",
+  "current_figure_source": "exports/system-overview-router/system-overview.drawio",
+  "files": [
+    {
+      "path": "ACM-Reference-Format.bst",
+      "bytes": 93560,
+      "sha256": "8ec002c927068bfc5b3cfe71b66aa4767b9e485530ac3c67ba5c064df4c2e6ac"
+    },
+    {
+      "path": "abstract.tex",
+      "bytes": 1400,
+      "sha256": "cbec88f8859baa96ccd6d2ce2af35de3f3f21543a5d02abb37d3dd9f9e83fac8"
+    },
+    {
+      "path": "acmart.cls",
+      "bytes": 121737,
+      "sha256": "2f949e6e3f2a79f2cdc218b9dcdbaa7dd451adb4ee0be1af6dc7ebe00b318ea7"
+    },
+    {
+      "path": "background_and_motivation.tex",
+      "bytes": 12401,
+      "sha256": "f1c9c7be3859deda4f47b911a79a4384f7647ef78a56c1dc892fcb65c5502341"
+    },
+    {
+      "path": "figures/agent-prediction.pdf",
+      "bytes": 11423,
+      "sha256": "7e21a4bab2f4bdb216e16e42e1f76a7e8a6873038cf0a0d27dd780c6df766c12"
+    },
+    {
+      "path": "figures/agent-prefix-reuse.pdf",
+      "bytes": 14714,
+      "sha256": "8ddc6e340244b7bfa8a45df43d3fe269872b53c74c5dd84e0f568bfc33cfa79a"
+    },
+    {
+      "path": "figures/preview/agent-prediction.png",
+      "bytes": 38809,
+      "sha256": "fc0ee3586ba44dc1b6b2997570d578eb683e0829187caa0c2442f231bb13bcf3"
+    },
+    {
+      "path": "figures/preview/agent-prefix-reuse.png",
+      "bytes": 66773,
+      "sha256": "eb659377cd0eb1d2c1884f19cba5d0dea3789948b8e78244916a8754e49ce496"
+    },
+    {
+      "path": "figures/preview/recovery-cost.png",
+      "bytes": 63330,
+      "sha256": "fadfb745a693887ec841c90d5e0c5898593c3d7a79f18fe4a05f99872efe4165"
+    },
+    {
+      "path": "figures/preview/recovery-exposure.png",
+      "bytes": 37129,
+      "sha256": "4403d87a4f31ead24f3117822bc5d9b0a8f0dc93624c9d19addaa3ddb59c5037"
+    },
+    {
+      "path": "figures/preview/recovery-pipeline.png",
+      "bytes": 102218,
+      "sha256": "b9725fd6e3fcdf3030ad3a4ce1511a1ba9c080840f3881257b31270ba03c5b41"
+    },
+    {
+      "path": "figures/preview/retry-kv-prediction.png",
+      "bytes": 43381,
+      "sha256": "00f0bf4323313e5886368e97a4e379d4ad02009286f34694acb66edceafc72c0"
+    },
+    {
+      "path": "figures/preview/sparse-models.png",
+      "bytes": 43418,
+      "sha256": "8fa681265e8a31607767c26a358936d4561adb080370a4da5086cd8b44874301"
+    },
+    {
+      "path": "figures/preview/system-overview.png",
+      "bytes": 151040,
+      "sha256": "7f90da978b1dfd3deb32cf7c6ca9159be87479fef30ab0942e4c9df52f10393c"
+    },
+    {
+      "path": "figures/preview/workflow-gaps.png",
+      "bytes": 39653,
+      "sha256": "472bcd8d8c75cc7e1ce4e6f190c150bff1f490247e95f925190e5d00872d4c22"
+    },
+    {
+      "path": "figures/preview/workflow.png",
+      "bytes": 26757,
+      "sha256": "2e34f94e780fe133a50984b3624dc856352b05e7a7a6f8b0e0adbec82e29db8c"
+    },
+    {
+      "path": "figures/recovery-cost.pdf",
+      "bytes": 15374,
+      "sha256": "2f5db52bdf63aad6f359217f6f39982d1049c9fe5c0260b06733b3e8d451c40c"
+    },
+    {
+      "path": "figures/recovery-exposure.pdf",
+      "bytes": 12637,
+      "sha256": "5a6086433f8a83e7f6e9034b052e448bcdc6d79ddf0d65ace8f7a06753450ca7"
+    },
+    {
+      "path": "figures/recovery-pipeline.pdf",
+      "bytes": 34902,
+      "sha256": "08870137fb479b18df155c89664a7b42d2068700a4906fd9fde108e73334c02d"
+    },
+    {
+      "path": "figures/retry-kv-prediction.pdf",
+      "bytes": 19466,
+      "sha256": "6cf63ea6bd7cb10acc0d474a5bf381f4518b72121b87cdd3bcc5c06222dc488b"
+    },
+    {
+      "path": "figures/sparse-models.pdf",
+      "bytes": 16293,
+      "sha256": "43f823bef46796ca7e7a9f272363c01d991c080955fdccf41b0328797387056c"
+    },
+    {
+      "path": "figures/system-overview.pdf",
+      "bytes": 58213,
+      "sha256": "d92e998ef99531f51a4c62203c398ac97c6aad2458174f804d1d0dbde1bc67d9"
+    },
+    {
+      "path": "figures/workflow-gaps.pdf",
+      "bytes": 16895,
+      "sha256": "7c72a38316937558dbb138be5bc1930db06b8373ff15f207010e27f930f79787"
+    },
+    {
+      "path": "figures/workflow.pdf",
+      "bytes": 11985,
+      "sha256": "c5a617d044f4d90d2f9cc48bbff5ce98be1ff9b82680383801dfb2e6f6201a1e"
+    },
+    {
+      "path": "main.tex",
+      "bytes": 1210,
+      "sha256": "2c1c0c76aa409724769b8c19936ed0cd881b3ae970652043789572addbb4a555"
+    },
+    {
+      "path": "paper_draft.md",
+      "bytes": 39963,
+      "sha256": "3957c5fa38a3b9e038e61d1bb4e869924e3d0e4543a76f7eb65b43ca3932099c"
+    },
+    {
+      "path": "references.bib",
+      "bytes": 14791,
+      "sha256": "081bffcec7a452081a4592d885ad462b788699e921efd0999b458b2808e0a87f"
+    },
+    {
+      "path": "system_design.tex",
+      "bytes": 45494,
+      "sha256": "506f589d9cf990345ed723e67b03e65b641f81eb84f7a6d1abaac68d7d3c5188"
+    }
+  ],
+  "figure_sources": {
+    "agent-prefix-reuse": "experiments/scripts/paper/render_agent_prefix_reuse.py"
+  }
+}

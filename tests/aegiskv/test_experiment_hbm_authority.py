@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from fractions import Fraction
+from types import SimpleNamespace
 
 import pytest
 
@@ -31,6 +33,8 @@ def _authority(
     journal: EventJournal | None = None,
     now_ns: Callable[[], int] = lambda: 0,
     reclaim_free_bytes: Callable[[int], bool] | None = None,
+    preview_reclaim_free_bytes: Callable[[int, int], bool] | None = None,
+    reclaimable_inactive_bytes: Callable[[], int] | None = None,
 ) -> tuple[ExperimentHBMAuthority, CapacityLedger]:
     ledger = CapacityLedger(
         resource_id="hbm:gpu-0",
@@ -56,6 +60,8 @@ def _authority(
         inactive_account=INACTIVE,
         recovery_reserved_account=RECOVERY,
         reclaim_free_bytes=reclaim_free_bytes,
+        preview_reclaim_free_bytes=preview_reclaim_free_bytes,
+        reclaimable_inactive_bytes=reclaimable_inactive_bytes,
     )
     return authority, ledger
 
@@ -92,6 +98,22 @@ def test_partial_source_tail_is_available_only_to_its_own_request() -> None:
     assert authority.num_free_blocks == 4
     assert authority.num_free_blocks_for_request("owner") == 7
     assert authority.num_free_blocks_for_request("other") == 4
+
+
+def test_committed_source_chunks_include_active_and_resident_backing() -> None:
+    authority, ledger = _authority(chunks=4, inactive_chunks=1)
+
+    authority.allocate_blocks((1, 2, 3, 4, 5), request_id="owner", cause="prefill")
+    authority.bind_shared_inactive_prefix(
+        request_id="owner",
+        restored_tokens=64,
+        start_token=128,
+        activate=lambda source_chunk_count: source_chunk_count * CHUNK_BYTES,
+    )
+
+    assert ledger.bytes_in(ACTIVE) == 2 * CHUNK_BYTES
+    assert authority.committed_source_chunks_for_request("owner") == 3
+    assert authority.committed_source_chunks_for_request("other") == 0
 
 
 def test_c32_tail_fragments_do_not_over_admit_the_thirty_third_request() -> None:
@@ -247,6 +269,63 @@ def test_reclaim_callback_receives_absolute_free_byte_target() -> None:
     assert ledger.bytes_in(FREE_ACCOUNT) == 3 * CHUNK_BYTES
 
 
+def test_fresh_request_preview_is_side_effect_free_and_counts_shared_backing() -> None:
+    preview_requests: list[tuple[int, int]] = []
+
+    def preview(required_free_bytes: int, reserved_primary_bytes: int) -> bool:
+        preview_requests.append((required_free_bytes, reserved_primary_bytes))
+        return required_free_bytes <= CHUNK_BYTES
+
+    authority, ledger = _authority(
+        chunks=2,
+        preview_reclaim_free_bytes=preview,
+    )
+    ledger._replace_accounts(
+        ledger.preview(
+            [
+                AccountTransfer(
+                    account_from=FREE_ACCOUNT,
+                    account_to=INACTIVE,
+                    delta_bytes=2 * CHUNK_BYTES,
+                )
+            ]
+        )
+    )
+    before = ledger.accounts
+
+    assert authority.preview_fresh_request_admission(
+        2 * CHUNK_BYTES,
+        shared_resident_bytes=CHUNK_BYTES,
+    )
+    assert preview_requests == [(CHUNK_BYTES, CHUNK_BYTES)]
+    assert ledger.accounts == before
+    assert authority.active_block_ids == ()
+
+
+def test_fresh_request_preview_rejects_when_exact_reclaim_cannot_establish_free() -> None:
+    authority, ledger = _authority(
+        chunks=2,
+        preview_reclaim_free_bytes=(
+            lambda required_free_bytes, _reserved_primary_bytes: (
+                required_free_bytes <= CHUNK_BYTES
+            )
+        ),
+    )
+    ledger._replace_accounts(
+        ledger.preview(
+            [
+                AccountTransfer(
+                    account_from=FREE_ACCOUNT,
+                    account_to=INACTIVE,
+                    delta_bytes=2 * CHUNK_BYTES,
+                )
+            ]
+        )
+    )
+
+    assert not authority.preview_fresh_request_admission(2 * CHUNK_BYTES)
+
+
 def test_reclaim_retries_when_conservative_binding_hides_first_release() -> None:
     holder: dict[str, CapacityLedger] = {}
     reclaim_requests: list[int] = []
@@ -314,6 +393,76 @@ def test_inactive_prefix_is_zero_copy_reclassified_before_pool_mutation() -> Non
     assert ledger.bytes_in(FREE_ACCOUNT) == 2 * CHUNK_BYTES
 
 
+def test_shared_inactive_alias_does_not_double_charge_or_release_backing() -> None:
+    authority, ledger = _authority(chunks=2, inactive_chunks=1)
+    activations: list[tuple[str, int]] = []
+
+    for request_id, block_ids in (
+        ("reader-a", (1, 2, 3, 4)),
+        ("reader-b", (5, 6, 7, 8)),
+    ):
+        authority.bind_shared_inactive_prefix(
+            request_id=request_id,
+            restored_tokens=64,
+            activate=lambda count, request_id=request_id: (
+                activations.append((request_id, count)) or count * CHUNK_BYTES
+            ),
+        )
+        authority.allocate_blocks(
+            block_ids,
+            request_id=request_id,
+            cause="shared-inactive-alias",
+        )
+
+    assert activations == [("reader-a", 1), ("reader-b", 1)]
+    assert ledger.bytes_in(INACTIVE) == CHUNK_BYTES
+    assert ledger.bytes_in(ACTIVE) == 0
+    assert ledger.bytes_in(FREE_ACCOUNT) == CHUNK_BYTES
+    assert authority.physical_bytes_for_request("reader-a") == 0
+    assert authority.physical_bytes_for_request("reader-b") == 0
+
+    authority.release_blocks(
+        (4, 3, 2, 1),
+        request_id="reader-a",
+        cause="reader-a-terminal",
+    )
+    authority.release_blocks(
+        (8, 7, 6, 5),
+        request_id="reader-b",
+        cause="reader-b-terminal",
+    )
+
+    assert ledger.bytes_in(INACTIVE) == CHUNK_BYTES
+    assert ledger.bytes_in(ACTIVE) == 0
+    assert ledger.bytes_in(FREE_ACCOUNT) == CHUNK_BYTES
+    authority.audit()
+
+
+def test_shared_alias_uses_exact_pin_evidence_not_inactive_account_total() -> None:
+    authority, ledger = _authority(chunks=2, inactive_chunks=0)
+    activations: list[int] = []
+    authority.bind_shared_inactive_prefix(
+        request_id="reader",
+        restored_tokens=64,
+        activate=lambda count: (
+            activations.append(count) or count * CHUNK_BYTES
+        ),
+    )
+    authority.allocate_blocks(
+        (1, 2, 3, 4),
+        request_id="reader",
+        cause="shared-active-owner-alias",
+    )
+
+    assert activations == [1]
+    assert ledger.bytes_in(INACTIVE) == 0
+    assert ledger.bytes_in(ACTIVE) == 0
+    assert ledger.bytes_in(FREE_ACCOUNT) == 2 * CHUNK_BYTES
+    assert authority.active_physical_bytes == 0
+    assert authority.physical_bytes_for_request("reader") == 0
+    authority.audit()
+
+
 def test_bound_inactive_prefix_is_private_not_globally_fungible() -> None:
     authority, ledger = _authority(chunks=2, inactive_chunks=2)
     authority.bind_inactive_prefix(
@@ -326,6 +475,107 @@ def test_bound_inactive_prefix_is_private_not_globally_fungible() -> None:
     assert authority.num_free_blocks == 0
     assert authority.num_free_blocks_for_request("owner") == 8
     assert authority.num_free_blocks_for_request("other") == 0
+
+
+@pytest.mark.parametrize("account", [INACTIVE, FOREGROUND_STORE])
+def test_partially_adopted_resident_interval_does_not_count_active_chunks_again(
+    account: str,
+) -> None:
+    authority, ledger = _authority(chunks=2)
+    ledger._replace_accounts(ledger.preview([
+        AccountTransfer(account_from=FREE_ACCOUNT, account_to=account,
+                        delta_bytes=2 * CHUNK_BYTES),
+    ]))
+    authority.bind_resident_interval(
+        request_id="owner", start_token=0, token_count=128, account=account,
+        activate=lambda count: count * CHUNK_BYTES,
+    )
+    authority.allocate_blocks((1, 2, 3, 4), request_id="owner", cause="first-chunk")
+
+    assert authority.num_free_blocks_for_request("owner") == 4
+    assert authority.num_free_blocks_for_request("other") == 0
+    authority.allocate_blocks((5, 6, 7, 8), request_id="owner", cause="second-chunk")
+    assert ledger.bytes_in(ACTIVE) == 2 * CHUNK_BYTES
+    assert authority.num_free_blocks_for_request("owner") == 0
+    authority.audit()
+
+
+def test_pool_source_pin_is_not_scheduler_capacity_until_released() -> None:
+    pinned = True
+
+    def reclaim(required_bytes: int) -> bool:
+        if pinned:
+            return False
+        ledger._replace_accounts(ledger.preview([
+            AccountTransfer(account_from=INACTIVE, account_to=FREE_ACCOUNT,
+                            delta_bytes=CHUNK_BYTES),
+        ]))
+        return ledger.bytes_in(FREE_ACCOUNT) >= required_bytes
+
+    authority, ledger = _authority(
+        chunks=2, inactive_chunks=1, reclaim_free_bytes=reclaim,
+        reclaimable_inactive_bytes=lambda: 0 if pinned else ledger.bytes_in(INACTIVE),
+    )
+    scheduler = ContinuousBatchScheduler(
+        block_pool=BlockPool(9, enable_caching=False), block_size_tokens=16,
+        max_num_scheduled_tokens=128, max_num_running_requests=2,
+        block_lifecycle_observer=authority,
+    )
+    scheduler.add_request(Request(request_id="foreground", prompt_tokens=128,
+                                  max_output_tokens=1, arrival_ns=0))
+    assert authority.num_free_blocks == 4
+    assert scheduler.schedule().total_num_scheduled_tokens == 0
+    assert authority.active_block_ids == ()
+    pinned = False
+    assert scheduler.schedule().total_num_scheduled_tokens == 128
+    assert ledger.bytes_in(ACTIVE) == 2 * CHUNK_BYTES
+    assert ledger.bytes_in(INACTIVE) == 0
+    scheduler.audit()
+
+
+@pytest.mark.parametrize("page_count", [4, 8])
+def test_runtime_shared_inactive_backing_remains_pinned_until_reader_releases(
+    page_count: int,
+) -> None:
+    from moonkvsim.aegiskv import experiment as runtime_module
+
+    chunks = tuple(
+        runtime_module._Chunk(key=f"source-{index}", workflow_id="workflow",
+                              token_start=index * 64, token_count=64, bytes=CHUNK_BYTES)
+        for index in range(2)
+    )
+    pool = runtime_module._ModeledPool(
+        pool_id="primary", capacity_bytes=2 * CHUNK_BYTES,
+        eviction=runtime_module.EvictionKind.LRU, seed=0,
+    )
+    for chunk in chunks:
+        assert pool.insert(chunk, score=Fraction(1), now_ns=0, cause="test")
+    authority, ledger = _authority(
+        chunks=2, inactive_chunks=2,
+        reclaimable_inactive_bytes=lambda: pool.evictable_bytes,
+    )
+    runtime = SimpleNamespace(
+        executions={"reader": SimpleNamespace(route_version=0, gpu_id="gpu-0",
+                                              reused_primary_tokens=128, chunks=chunks)},
+        continuous_hbm_authorities={"gpu-0": authority}, primary_pools={"gpu-0": pool},
+        foreground_store_restore_by_span={},
+    )
+    pool.pin_interval(chunks, start_token=0, token_count=128, pin_id="reader")
+    runtime_module._StudyRuntime._on_continuous_before_admit(
+        runtime, "gpu-0", SimpleNamespace(request_id="reader"), 0, "test", 128,
+    )
+    pages = tuple(range(1, page_count + 1))
+    authority.allocate_blocks(pages, request_id="reader", cause="adopt")
+
+    assert pool.evictable_bytes == 0
+    with pytest.raises(runtime_module.ExperimentError, match="cannot evict enough"):
+        pool.evict_at_least(CHUNK_BYTES, now_ns=1, cause="pressure")
+    assert authority.num_free_blocks_for_request("other") == 0
+    assert ledger.bytes_in(INACTIVE) == 2 * CHUNK_BYTES
+    authority.release_blocks(pages, request_id="reader", cause="retire")
+    assert pool.pinned_entry_count == 0
+    assert pool.evictable_bytes == 2 * CHUNK_BYTES
+    authority.audit()
 
 
 def test_resident_binding_rollback_preserves_reserved_bytes_for_rebind() -> None:

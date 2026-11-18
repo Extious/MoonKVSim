@@ -1,0 +1,15 @@
+{
+  "schema": "aegiskv.online.engine.v1",
+  "gpu": "NVIDIA A100-PCIE-40GB",
+  "gpus_per_node": 2,
+  "nodes": 2,
+  "tensor_parallel_size": 2,
+  "h2d_bytes_per_second": 23980000000,
+  "d2h_bytes_per_second": 23980000000,
+  "d2h_source": "not measured separately; same pinned PCIe figure as H2D job 1516171",
+  "hbm_bytes_per_gpu": 42949672960,
+  "router_mode": "design",
+  "layers": 32,
+  "depth": 4,
+  "top_k": 16
+}

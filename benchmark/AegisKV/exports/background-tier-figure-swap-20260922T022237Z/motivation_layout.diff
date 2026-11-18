@@ -1,0 +1,15 @@
+--- before/experiments/scripts/paper/motivation_layout.py
++++ experiments/scripts/paper/motivation_layout.py
+@@ -1,9 +1,10 @@
+-"""Physical alignment shared by the three current Figure 1 panels."""
++"""Physical alignment shared by the Motivation workflow panels."""
+ 
+ HEIGHT_IN = 1.65
+ TOP_IN = .43
+ BOTTOM_IN = .38
+-WIDTHS_IN = {"workflow": 2.48, "workflow-gaps": 1.86, "recovery-cost": 2.52}
++WIDTHS_IN = {"workflow": 2.48, "workflow-gaps": 1.86,
++             "recovery-exposure": 2.52, "recovery-cost": 2.52}
+ FONT_PT = 10.25
+ 
+ 

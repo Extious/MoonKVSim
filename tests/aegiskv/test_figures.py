@@ -80,7 +80,7 @@ def _payload(*, bucket: str, scenario: str, ordinal: int, seed: int) -> dict[str
                 "focus_span_id": "span-8k",
                 "target_gpu_id": "gpu-0",
                 "at_ns": 100,
-                "detection_delay_ns": 10,
+                "detection_delay_ns": 0,
                 "selection_scope": "same_context_bucket_active_in_every_core_system",
                 "repair_after_ns": None,
                 "parameter_source": "deterministic_core_interval_intersection_global_des",
@@ -163,8 +163,10 @@ def _row(
 ) -> dict[str, Any]:
     payload = _payload(bucket=bucket, scenario=scenario, ordinal=ordinal, seed=seed)
     dp_count = 8
-    peer_budget_gib = (
-        int(variant_id.split("=", 1)[1]) if variant_id.startswith("peer_budget_gib=") else 4
+    peer_hbm_alpha_percent = (
+        int(variant_id.split("=", 1)[1])
+        if variant_id.startswith("peer_hbm_alpha_percent=")
+        else 20
     )
     store_budget_gib = (
         int(variant_id.split("=", 1)[1]) if variant_id.startswith("store_budget_gib=") else 64
@@ -177,20 +179,17 @@ def _row(
         if variant_id.startswith("peer_fabric_bandwidth_gbps=")
         else 100
     )
-    detection_delay_ms = (
-        int(variant_id.split("=", 1)[1]) if variant_id.startswith("detection_delay_ms=") else 5
-    )
     reroute_delay_ms = (
         int(variant_id.split("=", 1)[1]) if variant_id.startswith("reroute_delay_ms=") else 1
     )
     parameters = {
         "dp_count": dp_count,
         "physical_hbm_bytes_per_gpu": 40 * 1024**3,
-        "peer_budget_bytes_per_gpu": peer_budget_gib * 1024**3,
+        "peer_hbm_alpha": peer_hbm_alpha_percent / 100,
         "store_budget_bytes": store_budget_gib * 1024**3,
         "peer_bandwidth_bytes_per_second": peer_bandwidth_gbps * 1_000_000_000,
         "store_bandwidth_bytes_per_second": store_bandwidth_gbps * 1_000_000_000,
-        "failure_detection_ns": detection_delay_ms * 1_000_000,
+        "failure_detection_ns": 0,
         "reroute_ns": reroute_delay_ms * 1_000_000,
     }
     variant_config = {
@@ -593,7 +592,7 @@ def test_complete_set_is_deterministic_valid_xml_and_provenance_bound(tmp_path: 
         for binding in f2_sidecar["point_bindings"]
     }
     assert ("execution/data-path fence (immediate)", 100) in f2_events
-    assert ("detection (schedule-derived)", 110) in f2_events
+    assert ("detection (schedule-derived)", 100) in f2_events
     assert ("reroute / recovery plan", 110) in f2_events
     assert ("aggregate recovery transfer start", 115) in f2_events
     assert ("aggregate recovery transfer end", 135) in f2_events

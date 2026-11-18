@@ -1,0 +1,177 @@
+% English counterpart of draft/background_and_motivation.md.
+% Compile from paper/; see motivation-preview.tex for EuroSys 2027 settings.
+\section{Background and Motivation}
+\label{sec:background-motivation}
+
+Multi-agent applications complete a user task through interdependent LLM
+requests. After a worker failure, rebuilding lost key--value (KV) state can
+restore an individual request, but the user-visible penalty depends on when
+the entire workflow completes. Workflow dependencies and the cost of
+rebuilding long contexts motivate allocating limited KV protection resources
+to reduce workflow completion time (WCT).
+
+\input{sections/motivation-figures}
+
+\subsection{Workflows, Failures, and KV Recovery}
+\label{sec:motivation-background}
+
+\paragraph{Multi-agent workflows.}
+We represent a workflow as a directed acyclic graph $G=(V,E)$, whose nodes
+are LLM requests and whose edges are data dependencies. An agent branch may
+include multiple requests and tool calls; a successor runs only after its
+dependencies are satisfied. WCT spans the release of the first request to
+the completion of the last. For a given execution schedule, a request's
+\emph{slack} is the maximum delay to its completion that does not postpone
+workflow completion. Requests on a critical path have zero slack.
+
+\paragraph{Serving and failure model.}
+We consider a cluster of GPU workers with block-managed KV that can be
+replicated to other GPUs or a host DRAM pool, consistent with KV-centric
+architectures such as Mooncake~\cite{qin2025mooncake}. Our failure model is
+a fail-stop failure of one GPU or worker: its local KV becomes unavailable,
+while the control plane, backup DRAM, and other workers survive. Surviving
+workers with the same model already loaded take over affected requests.
+Whole-host failures, network partitions, and silent corruption are outside
+this failure model.
+
+\paragraph{Recovery paths and resource costs.}
+Without a usable copy, the system must rerun prefill to rebuild lost KV.
+A DRAM copy avoids reconstructing the saved prefix but must be transferred
+to a GPU before use; concurrent recoveries share transfer bandwidth.
+A copy already resident in the actual takeover GPU's HBM can be used
+directly, at the cost of HBM capacity that could serve foreground requests
+and replication traffic before failure. Backup placement therefore trades
+capacity and normal-service overhead against recovery speed.
+
+Prior systems reduce failure costs through KV streaming in
+D\'{e}j\`{a}Vu~\cite{strati2024dejavu}, erasure coding in
+GhostServe~\cite{jayakody2026ghostserve}, and load-aware checkpoint and
+recovery coordination in LUMEN~\cite{cao2026lumen}. Multi-agent
+applications add an allocation problem: saving the same recovery time for
+different requests can have different value to the user. Neither saved KV
+bytes nor avoided computation alone captures that difference.
+
+\subsection{Recovery Cost Is Not Workflow Delay}
+\label{sec:motivation-workflow}
+
+A join waits for its last required branch. Earlier branches can tolerate
+some delay, whereas delaying the branch that determines the join time
+postpones downstream work. To characterize branch timing differences, we
+analyze the public CC/Weka coding-agent
+traces~\cite{semianalysis2026cctraces}. From 393 sessions, we first extract
+strictly overlapping subagent groups: the latest branch start precedes
+the earliest branch finish. We retain groups whose branches all complete
+and are followed by a Main request after the last branch finishes.
+Main may also issue requests while branches execute. Because the trace
+does not record result dependencies, this criterion infers fan-in from
+timing; it does not verify consumption of every branch's output.
+
+The filter retains 286 groups across 121 workflows. For each retained
+group, we compute the longest minus the shortest branch duration; each
+workflow contributes its maximum such gap.
+Figure~\ref{fig:motivation}(\subref{fig:motivation-branch-gap}) shows a median of
+138\,s and a 90th percentile of 1,173\,s. These gaps establish substantial
+branch-duration heterogeneity. With unequal branch start times, however,
+a duration gap is neither join slack nor a direct measure of fault tolerance.
+
+Figure~\ref{fig:motivation}(\subref{fig:motivation-workflow}) shows a
+real ten-branch group. Its durations range from 24.960 to 193.273\,s,
+with a gap of 168.313\,s, close to the population median of 137.758\,s.
+This group contributes its workflow's maximum to
+Figure~\ref{fig:motivation}(\subref{fig:motivation-branch-gap}). Nine branches
+last less than 117\,s each. A10 finishes last at 221.8\,s after the fork,
+followed by a Main request at 226.6\,s. Bars aggregate each branch's
+requests and tool calls while preserving observed starts and durations.
+Assuming that the successor depends on all ten branches, each branch's
+slack is its time margin to A10's completion. We select this example to
+illustrate greater fan-out and recovery exposure, not average failure impact.
+
+Figure~\ref{fig:motivation}(\subref{fig:motivation-recovery-exposure}) shows
+ten independent counterfactuals at 36.1\,s after the fork, each losing
+one branch's history KV. All ten branches have active LLM requests at
+that instant. Among such intervals, we choose one with a longer A10
+input to illustrate a larger recovery penalty. Trace hash-block counts
+provide history lengths $M_i$ of 2,944--123,648 tokens, to which we add an
+assumed known 64-token tail. We query the Qwen3-14B configuration of
+Figure~\ref{fig:motivation-recompute} at each exact length: $T_i$ estimates
+empty-cache reconstruction of $M_i+64$ tokens on A100-SXM, with BF16,
+batch one, and TP one. The tail state is a counterfactual assumption,
+not a trace observation. Slack $\sigma_i$ comes from trace completion
+times. Holding other branches, downstream execution, and queueing
+unchanged, the WCT penalty is $\max(0,T_i-\sigma_i)$.
+This cost substitution does not constitute physical failure replay on
+the original serving model.
+
+A5 has the highest rebuilding cost, 45.7\,s, but its 146.1\,s slack
+absorbs the entire delay. A10 costs less to rebuild, at 27.5\,s, yet
+exposes that entire delay to WCT because its slack is zero. All other
+branches absorb their rebuilding costs. Thus, avoiding the most
+recomputation need not yield the largest WCT improvement. KV protection
+must account for delay tolerance within a workflow; online estimation and
+resource contention require the mechanisms and evaluation developed later.
+
+\subsection{Long Contexts and Recovery Tiers}
+\label{sec:motivation-long-context}
+
+\input{sections/motivation-prefill-figure}
+
+Repeated agent interactions accumulate code, tool outputs, and other
+agents' intermediate results. Saving history KV avoids repeating that
+computation after failure, but its location still affects recovery
+latency. Figure~\ref{fig:motivation-recompute} compares three initial
+states: the entire history is resident in the takeover GPU's HBM, the
+same state is available only in host-local DRAM, or no copy is available.
+All paths end after the same known 64-token tail's forward pass, with
+history and tail KV available for continued decoding; model weights are
+already loaded. HBM reuse therefore still incurs tail computation.
+
+We use AIConfigurator~\cite{nvidia2026aiconfigurator} 0.9.0 HYBRID static
+estimates for Qwen3-4B, 8B, and 14B, with A100-SXM, vLLM 0.14.0, BF16,
+batch one, and TP one throughout. HYBRID combines available kernel
+performance tables with model-based fallbacks; these request-level
+latencies are estimates, not physical recovery measurements. HBM reuse
+sets the cached prefix to $M$ and computes 64 new tokens; Recompute
+starts empty and processes $M+64$ tokens. DRAM reuse first transfers the
+entire history, then performs the same tail computation. We calculate
+KV bytes from each model's layers, KV heads, and head dimension, and use
+the system configuration's assumed 32\,GB/s unidirectional PCIe bandwidth.
+This serialized transfer model assumes no transfer/compute overlap.
+
+At 128K history tokens, HBM reuse costs an estimated 35--59\,ms across
+the three models, DRAM reuse 639--730\,ms, and Recompute 31.4--49.6\,s.
+For Qwen3-14B, a DRAM copy avoids most historical recomputation; full
+HBM residency additionally removes about 671\,ms of modeled transfer
+waiting. Backups therefore avoid computation, while HBM's incremental
+value over DRAM comes from reducing transfer waiting. The magnitude
+requires matched physical measurements and concurrent-recovery evaluation.
+
+Full-history HBM residency is a reference, not AegisKV's limited hot-block
+peer placement. These shape estimates do not validate long-context
+accuracy or model resource contention, and do not establish WCT gains
+under a limited backup budget. They motivate allocating protection
+between avoiding recomputation and reducing transfer waiting.
+Figure~\ref{fig:motivation} further shows why such savings must be
+interpreted in the context of branch delay tolerance.
+
+\subsection{Problem and Design Goals}
+\label{sec:motivation-goals}
+
+AegisKV asks: \emph{with limited backup capacity and replication and
+recovery bandwidth, which KV from which requests should receive what
+protection to reduce the workflow-level impact of failures?}
+Dependencies differentiate protection benefits, long contexts increase
+state-loss costs, and replication competes with foreground serving.
+
+This problem imposes five goals and constraints.
+\textbf{(R1)} Optimize recovery for WCT, accounting for dependency-induced
+delay tolerance.
+\textbf{(R2)} Allocate limited backup capacity across requests and their
+KV to reduce exposed recovery waiting.
+\textbf{(R3)} Support concurrent recovery and transfer--compute overlap
+without introducing request-level serialization for protection priority.
+\textbf{(R4)} Bound normal-service replication overhead and subordinate
+backup capacity and bandwidth use to foreground needs.
+\textbf{(R5)} Preserve model computation and KV recovery correctness using
+existing serving resources.
+The next section develops the evidence for mechanism choices and the
+corresponding placement and recovery design.

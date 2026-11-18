@@ -1,0 +1,18 @@
+--- before/background_and_motivation.tex
++++ after/background_and_motivation.tex
+@@ -29,10 +29,11 @@
+ workflow unfinished.
+ 
+ \paragraph{Workflow completion time.}
+-The user receives a result only after the workflow produces its required
+-outputs. We measure this interval as \emph{workflow completion time}
+-(WCT): for workflow $w$ released at $a_w$ and completed at $c_w$,
+-$\mathrm{WCT}_w=c_w-a_w$. It includes model execution, tool execution,
++Let $w$ identify a workflow, $a_w$ denote its arrival time at the system,
++and $c_w$ denote the time when all its required outputs are ready.
++We define \emph{workflow completion time} (WCT) as the elapsed time from
++arrival to completion, $\mathrm{WCT}_w=c_w-a_w$.
++It includes model execution, tool execution,
+ queueing and dependency waits. In the coding example, integration waits
+ for all required changes. A delay on the last unfinished branch postpones
+ integration, while an earlier-finishing branch may absorb the same delay

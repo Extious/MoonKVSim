@@ -1,0 +1,1013 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://moonkvsim.local/schemas/aegiskv-no-failure-overhead.schema.json",
+  "title": "MoonKVSim Qwen3-8B no-failure backup-overhead diagnostic v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "status",
+    "evidence",
+    "protocol",
+    "provenance",
+    "cells",
+    "paired",
+    "aggregate",
+    "audit",
+    "fingerprint"
+  ],
+  "properties": {
+    "schema": {
+      "const": "moonkvsim.aegiskv.no-failure-overhead.v1"
+    },
+    "status": {
+      "const": "PASS"
+    },
+    "evidence": {
+      "$ref": "#/$defs/evidence"
+    },
+    "protocol": {
+      "$ref": "#/$defs/protocol"
+    },
+    "provenance": {
+      "$ref": "#/$defs/provenance"
+    },
+    "cells": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "$ref": "#/$defs/cell"
+      }
+    },
+    "paired": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "$ref": "#/$defs/pairedSeed"
+      }
+    },
+    "aggregate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "seed_count",
+        "workflow_pair_count",
+        "wct_delta_ns",
+        "makespan_overhead_ppm_floor_across_seeds",
+        "goodput_delta_ppm_floor_across_seeds"
+      ],
+      "properties": {
+        "seed_count": {
+          "const": 5
+        },
+        "workflow_pair_count": {
+          "const": 800
+        },
+        "wct_delta_ns": {
+          "$ref": "#/$defs/distribution800"
+        },
+        "makespan_overhead_ppm_floor_across_seeds": {
+          "$ref": "#/$defs/distribution5"
+        },
+        "goodput_delta_ppm_floor_across_seeds": {
+          "$ref": "#/$defs/distribution5"
+        }
+      }
+    },
+    "audit": {
+      "$ref": "#/$defs/audit"
+    },
+    "fingerprint": {
+      "$ref": "#/$defs/sha256"
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "nonnegativeInteger": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "positiveInteger": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "nonnegativeNumber": {
+      "type": "number",
+      "minimum": 0
+    },
+    "distribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["count", "min", "p05", "median", "mean", "p95", "max"],
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "min": {
+          "type": "integer"
+        },
+        "p05": {
+          "type": "integer"
+        },
+        "median": {
+          "type": "integer"
+        },
+        "mean": {
+          "type": "integer"
+        },
+        "p95": {
+          "type": "integer"
+        },
+        "max": {
+          "type": "integer"
+        }
+      }
+    },
+    "distribution5": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/distribution"
+        },
+        {
+          "properties": {
+            "count": {
+              "const": 5
+            }
+          }
+        }
+      ]
+    },
+    "distribution16": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/distribution"
+        },
+        {
+          "properties": {
+            "count": {
+              "const": 16
+            }
+          }
+        }
+      ]
+    },
+    "distribution144": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/distribution"
+        },
+        {
+          "properties": {
+            "count": {
+              "const": 144
+            }
+          }
+        }
+      ]
+    },
+    "distribution160": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/distribution"
+        },
+        {
+          "properties": {
+            "count": {
+              "const": 160
+            }
+          }
+        }
+      ]
+    },
+    "distribution800": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/distribution"
+        },
+        {
+          "properties": {
+            "count": {
+              "const": 800
+            }
+          }
+        }
+      ]
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "class",
+        "scope",
+        "calibration",
+        "physical_execution",
+        "physical_timing_claim_allowed",
+        "paper_ready",
+        "effect_direction_gate_applied"
+      ],
+      "properties": {
+        "class": {
+          "const": "E2"
+        },
+        "scope": {
+          "const": "modeled/preliminary"
+        },
+        "calibration": {
+          "const": "not_calibrated"
+        },
+        "physical_execution": {
+          "const": false
+        },
+        "physical_timing_claim_allowed": {
+          "const": false
+        },
+        "paper_ready": {
+          "const": false
+        },
+        "effect_direction_gate_applied": {
+          "const": false
+        }
+      }
+    },
+    "protocol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model",
+        "data_parallel_size",
+        "scenario",
+        "workflow_concurrency",
+        "workflow_count",
+        "record_count",
+        "seeds",
+        "workflow_admission_randomization",
+        "peer_binding_seed",
+        "peer_binding_seed_decoupled_from_experiment_seed",
+        "systems",
+        "continuous_batching_required",
+        "failure_events_required",
+        "failure_focus_bucket_rule",
+        "failure_focus_bucket",
+        "bootstrap_warmup",
+        "interpretation"
+      ],
+      "properties": {
+        "model": {
+          "const": "Qwen/Qwen3-8B"
+        },
+        "data_parallel_size": {
+          "const": 8
+        },
+        "scenario": {
+          "const": "no_failure"
+        },
+        "workflow_concurrency": {
+          "const": 16
+        },
+        "workflow_count": {
+          "const": 160
+        },
+        "record_count": {
+          "const": 1304
+        },
+        "seeds": {
+          "const": [0, 1, 2, 3, 4]
+        },
+        "workflow_admission_randomization": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "policy",
+            "seed_source",
+            "paired_systems_share_exact_permutation",
+            "peer_placement_held_fixed"
+          ],
+          "properties": {
+            "policy": {
+              "const": "observed_submit_then_seeded_sha256_workflow_permutation"
+            },
+            "seed_source": {
+              "const": "paired_experiment_seed"
+            },
+            "paired_systems_share_exact_permutation": {
+              "const": true
+            },
+            "peer_placement_held_fixed": {
+              "const": true
+            }
+          }
+        },
+        "peer_binding_seed": {
+          "const": 0
+        },
+        "peer_binding_seed_decoupled_from_experiment_seed": {
+          "const": true
+        },
+        "systems": {
+          "const": ["vanilla_mooncake_dram", "aegiskv_unified"]
+        },
+        "continuous_batching_required": {
+          "const": true
+        },
+        "failure_events_required": {
+          "const": 0
+        },
+        "failure_focus_bucket_rule": {
+          "const": "highest_nonempty_context_bucket"
+        },
+        "failure_focus_bucket": {
+          "enum": ["8k", "32k", "64k", "96k", "128k"]
+        },
+        "bootstrap_warmup": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "bootstrap_cohort_size",
+            "cohort_rule",
+            "warmup_end_rule",
+            "primary_metrics_include_bootstrap",
+            "cohort_breakdown_reported"
+          ],
+          "properties": {
+            "bootstrap_cohort_size": {
+              "const": 16
+            },
+            "cohort_rule": {
+              "const": "first_C_workflows_in_causal_admission_order"
+            },
+            "warmup_end_rule": {
+              "const": "all_bootstrap_workflows_have_started_first_compute_per_system"
+            },
+            "primary_metrics_include_bootstrap": {
+              "const": true
+            },
+            "cohort_breakdown_reported": {
+              "const": true
+            }
+          }
+        },
+        "interpretation": {
+          "const": "descriptive_no_failure_backup_overhead; no threshold or desired trend enforced"
+        }
+      }
+    },
+    "sourceContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["binding_kind", "files", "fingerprint"],
+      "properties": {
+        "binding_kind": {
+          "const": "complete_python_tree_plus_protocol_schema_and_lockfiles"
+        },
+        "files": {
+          "type": "object",
+          "minProperties": 4,
+          "additionalProperties": {
+            "$ref": "#/$defs/sha256"
+          }
+        },
+        "fingerprint": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "configBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["files", "fingerprint"],
+      "properties": {
+        "files": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["requests.json", "failure.json", "engine.json"],
+          "properties": {
+            "requests.json": {
+              "$ref": "#/$defs/sha256"
+            },
+            "failure.json": {
+              "$ref": "#/$defs/sha256"
+            },
+            "engine.json": {
+              "$ref": "#/$defs/sha256"
+            }
+          }
+        },
+        "fingerprint": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "workloadBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "declared_path",
+        "sha256",
+        "record_count",
+        "semantic_fingerprint",
+        "manifest_sha256",
+        "manifest_schema",
+        "workload_kind"
+      ],
+      "properties": {
+        "declared_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "record_count": {
+          "const": 1304
+        },
+        "semantic_fingerprint": {
+          "$ref": "#/$defs/sha256"
+        },
+        "manifest_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "manifest_schema": {
+          "const": "moonkvsim.aegiskv.experiment_workload_manifest.v1"
+        },
+        "workload_kind": {
+          "const": "fanoutqa_complete_tasks"
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "git_commit",
+        "source_contract",
+        "config_binding",
+        "workload_binding",
+        "workload_manifest_fingerprint",
+        "output_schema"
+      ],
+      "properties": {
+        "git_commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "source_contract": {
+          "$ref": "#/$defs/sourceContract"
+        },
+        "config_binding": {
+          "$ref": "#/$defs/configBinding"
+        },
+        "workload_binding": {
+          "$ref": "#/$defs/workloadBinding"
+        },
+        "workload_manifest_fingerprint": {
+          "$ref": "#/$defs/sha256"
+        },
+        "output_schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "sha256"],
+          "properties": {
+            "path": {
+              "const": "schemas/aegiskv-no-failure-overhead.schema.json"
+            },
+            "sha256": {
+              "$ref": "#/$defs/sha256"
+            }
+          }
+        }
+      }
+    },
+    "warmup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bootstrap_workflow_ids",
+        "bootstrap_workflow_count",
+        "steady_state_workflow_count",
+        "warmup_start_ns",
+        "warmup_end_ns",
+        "definition",
+        "warmup_exclusion_applied_to_primary_metrics"
+      ],
+      "properties": {
+        "bootstrap_workflow_ids": {
+          "type": "array",
+          "minItems": 16,
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "bootstrap_workflow_count": {
+          "const": 16
+        },
+        "steady_state_workflow_count": {
+          "const": 144
+        },
+        "warmup_start_ns": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "warmup_end_ns": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "definition": {
+          "type": "string",
+          "minLength": 1
+        },
+        "warmup_exclusion_applied_to_primary_metrics": {
+          "const": false
+        }
+      }
+    },
+    "phaseTraffic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["transfer_count", "submitted_bytes"],
+      "properties": {
+        "transfer_count": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "submitted_bytes": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        }
+      }
+    },
+    "protection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protection_causes",
+        "transfer_count",
+        "terminal_state_counts",
+        "submitted_bytes",
+        "transferred_bytes",
+        "aborted_bytes",
+        "queue_wait_ns_sum",
+        "service_time_ns_sum",
+        "copy_engine_busy_ns_sum",
+        "fabric_busy_ns_sum",
+        "by_time_phase",
+        "by_workflow_cohort",
+        "bandwidth_competition"
+      ],
+      "properties": {
+        "protection_causes": {
+          "const": ["AEGIS_PEER_HBM_PROTECTION", "AEGIS_STORE_DRAM_PROTECTION"]
+        },
+        "transfer_count": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "terminal_state_counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "COMMITTED": {
+              "$ref": "#/$defs/nonnegativeInteger"
+            },
+            "ABORTED": {
+              "$ref": "#/$defs/nonnegativeInteger"
+            }
+          }
+        },
+        "submitted_bytes": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "transferred_bytes": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "aborted_bytes": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "queue_wait_ns_sum": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "service_time_ns_sum": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "copy_engine_busy_ns_sum": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "fabric_busy_ns_sum": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "by_time_phase": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["bootstrap_warmup", "steady_state"],
+          "properties": {
+            "bootstrap_warmup": {
+              "$ref": "#/$defs/phaseTraffic"
+            },
+            "steady_state": {
+              "$ref": "#/$defs/phaseTraffic"
+            }
+          }
+        },
+        "by_workflow_cohort": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["bootstrap_initial_admission", "steady_state"],
+          "properties": {
+            "bootstrap_initial_admission": {
+              "$ref": "#/$defs/phaseTraffic"
+            },
+            "steady_state": {
+              "$ref": "#/$defs/phaseTraffic"
+            }
+          }
+        },
+        "bandwidth_competition": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "definition",
+            "protection_flow_interval_count",
+            "contended_flow_interval_count",
+            "contended_flow_interval_ns_sum",
+            "minimum_allocated_rate_bytes_per_second",
+            "maximum_allocated_rate_bytes_per_second",
+            "interval_time_sum_is_not_wall_clock_union"
+          ],
+          "properties": {
+            "definition": {
+              "const": "allocated_rate_below_minimum_path_resource_capacity"
+            },
+            "protection_flow_interval_count": {
+              "$ref": "#/$defs/nonnegativeInteger"
+            },
+            "contended_flow_interval_count": {
+              "$ref": "#/$defs/nonnegativeInteger"
+            },
+            "contended_flow_interval_ns_sum": {
+              "$ref": "#/$defs/nonnegativeInteger"
+            },
+            "minimum_allocated_rate_bytes_per_second": {
+              "$ref": "#/$defs/nonnegativeNumber"
+            },
+            "maximum_allocated_rate_bytes_per_second": {
+              "$ref": "#/$defs/nonnegativeNumber"
+            },
+            "interval_time_sum_is_not_wall_clock_union": {
+              "const": true
+            }
+          }
+        }
+      }
+    },
+    "algorithm2": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_count",
+        "preview_count",
+        "event_counts_by_kind",
+        "by_time_phase"
+      ],
+      "properties": {
+        "event_count": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "preview_count": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "event_counts_by_kind": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/nonnegativeInteger"
+          }
+        },
+        "by_time_phase": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["bootstrap_warmup", "steady_state"],
+          "properties": {
+            "bootstrap_warmup": {
+              "$ref": "#/$defs/nonnegativeInteger"
+            },
+            "steady_state": {
+              "$ref": "#/$defs/nonnegativeInteger"
+            }
+          }
+        }
+      }
+    },
+    "algorithm3": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event_count", "action_counts", "by_time_phase"],
+      "properties": {
+        "event_count": {
+          "$ref": "#/$defs/nonnegativeInteger"
+        },
+        "action_counts": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/nonnegativeInteger"
+          }
+        },
+        "by_time_phase": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["bootstrap_warmup", "steady_state"],
+          "properties": {
+            "bootstrap_warmup": {
+              "$ref": "#/$defs/nonnegativeInteger"
+            },
+            "steady_state": {
+              "$ref": "#/$defs/nonnegativeInteger"
+            }
+          }
+        }
+      }
+    },
+    "rawArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "schema"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^raw/seed-[0-4]/(vanilla_mooncake_dram|aegiskv_unified)\\.json$"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "schema": {
+          "const": "moonkvsim.aegiskv.no-failure-overhead.raw-run.v1"
+        }
+      }
+    },
+    "system": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "variant_id",
+        "variant_fingerprint",
+        "payload_sha256",
+        "journal_sha256",
+        "span_details_sha256",
+        "representative_sha256",
+        "workflow_wct_ns",
+        "workflow_admission_order",
+        "workflow_admission_order_sha256",
+        "makespan_ns",
+        "goodput_output_tokens_per_second_milli",
+        "warmup",
+        "protection",
+        "algorithm2",
+        "algorithm3",
+        "raw_artifact"
+      ],
+      "properties": {
+        "variant_id": {
+          "enum": ["vanilla_mooncake_dram", "aegiskv_unified"]
+        },
+        "variant_fingerprint": {
+          "$ref": "#/$defs/sha256"
+        },
+        "payload_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "journal_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "span_details_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "representative_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "workflow_wct_ns": {
+          "type": "object",
+          "minProperties": 160,
+          "maxProperties": 160,
+          "additionalProperties": {
+            "$ref": "#/$defs/positiveInteger"
+          }
+        },
+        "workflow_admission_order": {
+          "type": "array",
+          "minItems": 160,
+          "maxItems": 160,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "workflow_admission_order_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "makespan_ns": {
+          "$ref": "#/$defs/positiveInteger"
+        },
+        "goodput_output_tokens_per_second_milli": {
+          "$ref": "#/$defs/positiveInteger"
+        },
+        "warmup": {
+          "$ref": "#/$defs/warmup"
+        },
+        "protection": {
+          "$ref": "#/$defs/protection"
+        },
+        "algorithm2": {
+          "$ref": "#/$defs/algorithm2"
+        },
+        "algorithm3": {
+          "$ref": "#/$defs/algorithm3"
+        },
+        "raw_artifact": {
+          "$ref": "#/$defs/rawArtifact"
+        }
+      }
+    },
+    "cell": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["seed", "systems"],
+      "properties": {
+        "seed": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4
+        },
+        "systems": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["vanilla_mooncake_dram", "aegiskv_unified"],
+          "properties": {
+            "vanilla_mooncake_dram": {
+              "$ref": "#/$defs/system"
+            },
+            "aegiskv_unified": {
+              "$ref": "#/$defs/system"
+            }
+          }
+        }
+      }
+    },
+    "workflowPair": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workflow_id",
+        "cohort",
+        "mooncake_wct_ns",
+        "aegiskv_wct_ns",
+        "aegiskv_minus_mooncake_ns",
+        "aegiskv_overhead_ppm_floor",
+        "aegiskv_over_mooncake_ratio"
+      ],
+      "properties": {
+        "workflow_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cohort": {
+          "enum": ["bootstrap_initial_admission", "steady_state"]
+        },
+        "mooncake_wct_ns": {
+          "$ref": "#/$defs/positiveInteger"
+        },
+        "aegiskv_wct_ns": {
+          "$ref": "#/$defs/positiveInteger"
+        },
+        "aegiskv_minus_mooncake_ns": {
+          "type": "integer"
+        },
+        "aegiskv_overhead_ppm_floor": {
+          "type": "integer"
+        },
+        "aegiskv_over_mooncake_ratio": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["numerator", "denominator"],
+          "properties": {
+            "numerator": {
+              "$ref": "#/$defs/positiveInteger"
+            },
+            "denominator": {
+              "$ref": "#/$defs/positiveInteger"
+            }
+          }
+        }
+      }
+    },
+    "pairedSeed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "seed",
+        "workflow_pairs",
+        "wct_delta_ns",
+        "wct_delta_ns_by_cohort",
+        "makespan",
+        "goodput"
+      ],
+      "properties": {
+        "seed": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4
+        },
+        "workflow_pairs": {
+          "type": "array",
+          "minItems": 160,
+          "maxItems": 160,
+          "items": {
+            "$ref": "#/$defs/workflowPair"
+          }
+        },
+        "wct_delta_ns": {
+          "$ref": "#/$defs/distribution160"
+        },
+        "wct_delta_ns_by_cohort": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["bootstrap_initial_admission", "steady_state"],
+          "properties": {
+            "bootstrap_initial_admission": {
+              "$ref": "#/$defs/distribution16"
+            },
+            "steady_state": {
+              "$ref": "#/$defs/distribution144"
+            }
+          }
+        },
+        "makespan": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mooncake_ns",
+            "aegiskv_ns",
+            "aegiskv_minus_mooncake_ns",
+            "aegiskv_overhead_ppm_floor"
+          ],
+          "properties": {
+            "mooncake_ns": {
+              "$ref": "#/$defs/positiveInteger"
+            },
+            "aegiskv_ns": {
+              "$ref": "#/$defs/positiveInteger"
+            },
+            "aegiskv_minus_mooncake_ns": {
+              "type": "integer"
+            },
+            "aegiskv_overhead_ppm_floor": {
+              "type": "integer"
+            }
+          }
+        },
+        "goodput": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mooncake_output_tokens_per_second_milli",
+            "aegiskv_output_tokens_per_second_milli",
+            "aegiskv_minus_mooncake_output_tokens_per_second_milli",
+            "aegiskv_delta_ppm_floor"
+          ],
+          "properties": {
+            "mooncake_output_tokens_per_second_milli": {
+              "$ref": "#/$defs/positiveInteger"
+            },
+            "aegiskv_output_tokens_per_second_milli": {
+              "$ref": "#/$defs/positiveInteger"
+            },
+            "aegiskv_minus_mooncake_output_tokens_per_second_milli": {
+              "type": "integer"
+            },
+            "aegiskv_delta_ppm_floor": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    },
+    "audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "checks"],
+      "properties": {
+        "status": {
+          "const": "PASS"
+        },
+        "checks": {
+          "type": "object",
+          "minProperties": 13,
+          "additionalProperties": {
+            "const": true
+          }
+        }
+      }
+    }
+  }
+}

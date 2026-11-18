@@ -206,6 +206,20 @@ def _required_integer(row: Mapping[str, Any], key: str) -> int:
     return value
 
 
+def _failure_count(row: Mapping[str, Any]) -> int:
+    """Return zero for no-failure cells and a positive count otherwise."""
+
+    scenario = _required_string(row, "scenario")
+    value = row.get("failure_count")
+    if scenario == "no_failure":
+        if value != 0:
+            raise StatisticsError("no-failure row must have failure_count=0")
+        return 0
+    if type(value) is not int or value <= 0:
+        raise StatisticsError("GPU-failure row lacks a positive failure_count")
+    return value
+
+
 def _metric_value(row: Mapping[str, Any], metric_id: str) -> int:
     definition = METRIC_DEFINITIONS[metric_id]
     current: object = row.get("payload")
@@ -237,6 +251,7 @@ def _metric_value(row: Mapping[str, Any], metric_id: str) -> int:
 def _sample(row: Mapping[str, Any], metric_id: str) -> dict[str, Any]:
     return {
         "seed": _required_integer(row, "seed"),
+        "failure_count": _failure_count(row),
         "run_id": _required_string(row, "run_id"),
         "payload_sha256": _required_string(row, "payload_sha256"),
         "value": _metric_value(row, metric_id),
@@ -246,7 +261,7 @@ def _sample(row: Mapping[str, Any], metric_id: str) -> dict[str, Any]:
 def _descriptive_statistics(
     rows: Sequence[Mapping[str, Any]], seeds: Sequence[int]
 ) -> list[dict[str, Any]]:
-    grouped: dict[tuple[str, str, str, str], list[Mapping[str, Any]]] = defaultdict(list)
+    grouped: dict[tuple[str, str, str, str, int], list[Mapping[str, Any]]] = defaultdict(list)
     for row in rows:
         if row.get("repetition") == "A":
             key = (
@@ -254,12 +269,13 @@ def _descriptive_statistics(
                 _required_string(row, "variant_id"),
                 _required_string(row, "context_bucket"),
                 _required_string(row, "scenario"),
+                _failure_count(row),
             )
             grouped[key].append(row)
     expected_seeds = list(seeds)
     documents: list[dict[str, Any]] = []
     for key in sorted(grouped):
-        suite, variant_id, context_bucket, scenario = key
+        suite, variant_id, context_bucket, scenario, failure_count = key
         group_rows = sorted(grouped[key], key=lambda row: _required_integer(row, "seed"))
         actual_seeds = [_required_integer(row, "seed") for row in group_rows]
         if actual_seeds != expected_seeds:
@@ -275,6 +291,7 @@ def _descriptive_statistics(
                     "variant_id": variant_id,
                     "context_bucket": context_bucket,
                     "scenario": scenario,
+                    "failure_count": failure_count,
                     "metric_id": metric_id,
                     "unit": definition["unit"],
                     "samples": samples,
@@ -287,7 +304,7 @@ def _descriptive_statistics(
 def _paired_statistics(
     rows: Sequence[Mapping[str, Any]], seeds: Sequence[int]
 ) -> list[dict[str, Any]]:
-    by_key: dict[tuple[str, str, str, str, int], Mapping[str, Any]] = {}
+    by_key: dict[tuple[str, str, str, str, int, int], Mapping[str, Any]] = {}
     variants_by_suite: dict[str, set[str]] = defaultdict(set)
     for row in rows:
         if row.get("repetition") != "A":
@@ -300,6 +317,7 @@ def _paired_statistics(
             _required_string(row, "context_bucket"),
             _required_string(row, "scenario"),
             _required_integer(row, "seed"),
+            _failure_count(row),
         )
         if key in by_key:
             raise StatisticsError(f"duplicate repeat-A statistical cell: {key}")
@@ -317,62 +335,97 @@ def _paired_statistics(
         for candidate in sorted(variants - {comparator}):
             for context_bucket in ("8k", "32k", "64k", "96k", "128k"):
                 for scenario in ("no_failure", "gpu_failure"):
-                    for metric_id, definition in METRIC_DEFINITIONS.items():
-                        samples: list[dict[str, Any]] = []
-                        for seed in seeds:
-                            candidate_row = by_key.get(
-                                (suite, candidate, context_bucket, scenario, seed)
-                            )
-                            comparator_row = by_key.get(
-                                (suite, comparator, context_bucket, scenario, seed)
-                            )
-                            if candidate_row is None or comparator_row is None:
-                                raise StatisticsError(
-                                    "paired statistical cell is missing for "
-                                    f"{suite}/{candidate}/{context_bucket}/{scenario}/seed-{seed}"
+                    failure_counts = sorted(
+                        {
+                            key[-1]
+                            for key in by_key
+                            if key[0] == suite
+                            and key[2] == context_bucket
+                            and key[3] == scenario
+                        }
+                    )
+                    for failure_count in failure_counts:
+                        for metric_id, definition in METRIC_DEFINITIONS.items():
+                            samples: list[dict[str, Any]] = []
+                            for seed in seeds:
+                                candidate_row = by_key.get(
+                                    (
+                                        suite,
+                                        candidate,
+                                        context_bucket,
+                                        scenario,
+                                        seed,
+                                        failure_count,
+                                    )
                                 )
-                            candidate_value = _metric_value(candidate_row, metric_id)
-                            comparator_value = _metric_value(comparator_row, metric_id)
-                            samples.append(
+                                comparator_row = by_key.get(
+                                    (
+                                        suite,
+                                        comparator,
+                                        context_bucket,
+                                        scenario,
+                                        seed,
+                                        failure_count,
+                                    )
+                                )
+                                if candidate_row is None or comparator_row is None:
+                                    raise StatisticsError(
+                                        "paired statistical cell is missing for "
+                                        f"{suite}/{candidate}/{context_bucket}/{scenario}/"
+                                        f"seed-{seed}/failure-count-{failure_count}"
+                                    )
+                                candidate_value = _metric_value(candidate_row, metric_id)
+                                comparator_value = _metric_value(comparator_row, metric_id)
+                                samples.append(
+                                    {
+                                        "seed": seed,
+                                        "failure_count": failure_count,
+                                        "candidate_run_id": _required_string(
+                                            candidate_row, "run_id"
+                                        ),
+                                        "candidate_payload_sha256": _required_string(
+                                            candidate_row, "payload_sha256"
+                                        ),
+                                        "candidate_value": candidate_value,
+                                        "comparator_run_id": _required_string(
+                                            comparator_row, "run_id"
+                                        ),
+                                        "comparator_payload_sha256": _required_string(
+                                            comparator_row, "payload_sha256"
+                                        ),
+                                        "comparator_value": comparator_value,
+                                        "difference_candidate_minus_comparator": (
+                                            candidate_value - comparator_value
+                                        ),
+                                    }
+                                )
+                            documents.append(
                                 {
-                                    "seed": seed,
-                                    "candidate_run_id": _required_string(candidate_row, "run_id"),
-                                    "candidate_payload_sha256": _required_string(
-                                        candidate_row, "payload_sha256"
-                                    ),
-                                    "candidate_value": candidate_value,
-                                    "comparator_run_id": _required_string(
-                                        comparator_row, "run_id"
-                                    ),
-                                    "comparator_payload_sha256": _required_string(
-                                        comparator_row, "payload_sha256"
-                                    ),
-                                    "comparator_value": comparator_value,
-                                    "difference_candidate_minus_comparator": (
-                                        candidate_value - comparator_value
+                                    "suite": suite,
+                                    "candidate_variant_id": candidate,
+                                    "comparator_variant_id": comparator,
+                                    "context_bucket": context_bucket,
+                                    "scenario": scenario,
+                                    "failure_count": failure_count,
+                                    "metric_id": metric_id,
+                                    "unit": definition["unit"],
+                                    "preferred_direction": definition[
+                                        "preferred_direction"
+                                    ],
+                                    "effect_definition": "candidate_minus_comparator",
+                                    "samples": samples,
+                                    "estimate": confidence_summary(
+                                        [
+                                            int(
+                                                sample[
+                                                    "difference_candidate_minus_comparator"
+                                                ]
+                                            )
+                                            for sample in samples
+                                        ]
                                     ),
                                 }
                             )
-                        documents.append(
-                            {
-                                "suite": suite,
-                                "candidate_variant_id": candidate,
-                                "comparator_variant_id": comparator,
-                                "context_bucket": context_bucket,
-                                "scenario": scenario,
-                                "metric_id": metric_id,
-                                "unit": definition["unit"],
-                                "preferred_direction": definition["preferred_direction"],
-                                "effect_definition": "candidate_minus_comparator",
-                                "samples": samples,
-                                "estimate": confidence_summary(
-                                    [
-                                        int(sample["difference_candidate_minus_comparator"])
-                                        for sample in samples
-                                    ]
-                                ),
-                            }
-                        )
     return documents
 
 

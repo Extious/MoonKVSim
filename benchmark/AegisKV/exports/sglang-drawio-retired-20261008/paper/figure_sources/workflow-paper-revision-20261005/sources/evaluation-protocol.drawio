@@ -1,0 +1,104 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="protocol" name="New trace and paired evaluation protocol">
+    <mxGraphModel page="1" pageWidth="1008" pageHeight="620" background="#FFFFFF">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="canvas" value="" vertex="1" parent="1" style="fillColor=#FFFFFF;strokeColor=none;">
+          <mxGeometry x="0" y="0" width="1008" height="620" as="geometry" />
+        </mxCell>
+        <mxCell id="input" value="DeepResearch Bench&#10;APPS&#10;Frozen inputs" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O,FandolSong;fontSize=22;fontColor=#24323B;fillColor=#EAF4F1;strokeColor=#4D8074;strokeWidth=1.6;spacing=5;">
+          <mxGeometry x="24" y="90" width="230" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="capture" value="Agno + MiniCPM4.1-8B&#10;Model and tool execution" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O,FandolSong;fontSize=22;fontColor=#24323B;fillColor=#EAF4F1;strokeColor=#4D8074;strokeWidth=1.6;spacing=5;">
+          <mxGeometry x="316" y="90" width="290" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="quality" value="Independent APPS tests&#10;Research citation inventory" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O,FandolSong;fontSize=22;fontColor=#24323B;fillColor=#EDF2F8;strokeColor=#647F9E;strokeWidth=1.6;spacing=5;">
+          <mxGeometry x="674" y="45" width="300" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="trace" value="Client request / tool records&#10;Messages + usage + DAG gates" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O,FandolSong;fontSize=22;fontColor=#24323B;fillColor=#EAF4F1;strokeColor=#4D8074;strokeWidth=1.6;spacing=5;">
+          <mxGeometry x="674" y="186" width="300" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="replay" value="Planned dependency replay&#10;Matched inputs and budget" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O,FandolSong;fontSize=22;fontColor=#24323B;fillColor=#EDF2F8;strokeColor=#647F9E;strokeWidth=1.6;spacing=5;dashed=1;dashed=1;">
+          <mxGeometry x="24" y="415.0" width="290" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="healthy" value="F0&#10;Healthy" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O,FandolSong;fontSize=22;fontColor=#24323B;fillColor=#EDF2F8;strokeColor=#647F9E;strokeWidth=1.6;spacing=5;dashed=1;dashed=1;">
+          <mxGeometry x="380" y="375.0" width="130" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="fault" value="F1&#10;Worker fault" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O,FandolSong;fontSize=22;fontColor=#24323B;fillColor=#EDF2F8;strokeColor=#647F9E;strokeWidth=1.6;spacing=5;dashed=1;dashed=1;">
+          <mxGeometry x="380" y="475.0" width="130" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="result" value="Planned paired job WCT&#10;Recovery cost + interference" vertex="1" parent="1" style="rounded=1;arcSize=9;whiteSpace=wrap;html=0;fontFamily=Linux Libertine O,FandolSong;fontSize=22;fontColor=#24323B;fillColor=#FCF2E4;strokeColor=#AC864B;strokeWidth=1.6;spacing=5;dashed=1;dashed=1;">
+          <mxGeometry x="674" y="415.0" width="300" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="e0" edge="1" parent="1" source="input" target="capture" style="rounded=0;endArrow=block;endFill=1;strokeColor=#53636B;strokeWidth=1.7;jumpStyle=arc;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="capture" target="quality" style="rounded=0;endArrow=block;endFill=1;strokeColor=#53636B;strokeWidth=1.7;jumpStyle=arc;exitX=1;exitY=0.25;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="640" y="115" />
+              <mxPoint x="640" y="92.5" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="capture" target="trace" style="rounded=0;endArrow=block;endFill=1;strokeColor=#53636B;strokeWidth=1.7;jumpStyle=arc;exitX=1;exitY=0.75;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="625" y="165" />
+              <mxPoint x="625" y="233.5" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="trace" target="replay" style="rounded=0;endArrow=block;endFill=1;strokeColor=#53636B;strokeWidth=1.7;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="824" y="295" />
+              <mxPoint x="8" y="295" />
+              <mxPoint x="8" y="465" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="replay" target="healthy" style="rounded=0;endArrow=block;endFill=1;strokeColor=#53636B;strokeWidth=1.7;jumpStyle=arc;exitX=1;exitY=0.25;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="346" y="440.0" />
+              <mxPoint x="346" y="416.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="replay" target="fault" style="rounded=0;endArrow=block;endFill=1;strokeColor=#53636B;strokeWidth=1.7;jumpStyle=arc;exitX=1;exitY=0.75;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="346" y="490.0" />
+              <mxPoint x="346" y="516.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="healthy" target="result" style="rounded=0;endArrow=block;endFill=1;strokeColor=#53636B;strokeWidth=1.7;jumpStyle=arc;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.25;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="600" y="416.0" />
+              <mxPoint x="600" y="440.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="fault" target="result" style="rounded=0;endArrow=block;endFill=1;strokeColor=#53636B;strokeWidth=1.7;jumpStyle=arc;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.75;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="625" y="516.0" />
+              <mxPoint x="625" y="490.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="current-label" vertex="1" parent="1" value="Application validation in this work stage" style="fontFamily=Linux Libertine O;fontSize=22;fontStyle=1;fontColor=#24323B;align=left;fillColor=none;strokeColor=none;html=0;">
+          <mxGeometry x="24" y="12" width="950" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="future-label" vertex="1" parent="1" value="Future campaign: AegisKV protection policies inside SGLang" style="fontFamily=Linux Libertine O;fontSize=22;fontStyle=1;fontColor=#24323B;align=left;fillColor=none;strokeColor=none;html=0;">
+          <mxGeometry x="24" y="324" width="950" height="28" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

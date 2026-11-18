@@ -23,6 +23,13 @@ dev = [
 trace = [
   "pyarrow>=19,<20",
 ]
+fanoutqa = [
+  "httpx>=0.28,<1",
+  "tokenizers>=0.21,<1",
+]
+paper = [
+  "matplotlib>=3.9,<4",
+]
 
 [project.scripts]
 moonkv-sim = "moonkvsim.cli:main"

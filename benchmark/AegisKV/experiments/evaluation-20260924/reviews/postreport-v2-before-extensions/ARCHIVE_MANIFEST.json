@@ -1,0 +1,25 @@
+{
+  "time_utc": "2026-09-23T21:12:46.532233+00:00",
+  "files": {
+    "benchmark/AegisKV/paper/evaluation.tex": {
+      "archive": "evaluation.tex",
+      "sha256": "58454f3eafbbf2aa3c5ba653b7db7641c22f0beecfde8e3e188bb6a27f237bcf"
+    },
+    "benchmark/AegisKV/paper/main.pdf": {
+      "archive": "main.pdf",
+      "sha256": "99b126a77d069b51cb3141efbd0e3f563668583d94db5f83dd99b05d92021837"
+    },
+    "benchmark/AegisKV/paper/figures/eval-resource-sensitivity.pdf": {
+      "archive": "eval-resource-sensitivity.pdf",
+      "sha256": "fc3cc36b02bdad68f8b42067fb6c4aa118e7a5808e6596efc2441f31afd30242"
+    },
+    "benchmark/AegisKV/experiments/evaluation-20260924/paper-preview/EXPORT_REVIEW.json": {
+      "archive": "EXPORT_REVIEW.json",
+      "sha256": "ef3fa8a0fa30ce8b1a9def60f6bfe721ea07caa370ca88ee1ffb5f3c4d690322"
+    },
+    "benchmark/AegisKV/experiments/evaluation-20260924/paper-preview/VISUAL_REVIEW.json": {
+      "archive": "VISUAL_REVIEW.json",
+      "sha256": "4f94ef6787dea52e7baa46bd37b43da67c3685f46b469f1fd478a1c1d0f9b06d"
+    }
+  }
+}

@@ -1,0 +1,28 @@
+\subsection{Repeated Failures and Concurrency}
+\label{sec:sensitivity-results}
+\input{sections/figures/sensitivity}
+
+Figure~\ref{fig:sensitivity} summarizes all seven settings and five paired
+seeds. At concurrency 16, mean focus WCT gains for one, two, four and eight
+failures are $-8.82\%$, $-15.94\%$, $-0.15\%$ and $5.52\%$. With two failures,
+concurrencies 8, 16, 24 and 32 give $-10.66\%$, $-15.94\%$, $6.32\%$ and
+$-4.23\%$. Every focus-mean interval and every all-workflow-mean interval
+crosses zero. The observed means support neither a consistently positive
+gain nor a monotonic increase with failure count or concurrency.
+
+Gains average seed-level percentages; they are not ratios of the absolute
+means in row~(a), so their signs need not agree with that ratio. In F4/C16,
+the focus P95 gain is 15.77\%, with interval [0.41\%, 31.14\%]. This isolated
+positive comparison is exploratory and unadjusted; with four focus workflows,
+P95 is the maximum rather than a resolved population-tail estimate.
+
+Resource diagnostics also resist a simple pressure-to-benefit interpretation.
+At two failures, increasing concurrency from 8 to 32 raises mean pressure
+frequency from 3.42\% to 4.88\%, while mean Peer quota changes from 33.34\%
+to 28.35\% and is not strictly decreasing at intermediate points. Across
+the failure-count sweep, mean quota stays between 29.15\% and 30.12\%.
+These averages describe controller exposure; the event-level audit separately
+verifies its AIMD updates. Focus and collateral counts in row~(d) retain the
+different realized victim populations rather than treating them as matched
+samples. Selected Peer/Store fractions likewise describe recovery composition,
+without asserting that tier overlap provides additional prefix coverage.

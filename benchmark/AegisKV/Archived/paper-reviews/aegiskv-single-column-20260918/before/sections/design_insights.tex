@@ -1,0 +1,120 @@
+\subsection{Insights and Design Implications}
+\label{sec:design-insights}
+
+Three premises connect workflow structure to selective KV protection:
+estimating an agent's remaining time, identifying workloads with sparse
+historical reads, and predicting the reads of an uncommitted retry tail.
+Figure~\ref{fig:design-insights} separates their evidence. The first
+premise remains a validation gap in this draft; the other two motivate
+the placement policy within the scope stated below.
+
+\begin{figure*}[t]
+  \centering
+  \captionsetup[subfigure]{font=normalsize,labelfont=normalfont,
+    textfont=normalfont,justification=centering,singlelinecheck=false}
+  \begin{subfigure}[t]{0.32\textwidth}
+    \vspace{0pt}
+    \includegraphics[width=\linewidth]{figures/design-insights/agent-time-audit.pdf}
+    \caption{Agent-time prediction}
+    \label{fig:insight-agent-time}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.32\textwidth}
+    \vspace{0pt}
+    \includegraphics[width=\linewidth]{figures/design-insights/sparse-attention-survey.pdf}
+    \caption{Sparse attention adoption}
+    \label{fig:insight-sparse-adoption}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.32\textwidth}
+    \vspace{0pt}
+    \includegraphics[width=\linewidth]{figures/design-insights/retry-kv-prediction.pdf}
+    \caption{Retry KV prediction}
+    \label{fig:insight-retry-kv}
+  \end{subfigure}
+  \caption{Evidence for the three design premises.
+    (a) Offline five-fold prediction audit of 1,688 CC agents from 174
+    workflows; workflows do not cross folds. Each agent contributes its
+    mean absolute remaining-time error divided by total duration.
+    The symmetric-log axis retains all errors; all recorded roles are
+    \texttt{Subagent}. This does not establish accurate role-conditioned
+    timing prediction.
+    (b) Four representative 2025--2026 releases, their sparse mechanisms,
+    and reported context limits; DS denotes DeepSeek. MiniCPM4 uses its
+    native 32K limit. This is a source survey, not an adoption-rate estimate.
+    (c) Native PG19 traces, 32K history, three documents per model.
+    Past-frequency ranking observes queries 32,257--32,768; demand is
+    the distinct historical KV selected by queries 32,769--32,832.
+    Both policies reserve mandatory blocks within the same 40\% budget.
+    Bars are document means; whiskers span the three documents. This is
+    trace-derived hypothetical retry demand, not a fault-recovery run.}
+  \label{fig:design-insights}
+  \Description{Three side-by-side panels show a negative agent timing
+    prediction audit, a primary-source survey of sparse model releases,
+    and held-out retry KV coverage. Past-frequency ranking improves
+    coverage substantially for NOSA and only modestly for MiniCPM4.}
+\end{figure*}
+
+\paragraph{Insight 1: workflow-aware protection requires validated
+remaining-time estimates.}
+Repeated agent roles offer a basis for profiling: prior work observes
+role-dependent output-length distributions~\cite{yu2026pythia}.
+Output length, however, is not a multi-round agent's wall-clock duration,
+which also includes tool execution and service delays. We therefore
+audit remaining-time prediction on completed CC agents~\cite{semianalysis2026cctraces},
+using only features available at each request arrival and withholding
+whole workflows. A diagnostic progress GBDT has a median normalized
+error of 51.8\%, versus 49.3\% for a training-fold median prior
+(Figure~\ref{fig:design-insights}\subref{fig:insight-agent-time}).
+The trace labels every agent as \texttt{Subagent}, preventing validation
+of the role-specific P90 estimator used by the Tracker.
+
+\emph{Design implication.} AegisKV separates time estimation from DAG
+propagation and conservatively handles unknown successors
+(Section~\ref{sec:workflow-protection}). We still need repeated timings
+for each role, interval coverage, and protection tier error rates.
+We do not treat Figure~\ref{fig:insight-agent-time} as
+positive evidence of accurate agent-time prediction or replace the
+current P90 policy with the diagnostic GBDT.
+
+\paragraph{Insight 2: sparse attention is relevant to long-context serving.}
+MiniCPM4 uses InfLLMv2~\cite{minicpm4model}; DeepSeek-V3.2 and GLM-5
+use DeepSeek Sparse Attention and explicitly target agentic
+capabilities~\cite{deepseek2025v32model,zai2026glm5model}.
+DeepSeek-V4 combines compressed sparse and heavily compressed attention
+at a reported million-token context~\cite{deepseek2026v4model}.
+Figure~\ref{fig:design-insights}\subref{fig:insight-sparse-adoption}
+documents these examples; it does not establish that most deployments
+already use sparse attention.
+
+\emph{Design implication.} AegisKV exposes actual layer/block selections
+to the Planner instead of assigning equal value to every historical
+KV byte. This interface must preserve selector state and all required
+attention branches. Different sparse or compressed models need their
+own recovery objects and calibration; the survey does not demonstrate
+AegisKV compatibility with every listed model.
+
+\paragraph{Insight 3: past selections predict part of a short retry
+tail's distinct historical KV demand.}
+After failure, rebuilding an uncommitted suffix replays known token IDs.
+The relevant forecast is which \emph{historical} blocks these queries
+will need, before their own selector outputs are available. On native
+NOSA-1B, NOSA-3B, and MiniCPM4-8B traces, we use a strictly earlier
+512-query window to rank historical blocks and hold out the next
+64 queries. At the same 40\% historical-byte budget, past frequency
+covers 79.2\%, 77.8\%, and 53.6\% of distinct needed KV, versus
+59.7\%, 59.7\%, and 50.9\% for recency
+(Figure~\ref{fig:design-insights}\subref{fig:insight-retry-kv}).
+The improvement is model-dependent and does not recover every needed
+block. These are PG19 demand traces, not agentic failure-retry executions.
+
+\emph{Design implication.} The Planner uses past selections for advance
+placement; exact demand fetches cover misses (Section~\ref{sec:kv-placement}).
+Repeated reads of one block count once when sizing recovery bytes.
+With recoverable selector state and the same causal prefix and token
+IDs, the held-out demand is a proxy for retry demand; physical replay
+equivalence still requires validation.
+
+Together, these premises motivate workflow-level protection tiers and
+request-internal block selection. The remaining design problem is to
+turn them into a capacity-bounded plan that removes exposed transfer
+wait, then execute independent retries without imposing a serial
+recovery order (Sections~\ref{sec:kv-placement}--\ref{sec:kv-runtime}).

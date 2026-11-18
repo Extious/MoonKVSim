@@ -19,9 +19,10 @@ from __future__ import annotations
 
 import hashlib
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field, replace
 from enum import StrEnum
+from typing import cast
 
 from moonkvsim.aegiskv.scheduler_step_bridge import (
     AegisSchedulerStep,
@@ -75,6 +76,32 @@ class ObservedIdealRequestDuration:
         # output materializes one decode token for a later forward.
         return self.prompt_tokens + self.max_output_tokens - 1
 
+    @property
+    def scheduler_weighted_work(self) -> int:
+        # The observed trace exposes only one request-level duration.  Preserve
+        # the experiment's 8x decode heuristic, but bind it to the exact
+        # scheduler lifecycle: prompt work produces output position 1, leaving
+        # max_output_tokens - 1 decode forwards.
+        return self.prompt_tokens + (self.max_output_tokens - 1) * 8
+
+    def remaining_weighted_work(
+        self,
+        *,
+        computed_tokens: int,
+        total_tokens: int,
+    ) -> int:
+        if not 0 <= computed_tokens <= total_tokens <= self.scheduler_work_tokens:
+            raise ValueError("scheduler progress is outside the request work extent")
+        remaining_prefill = max(
+            0,
+            min(self.prompt_tokens, total_tokens) - min(self.prompt_tokens, computed_tokens),
+        )
+        remaining_decode = max(
+            0,
+            total_tokens - max(self.prompt_tokens, computed_tokens),
+        )
+        return remaining_prefill + remaining_decode * 8
+
     def to_dict(self) -> dict[str, object]:
         return {
             "request_id": self.request_id,
@@ -82,50 +109,81 @@ class ObservedIdealRequestDuration:
             "max_output_tokens": self.max_output_tokens,
             "observed_ideal_duration_ns": self.observed_ideal_duration_ns,
             "scheduler_work_tokens": self.scheduler_work_tokens,
+            "scheduler_weighted_work": self.scheduler_weighted_work,
         }
 
 
 class ObservedIdealTraceDurationProvider:
-    """Uncalibrated token-share duration model over observed ideal traces.
+    """Uncalibrated phase-weighted duration model over observed ideal traces.
 
     For participant ``i``, the modeled work share is
 
-    ``ceil(observed_duration_i * scheduled_tokens_i / total_work_tokens_i)``.
+    ``ceil(observed_duration_i * scheduled_weight_i / total_weight_i)``.
 
-    A shared GPU step takes the maximum participant share.  This deterministic
-    ideal-parallel rule exposes concurrency to the DES without pretending to
-    model real batch-size, phase-mixing, kernel, or interference effects.
+    Prefill tokens have weight 1 and decode forwards have weight 8.  The first
+    output is produced by the terminal prompt forward, so a request has
+    ``max_output_tokens - 1`` decode forwards.  Restored prompt tokens are not
+    scheduled and therefore consume no duration share.
+
+    By default a shared GPU step takes the maximum participant share. Optional
+    serialization mixes the maximum and sum of shares for assumption sensitivity;
+    it is not a physical batch-size, kernel, or interference measurement.
     """
 
     PROVIDER_NAME = "observed-ideal-trace-token-share"
-    PROVIDER_VERSION = "v1-modeled-uncalibrated"
-    COMPOSITION_RULE = "ceil_per_request_token_share_then_max"
+    PROVIDER_VERSION = "v2-phase-weighted-modeled-uncalibrated"
+    COMPOSITION_RULE = (
+        "ceil_per_request_prefill1_decode8_share_then_mixed_step_max"
+    )
 
     def __init__(
         self,
         *,
         prediction_profile: PredictionProfile,
         trace_provenance_sha256: str,
+        batch_serialization_per_mille: int = 0,
     ) -> None:
         if not isinstance(prediction_profile, PredictionProfile):
             raise TypeError("prediction_profile must be a PredictionProfile")
         if _SHA256.fullmatch(trace_provenance_sha256) is None:
             raise ValueError("trace_provenance_sha256 must be a lowercase SHA-256")
+        if (
+            type(batch_serialization_per_mille) is not int
+            or not 0 <= batch_serialization_per_mille <= 1000
+        ):
+            raise ValueError("batch serialization must be an integer in [0, 1000]")
         self.prediction_profile = prediction_profile
         self.trace_provenance_sha256 = trace_provenance_sha256
+        self.batch_serialization_per_mille = batch_serialization_per_mille
         self._requests: dict[str, ObservedIdealRequestDuration] = {}
+
+    @classmethod
+    def version_for_composition(cls, batch_serialization_per_mille: int) -> str:
+        return (
+            cls.PROVIDER_VERSION if batch_serialization_per_mille == 0
+            else "v3-phase-weighted-max-sum-modeled-uncalibrated"
+        )
 
     @property
     def evidence(self) -> StepDurationProviderEvidence:
+        version = self.version_for_composition(self.batch_serialization_per_mille)
+        composition_rule = (
+            self.COMPOSITION_RULE if self.batch_serialization_per_mille == 0
+            else (
+                "ceil_per_request_prefill1_decode8_share_then_ceil_"
+                f"((1000-{self.batch_serialization_per_mille})*max+"
+                f"{self.batch_serialization_per_mille}*sum)/1000"
+            )
+        )
         return StepDurationProviderEvidence(
             provider_name=self.PROVIDER_NAME,
-            provider_version=self.PROVIDER_VERSION,
+            provider_version=version,
             prediction_profile_fingerprint=self.prediction_profile.fingerprint,
             provenance_sha256=sha256_json(
                 {
                     "trace_provenance_sha256": self.trace_provenance_sha256,
-                    "composition_rule": self.COMPOSITION_RULE,
-                    "provider_version": self.PROVIDER_VERSION,
+                    "composition_rule": composition_rule,
+                    "provider_version": version,
                 }
             ),
             evidence_class=StepDurationEvidenceClass.UNCALIBRATED_MODEL,
@@ -157,18 +215,31 @@ class ObservedIdealTraceDurationProvider:
                     raise KeyError(
                         f"missing observed ideal-trace duration: {request_id}"
                     ) from error
+                phase_weight = 1 if prediction_request.past_kv_length < (
+                    observed.prompt_tokens
+                ) else 8
                 numerator = (
                     observed.observed_ideal_duration_ns
                     * prediction_request.extend_length
+                    * phase_weight
                 )
                 shares.append(
                     max(
                         1,
-                        (numerator + observed.scheduler_work_tokens - 1)
-                        // observed.scheduler_work_tokens,
+                        (numerator + observed.scheduler_weighted_work - 1)
+                        // observed.scheduler_weighted_work,
                     )
                 )
-        return max(shares)
+        return self.compose_shares(shares)
+
+    def compose_shares(self, shares: Sequence[int]) -> int:
+        if not shares or any(type(value) is not int or value <= 0 for value in shares):
+            raise ValueError("duration composition requires positive integer service shares")
+        beta = self.batch_serialization_per_mille
+        # The endpoints are alternative ideal parallel/serial assumptions,
+        # not lower/upper bounds on measured physical latency.
+        numerator = (1000 - beta) * max(shares) + beta * sum(shares)
+        return (numerator + 999) // 1000
 
 
 @dataclass(frozen=True, slots=True)
@@ -397,6 +468,9 @@ class _TargetRuntime:
     step_ready_pending: bool = False
     active_record: _ForwardStepRecord | None = None
     completion_handle: EventHandle | None = None
+    load_epoch: int = 0
+    load_snapshot_cache_key: tuple[int, int] | None = None
+    load_snapshot_cache_value: dict[str, int] | None = None
 
 
 class AegisContinuousBatchDESDriver:
@@ -427,8 +501,10 @@ class AegisContinuousBatchDESDriver:
             [str, ContinuousBatchRequestSpec, int, str, int], None
         ]
         | None = None,
+        recovery_priority_key: Callable[[str], tuple[int, int, str]] | None = None,
         on_maintenance_step: Callable[[str, AegisSchedulerStep], None]
         | None = None,
+        on_blocked_step: Callable[[str], bool] | None = None,
     ) -> None:
         if not isinstance(des, GlobalDES):
             raise TypeError("des must be a GlobalDES")
@@ -458,6 +534,8 @@ class AegisContinuousBatchDESDriver:
         self._steps: list[_ForwardStepRecord] = []
         self._issued_step_ids: set[str] = set()
         self._failures: list[DriverFailureRecord] = []
+        self.target_load_snapshot_cache_hits = 0
+        self.target_load_snapshot_cache_misses = 0
         self._started = False
         self._finished = False
         self._register_failure_handler = register_failure_handler
@@ -466,7 +544,9 @@ class AegisContinuousBatchDESDriver:
         self._on_before_admit_callback = on_before_admit
         self._on_after_admit_callback = on_after_admit
         self._on_admit_abort_callback = on_admit_abort
+        self._recovery_priority_key_callback = recovery_priority_key
         self._on_maintenance_step_callback = on_maintenance_step
+        self._on_blocked_step_callback = on_blocked_step
         des.register_handler(
             EventKind.CONTINUOUS_BATCH_ADMIT,
             self._on_request_arrival,
@@ -559,6 +639,14 @@ class AegisContinuousBatchDESDriver:
                 "only a pristine suspended runtime can be unregistered"
             )
         del self._requests[request_id]
+
+    def router_committed_output_tokens(self, request_id: str) -> int:
+        """Return the exact output position committed at completed step boundaries."""
+
+        try:
+            return self._requests[request_id].router_committed_output_tokens
+        except KeyError as error:
+            raise KeyError(f"unknown continuous request: {request_id}") from error
 
     def inject_gpu_failure(self, failure: ScheduledGPUFailure) -> EventHandle:
         if not self._register_failure_handler:
@@ -687,6 +775,8 @@ class AegisContinuousBatchDESDriver:
         runtime.pending_ready_ns = ready_ns
         runtime.pending_restored_tokens = restored_tokens
         runtime.pending_cause = cause
+        if target_id is not None:
+            self._invalidate_target_load(target_id)
         return handle
 
     def replace_repaired_target(self, bridge: AegisSchedulerStepBridge) -> None:
@@ -706,16 +796,29 @@ class AegisContinuousBatchDESDriver:
         bridge.continue_step_sequence_after(target.bridge)
         for runtime in self._requests.values():
             provider.register_request(runtime.spec.observed_duration)
-        self._targets[target_id] = _TargetRuntime(bridge, provider)
+        self._targets[target_id] = _TargetRuntime(
+            bridge,
+            provider,
+            load_epoch=target.load_epoch + 1,
+        )
+
+    def _invalidate_target_load(self, target_id: str) -> None:
+        """Advance one target's route-visible state generation."""
+
+        target = self._targets[target_id]
+        target.load_epoch += 1
+        target.load_snapshot_cache_key = None
+        target.load_snapshot_cache_value = None
 
     def target_load_snapshot(self, target_id: str) -> dict[str, int]:
         """Estimate route-visible target backlog from live scheduler progress.
 
-        The estimate follows the same observed-duration token-share model as
-        forward steps.  Resident requests batch ideally, so their remaining
-        horizon is the maximum share rather than a serial sum.  Route-bound
-        future admissions extend that horizon by their ready time and full
-        modeled duration.
+        The estimate shadows future FCFS scheduler steps without mutating the
+        live scheduler.  It uses the scheduler's token and running-request
+        budgets and the duration provider's phase-weighted request shares.
+        Co-batched shares use the same ideal ``max`` composition as actual
+        execution. Pending admissions still contribute their own future work,
+        but requests that fit in one batch are not falsely serialized.
         """
 
         try:
@@ -724,28 +827,47 @@ class AegisContinuousBatchDESDriver:
             raise ContinuousBatchDESError(f"unknown target: {target_id}") from error
         if target.failed:
             raise ContinuousBatchDESError("failed target has no routable load snapshot")
+        cache_key = (self.des.now_ns, target.load_epoch)
+        if (
+            target.load_snapshot_cache_key == cache_key
+            and target.load_snapshot_cache_value is not None
+        ):
+            self.target_load_snapshot_cache_hits += 1
+            return dict(target.load_snapshot_cache_value)
+        self.target_load_snapshot_cache_misses += 1
         active_ready_ns = (
             self.des.now_ns
             if target.active_record is None
             else target.active_record.planned_end_ns
         )
-        remaining_shares: list[int] = []
-        for request_id, computed_tokens, total_tokens in (
-            target.bridge.request_progress_snapshot()
-        ):
+        resident_weighted_work = 0
+        progress = target.bridge.request_progress_snapshot()
+        running_ids = set(target.bridge.scheduler.running_request_ids)
+        running: list[list[object]] = []
+        waiting: list[list[object]] = []
+        for request_id, computed_tokens, _materialized_tokens in progress:
             runtime = self._requests[request_id]
-            remaining_tokens = max(0, total_tokens - computed_tokens)
-            remaining_shares.append(
-                (
-                    runtime.spec.observed_ideal_duration_ns * remaining_tokens
-                    + runtime.spec.observed_duration.scheduler_work_tokens
-                    - 1
+            observed = runtime.spec.observed_duration
+            # schedule() records tokens before their active forward completes.
+            # A final prompt/decode forward can therefore leave a resident at
+            # the modeled work extent until complete_step() samples its terminal
+            # output and the driver retires it.  That resident occupies live
+            # scheduler state but has no future route-visible work.
+            if computed_tokens >= observed.scheduler_work_tokens:
+                continue
+            remaining_weighted_work = (
+                observed.remaining_weighted_work(
+                    computed_tokens=computed_tokens,
+                    total_tokens=observed.scheduler_work_tokens,
                 )
-                // runtime.spec.observed_duration.scheduler_work_tokens
             )
-        estimated_available_ns = active_ready_ns + max(remaining_shares, default=0)
+            resident_weighted_work += remaining_weighted_work
+            item: list[object] = [request_id, computed_tokens, observed]
+            (running if request_id in running_ids else waiting).append(item)
         pending_count = 0
         pending_tokens = 0
+        pending_weighted_work = 0
+        pending: list[tuple[int, list[object]]] = []
         for runtime in self._requests.values():
             if (
                 runtime.admission_handle is None
@@ -754,15 +876,137 @@ class AegisContinuousBatchDESDriver:
             ):
                 continue
             pending_count += 1
-            pending_tokens += runtime.spec.observed_duration.scheduler_work_tokens
-            estimated_available_ns = max(
-                estimated_available_ns,
-                runtime.pending_ready_ns
-                + runtime.spec.observed_ideal_duration_ns,
+            observed = runtime.spec.observed_duration
+            restored_tokens = runtime.pending_restored_tokens
+            computed_tokens = (
+                restored_tokens - 1
+                if restored_tokens > 0
+                and restored_tokens == runtime.spec.prompt_tokens
+                else restored_tokens
             )
-        progress = target.bridge.request_progress_snapshot()
-        return {
+            if computed_tokens >= observed.scheduler_work_tokens:
+                continue
+            pending_tokens += observed.scheduler_work_tokens - computed_tokens
+            pending_weighted_work += observed.remaining_weighted_work(
+                computed_tokens=computed_tokens,
+                total_tokens=observed.scheduler_work_tokens,
+            )
+            pending.append(
+                (
+                    runtime.pending_ready_ns,
+                    [
+                        runtime.spec.request_id,
+                        computed_tokens,
+                        observed,
+                    ],
+                )
+            )
+        pending.sort(key=lambda item: item[0])
+
+        estimated_available_ns = active_ready_ns
+        token_budget_limit = target.bridge.scheduler.max_num_scheduled_tokens
+        running_limit = target.bridge.scheduler.max_num_running_requests
+        pending_index = 0
+        while running or waiting or pending_index < len(pending):
+            while (
+                pending_index < len(pending)
+                and pending[pending_index][0] <= estimated_available_ns
+            ):
+                waiting.append(pending[pending_index][1])
+                pending_index += 1
+            if not running and not waiting:
+                estimated_available_ns = max(
+                    estimated_available_ns,
+                    pending[pending_index][0],
+                )
+                continue
+
+            token_budget = token_budget_limit
+            scheduled: list[tuple[list[object], int, int]] = []
+            for item in running:
+                if token_budget == 0:
+                    break
+                observed = cast(ObservedIdealRequestDuration, item[2])
+                computed_tokens = cast(int, item[1])
+                remaining_tokens = observed.scheduler_work_tokens - computed_tokens
+                if remaining_tokens <= 0:
+                    continue
+                phase_weight = 1 if computed_tokens < observed.prompt_tokens else 8
+                schedulable_tokens = (
+                    min(observed.prompt_tokens - computed_tokens, token_budget)
+                    if phase_weight == 1
+                    else 1
+                )
+                scheduled.append((item, schedulable_tokens, phase_weight))
+                token_budget -= schedulable_tokens
+
+            while (
+                waiting
+                and token_budget > 0
+                and len(running) < running_limit
+            ):
+                item = waiting.pop(0)
+                observed = cast(ObservedIdealRequestDuration, item[2])
+                computed_tokens = cast(int, item[1])
+                if computed_tokens >= observed.scheduler_work_tokens:
+                    continue
+                phase_weight = 1 if computed_tokens < observed.prompt_tokens else 8
+                schedulable_tokens = (
+                    min(observed.prompt_tokens - computed_tokens, token_budget)
+                    if phase_weight == 1
+                    else 1
+                )
+                running.append(item)
+                scheduled.append((item, schedulable_tokens, phase_weight))
+                token_budget -= schedulable_tokens
+
+            if not scheduled:
+                if pending_index < len(pending):
+                    estimated_available_ns = max(
+                        estimated_available_ns,
+                        pending[pending_index][0],
+                    )
+                    continue
+                raise ContinuousBatchDESError(
+                    "route shadow found scheduler work that cannot make progress"
+                )
+
+            participant_shares = []
+            for item, scheduled_tokens, phase_weight in scheduled:
+                observed = cast(ObservedIdealRequestDuration, item[2])
+                item[1] = cast(int, item[1]) + scheduled_tokens
+                numerator = (
+                    observed.observed_ideal_duration_ns
+                    * scheduled_tokens
+                    * phase_weight
+                )
+                participant_duration_ns = max(
+                    1,
+                    (
+                        numerator + observed.scheduler_weighted_work - 1
+                    )
+                    // observed.scheduler_weighted_work,
+                )
+                participant_shares.append(participant_duration_ns)
+            duration_provider = target.bridge.duration_provider
+            step_duration_ns = (
+                duration_provider.compose_shares(participant_shares)
+                if isinstance(duration_provider, ObservedIdealTraceDurationProvider)
+                else max(participant_shares)
+            )
+            estimated_available_ns += step_duration_ns
+            running = [
+                item
+                for item in running
+                if cast(int, item[1])
+                < cast(ObservedIdealRequestDuration, item[2]).scheduler_work_tokens
+            ]
+
+        snapshot = {
             "queued_tokens": target.bridge.scheduler.queued_tokens + pending_tokens,
+            "weighted_queued_work": (
+                resident_weighted_work + pending_weighted_work
+            ),
             "resident_request_count": len(progress),
             "pending_admission_count": pending_count,
             "active_forward_remaining_ns": max(
@@ -774,6 +1018,9 @@ class AegisContinuousBatchDESDriver:
                 estimated_available_ns,
             ),
         }
+        target.load_snapshot_cache_key = cache_key
+        target.load_snapshot_cache_value = snapshot
+        return dict(snapshot)
 
     def run(self, *, until_ns: int | None = None) -> ContinuousBatchDESResult:
         if self._finished:
@@ -815,6 +1062,8 @@ class AegisContinuousBatchDESDriver:
         restored_tokens = runtime.pending_restored_tokens
         if cause is None or runtime.pending_ready_ns != self.des.now_ns:
             raise ContinuousBatchDESError("pending admission metadata diverged")
+        if target_id is not None:
+            self._invalidate_target_load(target_id)
         runtime.admission_handle = None
         runtime.pending_target_id = None
         runtime.pending_ready_ns = None
@@ -877,10 +1126,20 @@ class AegisContinuousBatchDESDriver:
             else:
                 target.bridge.admit_request(request)
             bridge_admitted = True
-            if restored_tokens and cause.startswith(
+            self._invalidate_target_load(target_id)
+            if cause.startswith(
                 ("GPU_FAILURE_REQUEUE:", "EXTERNAL_FAILURE_OWNER_REQUEUE")
             ):
-                target.bridge.prioritize_waiting_recovery(request.request_id)
+                priority_key = (
+                    (0, self.des.now_ns, request.request_id)
+                    if self._recovery_priority_key_callback is None
+                    else self._recovery_priority_key_callback(request.request_id)
+                )
+                target.bridge.prioritize_waiting_recovery(
+                    request.request_id,
+                    priority_key=priority_key,
+                )
+                self._invalidate_target_load(target_id)
             if self._on_after_admit_callback is not None:
                 self._on_after_admit_callback(
                     target_id,
@@ -892,6 +1151,7 @@ class AegisContinuousBatchDESDriver:
         except Exception:
             if bridge_admitted:
                 target.bridge.rollback_unstarted_admission(spec.request_id)
+                self._invalidate_target_load(target_id)
             if self._on_admit_abort_callback is not None:
                 self._on_admit_abort_callback(
                     target_id,
@@ -947,6 +1207,7 @@ class AegisContinuousBatchDESDriver:
         if target.active_record is not None:
             raise ContinuousBatchDESError("GPU attempted to overlap scheduler steps")
         step = target.bridge.start_step()
+        self._invalidate_target_load(target_id)
         if step.step_id in self._issued_step_ids:
             raise ContinuousBatchDESError("duplicate scheduler step ID in one driver run")
         self._issued_step_ids.add(step.step_id)
@@ -964,6 +1225,13 @@ class AegisContinuousBatchDESDriver:
             if target.bridge.scheduler.running_request_ids or (
                 target.bridge.scheduler.waiting_request_ids
             ):
+                if self._on_blocked_step_callback is not None and self._on_blocked_step_callback(target_id):
+                    self.des.journal.append(
+                        self.des.now_ns,
+                        "AegisSchedulerWaitingForExternalCapacity",
+                        {"target_id": target_id},
+                    )
+                    return
                 raise ContinuousBatchDESError("scheduler made no progress with queued work")
             return
         assert step.duration is not None
@@ -983,6 +1251,7 @@ class AegisContinuousBatchDESDriver:
         )
         target.active_record = record
         target.completion_handle = handle
+        self._invalidate_target_load(target_id)
         self._steps.append(record)
         self.des.journal.append(
             self.des.now_ns,
@@ -1009,6 +1278,7 @@ class AegisContinuousBatchDESDriver:
         ):
             raise ContinuousBatchDESError("stale scheduler-step completion crossed its fence")
         completion = target.bridge.complete_step(record.step.step_id)
+        self._invalidate_target_load(target_id)
         position_by_id = dict(completion.output_positions)
         participant_by_id = {
             participant.request_id: participant
@@ -1029,6 +1299,7 @@ class AegisContinuousBatchDESDriver:
             if runtime.router_committed_output_tokens != runtime.spec.max_output_tokens:
                 raise ContinuousBatchDESError("terminal request ended inside silent replay")
             after_retire = target.bridge.retire_request(request_id)
+            self._invalidate_target_load(target_id)
             runtime.completion_ns = self.des.now_ns
         record.status = ForwardStepStatus.COMPLETED
         record.effective_end_ns = self.des.now_ns
@@ -1036,6 +1307,7 @@ class AegisContinuousBatchDESDriver:
         record.residency_after_retire = after_retire
         target.active_record = None
         target.completion_handle = None
+        self._invalidate_target_load(target_id)
         if self._on_step_completed_callback is not None:
             self._on_step_completed_callback(
                 target_id,
@@ -1095,6 +1367,7 @@ class AegisContinuousBatchDESDriver:
                 # domain yet.  Drop only its preferred target and let the
                 # unchanged route-version-zero event select a healthy GPU.
                 runtime.pending_target_id = None
+                self._invalidate_target_load(target_id)
                 continue
             if runtime.pending_ready_ns is None or not self.des.cancel(
                 runtime.admission_handle,
@@ -1126,6 +1399,7 @@ class AegisContinuousBatchDESDriver:
             runtime.pending_ready_ns = None
             runtime.pending_restored_tokens = 0
             runtime.pending_cause = None
+            self._invalidate_target_load(target_id)
         snapshot = replace(
             snapshot,
             pending_admissions=tuple(pending),
@@ -1145,6 +1419,7 @@ class AegisContinuousBatchDESDriver:
         target.active_record = None
         target.completion_handle = None
         target.step_ready_pending = False
+        self._invalidate_target_load(target_id)
 
         committed = tuple(
             (item.request_id, self._requests[item.request_id].router_committed_output_tokens)

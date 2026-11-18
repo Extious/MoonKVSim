@@ -67,7 +67,7 @@
     "static_source_derivation": "pass",
     "vllm_cache_spec_block_byte_differential": "not_run"
   },
-  "fingerprint": "616330f7a5e168edfad90d6e53dc8b754ef3f4c78925e80a49516e4f3f3d8d4f",
+  "fingerprint": "a2652848f10c2902063dbdb33195c4b58804e9cbc3d867c5767037278f437973",
   "model": {
     "architecture": "Qwen3ForCausalLM",
     "chat_template_sha256": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8",
@@ -86,7 +86,8 @@
     "tokenizer_fingerprint": "502cf8e70504d831095690878aa07f79bcd2e60220fb4191821ad4e498a60156",
     "tokenizer_json_sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
     "tokenizer_model_max_length": 131072,
-    "total_num_kv_heads": 8
+    "total_num_kv_heads": 8,
+    "weights_bytes": 16381470720
   },
   "parallelism": {
     "dp_replication": "layout_repeats_identically_for_each_dp_rank",

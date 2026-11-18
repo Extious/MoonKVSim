@@ -1,0 +1,268 @@
+{
+  "upload_source_directory": "paper/",
+  "main_document": "main.tex",
+  "compiler": "pdfLaTeX",
+  "compiled_pdf": "paper/main.pdf",
+  "generated_pdf_sha256": "02dd2e94da21f73406c8b07006dea7164a6ce46af26cd9e6400adb14bf3d92cf",
+  "current_figure_source": "/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/exports/system-design-submit-review-20260921/sources",
+  "files": [
+    {
+      "path": "ACM-Reference-Format.bst",
+      "bytes": 93560,
+      "sha256": "8ec002c927068bfc5b3cfe71b66aa4767b9e485530ac3c67ba5c064df4c2e6ac"
+    },
+    {
+      "path": "abstract.tex",
+      "bytes": 1950,
+      "sha256": "2d03942d00e5ff04607152fc1d062f63eea82da2baa0d10595218adaa18e1d1a"
+    },
+    {
+      "path": "acmart.cls",
+      "bytes": 121737,
+      "sha256": "2f949e6e3f2a79f2cdc218b9dcdbaa7dd451adb4ee0be1af6dc7ebe00b318ea7"
+    },
+    {
+      "path": "background_and_motivation.tex",
+      "bytes": 10952,
+      "sha256": "580ad4d9d17ecdbe3b9516a02090c9be4a26914ee9f693992e6bf302811badd2"
+    },
+    {
+      "path": "figures/agent-prefix-reuse.pdf",
+      "bytes": 18742,
+      "sha256": "57acc696728d4bcc7d889c3ffff65ab5c2dfa2bbc20d60e42ab86e91a57f9aae"
+    },
+    {
+      "path": "figures/eval-branch-exposure.pdf",
+      "bytes": 27774,
+      "sha256": "ec676679433789969c784baa394ecce4ac229acdc2e330d45a129219f4e33450"
+    },
+    {
+      "path": "figures/eval-burst-interference.pdf",
+      "bytes": 16646,
+      "sha256": "3af4c3606eaef9d51f77b277d9d53f402054873223a0fb93d509bbf60fdca965"
+    },
+    {
+      "path": "figures/eval-capacity-frontier.pdf",
+      "bytes": 18158,
+      "sha256": "bddeb97b10ce9e6b6ccce8ad86a4a515f6b3e6326bc91aaa8f1c795d602f9643"
+    },
+    {
+      "path": "figures/eval-layer-factorial.pdf",
+      "bytes": 16464,
+      "sha256": "7eb7ddb8cc6df940c3c8370dd45dd4bf0a64951dca87ab33d7b3bb35c6384045"
+    },
+    {
+      "path": "figures/eval-rental-cost.pdf",
+      "bytes": 12673,
+      "sha256": "54fa5818f65abbccf8a1c66df62584e1e3a7e9e08044474a47699d06f17c7909"
+    },
+    {
+      "path": "figures/eval-trace-penalty.pdf",
+      "bytes": 16393,
+      "sha256": "a3442352bb98737430217b3a439694a5579288dd76fb3cf15aaa544fdcee66a5"
+    },
+    {
+      "path": "figures/eval-value-ablation.pdf",
+      "bytes": 17356,
+      "sha256": "0f48bd7e347fc832c6741daaaca8975c3175a430e33326549757487edaadc031"
+    },
+    {
+      "path": "figures/eval-workflow-outcomes.pdf",
+      "bytes": 17020,
+      "sha256": "97e987cf11ba70ccae42921e2d3f7b366f4533ac0bed4db46eae5166ad99b354"
+    },
+    {
+      "path": "figures/preview/agent-prefix-reuse.png",
+      "bytes": 61413,
+      "sha256": "68f64ebceb32880e9761e7c112c6684b81c553e8a24522278c74b9b8e7825e50"
+    },
+    {
+      "path": "figures/preview/eval-branch-exposure.png",
+      "bytes": 30227,
+      "sha256": "8e6e03d09408b1287bd3d0e098bc0fa259ab87c0d51a665f2fba4085dc0092ed"
+    },
+    {
+      "path": "figures/preview/eval-burst-interference.png",
+      "bytes": 56174,
+      "sha256": "ee25ccbfbda5fca3871daede9921b6572a069ebe3e85c09aa066d31879ab2e11"
+    },
+    {
+      "path": "figures/preview/eval-capacity-frontier.png",
+      "bytes": 53503,
+      "sha256": "40653f2cde83f140d488b7a554250eca4f6e9be7394b83ab534ada0cb3bc86eb"
+    },
+    {
+      "path": "figures/preview/eval-layer-factorial.png",
+      "bytes": 56756,
+      "sha256": "96402f2895c8db15973f6db3a780d1bfc126e8bc30a98d60cb9fd83478c61338"
+    },
+    {
+      "path": "figures/preview/eval-rental-cost.png",
+      "bytes": 43526,
+      "sha256": "bcd476dc79a662d38d57ccee88873aceb120bba5361c12676a00a863bbb927cf"
+    },
+    {
+      "path": "figures/preview/eval-trace-penalty.png",
+      "bytes": 41062,
+      "sha256": "f5bff34e67797f720b36ae86d36c91129ceba37741dce653c2636ed43a682a86"
+    },
+    {
+      "path": "figures/preview/eval-value-ablation.png",
+      "bytes": 48310,
+      "sha256": "3fafa49810896c107e67affba88f63b6c2307cf09c86fab12cd8dd0c4f365b98"
+    },
+    {
+      "path": "figures/preview/eval-workflow-outcomes.png",
+      "bytes": 52500,
+      "sha256": "a2394c0cf1f6c3c3ac55001fcd1e3de8556b13f951e0c52d79ee59b54c391f8d"
+    },
+    {
+      "path": "figures/preview/recovery-cost.png",
+      "bytes": 46316,
+      "sha256": "629471cbd674b1eb8357812cd2c868a0bc77623bd4e6224892ee20cdd61ef740"
+    },
+    {
+      "path": "figures/preview/recovery-exposure.png",
+      "bytes": 47229,
+      "sha256": "e7587dc0aaae3064c95b9e5d04bbfe2606f417b28507b11c31995d7407111fbc"
+    },
+    {
+      "path": "figures/preview/recovery-pipeline.png",
+      "bytes": 102218,
+      "sha256": "b9725fd6e3fcdf3030ad3a4ce1511a1ba9c080840f3881257b31270ba03c5b41"
+    },
+    {
+      "path": "figures/preview/retention-value.png",
+      "bytes": 40733,
+      "sha256": "2da96fb9e90a7c9eaa99c1b5183951fd12009f6fddf5bf73356466cf199a1bef"
+    },
+    {
+      "path": "figures/preview/retry-kv-prediction.png",
+      "bytes": 44758,
+      "sha256": "28b3ef595b1794ebb5ab2623a2a8dd737e228c636e70b21160294599bc3f66c9"
+    },
+    {
+      "path": "figures/preview/sparse-recovery.png",
+      "bytes": 146643,
+      "sha256": "75a08b57a1d7dc0c0f1b268ffbc9f38328a9a651c41fddb3b0e564cf6cc52c2c"
+    },
+    {
+      "path": "figures/preview/system-overview.png",
+      "bytes": 226228,
+      "sha256": "cf03c811e421f22f3eb2788fb905bb554510dcfc44f472ace1ba2207abca667b"
+    },
+    {
+      "path": "figures/preview/tracker-correlations.png",
+      "bytes": 75509,
+      "sha256": "6ca007f6950db7d22f307bdea682b972e52093e092da34456914bf49af215e1f"
+    },
+    {
+      "path": "figures/preview/workflow-gaps.png",
+      "bytes": 31536,
+      "sha256": "d19039de03f8138c8c371f6100019c2527d46bfd2e99207296715c3b84b33cce"
+    },
+    {
+      "path": "figures/preview/workflow.png",
+      "bytes": 22887,
+      "sha256": "300721d3d17dbce17d8e910d21c2f548a28e0e68d18b162315e2ca8b86ce1d73"
+    },
+    {
+      "path": "figures/recovery-cost.pdf",
+      "bytes": 14548,
+      "sha256": "ca31826d6b0d938cc752f3bd86e9261aa938a3bff02d5970c2990df066f2ed42"
+    },
+    {
+      "path": "figures/recovery-exposure.pdf",
+      "bytes": 16635,
+      "sha256": "d9cd26c535f17a32dad309067a859d2578f13f4f8751d9beda20fdc58586e3d6"
+    },
+    {
+      "path": "figures/recovery-pipeline.pdf",
+      "bytes": 34902,
+      "sha256": "08870137fb479b18df155c89664a7b42d2068700a4906fd9fde108e73334c02d"
+    },
+    {
+      "path": "figures/retention-value.pdf",
+      "bytes": 11929,
+      "sha256": "4ae9554c5ab063dc1b79f7849bd9ece5598e5479a5954baca267c3f982a0968b"
+    },
+    {
+      "path": "figures/retry-kv-prediction.pdf",
+      "bytes": 19272,
+      "sha256": "25365ab0345e2430c5d011cebec34188ca40fff28570be30329872a961b2864d"
+    },
+    {
+      "path": "figures/sparse-recovery.pdf",
+      "bytes": 22560,
+      "sha256": "096b8618a54070cb21005bb70495573462dd5c391baa03a51302661196d1a49d"
+    },
+    {
+      "path": "figures/system-overview.pdf",
+      "bytes": 44082,
+      "sha256": "1a0df49b8cb6ba29fd646adfdaa414008e9b308c8dc461068ec655631204a77c"
+    },
+    {
+      "path": "figures/tracker-correlations.pdf",
+      "bytes": 36634,
+      "sha256": "6f88752b4013bd764f9e978cf1f6fd15351db0a6c6841cff722b707fabaaf29f"
+    },
+    {
+      "path": "figures/workflow-gaps.pdf",
+      "bytes": 13528,
+      "sha256": "281e5b4b6bbef372cb108644b9d2980325edbb28891e973cf98039900642f55b"
+    },
+    {
+      "path": "figures/workflow.pdf",
+      "bytes": 19789,
+      "sha256": "61f200ef5c6796a4a6cb6576c14471daf82e93a950f552a7b86cc9696d88e15b"
+    },
+    {
+      "path": "main.pdf",
+      "bytes": 881964,
+      "sha256": "02dd2e94da21f73406c8b07006dea7164a6ce46af26cd9e6400adb14bf3d92cf"
+    },
+    {
+      "path": "main.tex",
+      "bytes": 57122,
+      "sha256": "b238991a05b2f127989b582a64d28b391041495de7b9c01c5e466359e2ffdd04"
+    },
+    {
+      "path": "paper_draft.md",
+      "bytes": 48952,
+      "sha256": "cda7695e8906bfa457ff5d3edc79fa11968bc6d5f4d42485c42f4c915ccf9b72"
+    },
+    {
+      "path": "placeins.sty",
+      "bytes": 4087,
+      "sha256": "e6c6c01e0c057e360c07238cd765117e5d415c26c2ea1cdf141b7ddfaf151b0c"
+    },
+    {
+      "path": "references.bib",
+      "bytes": 18428,
+      "sha256": "57a0b38ef64c138d0f4fcae6f6531cf95608e7966ebdeda97f2d7f81f1f73adf"
+    },
+    {
+      "path": "system_design.tex",
+      "bytes": 23807,
+      "sha256": "c600d9a6ffb3d3f823f8c734f79e6d6a6156655b170b63ce694da920dd9c11ee"
+    }
+  ],
+  "figure_sources": {
+    "agent-prefix-reuse": "experiments/scripts/paper/render_agent_prefix_reuse.py",
+    "system-overview": "/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/exports/system-design-submit-review-20260921/sources/system-overview.drawio",
+    "sparse-recovery": "/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/exports/system-design-submit-review-20260921/sources/sparse-recovery.drawio",
+    "recovery-pipeline": "/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/experiments/scripts/paper/render_pipeline_single.py",
+    "tracker-correlations": "/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/experiments/scripts/paper/render_submit_design.py",
+    "retention-value": "/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/experiments/scripts/paper/render_submit_design.py",
+    "retry-kv-prediction": "experiments/scripts/paper/render_design_evidence.py"
+  },
+  "latest_manuscript_review": "/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/exports/system-design-submit-review-20260921/REVIEW.md",
+  "latest_design_review": "/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/exports/system-design-submit-review-20260921/REVIEW.md",
+  "latest_overview_review": "/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/exports/system-design-submit-review-20260921/REVIEW.md",
+  "archived_figure_sources": {
+    "overlap-frontier": "/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/experiments/scripts/paper/model_peer_overlap.py",
+    "placement-competition": "/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/exports/three-tier-peer-restored-20260921/sources/placement-competition.drawio",
+    "checkpoint-lifecycle": "/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/exports/three-tier-peer-restored-20260921/sources/checkpoint-lifecycle.drawio"
+  },
+  "restored_pipeline_provenance": "/home/comp/zhanzhao/MoonKVSim/benchmark/AegisKV/exports/system-design-submit-review-20260921/data/pipeline-provenance.json"
+}

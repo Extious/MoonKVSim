@@ -1,0 +1,128 @@
+--- before/background_and_motivation.tex
++++ paper/background_and_motivation.tex
+@@ -5,36 +5,95 @@
+ \subsection{Background}
+ \label{sec:motivation-background}
+ 
+-\paragraph{Multi-agent workflows.}
+-Coding assistants and research systems increasingly organize LLM calls
+-into multi-agent workflows~\cite{wu2023autogen,anthropic2025multiagent}.
+-An agent may have a predefined role, such as planner or reviewer, or be
+-created for a particular subtask. It can issue multiple LLM requests,
+-invoke tools, and incorporate their results before producing an output.
+-Sequential dependencies, parallel branches, and joins connect these
+-agents. A request, an agent, and the complete user workflow therefore
+-have different completion conditions.
+-
+-\paragraph{Prefill and reusable state.}
+-Prefill processes a request's input tokens and produces per-layer key and
+-value (KV) tensors. Subsequent computation can reuse this state instead
+-of processing the same prefix again. Agent histories often grow as later
+-requests include earlier reasoning, code, and tool outputs. Reusing their
+-KV saves computation, but retaining every growing history consumes memory.
+-Hierarchical caches extend GPU memory with host DRAM and larger storage
+-tiers~\cite{qin2025mooncake,gao2024cachedattention}.
+-
+-\paragraph{Failures at serving scale.}
+-A GPU or worker failure can interrupt an entire model replica, removing
+-both serving capacity and access to its active KV cache~\cite{cao2026lumen}.
+-Surviving KV copies allow recovery without reconstructing the complete
+-history; otherwise, retained tokens must be processed again.
+-KV checkpointing and load-aware recovery address these
+-costs~\cite{strati2024dejavu,jayakody2026ghostserve,cao2026lumen}.
+-We consider fail-stop failures with a compatible surviving replica,
+-retained token history and control state, and backup storage outside the
+-failed domain. Within this scope, we ask which histories deserve scarce
+-fast-tier capacity when their recovery affects a dependent workflow.
++\paragraph{From LLM requests to agent workflows.}
++An LLM request supplies an input sequence and receives generated tokens.
++An agent repeatedly makes such requests to carry out a task: it sends
++its current conversation to the model, interprets the response, executes
++any requested tools, and incorporates their results into a subsequent
++request~\cite{wu2023autogen}. For example, a coding agent may inspect a
++repository, generate a patch, run tests, and submit the test output to
++the model before revising the patch. Its lifetime spans multiple model
++calls and periods of tool execution. Between calls, the conversation
++persists even though the agent has no request executing on a GPU.
++
++A multi-agent application connects several such agents. A coordinator
++can delegate independent subtasks to subagents, each with its own
++conversation, and combine their outputs before continuing~\cite{anthropic2025multiagent}.
++This creates forks, joins and sequential dependencies. A branch can
++contain several model calls and tool invocations; completing one call
++does not necessarily complete that branch. The orchestration layer
++determines which outputs are required for subsequent work, whereas the
++serving engine executes the individual model requests. This distinction
++connects a serving interruption to the downstream agents that await its
++result.
++
++\paragraph{How KV state supports repeated execution.}
++An autoregressive Transformer first performs \emph{prefill} over input
++tokens, producing the state used to predict an output token. It then
++\emph{decodes} subsequent tokens incrementally. At each attention layer,
++the engine retains keys and values for processed tokens so later queries
++can use their representations without recomputing them. For conventional
++per-token KV layouts, every additional token adds state across layers
++and KV heads, so cache size grows with retained context length.
++KV contains intermediate model state; it is much larger than the token
++IDs from which that state can be reconstructed.
++
++This state can also be reused across requests. When a later call extends
++an earlier conversation under compatible model and position semantics,
++the engine can retain the matching prefix's KV and prefill only the new
++suffix~\cite{gao2024cachedattention,zheng2024sglang}. In the coding example,
++the next call can reuse the prior conversation while processing the newly
++appended test output. Reuse ends where the token prefix changes, for
++example after rewriting or summarizing history. Consequently, a completed
++request's KV can remain useful during a tool call or between agent turns;
++evicting it saves memory but may make the next call repeat prefix work.
++
++\paragraph{Retained state and the memory hierarchy.}
++GPU attention kernels consume KV in high-bandwidth memory (HBM), where
++it competes with model weights, other requests and execution workspace.
++Hierarchical caches retain additional histories in host DRAM or storage
++and bring needed state back for execution~\cite{qin2025mooncake,gao2024cachedattention}.
++DRAM reuse adds host-to-device transfer; a filesystem-backed path also
++reads the stored state, potentially across a network. Layer prefetching
++can overlap these transfers with computation, so the delay exposed to
++the request depends on when the data is needed and whether sufficient
++independent computation remains. Keeping KV available therefore consumes
++both storage capacity and transfer bandwidth.
++
++Attention determines which retained state a computation accesses. Dense
++causal attention reads preceding tokens' KV, while sparse attention
++restricts queries to selected positions or blocks~\cite{jiang2024minference}.
++Selections may differ across layers and queries. A block skipped by one
++query can be needed later: reducing an attention operation's reads does
++not, by itself, make the skipped history disposable. This separates the
++state retained for future execution from the subset needed immediately.
++
++\paragraph{What a serving failure must recover.}
++A serving cluster runs multiple model replicas to distribute requests.
++One replica may span several GPUs through tensor parallelism; losing a
++participating GPU can make that replica unavailable. Such a failure
++interrupts its in-flight requests, removes access to their GPU-resident
++KV, and reduces the capacity available to serve them~\cite{cao2026lumen}.
++A surviving replica already has model weights, but still needs the
++interrupted requests' sequence-specific state. We consider fail-stop
++worker failures with accepted token histories and workflow state retained
++outside the failed worker, and a compatible surviving replica available.
++
++Without surviving KV, the destination must replay the retained tokens
++through the model to reconstruct state before continuing generation.
++A KV checkpoint instead preserves already computed state for a prefix.
++The destination retrieves that prefix and replays any later tokens whose
++KV was not saved; asynchronous copying can leave such a tail even when
++checkpointing is enabled. Checkpointing thus trades background copying
++and retained capacity for less reconstruction~\cite{strati2024dejavu,jayakody2026ghostserve}.
++The checkpoint must survive the protected failure: same-host memory can
++survive a GPU-process failure but cannot protect against loss of that host.
++Recovery scheduling must also accommodate the interrupted requests on
++the remaining serving capacity~\cite{cao2026lumen}. For an agent workflow,
++these retrieval, replay and queueing delays postpone a branch's result
++and can propagate through its dependencies. The following section
++examines when that delay reaches workflow completion and what it costs
++to keep the required KV readily available.
+ 
+ \begin{figure*}[t]
+   \centering

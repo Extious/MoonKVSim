@@ -165,6 +165,24 @@ def test_kv_shortage_preempts_tail_and_resumes_with_recompute() -> None:
 
     assert pressured.preempted_req_ids == ("tail",)
     assert pressured.scheduled_req_ids == ("head",)
+    assert pressured.preemption_details == (
+        {
+            "reason": "KV_BLOCK_PRESSURE",
+            "trigger_request_id": "head",
+            "victim_request_id": "tail",
+            "victim_num_computed_tokens_before_preemption": 8,
+            "victim_prompt_tokens": 8,
+            "victim_output_tokens_before_preemption": 0,
+            "victim_phase_before_preemption": "DECODE",
+            "required_blocks": 1,
+            "free_blocks_before_reclaim": 0,
+            "free_blocks_after_reclaim": 0,
+            "logical_blocks_before_reclaim": 0,
+            "logical_blocks_after_reclaim": 0,
+            "physical_blocks_before_reclaim": 0,
+            "physical_blocks_after_reclaim": 0,
+        },
+    )
     assert tail.status is RequestStatus.PREEMPTED
     assert tail.num_computed_tokens == 0
     assert tail.num_preemptions == 1
@@ -181,8 +199,73 @@ def test_kv_shortage_preempts_tail_and_resumes_with_recompute() -> None:
     assert resumed.num_computed_tokens_after == 8
 
 
+def test_running_chunked_prefill_uses_partial_capacity_without_self_preemption() -> None:
+    scheduler = make_scheduler(
+        num_gpu_blocks=6,
+        block_size_tokens=4,
+        token_budget=16,
+    )
+    request = make_request("long-prefill", 24)
+    scheduler.add_request(request)
+
+    first = scheduler.schedule()
+    second = scheduler.schedule()
+
+    assert first.num_scheduled_tokens == {"long-prefill": 16}
+    assert second.num_scheduled_tokens == {"long-prefill": 4}
+    assert second.preempted_req_ids == ()
+    assert second.scheduled_running_reqs[0].num_computed_tokens_before == 16
+    assert second.scheduled_running_reqs[0].num_computed_tokens_after == 20
+    assert request.num_preemptions == 0
+
+
+def test_scheduler_step_stops_at_prefill_decode_boundary() -> None:
+    scheduler = make_scheduler(
+        num_gpu_blocks=8,
+        block_size_tokens=4,
+        token_budget=16,
+    )
+    request = make_request("boundary", 6)
+    scheduler.add_request(request)
+
+    prefill = scheduler.schedule().scheduled_new_reqs[0]
+    scheduler.append_output_tokens(request.request_id, count=1)
+    decode = scheduler.schedule().scheduled_running_reqs[0]
+
+    assert prefill.phase is SchedulingPhase.PREFILL
+    assert prefill.num_scheduled_tokens == 6
+    assert prefill.num_computed_tokens_after == request.prompt_tokens
+    assert prefill.chunked is False
+    assert decode.phase is SchedulingPhase.DECODE
+    assert decode.num_scheduled_tokens == 1
+
+
+def test_decode_schedules_one_token_when_multiple_outputs_are_materialized() -> None:
+    scheduler = make_scheduler(
+        num_gpu_blocks=8,
+        block_size_tokens=4,
+        token_budget=16,
+    )
+    request = make_request("decode-budget", 4)
+    scheduler.add_request(request)
+    scheduler.schedule()
+    scheduler.append_output_tokens(request.request_id, count=3)
+
+    first = scheduler.schedule().scheduled_running_reqs[0]
+    second = scheduler.schedule().scheduled_running_reqs[0]
+
+    assert first.phase is SchedulingPhase.DECODE
+    assert first.num_scheduled_tokens == 1
+    assert second.phase is SchedulingPhase.DECODE
+    assert second.num_scheduled_tokens == 1
+
+
 def test_ready_remote_prefix_owner_precedes_newly_preempted_recompute() -> None:
-    scheduler = make_scheduler(num_gpu_blocks=4, block_size_tokens=4, token_budget=8)
+    scheduler = make_scheduler(
+        num_gpu_blocks=4,
+        block_size_tokens=4,
+        token_budget=12,
+    )
     running = make_request("running", 12)
     restored = make_request("restored", 8)
     scheduler.add_request(running)
@@ -195,7 +278,9 @@ def test_ready_remote_prefix_owner_precedes_newly_preempted_recompute() -> None:
     pressured = scheduler.schedule()
 
     assert pressured.preempted_req_ids == (running.request_id,)
-    assert scheduler.waiting_request_ids == (restored.request_id, running.request_id)
+    # Preemption prepends ordinary waiting; external skipped owners are
+    # selected first when the next scheduler traversal begins.
+    assert scheduler.waiting_request_ids == (running.request_id, restored.request_id)
 
     admitted = scheduler.schedule()
 
@@ -205,7 +290,71 @@ def test_ready_remote_prefix_owner_precedes_newly_preempted_recompute() -> None:
     assert running.status is RequestStatus.PREEMPTED
 
 
-def test_failure_recovery_priority_preempts_one_running_slot_then_admits() -> None:
+def test_local_prefix_arrivals_do_not_overtake_preempted_long_request() -> None:
+    scheduler = make_scheduler(num_gpu_blocks=80, token_budget=16)
+    old = make_request("old", 32)
+    scheduler.add_request(old)
+    scheduler.schedule()
+    scheduler._running.remove(old)
+    scheduler._preempt_for_recompute(old)
+    for i in range(6):
+        new = make_request(f"new-{i}", 16)
+        scheduler.add_request(new)
+        scheduler.mark_waiting_for_remote_kv(new.request_id, external=False)
+        scheduler.restore_waiting_request_prefix(new.request_id, restored_tokens=4)
+    step = scheduler.schedule()
+    assert step.scheduled_req_ids == (old.request_id,)
+    assert old.num_computed_tokens == 16
+    scheduler.audit()
+
+
+def test_preempted_connector_reload_preserves_emitted_output() -> None:
+    scheduler = make_scheduler(num_gpu_blocks=30, token_budget=16)
+    request = make_request("resume", 16)
+    scheduler.add_request(request)
+    scheduler.schedule()
+    scheduler.append_output_tokens(request.request_id)
+    scheduler._running.remove(request)
+    scheduler._preempt_for_recompute(request)
+    scheduler.mark_waiting_for_remote_kv(request.request_id)
+    scheduler.restore_waiting_request_prefix(request.request_id, restored_tokens=16)
+    step = scheduler.schedule()
+    assert step.scheduled_resumed_reqs[0].num_computed_tokens_before == 16
+    assert step.scheduled_resumed_reqs[0].num_scheduled_tokens == 1
+    assert request.num_output_tokens == 1
+    assert request.num_computed_tokens == 17
+    scheduler.audit()
+
+
+def test_capacity_blocked_head_does_not_dispatch_later_connector_gets() -> None:
+    scheduler = make_scheduler()
+    for name in ("old", "new"):
+        scheduler.add_request(make_request(name, 16))
+    visited = []
+    def prepare(request, budget):
+        visited.append(request.request_id)
+        return False
+    scheduler.waiting_prefix_provider = prepare
+    assert not scheduler.schedule().scheduled_req_ids
+    assert visited == ["old"]
+
+
+def test_inflight_get_holds_logical_capacity_against_other_requests() -> None:
+    scheduler = make_scheduler(num_gpu_blocks=5, token_budget=16)
+    loader = make_request("loader", 16)
+    scheduler.add_request(loader)
+    scheduler.reserve_external_pages(loader.request_id, 16)
+    scheduler.mark_waiting_for_remote_kv(loader.request_id)
+    scheduler.add_request(make_request("cold", 16))
+    assert not scheduler.schedule().scheduled_req_ids
+    scheduler.restore_waiting_request_prefix(loader.request_id, restored_tokens=16)
+    step = scheduler.schedule()
+    assert step.scheduled_req_ids == (loader.request_id,)
+    assert not scheduler._external_page_reservations
+    scheduler.audit()
+
+
+def test_failure_recovery_priority_waits_for_running_slot_without_destroying_progress() -> None:
     scheduler = make_scheduler(
         num_gpu_blocks=10,
         block_size_tokens=4,
@@ -219,18 +368,54 @@ def test_failure_recovery_priority_preempts_one_running_slot_then_admits() -> No
     scheduler.add_request(tail)
     scheduler.schedule()
     scheduler.add_request(recovery)
-    scheduler.prioritize_waiting_recovery(recovery.request_id)
+    scheduler.prioritize_waiting_recovery(
+        recovery.request_id,
+        priority_key=(10, 100, recovery.request_id),
+    )
 
     pressured = scheduler.schedule()
 
-    assert pressured.preempted_req_ids == (tail.request_id,)
-    assert scheduler.waiting_request_ids == (recovery.request_id, tail.request_id)
+    assert pressured.preempted_req_ids == ()
+    assert scheduler.waiting_request_ids == (recovery.request_id,)
+    assert tail.status is RequestStatus.RUNNING
+    assert tail.num_computed_tokens > 0
 
+    scheduler.finish_request(tail.request_id, RequestStatus.FINISHED_STOPPED)
     admitted = scheduler.schedule()
 
     assert admitted.scheduled_req_ids[0] == recovery.request_id
     assert recovery.status is RequestStatus.RUNNING
-    assert tail.status is RequestStatus.PREEMPTED
+    assert tail.status is RequestStatus.FINISHED_STOPPED
+
+
+def test_failure_recovery_priority_orders_waiters_by_current_slack() -> None:
+    scheduler = make_scheduler(
+        num_gpu_blocks=12,
+        block_size_tokens=4,
+        token_budget=16,
+        max_running=2,
+    )
+    loose = make_request("loose", 4)
+    urgent = make_request("urgent", 4)
+    ordinary = make_request("ordinary", 4)
+    scheduler.add_request(loose)
+    scheduler.add_request(ordinary)
+    scheduler.add_request(urgent)
+
+    scheduler.prioritize_waiting_recovery(
+        loose.request_id,
+        priority_key=(100, 10, loose.request_id),
+    )
+    scheduler.prioritize_waiting_recovery(
+        urgent.request_id,
+        priority_key=(5, 20, urgent.request_id),
+    )
+
+    assert scheduler.waiting_request_ids == (
+        urgent.request_id,
+        loose.request_id,
+        ordinary.request_id,
+    )
 
 
 def test_local_prefix_hit_recomputes_final_full_prompt_block_and_shares_refcount() -> None:
@@ -317,6 +502,24 @@ def test_waiting_request_stays_queued_when_blocks_are_unavailable() -> None:
     assert output.scheduled_req_ids == ("first",)
     assert scheduler.running_request_ids == ("first",)
     assert scheduler.waiting_request_ids == ("blocked",)
+
+
+def test_full_input_admission_checks_prompt_but_allocates_only_the_chunk() -> None:
+    scheduler = make_scheduler(num_gpu_blocks=6, token_budget=4)
+    scheduler.scheduler_reserve_full_isl = True
+    resident = make_request("resident", 8)
+    scheduler.restore_request_prefix(resident, restored_tokens=4)
+    blocked = make_request("long-input", 16)
+    scheduler.add_request(blocked)
+    scheduler.schedule()
+    # Two pages remain owned by resident; only three are free. Checking the
+    # first four-token chunk alone would over-admit the four-page input.
+    assert scheduler.waiting_request_ids == (blocked.request_id,)
+    scheduler.finish_request(resident.request_id, RequestStatus.FINISHED_STOPPED)
+    [admitted] = scheduler.schedule().scheduled_new_reqs
+    assert admitted.request_id == blocked.request_id
+    assert admitted.num_scheduled_tokens == 4
+    assert len(scheduler.request_block_ids(blocked.request_id)) == 1
 
 
 def test_identical_inputs_produce_byte_identical_scheduler_outputs() -> None:

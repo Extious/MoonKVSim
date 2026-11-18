@@ -1,0 +1,28 @@
+% Method wording prepared while the maximum-context measurement is running.
+% Insert measured coverage and values only after the final run is reconciled.
+We measure Qwen2.5-7B-Instruct-1M~\cite{qwen2025qwen25oneM} on two
+A100 PCIe 40\,GB GPUs with tensor parallelism two, BF16 weights and KV,
+and batch one. The SGLang 0.5.10rc0 worker uses native Dual Chunk Attention,
+with sparse acceleration disabled. An A100-compatible FlashAttention build
+and FlashInfer SiLU are fixed across all paths. The input is a fixed
+synthetic text stream, truncated to each total context length $C=M+64$.
+Each plotted point is one timed execution after warmup, rather than an
+average over independent workloads.
+
+HBM reuse begins with the complete historical KV resident in the recovery
+GPU group. DRAM reuse restores the same history from pinned host memory,
+then computes the tail; H2D time is measured directly, without assumed
+bandwidth or transfer--compute overlap. Recompute begins with empty KV,
+rebuilds $M$ in chunks of at most 8,192 tokens, and processes the same
+separate 64-token tail. This fixed boundary preserves the execution
+partition used to construct the saved state. Timing ends after synchronized
+model-forward completion, before vocabulary projection. Every timed trial
+checks all-layer tail KV, hidden states, and the next greedy token against
+the reference execution.
+
+These are worker-level path costs for this implementation. They exclude
+fault detection, queueing, backup creation, model loading, and service
+handoff. Complete-history HBM residency is a reuse reference, not a
+finite-capacity Peer policy; serialized DRAM is not an optimized overlapping
+recovery baseline. The measurements therefore motivate preserving reusable
+state without establishing end-to-end WCT gains or model quality at 1M.

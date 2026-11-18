@@ -1,0 +1,290 @@
+--- before/benchmark/AegisKV/paper/draft/system_design.md
++++ benchmark/AegisKV/paper/draft/system_design.md
+@@ -4,7 +4,7 @@
+ 
+ ### 3.1 Insights 与设计启示
+ 
+-**Insight 1：从工作流进度估计延迟容忍度，但时间估计前提仍需验证。** 重复角色提供历史画像的基础，但多轮 agent 时长还包含工具与服务延迟。图 3(a) 的 CC 轨迹按 workflow 隔离预测中，进度 GBDT 的归一化误差中位数为 51.8%，持续时间中位数基线为 49.3%；角色标签全部为 `Subagent`，尚不能证明按角色准确预测。Tracker 因而将时间估计与 DAG 上的 Slack 传播分开，并对未知后继保守处理。
++**Insight 1：从工作流进度估计延迟容忍度，但时间估计前提仍需验证。** 重复角色提供历史画像的基础，但多轮 agent 时长还包含工具与服务延迟。图 3(a) 的 CC 轨迹按 workflow 隔离预测中，进度 GBDT 的归一化误差中位数为 51.8%，持续时间中位数基线为 49.3%；角色标签全部为 `Subagent`，尚不能证明按角色准确预测。算法 1 将 GBDT 时间预测与 CPM Slack 传播分开；这一诊断尚未验证完整 Tracker 及其保护决策。
+ 
+ **Insight 2：稀疏注意力改变恢复时需要保护的对象。** 长上下文模型已采用 InfLLMv2、DSA 以及压缩/混合注意力。图 3(b) 的十个发布实例说明适用模型的存在，不代表市场采用率，也不意味着每层都使用相同的 Top-k。Planner 接收真实的逐层选择与模型特定恢复状态，而不将所有历史 KV 字节视为等价。
+ 
+@@ -32,21 +32,50 @@
+ 
+ Peer 目标在故障前确定，例如 $n\ge2$ 个 DP 采用 $p(g)=(g+1)\bmod n$，使接管端直接读取本地副本。TP 组按兼容分片恢复；分散到多个接管目标同样需要提前绑定请求和副本。目录与提交元数据保存在源故障域之外。Planner 默认每 1 s 或显著请求/Slack 事件后刷新；静态画像确定热集大小，Adapter 计数更新块身份。
+ 
+-### 3.3 Workflow Tracker：层级与优先级 ①
++### 3.3 Workflow Tracker：GBDT 与 CPM ①
+ 
+-Tracker 用每个角色最近 200 次完成或一小时内时长的 P90 估计未开始节点；无画像时退回全局分布。运行中节点取 $\max(\widehat T_\rho-\mathrm{elapsed},\tau_{\min})$。在已知 DAG 上作前向/后向关键路径传播，得到 $\sigma_r=\mathrm{LF}_r-\mathrm{EF}_r$；未知后继按 $\sigma_r=0$。节点事件和放置窗口触发更新，层级阈值采用 20% 滞回。这些规则是保守启发式，不是 Slack 误差上界；乐观估计可能将请求误放入无保护的 Tier R。
++Tracker 先用 GBDT 预测 agent 剩余执行时间，再用关键路径法（CPM）计算 Slack，过程见算法 1。在时刻 $t$，残余 DAG $G_t=(V_t,E_t)$ 的节点是尚未完成的 **agent 执行段**：每段包含依赖屏障之间的连续多轮请求；父 agent 在分叉/汇合处拆段，避免将子 agent 的执行时间重复计为父 agent 的等待时间。已完成的段移除，每个活跃请求 $r$ 映射至所属执行段 $a(r)$。
+ 
+-设 $T_{\mathrm{rc}}$ 为历史重算代价，$T_{\mathrm{rp}}$ 为已知尾部重放计算代价，$W_0$ 为无 Peer 时暴露的 DRAM 等待；$R_{\mathrm{floor}}$ 包含检测、重新路由与准入。Planner 使用
++**预测剩余时间。** GBDT $f_\theta$ 的特征包括角色/模型、已运行时间、已知 prompt 长度，以及已完成请求的数量、输出长度和延迟。历史运行快照的训练标签为 $t_a^{\mathrm{finish}}-t$；入口快照的标签为执行段总时长，并遮蔽启动前不可知的元数据。因此，未启动段预测的是依赖就绪后的执行时长。未来请求、未来输出和最终完成时刻不作为输入特征。模型直接输出剩余时长，不再减一次已运行时间。
++
++**算法 1：GBDT–CPM Slack 估计**
++
++```text
++Input: residual DAG Gt, visible features x(t), trained GBDT fθ,
++       live requests Rt, request-to-segment map a(r)
++Output: request Slack σ
++1  σr ← 0 for all r ∈ Rt
++2  if DAG structure incomplete: return σ
++3  za ← fθ(xa(t)) for all a ∈ Vt
++4  if any prediction unavailable or invalid: return σ
++5  d̂a ← max(ε, za) for all a; π ← Topo(Gt)
++6  for a in π:
++7      EFa ← d̂a + max{EFb : b ∈ P(a)}
++8  T ← max({0} ∪ {EFa : a ∈ Vt})
++9  for a in reverse π:
++10     LFa ← min{LFb − d̂b : b ∈ S(a)}
++11 for r ∈ Rt:
++12     σr ← max(0, LFa(r) − EFa(r))
++13 return σ
++```
++
++$P(a)$/$S(a)$ 为前驱/后继集合；无前驱时取最大值 0，无后继时取最小值 $T$；$\varepsilon>0$ 为剩余时长下限。EF 是相对当前时刻的最早完成时间，LF 是不推迟预测工作流完成时间 $T$ 的最晚完成时间。
++
++**传播并更新 Slack。** 活跃请求继承所属执行段的 $\sigma_r=\max(0,\mathrm{LF}_{a(r)}-\mathrm{EF}_{a(r)})$；同段请求共享这份余量，不能将其视为每个请求可独立累加的延迟预算。请求到达/完成、DAG 更新和放置窗口触发重算，CPM 的复杂度为 $O(|V_t|+|E_t|)$。若依赖结构尚不明确或预测不可用，该 workflow 的 Slack 取零；已知但尚未完成的前驱正常参与 CPM。这是规划估计，不是延迟保证；图 3(a) 是 agent episode 的预测诊断，尚未验证完整 Tracker。
++
++### 3.4 KV Placement Planner ②
++
++Planner 先选择前 $L$ 层中每层最热的 $K_l$ 个密封块，再在 Peer 预算内准入完整足迹。
++
++**选择保护层级。** 设 $T_{\mathrm{rc}}$ 为历史重算代价，$T_{\mathrm{rp}}$ 为已知尾部重放计算代价，$W_0$ 为无 Peer 时暴露的 DRAM 等待；$R_{\mathrm{floor}}$ 包含检测、重新路由与准入。Planner 使用
+ 
+ $$R_{\mathrm{base}}=R_{\mathrm{floor}}+T_{\mathrm{rp}},\qquad R_R=R_{\mathrm{base}}+T_{\mathrm{rc}},\qquad R_D=R_{\mathrm{base}}+W_0.$$
+ 
+-代价按模型、上下文、尾长、设备和代表性并发校准。若 $\sigma_r\ge R_R$，请求为 **Tier R**，计划无需备份；否则若 $\sigma_r\ge R_D$，为 **Tier D**，保留 DRAM；其余为 **Tier P**，保留 DRAM 并按 Slack 升序竞争 Peer。未获准的请求仍走 DRAM。
++代价按模型、上下文、尾长、设备和代表性并发校准。若 $\sigma_r\ge R_R$，请求为 **Tier R**，计划无需备份；否则若 $\sigma_r\ge R_D$，为 **Tier D**，保留 DRAM；其余为 **Tier P**，保留 DRAM 并按 Slack 升序竞争 Peer。层级变化采用 20% 滞回。未获准的请求仍走 DRAM。
+ 
+ Slack 决定整体准入顺序，不缩放请求足迹。整体准入使容量核算和更新更可预测，但可能留下空闲容量或错过部分保护的收益；它是策略取舍，不是全局最优结论，也不是恢复执行顺序。
+ 
+-### 3.4 KV Placement Planner ②
+-
+-Planner 先选择前 $L$ 层中每层最热的 $K_l$ 个密封块，再在 Peer 预算内准入完整足迹。对象为包含全部 KV heads 的 `(layer, block)`；当前画像使用 64-token 块。写满密封后才可复制，但故障后的可用前缀以提交前沿为准：未提交的密封块和活跃尾部都要重放。重放使用故障前已知的 token ID 重建 KV，不重新采样。
++**定义保护对象。** 对象为包含全部 KV heads 的 `(layer, block)`；当前画像使用 64-token 块。写满密封后才可复制，但故障后的可用前缀以提交前沿为准：未提交的密封块和活跃尾部都要重放。重放使用故障前已知的 token ID 重建 KV，不重新采样。
+ 
+ **离线定大小，在线定身份。** 第 $l$ 层的长度 $n$ 重放需要历史块并集 $U_l(n)=\bigcup_{q=1}^{n}\bigcup_g S_{l,q,g}$；$S$ 为原生选择器输出，重复读取只算一块。以模型、层、上下文档和尾长为索引的表估计 $h_l=|U_l|/B_l$，得到 $K_l=\lceil h_lB_l\rceil$；$B_l$ 为历史块数。强制起始/窗口块必须包含在 $K_l$ 内，画像跨请求缓慢更新。
+ 
+@@ -79,7 +108,9 @@
+ 
+ $$B=[\min(B_{\mathrm{cap}},\mathrm{pool}-\mathrm{watermark}-\mathrm{headroom})]^+.$$
+ 
+-算法按 Slack 升序准入完整足迹，物理共享对象只计一次；当前请求放不下时继续考虑后续较小请求。$A_r$ 包含前 $L$ 层选中的密封块及必需选择器状态，`sealed(r)` 包含全部密封历史 KV。
++算法 2 按 Slack 升序准入完整足迹，物理共享对象只计一次；当前请求放不下时继续考虑后续较小请求。$A_r$ 包含前 $L$ 层选中的密封块及必需选择器状态，`sealed(r)` 包含全部密封历史 KV。
++
++**算法 2：完整足迹放置**
+ 
+ ```text
+ Input: requests, Slack, profiles, rankings, window budget B
+@@ -121,3 +152,5 @@
+ 编辑记录（不进入论文）：原 3.4 与 3.5 合并为同一 KV Placement Planner 小节，按选块、确定层数、预算准入展开；Recovery Manager 和 Adapter 顺次成为 3.5、3.6。正文逐项引用 Figure 3(a)–(c)，流水线解释对应 Figure 5(a)–(d)。
+ 
+ 编辑记录（不进入论文）：用户进一步澄清主要问题为 Figure 3/5 的图内字体过大；本轮改用与正文一致的 Linux Libertine，原生字号由 10.25/10.5 pt 调至 10.05 pt，Figure 5 仅面板字母加粗。图尺寸、数据、引用与小节结构保持上一轮结果。
++
++编辑记录（不进入论文）：按用户确认，3.3 改为 GBDT 剩余时间预测与 CPM Slack 传播，并新增算法 1；原放置算法顺次成为算法 2。恢复代价与层级选择移入 3.4 Planner，角色 P90 不再作为当前 Tracker 的预测方法；图 3(a) 的 Median/P90 仍保留为原诊断基线。本轮补充的是论文算法规格，没有重新训练模型或验证端到端预测收益。
+--- before/benchmark/AegisKV/paper/figures/design-insights/README.md
++++ benchmark/AegisKV/paper/figures/design-insights/README.md
+@@ -32,7 +32,7 @@
+ | 训练折持续时间中位数减已运行时间 | 49.3% | 393.7% |
+ | 训练折 P90 减已运行时间 | 424.3% | 2,258.8% |
+ 
+-P90 的目标是保守估计而非最小 MAE，三条曲线不是“当前 P90 算法输给 GBDT”的结论。这里的 P90 使用整个训练折、全体同角色样本，不等于线上最近 200 次/1 小时的实现。当前算法保持角色 P90 不变。五折结果也不是按时间推进的部署验证。
++按用户 2026-09-18 的确认，当前 §3.3 采用 GBDT 预测剩余时间，再用 CPM 计算 Slack（算法 1）。本图的 Median/P90 保留为原诊断基线，P90 使用整个训练折、全体同角色样本，其目标也不是最小 MAE。本轮算法整理未改变图的数据或重新训练模型：图中的 GBDT 结果不能验证新增执行段定义、完整 Tracker 或后续保护决策，五折结果也不是按时间推进的部署验证。
+ 
+ 要得到用户所需的正面 Insight，需要带有明确角色/任务类型的重复执行记录，独立 workflow/时间段测试，报告预测区间覆盖与保护层级误判，并同时保留工具延迟与慢尾部。Pythia 的角色相关输出长度可以解释 profiling 动机，不能替代整个 agent 的执行时间证据。
+ 
+--- before/benchmark/AegisKV/paper/sections/README.md
++++ benchmark/AegisKV/paper/sections/README.md
+@@ -18,9 +18,9 @@
+ | `system_design.tex` | 章节入口 | — |
+ | `design_insights.tex` | 三个观察、设计启示、待解决的系统问题 | — |
+ | `system_overview.tex` | 三层职责、正常路径、预定接管位置、决策时间尺度 | — |
+-| `workflow_protection.tex` | Slack 估计、恢复代价、三种保护层级 | ① Tracker |
+-| `kv_placement.tex` | §3.4 Planner：保护单位、K 的大小与身份、流水线、L/F，并包含准入段 | ② Planner |
+-| `capacity_allocation.tex` | §3.4 内的预算准入段，由 `kv_placement.tex` 引入；窗口预算、算法 1、物理水位 | ② Planner |
++| `workflow_protection.tex` | §3.3：GBDT 剩余时间预测、agent 执行段、CPM Slack 传播与算法 1 | ① Tracker |
++| `kv_placement.tex` | §3.4 Planner：恢复代价与保护层级、保护单位、K 的大小与身份、流水线、L/F，并包含准入段 | ② Planner |
++| `capacity_allocation.tex` | §3.4 内的预算准入段，由 `kv_placement.tex` 引入；窗口预算、算法 2、物理水位 | ② Planner |
+ | `parallel_recovery.tex` | §3.5：故障信号、恢复上下文、并行 retry | ③ Recovery Manager |
+ | `kv_runtime.tex` | §3.6：副本提交、前台回收、逐请求装载与正确性 | ④ Adapter |
+ | `design_discussion.tex` | §3.6 末尾的简短适用边界段落 | — |
+@@ -95,6 +95,10 @@
+ 
+ ---
+ 
++## GBDT 与 CPM 算法（2026-09-18）
++
++按用户确认，§3.3 以算法 1 给出 GBDT 剩余时间预测、CPM 前向/后向传播和请求 Slack 更新。父子 agent 在 fork/join 处划分执行段，避免重复计算等待；输入仅包含当时可见的特征。未知依赖结构或缺失预测返回零 Slack。恢复代价、层级阈值与滞回移入 §3.4，原完整足迹放置顺次成为算法 2。图 3(a) 的负面诊断结果和图源数据保持不变，不将本轮论文算法规格视为新训练结果或完整 Tracker 的验证。中文草稿与图源说明同步更新；编译和 CPM 数学核对记录在 `output/pdf/aegiskv-gbdt-cpm-20260918/`。
++
+ # AegisKV LaTeX sections
+ 
+ `background_and_motivation.tex` 是 `../draft/background_and_motivation.md` 的英文初稿。`motivation-figures.tex` 将时长差分布、四分支真实 Workflow、同例恢复损失组成跨双栏 Figure 1(a)–(c)。`motivation-prefill-figure.tex` 保留稳定文件名和语义标签，内容已扩展为独立单栏 Figure 2 的三路径恢复估计。
+--- before/benchmark/AegisKV/paper/sections/capacity_allocation.tex
++++ benchmark/AegisKV/paper/sections/capacity_allocation.tex
+@@ -16,6 +16,7 @@
+ $\mathrm{sealed}(r)$ contains \emph{all} sealed historical KV.
+ 
+ \begin{figure}[t]
++  \raggedright
+   \refstepcounter{designalgorithm}\label{alg:placement}
+   \noindent\textbf{Algorithm \thedesignalgorithm: Whole-footprint placement}
+   \par\smallskip
+--- before/benchmark/AegisKV/paper/sections/design_insights.tex
++++ benchmark/AegisKV/paper/sections/design_insights.tex
+@@ -54,8 +54,9 @@
+ (Figure~\ref{fig:design-insights}(\subref{fig:insight-agent-time})) yields median normalized error
+ 51.8\% for progress GBDT versus 49.3\% for a median prior; all role labels
+ are \texttt{Subagent}. Thus accurate role-conditioned timing remains
+-unvalidated. The Tracker keeps estimation separate from DAG slack
+-propagation and conservatively handles unknown successors.
++unvalidated. Algorithm~\ref{alg:slack-estimation} separates GBDT
++prediction from CPM slack propagation; this audit does not validate
++the full Tracker or its protection decisions.
+ 
+ \paragraph{Insight 2: sparse attention changes the recovery objects.}
+ Long-context models use sparse mechanisms including InfLLMv2,
+--- before/benchmark/AegisKV/paper/sections/kv_placement.tex
++++ benchmark/AegisKV/paper/sections/kv_placement.tex
+@@ -4,6 +4,35 @@
+ 
+ Planner (2) protects the hottest $K_l$ sealed blocks in each of the
+ first $L$ layers, then admits complete footprints within the Peer budget.
++\paragraph{Choose protection tiers.}
++Let $T_{\mathrm{rc}}$ be historical-prefix recomputation cost,
++$T_{\mathrm{rp}}$ known-tail replay cost, and $W_0$ exposed DRAM-loading
++wait without Peer residency.
++Detection, rerouting, and readmission contribute $R_{\mathrm{floor}}$.
++The Planner uses
++\begin{equation}
++\begin{aligned}
++ R_{\mathrm{base}}&=R_{\mathrm{floor}}+T_{\mathrm{rp}},\\
++ R_R&=R_{\mathrm{base}}+T_{\mathrm{rc}},\quad
++ R_D=R_{\mathrm{base}}+W_0.
++\end{aligned}
++\label{eq:recovery-base}
++\end{equation}
++Costs are calibrated by model, context, tail length, hardware, and
++representative concurrency, rather than exclusive peak bandwidth.
++
++The three placement tiers are:
++\emph{R}, no required backup when $\sigma_r\ge R_R$;
++\emph{D}, DRAM only when $R_D\le\sigma_r<R_R$;
++and \emph{P}, DRAM coverage plus competition for Peer HBM otherwise.
++Tier changes use 20\% hysteresis. Tier-P requests compete by increasing slack; a skipped request retains
++its DRAM path. Slack orders admission but does not scale a request's
++footprint. Admitting whole footprints makes accounting and updates
++predictable under noisy estimates, at the cost of possible unused
++capacity or missed gains from partial protection. It is a policy choice,
++not an optimality claim or a serial recovery order.
++
++\paragraph{Define protection objects.}
+ A protection object is a \emph{(layer, block)} containing
+ all KV heads; the profiled selectors use 64-token blocks.
+ Sealing makes a full block eligible for copying, whereas the commit
+--- before/benchmark/AegisKV/paper/sections/workflow_protection.tex
++++ benchmark/AegisKV/paper/sections/workflow_protection.tex
+@@ -1,39 +1,67 @@
+-\subsection{Workflow Tracker: Tiers and Priority}
++\subsection{Workflow Tracker: GBDT and CPM}
+ \label{sec:workflow-protection}
+ 
+-Tracker (1) estimates node duration by the role's P90 over its most
+-recent 200 completions or one hour, with a global fallback for unseen
+-roles. A running node uses $\max(\widehat T_\rho-\mathrm{elapsed},\tau_{\min})$.
+-A forward/backward critical-path pass~\cite{kelley1959cpm} gives request
+-slack $\sigma_r=\mathrm{LF}_r-\mathrm{EF}_r$; unknown successors force
+-$\sigma_r=0$. Node events and placement windows refresh the estimates,
+-with 20\% hysteresis at tier thresholds. These are conservative
+-heuristics, not bounds on slack error; optimistic estimates can leave
+-a request unprotected in Tier R.
++Tracker (1) predicts remaining execution time with GBDT, then computes
++slack by CPM~\cite{kelley1959cpm} (Algorithm~\ref{alg:slack-estimation}).
++At time $t$, the residual DAG $G_t=(V_t,E_t)$ contains unfinished agent
++execution segments. A segment groups sequential requests between
++dependency barriers; parent agents split at fork/join boundaries so
++child execution is not counted again as parent waiting. Completed
++segments are removed, and each live request $r$ maps to its segment $a(r)$.
+ 
+-Let $T_{\mathrm{rc}}$ be historical-prefix recomputation cost,
+-$T_{\mathrm{rp}}$ known-tail replay cost, and $W_0$ exposed DRAM-loading
+-wait without Peer residency (Section~\ref{sec:kv-placement}).
+-Detection, rerouting, and readmission contribute $R_{\mathrm{floor}}$.
+-The Planner uses
+-\begin{equation}
+-\begin{aligned}
+- R_{\mathrm{base}}&=R_{\mathrm{floor}}+T_{\mathrm{rp}},\\
+- R_R&=R_{\mathrm{base}}+T_{\mathrm{rc}},\quad
+- R_D=R_{\mathrm{base}}+W_0.
+-\end{aligned}
+-\label{eq:recovery-base}
+-\end{equation}
+-Costs are calibrated by model, context, tail length, hardware, and
+-representative concurrency, rather than exclusive peak bandwidth.
++\paragraph{Predict remaining time.}
++The GBDT $f_\theta$ uses role/model, elapsed time, known prompt lengths,
++and completed-request counts, output lengths, and latencies.
++Historical running snapshots have target $t_a^{\mathrm{finish}}-t$;
++entry snapshots use segment duration, masking metadata unavailable
++before launch. Thus unstarted segments predict execution after their
++dependencies become ready. Future requests, outputs, and completion
++times are never input features. GBDT predicts the remaining duration
++directly; elapsed time is not subtracted again.
+ 
+-The three placement tiers are:
+-\emph{R}, no required backup when $\sigma_r\ge R_R$;
+-\emph{D}, DRAM only when $R_D\le\sigma_r<R_R$;
+-and \emph{P}, DRAM coverage plus competition for Peer HBM otherwise.
+-Tier-P requests compete by increasing slack; a skipped request retains
+-its DRAM path. Slack orders admission but does not scale a request's
+-footprint. Admitting whole footprints makes accounting and updates
+-predictable under noisy estimates, at the cost of possible unused
+-capacity or missed gains from partial protection. It is a policy choice,
+-not an optimality claim or a serial recovery order.
++\begin{figure}[t]
++  \raggedright
++  \refstepcounter{designalgorithm}\label{alg:slack-estimation}
++  \noindent\textbf{Algorithm \thedesignalgorithm: GBDT--CPM slack estimation}
++  \par\smallskip
++  \noindent Input: $G_t$, visible features $x(t)$, GBDT $f_\theta$, live
++  requests $\mathcal R_t$, and segment map $a(r)$.
++  Output: request slack $\sigma$.
++  \par\smallskip
++  \begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
++    \toprule
++     1 & $\sigma_r\gets0$ for all $r\in\mathcal R_t$ \\
++     2 & \textbf{if} DAG structure incomplete: \textbf{return} $\sigma$ \\
++     3 & $z_a\gets f_\theta(x_a(t))$ for all $a\in V_t$ \\
++     4 & \textbf{if} any prediction unavailable or invalid: \textbf{return} $\sigma$ \\
++     5 & $\widehat d_a\gets\max(\varepsilon,z_a)\ \forall a$; $\pi\gets\mathrm{Topo}(G_t)$ \\
++     6 & \textbf{for} $a$ in $\pi$: \\
++     7 & \quad $\mathrm{EF}_a\gets\widehat d_a+\max_{b\in P(a)}\mathrm{EF}_b$ \\
++     8 & $T\gets\max(\{0\}\cup\{\mathrm{EF}_a:a\in V_t\})$ \\
++     9 & \textbf{for} $a$ in reverse $\pi$: \\
++    10 & \quad $\mathrm{LF}_a\gets\min_{b\in S(a)}(\mathrm{LF}_b-\widehat d_b)$ \\
++    11 & \textbf{for} $r\in\mathcal R_t$: \\
++    12 & \quad $\sigma_r\gets\max(0,\mathrm{LF}_{a(r)}-\mathrm{EF}_{a(r)})$ \\
++    13 & \textbf{return} $\sigma$ \\
++    \bottomrule
++  \end{tabularx}
++  \par\smallskip
++  \noindent $P(a)$/$S(a)$: predecessors/successors. Empty predecessor
++  max is $0$; empty successor min is $T$; $\varepsilon>0$ is a
++  minimum remaining-time floor.
++  \Description{GBDT predicts remaining agent-segment durations. Forward
++    CPM computes earliest finishes and the workflow horizon; backward
++    CPM computes latest finishes. Requests inherit their segment's slack.
++    Incomplete dependency structure or unavailable predictions return zero slack.}
++\end{figure}
++
++\paragraph{Propagate and refresh slack.}
++The forward pass computes earliest finishes relative to now; the
++backward pass computes latest finishes without extending horizon $T$.
++Their difference is the segment slack inherited by its live requests.
++This shared margin is not an independent allowance for every request.
++Request arrivals/completions, DAG updates, and placement windows trigger
++refreshes; CPM costs $O(|V_t|+|E_t|)$. Unknown dependency structure or missing
++predictions force zero slack for that workflow. These are planning
++estimates, not delay guarantees: Figure~\ref{fig:design-insights}(\subref{fig:insight-agent-time})
++audits episode prediction but does not validate the complete Tracker.

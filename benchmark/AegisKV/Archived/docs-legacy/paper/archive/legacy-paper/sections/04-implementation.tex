@@ -1,0 +1,62 @@
+\section{Implementation and Simulation Model}
+\label{sec:implementation}
+
+\paragraph{Implementation map.}
+\system{} is implemented across a workflow runtime, system-level DP Router,
+Mooncake Store Master, and vLLM Workers.  The runtime publishes causal Slack;
+the Router binds source, compatible target, route version, and output fence;
+Store Master maintains chunk/version/residency metadata and both pool-local
+victim indices; Workers execute independent copies and recovery.  This source
+implementation fixes ownership, state transitions, and event contracts, while
+all quantitative results in this paper come from SGLSim rather than physical
+vLLM/CUDA/Mooncake execution.
+
+At each chunk seal, HBM and DRAM independently reserve final space and create
+their own \textsc{Pending} records.  The source sends D2D/P2P to route-bound
+Peer HBM and direct D2H to Store DRAM.  Each queue validates complete shards,
+route/model/layout, and version before its own \textsc{Committed} transition;
+failure aborts only that path.  Thus \textsc{HbmOnly}, \textsc{DramOnly}, and
+\textsc{HbmAndDram} arise from two source-owned commits, never target handoff
+or HBM-to-DRAM traffic.  Recovery consumes the longest valid contiguous prefix
+and recomputes the remainder.
+
+\paragraph{Discrete-event model.}
+SGLSim uses an isolated metadata driver with rank-local FCFS service, not the
+online SGLang scheduler.  Timestamped events cover offered arrival, modeled
+prefill/decode service, chunk seal, per-tier copy/commit, eviction, AIMD window,
+fail-now query, repair marker, and release.  A transfer of $b$ bytes on path
+$r$ takes
+\begin{equation}
+  T_r(b)=\ell_r+b/B_r+Q_r(b),
+  \label{eq:sim-transfer}
+\end{equation}
+where $\ell_r$, $B_r$, and $Q_r$ are declared setup, effective rate, and that
+path's serialized-lane queue.  HBM and DRAM lanes may overlap; PP=4 stages have
+independent effective lanes, so shared-NIC contention is outside the model.
+Compute, transfer, and recovery profiles are immutable inputs, not fitted to
+outcomes.
+
+KV is sealed in 4096-token prefix and 256-token decode chunks; actual bytes
+follow realized tokens, dtype, and layout.  Each tier exposes one safe suffix
+tail per request.  When Algorithm~3 lowers HBM quota below occupancy, new HBM
+admission pauses and Store Master directly reclaims low-value tails, including
+\textsc{HbmOnly}.  Whole-chunk allocation quantization can make effective HBM
+quota zero while preserving foreground reserve.
+
+\paragraph{Counterfactual and audit boundary.}
+The production contract includes source fencing, compatible standby activation,
+target rebinding, and independent DRAM survival.  The simulator instead samples
+one GPU-shard fail-now event, invalidates affected logical-replica Peer HBM, and
+estimates recovery from committed HBM, DRAM, and recomputation.  Its 60-second
+repair marker only re-enables future HBM admission: it does not execute queue
+outage, worker replacement, rerouting, standby rotation, old-copy restoration,
+or re-protection.  At PP=4, one stage-shard event conservatively invalidates
+aggregate replica HBM.  Reported delay is therefore a protection/recovery
+surrogate, not output-resume time.
+
+Every run retains workflow, control-window, failure, repair, admission,
+residency, alpha, occupancy, copy, reuse, and recovery records.  Audits replay
+state and byte conservation, independent path ACKs, HBM-reject then DRAM-admit,
+direct \textsc{HbmOnly} reclaim, and absence of target-owned/HBM-to-DRAM events.
+Trace, configuration, source, seed schedule, raw rows, aggregates, and figures
+are hash-bound; a missing or failed check makes a cell ineligible.

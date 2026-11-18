@@ -14,7 +14,9 @@ import pytest
 import moonkvsim.aegiskv.experiment_suite as suite
 from moonkvsim.aegiskv.experiment import (
     CellSpec,
+    FailureEventSchedule,
     FailureSchedule,
+    ModelParameters,
     StudyRunResult,
     qwen3_8b_dp_deployment,
 )
@@ -190,45 +192,83 @@ def _payload(spec: CellSpec) -> dict[str, Any]:
 
 def _fake_run(_records: object, spec: CellSpec) -> StudyRunResult:
     failure = spec.failure_schedule is not None
-    representative = (
-        {
-            "failure_events": [
+    failure_events: list[dict[str, Any]] = []
+    recovery_events: list[dict[str, Any]] = []
+    peer_hbm_timelines: dict[str, list[dict[str, int]]] = {}
+    if spec.failure_schedule is not None:
+        for event_schedule in spec.failure_schedule.events:
+            failure_at_ns = 100 + 100 * event_schedule.event_index
+            repair_completed_at_ns = (
+                None
+                if event_schedule.gpu_recovery_time_ns is None
+                else failure_at_ns + event_schedule.gpu_recovery_time_ns
+            )
+            failure_events.append(
                 {
-                    "timestamp_ns": 100,
-                    "target_gpu_id": "gpu-0",
-                    "impacted_active_span_ids": ["span-0"],
+                    "failure_id": event_schedule.failure_id,
+                    "timestamp_ns": failure_at_ns,
+                    "target_gpu_id": event_schedule.target_gpu_id,
+                    "impacted_active_span_ids": [event_schedule.focus_span_id],
                     "impacted_queued_span_ids": [],
+                    "repair_completed_at_ns": repair_completed_at_ns,
                     "logical_trigger": {
-                        "focus_span_id": "span-0",
-                        "progress_per_mille": 100,
-                        "resolved_at_ns": 100,
+                        "focus_span_id": event_schedule.focus_span_id,
+                        "progress_per_mille": event_schedule.trigger_progress_per_mille,
+                        "resolved_at_ns": failure_at_ns,
                     },
                 }
-            ],
-            "recovery_events": [
-                {"timestamp_ns": 105, "event": "RECOVERY_PLAN", "span_id": "span-0"},
+            )
+            for offset, name in (
+                (5, "RECOVERY_PLAN"),
+                (10, "PROMPT_SUFFIX_RECOMPUTE_START"),
+                (20, "PROMPT_SUFFIX_RECOMPUTE_COMPLETE"),
+                (20, "SILENT_REPLAY_START"),
+                (30, "SILENT_REPLAY_COMPLETE"),
+                (30, "RECOVERY_ATOMIC_ACTIVATION"),
+            ):
+                recovery_events.append(
+                    {
+                        "timestamp_ns": failure_at_ns + offset,
+                        "event": name,
+                        "span_id": event_schedule.focus_span_id,
+                    }
+                )
+            peer_hbm_timelines[event_schedule.target_gpu_id] = [
                 {
-                    "timestamp_ns": 110,
-                    "event": "PROMPT_SUFFIX_RECOMPUTE_START",
-                    "span_id": "span-0",
+                    "occupied_bytes": 0,
+                    "committed_bytes": 0,
+                    "pending_bytes": 0,
+                    "unavailable_bytes": 0,
                 },
                 {
-                    "timestamp_ns": 120,
-                    "event": "PROMPT_SUFFIX_RECOMPUTE_COMPLETE",
-                    "span_id": "span-0",
-                },
-                {"timestamp_ns": 120, "event": "SILENT_REPLAY_START", "span_id": "span-0"},
-                {
-                    "timestamp_ns": 130,
-                    "event": "SILENT_REPLAY_COMPLETE",
-                    "span_id": "span-0",
+                    "occupied_bytes": 10,
+                    "committed_bytes": 0,
+                    "pending_bytes": 10,
+                    "unavailable_bytes": 0,
                 },
                 {
-                    "timestamp_ns": 130,
-                    "event": "RECOVERY_ATOMIC_ACTIVATION",
-                    "span_id": "span-0",
+                    "occupied_bytes": 0,
+                    "committed_bytes": 0,
+                    "pending_bytes": 0,
+                    "unavailable_bytes": 100,
                 },
-            ],
+                *(
+                    [
+                        {
+                            "occupied_bytes": 0,
+                            "committed_bytes": 0,
+                            "pending_bytes": 0,
+                            "unavailable_bytes": 0,
+                        }
+                    ]
+                    if repair_completed_at_ns is not None
+                    else []
+                ),
+            ]
+    representative = (
+        {
+            "failure_events": failure_events,
+            "recovery_events": recovery_events,
             "transfers": [
                 {
                     "transfer_id": "transfer-committed",
@@ -261,28 +301,7 @@ def _fake_run(_records: object, spec: CellSpec) -> StudyRunResult:
                     ],
                 },
             ],
-            "peer_hbm_timelines": {
-                "gpu-0": [
-                    {
-                        "occupied_bytes": 0,
-                        "committed_bytes": 0,
-                        "pending_bytes": 0,
-                        "unavailable_bytes": 0,
-                    },
-                    {
-                        "occupied_bytes": 10,
-                        "committed_bytes": 0,
-                        "pending_bytes": 10,
-                        "unavailable_bytes": 0,
-                    },
-                    {
-                        "occupied_bytes": 0,
-                        "committed_bytes": 0,
-                        "pending_bytes": 0,
-                        "unavailable_bytes": 100,
-                    },
-                ]
-            },
+            "peer_hbm_timelines": peer_hbm_timelines,
             "store_dram_timelines": {
                 "store-0:segment-0": [
                     {"occupied_bytes": 0, "committed_bytes": 0, "pending_bytes": 0},
@@ -307,18 +326,34 @@ def _fake_schedule(
     *,
     bucket: str,
     seed: int,
-    parameters: object,
+    parameters: ModelParameters,
+    failure_count: int = 2,
+    workflow_concurrency: int | None = None,
+    compared_profiles: object = None,
 ) -> FailureSchedule:
-    del parameters
+    del workflow_concurrency, compared_profiles
     return FailureSchedule(
-        failure_id=f"failure:{bucket}:{seed}",
-        bucket=bucket,
-        seed=seed,
-        focus_span_id="span-0",
-        target_gpu_id="gpu-0",
-        reference_at_ns=100 + seed,
-        detection_delay_ns=5,
-        trigger_progress_per_mille=100,
+        tuple(
+            FailureEventSchedule(
+                failure_id=f"failure:{bucket}:{seed}:event-{event_index}",
+                event_index=event_index,
+                bucket=bucket,
+                seed=seed,
+                focus_span_id=f"span-{event_index}",
+                target_gpu_id=f"gpu-{event_index}",
+                reference_at_ns=100 + seed + event_index,
+                target_workload_progress_per_mille=(
+                    1_000 * (event_index + 1) + (failure_count + 1) // 2
+                )
+                // (failure_count + 1),
+                reference_completed_workflow_count=event_index + 1,
+                reference_workflow_count=failure_count + 1,
+                detection_delay_ns=parameters.failure_detection_ns,
+                trigger_progress_per_mille=parameters.failure_progress_per_mille,
+                gpu_recovery_time_ns=parameters.gpu_recovery_time_ns,
+            )
+            for event_index in range(failure_count)
+        )
     )
 
 
@@ -614,8 +649,8 @@ def test_complete_bundle_passes_and_cli_emits_canonical_json(
     report = AUDIT.audit_artifacts(bundle.matrix, bundle.figures)
     assert report["status"] == "PASS"
     assert report["matrix"]["artifact_count"] == 8
-    assert report["matrix"]["result_count"] == 860
-    assert report["matrix"]["pair_count"] == 430
+    assert report["matrix"]["result_count"] == 800
+    assert report["matrix"]["pair_count"] == 400
     assert report["matrix"]["config_snapshot_binding"] == "manifest_bound"
     assert report["figures"]["required_svg_count"] == 14
     assert report["figures"]["excluded_figure_ids"] == ["F12"]
@@ -628,6 +663,47 @@ def test_complete_bundle_passes_and_cli_emits_canonical_json(
     assert stdout == _canonical(json.loads(stdout))
     assert _tree_hashes(bundle.matrix) == matrix_before
     assert _tree_hashes(bundle.figures) == figures_before
+
+
+def test_matrix_auditor_accepts_compact_failure_v2_snapshot(bundle: Bundle) -> None:
+    path = bundle.matrix / "configs/failure.json"
+    _write_json(
+        path,
+        {
+            "schema": "moonkvsim.aegiskv.failure.v2",
+            "type": "GPU_FAILURE",
+            "conditioned_progress_per_mille": 100,
+            "per_gpu_mttf_hours": 100_000,
+            "gpu_recovery_time_hours": 0.88,
+            "detection_delay_ms": 5,
+        },
+    )
+    manifest = _read_json(bundle.matrix / "manifest.json")
+    manifest["config_snapshot"]["files"]["failure.json"] = {
+        "sha256": _sha256(path.read_bytes()),
+        "size_bytes": path.stat().st_size,
+    }
+    _write_json(bundle.matrix / "manifest.json", manifest)
+    _refresh_manifest(bundle.matrix)
+
+    state = AUDIT._validate_matrix(bundle.matrix)
+    assert state.config_snapshot_binding == "manifest_bound"
+
+
+def test_matrix_auditor_accepts_minimal_engine_v2_snapshot(bundle: Bundle) -> None:
+    path = bundle.matrix / "configs/engine.json"
+    _write_json(
+        path,
+        _read_json(ROOT / "benchmark/AegisKV/experiments/configs/engine.json"),
+    )
+    rows = tuple(_read_jsonl(bundle.matrix / "results.jsonl"))
+    provenance = _read_json(bundle.matrix / "provenance.json")
+    protocol = _read_json(bundle.matrix / "protocol.json")
+    scope = AUDIT._scope_for_contract(
+        provenance["model_deployment_contract"],
+        protocol,
+    )
+    AUDIT._validate_snapshot_configs(bundle.matrix, scope, rows, provenance)
 
 
 def test_cli_failure_is_canonical_and_creates_no_output(

@@ -1,0 +1,34 @@
+# Paper directory contract
+
+These are the user's current manuscript-maintenance preferences. Current user instructions take precedence; preserve unrelated active work and scientific provenance.
+
+- `paper/` is the sole directory downloaded for Overleaf. Keep compilation inputs and the explicitly requested writing companion `paper/paper_draft.md` with inline PNGs in `paper/figures/preview/` there. Scripts, logs, raw data, drawing sources and review artifacts stay outside `paper/`.
+- Keep exactly four root `.tex` files: `main.tex`, `abstract.tex`, `background_and_motivation.tex`, `system_design.tex`. The new Introduction, Evaluation, Related Work and Conclusion are inline in `main.tex`; subsection/algorithm/figure environments remain in their chapter.
+- Publish the canonical compiled manuscript as `paper/main.pdf`. Build from the repository root with `sh benchmark/AegisKV/experiments/scripts/paper/build_paper.sh`; auxiliaries stay in `exports/latex-build/`. Do not create a second current manuscript as `exports/aegiskv.pdf` or automatically create a ZIP.
+- Use descriptive figure filenames without figure-number prefixes. Let LaTeX captions/references number the figures. Preserve editable sources and replaced material in archives.
+
+## Current design and full-paper decision (2026-09-20)
+
+The user explicitly requested a complete EuroSys 2027 paper, confirmed abstract registration, and chose **DRAM plus SSD/shared storage, requiring a design rewrite**, in task `01a0befa-cbd6-78a3-acd9-bc8b3f24386b`. This supersedes the previous Peer-HBM R/D/P, layer-depth L, hot-block K and Peer-capacity rules. Ordinary inference still uses its own HBM working set.
+
+- The complete manuscript has Introduction; Background and Motivation; AegisKV Design; Evaluation; Related Work; Conclusion. The Chinese writing companion covers the same full structure, rather than starting at Background.
+- Design has six subsections: Design Insights; System Overview; Workflow Tracker: Remaining Time and Slack; Recovery-aware Router; KV Master: Sparse Recovery Value and Online Rent; Adapter and Connector: Safe Layered Recovery.
+- KV Master has three subsubsections: Valuing retention and demotion; Sparse candidates and layer overlap; Online admission, rental, and eviction. Normal reuse is independent of Slack. Value DRAM demotion and last-copy deletion separately. Common-source failure affects all colocated requests and must propagate through the DAG, not a sum of isolated slack penalties.
+- The current Design task (`01a0bd4a-76fc-70a2-9e63-cddccb4facca`) explicitly requested integrating rental, native sparse attention, and layer overlap after removing Peer HBM. The proposed controller now uses tier-local trial rent to screen candidates, followed by joint marginal revaluation and migration hysteresis. All committed physical replicas in a tier age, including leased replicas outside its safe victim set. Rejected previews do not advance committed rent. Independent benefit over direct revaluation is unvalidated; no inherited competitive guarantee is claimed.
+- Shared DRAM and finite SSD have separate cost/credit ledgers. DRAM removal usually incurs storage I/O; last-copy storage deletion can incur reconstruction and must publish an explicit valid fallback frontier before old readers drain and the replica is deleted. Prompt and token log must survive. Shared physical bytes are charged once per actual replica; normal reuse is valued independently of Slack.
+- Z remains a fixed configured, block-aligned review interval. There is no uniform resident layer count L. Layer/block candidates use causal sparse demand and a finite-workspace SSD/H2D/replay profile. Copy lag may make N exceed Z; prediction does not change native attention selections or itself establish complete coverage.
+- Router dispatches by load/locality and selects compatible surviving targets; it does not bind a Peer backup location. Adapter/Connector handle bounded transfer queues, byte ledgers, manifests, leases and safe release.
+- New Overview is proportional single-column: editable source `exports/system-design-dram-ssd-20260920/sources/system-overview.drawio`, generator `experiments/scripts/paper/build_storage_design.py`, paper asset `figures/system-overview.pdf`. Other new design mechanisms are `sparse-recovery`, `recovery-pipeline`, `overlap-frontier`, `rental-competition`, and `checkpoint-lifecycle`; their sources/data/review live in the same design export directory. Numerical plots use `experiments/scripts/paper/model_storage_overlap.py`.
+- New Evaluation figures are explicitly **analytical**, with no physical runs or fabricated confidence intervals. Generator/renderer and model configuration live in `experiments/scripts/eurosys27/` and `experiments/eurosys27/`. Preserve model assumptions, zero/negative results, static-versus-online scope, and separate the measured Motivation microbenchmarks from new theoretical curves.
+- Future measured replacement uses the same CSV schema and `plot.py --mode measured`, with verified raw-source hashes and independent-campaign statistics. Update prose/captions/abstract together; changing a data file alone does not make an analytical claim measured.
+
+## Preserved Motivation contract
+
+- Background covers agent roles/subagents and serving-scale failures. Motivation covers WCT priorities and growing-context reconstruction costs, followed by a standalone failure-position paragraph introducing AegisKV.
+- Figure 1 is the full-width row `workflow`, `workflow-gaps`, `recovery-cost`; Figure 2 is standalone `recovery-exposure`. Preserve source values, real branch timing, model/configuration, sample definitions, units and evidence boundaries. Same-column HBM reuse in a microbenchmark is a resident-state reference, not a reinstated Peer-HBM protection policy.
+- The Motivation task can update the physical recovery-cost panel with measured shared-filesystem results; retain actual backend/cache/fault-domain labels, never relabel an unverified filesystem path as SSD.
+- Trace prefix locality and historical native-sparse prediction results remain source evidence, not runtime cache hits or measured failure-recovery benefits. The native sparse survey/prediction evidence remains in Design; its per-model limitations must be retained. Superseded Peer-specific pipeline versions remain archived.
+
+## Scientific review and concurrency
+
+Use `/home/comp/zhanzhao/.codex/skills/scientific-figure-review/SKILL.md`, read applicable corrections, and inspect final-size actual exports and paper pages. For this EuroSys submission, verify official 10 pt figure text and grayscale readability. Preserve other tasks' edits by re-reading changed source files before integration. Earlier full source snapshots and initial figure hashes for this rewrite are under `exports/eurosys-complete-20260920/before/` and `source-snapshot.json`.

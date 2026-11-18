@@ -1,0 +1,92 @@
+% Paths relative to benchmark/AegisKV/paper.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../../output/pdf/aegiskv-revision-20260909/motivation-branch-gap.pdf}
+\caption{Maximum overlapping-branch duration gap per workflow in 124 CC/Weka workflows. The horizontal axis is logarithmic. Observed duration imbalance is not itself an estimate of usable slack.}
+\label{fig:lease-motivation-branch-gap}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../../output/pdf/aegiskv-revision-20260909/motivation-recovery-exposure.pdf}
+\caption{Recovery cost versus workflow delay in five separate branch-fault counterfactuals of one trace fan-out at 349.5 s. Bars partition modeled recomputation into absorbed and exposed delay. Frozen AIConfigurator Qwen3-235B-A22B, A100-80GB, TP8/PP4/EP8; other branches are unchanged. This is neither a measured failure nor the later Qwen3-8B evaluation.}
+\label{fig:lease-motivation-recovery-exposure}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../../output/pdf/aegiskv-revision-20260909/motivation-recompute.pdf}
+\caption{Predicted full-prefix recomputation for Qwen3-8B/32B on A100-80GB with TP4/PP2 and BF16. Each point sums single-request prefill predictions in 8-Ki-token chunks (Ki=1,024). These eight historical AIConfigurator SILICON predictions exclude detection, transfer and queueing; they are not physical failure measurements.}
+\label{fig:lease-motivation-recompute}
+\end{figure}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../../../output/pdf/aegiskv-revision-20260909/system-overview.pdf}
+\caption{AegisKV system overview. Workflow context informs Agent priorities. The source independently copies named KV chunks to Peer HBM and DRAM; copies become readable after ACK. A separate Peer controller bounds backup borrowing. Recovery materializes C0/C1 into new primary allocations and recomputes C2. Colored arrows carry KV, dashed arrows indicate control, and gray DAG edges indicate dependencies.}
+\label{fig:lease-system-overview}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../../../output/pdf/aegiskv-revision-20260909/eval-workflow-delay.pdf}
+\caption{WCT difference from the same-ID Mooncake baseline for all 160 workflows in the same no-failure configuration. Systems share the Mooncake F0 ordering; negative is faster. All tails are retained and the largest outlier is annotated. One frozen-algorithm simulation per system.}
+\label{fig:lease-eval-workflow-delay}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../../../output/pdf/aegiskv-revision-20260909/eval-initial-reuse.pdf}
+\caption{Initial DRAM-hit tokens divided by second-visit prompt tokens for the same workflows; cold visits are excluded. One simulation per system. Global token-weighted rates are 94.257\%, 81.568\% and 82.245\%. An initial hit does not imply that its computation remains avoided after preemption.}
+\label{fig:lease-eval-initial-reuse}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../../../output/pdf/aegiskv-revision-20260909/eval-preemption-progress.pdf}
+\caption{Valid prefill progress for the same revisit request in the largest-outlier workflow, aligned to each system's workflow release. AegisKV resets progress at preemption and waits 104.929 s before readmission. One trace per system; Peer occupancy is zero around this preemption.}
+\label{fig:lease-eval-preemption-progress}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../../../output/pdf/aegiskv-revision-20260909/eval-fixed-event-wct.pdf}
+\caption{Same-ID effect of adding a GPU2 fault at 180 s. K1/K2 share a GPU0 fault at 60 s; each outage lasts 120 s. The ordinate is same-system WCT(K2) minus WCT(K1). The seven IDs form the post-treatment union of direct victims across systems. Filled, hollow and cross markers indicate active, queued-only and no direct victims. Release times match in all 21 pairs; negative and zero changes are retained. One simulation per system per schedule.}
+\label{fig:lease-eval-fixed-event-wct}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../../../output/pdf/aegiskv-revision-20260909/eval-fault-paired-wct.pdf}
+\caption{C1/C2/C3 correspond to workflows 98ced84a/220852c6/5aa09932 on source GPUs 6/2/0. Each arrow connects the same system and ID from fault-free F0 to single-fault F1. One F1 execution per system per case reuses the corresponding F0. Injection fixes the focal request and token progress, but other victim sets differ; these are diagnostic cases.}
+\label{fig:lease-eval-fault-paired-wct}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../../../output/pdf/aegiskv-revision-20260909/eval-fault-token-source.pdf}
+\caption{Peer/DRAM-restored and recomputed tokens for the focal requests in the preceding figure (Ki=1,024), one F1 execution per row. Peer restoration is zero throughout and remains in the legend. Local-primary reuse is outside these segments; token counts do not decompose DAG completion time.}
+\label{fig:lease-eval-fault-token-source}
+\end{figure*}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../../output/pdf/aegiskv-revision-20260909/eval-concurrency-throughput.pdf}
+\caption{Fixed 160-workflow, two-visit workload; concurrency uses a log2 axis. Completion rate is 160 divided by full batch duration, including fill and drain; it is not SLO goodput. Each system has one frozen-algorithm simulation per point; no replicate confidence intervals.}
+\label{fig:lease-eval-concurrency-throughput}
+\end{figure}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../../../output/pdf/aegiskv-revision-20260909/eval-concurrency-workflow.pdf}
+\caption{At C64, WCT differences from same-ID, same-C64 Mooncake for all 160 workflows. The abscissa uses C16 Mooncake only to determine order; all numerical contrasts use C64. One simulation per system. AegisKV is faster on 65 workflows and slower on 95; all signed changes are retained.}
+\label{fig:lease-eval-concurrency-workflow}
+\end{figure*}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../../output/pdf/aegiskv-revision-20260909/eval-failure-rate-throughput.pdf}
+\caption{K=0,1,2,4 external GPU failures in a prespecified 480-s window, expressed per cluster-hour. Systems share times and GPU targets; each outage lasts 120 s. In-window downtime is 0,120,240,420 GPU-s; the final repair extends beyond the window. The ordinate counts workflows completed by 480 s divided by 480 s. One simulation per system and stress point.}
+\label{fig:lease-eval-failure-rate-throughput}
+\end{figure}

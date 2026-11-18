@@ -48,6 +48,7 @@ class LockedLayoutInputs:
     model_id: str
     model_revision: str
     model_config: Mapping[str, Any]
+    model_weights_bytes: int
     model_files: tuple[Mapping[str, str], ...]
     tokenizer: Mapping[str, Any]
     proposed_context: Mapping[str, Any]
@@ -152,10 +153,15 @@ def load_locked_qwen3_layout_inputs(source_lock_path: Path) -> LockedLayoutInput
             )
 
     config_path = snapshot_path / "config.json"
+    weight_index_path = snapshot_path / "model.safetensors.index.json"
     tokenizer_config_path = snapshot_path / "tokenizer_config.json"
     try:
         actual_config = _mapping(
             json.loads(config_path.read_text(encoding="utf-8")), "config.json"
+        )
+        weight_index = _mapping(
+            json.loads(weight_index_path.read_text(encoding="utf-8")),
+            "model.safetensors.index.json",
         )
         actual_tokenizer_config = _mapping(
             json.loads(tokenizer_config_path.read_text(encoding="utf-8")),
@@ -163,6 +169,18 @@ def load_locked_qwen3_layout_inputs(source_lock_path: Path) -> LockedLayoutInput
         )
     except (OSError, json.JSONDecodeError) as error:
         raise ValueError(f"cannot parse locked model metadata: {error}") from error
+    weight_index_metadata = _mapping(
+        weight_index.get("metadata"),
+        "model.safetensors.index.json.metadata",
+    )
+    model_weights_bytes = _integer(
+        weight_index_metadata.get("total_size"),
+        "model.safetensors.index.json.metadata.total_size",
+    )
+    if model_weights_bytes <= 0:
+        raise ValueError(
+            "model.safetensors.index.json.metadata.total_size must be positive"
+        )
 
     locked_config = _mapping(model.get("model_config"), "$.model_tokenizer.model_config")
     config_field_mapping = {
@@ -219,6 +237,7 @@ def load_locked_qwen3_layout_inputs(source_lock_path: Path) -> LockedLayoutInput
         model_id=model_id,
         model_revision=revision,
         model_config=actual_config,
+        model_weights_bytes=model_weights_bytes,
         model_files=model_files,
         tokenizer=dict(tokenizer),
         proposed_context=dict(
@@ -522,6 +541,7 @@ def build_qwen3_kv_layout_document(
         "model": {
             "id": inputs.model_id,
             "revision": inputs.model_revision,
+            "weights_bytes": inputs.model_weights_bytes,
             "config_sha256": model_file_hashes["config.json"],
             "tokenizer_json_sha256": model_file_hashes["tokenizer.json"],
             "tokenizer_config_sha256": model_file_hashes["tokenizer_config.json"],
@@ -616,6 +636,9 @@ def audit_kv_layout_document(document: Mapping[str, Any]) -> None:
     payload.pop("fingerprint", None)
     if fingerprint != sha256_json(payload):
         raise ValueError("top-level KV layout fingerprint mismatch")
+    model = _mapping(document.get("model"), "$.model")
+    if _integer(model.get("weights_bytes"), "$.model.weights_bytes") <= 0:
+        raise ValueError("$.model.weights_bytes must be positive")
     evidence = _mapping(document.get("evidence"), "$.evidence")
     expected_boundary = {
         "class": "E1",

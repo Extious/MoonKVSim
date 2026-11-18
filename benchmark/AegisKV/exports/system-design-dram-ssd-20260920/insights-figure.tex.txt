@@ -1,0 +1,37 @@
+\begin{figure}[t]
+  \centering
+  \captionsetup[subfigure]{font=normalsize,labelfont=normalfont,
+    textfont=normalfont,justification=centering,singlelinecheck=false,skip=3pt}
+  \begin{subfigure}[t]{\columnwidth}
+    \vspace{0pt}
+    \includegraphics[width=\linewidth]{figures/sparse-models.pdf}
+    \caption{Selected sparse releases}
+    \label{fig:insight-sparse-adoption}
+  \end{subfigure}
+  \par\medskip
+  \begin{subfigure}[t]{\columnwidth}
+    \vspace{0pt}
+    \includegraphics[width=\linewidth]{figures/retry-kv-prediction.pdf}
+    \caption{Retry KV prediction}
+    \label{fig:insight-retry-kv}
+  \end{subfigure}
+  \caption{KV protection evidence. (a) Selected releases and
+    native context: 1 MiniCPM4, 2 MiniCPM4.1, 3 DeepSeek-V3.2-Exp,
+    4 DeepSeek-V3.2, 5 GLM-5, 6 MiniCPM-SALA, 7 DeepSeek-V4 preview,
+    8 MiniMax-M3, 9 GLM-5.2, 10 LongCat-Flash-Lite-Sparse.
+    Dates follow announcements/model cards. Gray steps trace the sample
+    maximum; markers denote top-$k$ units in sparse branches.
+    (b) Three native PG19 captures/model: 32K history; queries
+    32,257--32,768 predict distinct historical KV for 32,769--32,832.
+    Objects are layer/64-token blocks containing all KV heads; both
+    policies include mandatory blocks in the 40\% budget.
+    Seer uses an experimental Qwen3-8B Prefill gate~\cite{song2026seerqwen3}
+    (threshold $10^{-3}$; final-block dense override disabled).
+    Bars/whiskers are document means/ranges, not fault-recovery runs.}
+  \label{fig:design-insights}
+  \Description{Two vertically stacked panels within one column show
+    a primary-source survey of sparse model releases and held-out retry
+    KV coverage. Past-frequency ranking improves
+    coverage substantially for NOSA and only modestly for MiniCPM4
+    and SeerAttention-Qwen3.}
+\end{figure}

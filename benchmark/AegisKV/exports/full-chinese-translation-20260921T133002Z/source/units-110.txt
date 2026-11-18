@@ -1,0 +1,400 @@
+U110 prose 
+The preceding priority concerns one request. Across requests, a shared
+prefix can serve several Agents, while one Agent can return after a tool
+wait. Master gives each interested Agent its own share of an object's
+credit. A different Agent adds a share; the same Agent's new use refreshes
+its share instead of accumulating another copy of its value. Agent
+identity includes its workflow instance, and physical capacity is charged
+only once.
+
+U111 prose 
+For a lower-tier object $x$, the current grant combines a normal-reuse
+term with its recovery priority:
+
+U112 equation 
+\begin{equation}
+ g_{a,x,j}=v^{\mathrm{reuse}}_{a,x,j}
+                +\lambda_f c_{a,x,j}P_{a,x}.
+ \label{eq:credit-grant}
+\end{equation}
+
+U113 prose 
+Here $j$ is DRAM or storage; $\lambda_f$ weights fault risk over a common
+decision horizon. The profiled cost $c$ measures the additional service
+work if the object leaves $j$: storage access after DRAM demotion, or
+reconstruction after final storage removal. The reuse term multiplies a causal next-use estimate by the corresponding
+saved service work, independently
+of slack. This preserves useful state for long-slack, multi-round Agents.
+When recovery requires a dependent group, its profiled cost is distributed
+by bytes rather than repeatedly assigned to every block. Summed Agent
+shares express competing interests, not exact joint WCT: simultaneous
+delays at a workflow join are not additive.
+
+U114 prose 
+A one-time grant becomes stale; granting fresh credit at every checkpoint
+can retain unused state indefinitely. Inspired by Landlord and
+GreedyDual-Size~\cite{young2002landlord,cao1997greedydual}, Master separates
+current grant $g$ from already-paid rent $d$:
+
+U115 equation 
+\begin{equation}
+ C_{x,j}=\sum_a[g_{a,x,j}-d_{a,x,j}]^+,
+ \qquad H_{x,j}=\rho_j+C_{x,j}/b_x.
+ \label{eq:rental-credit}
+\end{equation}
+
+U116 prose 
+The pool pressure clock $\rho_j$ charges bytes $b_x$, rather than elapsed
+time. Increasing it by $\delta$ removes $\min(C_{x,j},b_x\delta)$, split
+proportionally among positive Agent shares. All committed residents age,
+including leased objects; eviction eligibility is separate. Actual reuse or recovery consumption renews only the using Agent,
+once per object and request/use ID. Attention observations refresh demand;
+checkpoint growth, score updates and migration preserve paid rent.
+Expired Agent interest is removed. Figure~\ref{fig:renewable-credit}
+illustrates these different events. Recency enters through renewal,
+demand through selection probability and reuse history, and workflow
+urgency through $u_r$; these are explicit signals, not a claim to subsume
+every LRU/LFU variant.
+
+U117 heading 
+Avoiding a credit update per token.
+
+U118 prose 
+The engine advances one query counter per layer and records only selected
+block IDs. A block's birth index and the window boundary determine its
+opportunities without incrementing every block's denominator. Bounded
+query buckets expire old selected counts; dense attention needs no such
+counters. Statistics are batched at checkpoint events. Slack changes
+update a request scalar and version, leaving its blocks untouched.
+
+U119 prose 
+Master materializes a block only on use, candidate inspection or a
+rotating scan. It first settles rent since that block's last clock,
+then reads current request/demand versions and refreshes the grant while
+retaining paid amounts. Grants remain fixed between materializations;
+the shared pressure clock therefore avoids scanning all residents on
+each charge. Refreshing only a stale heap minimum is insufficient when
+unseen keys can decrease. Each round refreshes $q$ low-key candidates
+and $q$ rotating alternatives, within a fixed work budget, before choosing
+victims. This is approximate selection, compared with eager refresh in
+Section~\ref{sec:eval-rental}; it is not an exact global minimum. Work
+scales with observed selections, examined candidates and their Agent
+shares, rather than a full-cache update per generated token.
+
+U120 heading 3.5.3
+Greedy Peer Protection
+
+U122 prose 
+Peer accelerates recovery without participating in rent. For each supported
+model/layout, calibration fixes checkpoint interval $Z$, prefix depth $L$
+and $K$ blocks per selected layer. The online policy changes hot-block
+identities and request membership, not these three parameters. A Peer
+slot reserves at most $LK$ blocks plus a separately budgeted mandatory
+state allowance. Short histories use fewer blocks; shared physical
+objects are charged once. This is a fixed quota, not a claim of identical
+physical occupancy for every request. Engine block size is configured
+separately from $Z$; a measurement's 64-token unit is not universal.
+
+U123 prose 
+Figure~\ref{fig:sparse-recovery} shows the resulting placement. Each sealed
+layer/block/TP object has one managed owner, distinct from execution
+working KV. Peer, DRAM and storage together cover a committed checkpoint;
+moving an object to Peer releases its lower-tier copy after handoff.
+Unselected blocks stay below and demand misses fetch their actual owners.
+
+U124 caption 
+A checkpoint across three exclusive tiers, with a fixed Peer
+ quota $L=2$, $K=2$. Each cell groups a layer/block's TP objects; four
+ cells reside in Peer and the others in DRAM/storage. Layer 1 needs
+ B0/B1/B2: B0 is local, B1 needs H2D, and B2 needs a storage read plus
+ H2D. The dashed tail is uncommitted. Hot identities can change within
+ the quota; a Peer victim must migrate down before its space is reusable.
+
+U126 prose 
+Only requests with clipped guarded slack $s_r=0$ enter the Peer candidate
+queue, including requests whose slack reaches zero while running.
+Admitted requests select $K$ blocks per layer by $\widehat p$, with recency
+then block ID breaking ties. Completion or tool handoff makes that
+request's slot evictable. On admission or quota shrink, Master first
+reclaims ended requests, then active requests in decreasing slack order.
+Ordinary admission preserves an incumbent at equal slack; a new tied
+request waits for Peer while retaining lower-tier protection. Required
+shrink breaks active ties by least recent request use. Active requests
+therefore have a policy preference, not an absolute eviction lock;
+physical read/copy leases are always respected. A shared object is released
+only when no retained slot needs it. Different takeover DPs cannot both
+count its sole owner as local.
+
+U127 heading 
+Why fix a partial prefix of layers?
+
+U128 prose 
+Let $M$ be committed history and $N$ its acknowledged, uncommitted tail.
+Recovery replays $N$; that computation can overlap later-layer reads.
+Peer removes only exposed transfer waiting, beyond the reconstruction
+already avoided by lower-tier state. Figure~\ref{fig:design-pipeline}
+includes storage reads, H2D and replay on one clock. Demand misses make
+sparse loading slower than full-layer pipelining in this example; Peer
+removes about 15\,ms relative to the same sparse demand. The comparison
+illustrates partial residency, not a universally optimal $L$.
+Calibration sweeps fixed quotas over declared history/tail and load
+profiles, selects a configuration under an HBM budget, then freezes it
+before evaluation on other workflows. Heterogeneous requests may prefer
+different depths; adaptive-depth and small-instance oracle comparisons
+measure the cost of this simplification.
+
+U129 caption 
+Analytical storage/H2D/replay schedules: 32 layers, 32K history,
+ 64-token tail, and 1,024\,MiB unique KV. (a)--(c) split history equally
+ between DRAM/storage; (d) moves $L=7$, $K=336$ 64-token blocks per layer
+ to Peer: 147\,MiB Peer, 438.5\,MiB per lower tier. The existing
+ MiniCPM4-8B replay calibration is 2.870\,ms/layer; storage/H2D rates
+ of 3.125/6.25\,GB/s are assumed. Both sparse cases preload 336 blocks
+ and miss on 64 per layer; misses become known after the previous layer
+ finishes. These demands are constructed. Cold KV follows the plotted
+ endpoint. Placement is complete; I/O stages are independent, workspace
+ sufficient and foreground traffic absent. These are mechanism schedules,
+ not integrated measurements or an optimal quota search.
+
+U131 heading 3.5.4
+Online Three-Tier Management
+
+U133 prose 
+Prefill offers sealed blocks; decode reviews every fixed $Z$ tokens, and
+completion/tool handoff offers a final snapshot, including short rounds.
+Actual use, Slack changes, capacity updates and transfer outcomes also
+invoke Algorithm~\ref{alg:placement}. New blocks receive the creating
+Agent's initial grant; unchanged prefix objects receive no new grant.
+
+U134 heading 
+Admission and pressure.
+
+U135 prose 
+Free lower-tier space admits new state, including zero-credit state.
+Under pressure, Master refreshes candidate victims and trials enough
+byte-proportional rent to exhaust an examined, safely removable bundle.
+Incoming objects pay the same trial rent; those reaching zero are deferred
+from that tier. DRAM rejection can send state directly to storage.
+Committed zero-credit objects remain available until space is needed;
+DRAM victims migrate to storage, whose separate ledger values retention
+against reconstruction. Last-copy removal must publish a valid older
+checkpoint or input/log replay fallback for every affected manifest.
+Dependencies and physical leases constrain all victim choices.
+
+U136 prose 
+Peer admission/shrink follows the request order above. A hot-set change
+swaps identities within the same slot. Both can require Peer-to-DRAM and
+DRAM-to-storage cascades. If a safe destination cannot be reserved, the
+move waits and the source remains occupied. Paid amounts persist per
+lower pool across round trips, with no rent during absence. Neither a
+move through Peer nor a value-only refresh renews credit.
+
+U137 algorithm 
+\par\medskip\noindent\begin{minipage}{\columnwidth}
+\raggedright
+ \refstepcounter{designalgorithm}\label{alg:placement}
+ \textbf{Algorithm \thedesignalgorithm: Online three-tier management}
+ \par\smallskip
+ \begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
+ \toprule
+ 1 & \textsc{ReconcileTransfers}$(e)$; \textsc{PublishSignals}$(e)$ \\
+ 2 & \textsc{RecordNewBlocksAndUses}$(e)$ \\
+ 3 & $Q\gets\textsc{LowKeysAndRotation}(q)$ \\
+ 4 & \textbf{for} $x\in Q$ \textbf{while} \textsc{WorkLeft}() \textbf{do} \\
+ 5 & \quad \textsc{SettleRent}$(x)$; \textsc{RefreshGrantAndKey}$(x)$ \\
+ 6 & $P_D\gets\textsc{LowerTierAdmission}(e,Q)$ \\
+ 7 & $P_H\gets\textsc{PeerSlots}(s,B,L,K,e)$ \\
+ 8 & $P\gets\textsc{PrepareCascade}(P_D,P_H)$ \\
+ 9 & \textbf{if} $P=\varnothing$ \textbf{then} \textsc{Defer}$(e)$; \textbf{return} \\
+ 10 & \textbf{if not} \textsc{ReserveIfCurrent}$(P)$ \textbf{then} \\
+ 11 & \quad \textsc{Requeue}$(e)$; \textbf{return} \\
+ 12 & \textsc{Submit}$(P)$ \quad\textit{completion/failure emits a new event} \\
+ \bottomrule
+ \end{tabularx}
+\end{minipage}\par\medskip
+
+U138 prose 
+Connector copies, confirms the destination, redirects ownership, and
+releases the source after readers drain. Both copies count during the
+handoff. Rejected previews change neither ownership nor committed rent;
+successful capacity handoffs commit their trial rent and residual grants.
+Only complete dependency coverage advances $M$; copy lag can make $N>Z$.
+The protected source failure must leave advertised owners reachable;
+additional owner loss requires an explicit fallback. Capacity checks
+validate feasible execution, not global WCT optimality. Dynamic values,
+dependent objects and budgeted refresh also prevent inheriting Landlord's
+competitive guarantee. Section~\ref{sec:eval-rental} compares against the
+same values with direct revaluation and isolates renewal, aging and
+shared-Agent contributions.
+
+U139 caption 
+Credit for one shared, unit-size DRAM object. Grants 3 and 2
+ become remaining shares 1.8 and 1.2 after rent of 2. Updating A's
+ grant to 4 preserves its paid amount 1.2, leaving 2.8; an actual new
+ use by A renews its share to 4. B stays at 1.2. Lazy materialization
+ settles earlier rent before updating the grant. This is a constructed
+ accounting example; Peer has no rental clock.
+
+U141 heading 3.6
+Adapter: Guarded AIMD for Peer Capacity
+
+U143 prose 
+Master selects content within a quota; Adapter adjusts that quota as
+foreground inference demand changes. It uses pressure-driven multiplicative
+decrease and stable-window additive increase~\cite{chiu1989aimd}.
+The total Peer authorization has a physical ceiling
+
+U144 equation 
+\begin{equation}
+ C=\max\{0,\min(B_{\mathrm{cap}},
+ B_{\mathrm{pool}}-B_{\mathrm{serve}}-B_{\mathrm{reserve}})\}.
+ \label{eq:peer-ceiling}
+\end{equation}
+
+U145 prose 
+The pool excludes weights/fixed allocations; serving high watermark
+excludes Peer, and reserve covers growth/workspace. Existing Peer bytes
+are not subtracted twice. $B_{\rm cap}$ can be a configured pool fraction.
+
+U146 prose 
+The current quota $B$ and stable-window count $z$ start at zero.
+Pressure (allocation stalls, reserve violations or
+memory-related admission waits) multiplies $B$ by $0<\gamma<1$. After $m$
+stable windows below a lower wait threshold, deferred zero-slack Peer
+demand, counted before quota filtering, permits an additive byte step
+$\Delta$. Intermediate windows reset
+$z$; missing telemetry disables growth. The ceiling clips every update;
+emergencies may decrease within a window, but growth requires completed
+stable windows. Parameters and window length are configurable.
+
+U147 algorithm 
+\par\medskip\noindent\begin{minipage}{\columnwidth}
+\raggedright
+ \refstepcounter{designalgorithm}\label{alg:adapter}
+ \textbf{Algorithm \thedesignalgorithm: Windowed Peer quota}
+ \par\smallskip
+ \begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
+ \toprule
+ 1 & $C\gets\textsc{SafeCeiling}();\quad B'\gets B$ \\
+ 2 & \textbf{if} \textsc{Pressure}() \textbf{then} $(B',z)\gets(\gamma B,0)$ \\
+ 3 & \textbf{else if} \textsc{Stable}() \textbf{then} \\
+ 4 & \quad $z\gets z+1$ \\
+ 5 & \quad \textbf{if} $z\ge m$ \textbf{then} \\
+ 6 & \qquad \textbf{if} \textsc{PeerDemand}() \textbf{then} $B'\gets B+\Delta$ \\
+ 7 & \qquad $z\gets0$ \\
+ 8 & \textbf{else} $z\gets0$ \\
+ 9 & $B\gets\textsc{RoundDownPage}(\min(C,B'))$ \\
+ 10 & \textsc{PublishBudget}$(B)$; \textsc{EmitCapacityEvent}() \\
+ \bottomrule
+ \end{tabularx}
+\end{minipage}\par\medskip
+
+U148 prose 
+Adapter sets the total budget; Master admits fixed-$L/K$ request slots
+and refreshes their identities at fixed $Z$ and other placement events. If occupancy plus reservations exceeds a reduced
+quota, Master pauses Peer admission and selects objects to demote. Their
+DRAM destinations may first require storage demotion. Serving can reuse
+the memory only after these transfers and ongoing readers finish; the
+new quota is an authorization target, not an instantaneous free-space claim.
+
+U149 heading 4
+Evaluation
+
+U151 prose 
+Our evaluation asks five questions: does workflow-aware placement improve
+completion after one failure; which recovery and dependency mechanisms
+produce that improvement; does it persist under recorded outage timing;
+which online mechanisms justify their complexity; and what healthy-service,
+resource, and correctness costs accompany it? We evaluate the complete
+claim chain, from retained bytes to ready KV to branch completion to
+workflow completion, rather than using cache hit rate as its endpoint.
+
+U152 heading 
+Evidence status.
+
+U153 prose 
+This expanded research draft contains reproducible analytical results,
+descriptions of public traces, trace-driven model results, and a detailed
+physical experiment specification. It does not report an implemented
+end-to-end failure-recovery campaign. Each figure identifies its evidence
+level. Measured Motivation microbenchmarks retain their own scope;
+their timings are not silently substituted for the generic rates below.
+The existing DRAM/storage placement results use an earlier whole-checkpoint,
+Peer-disabled policy; they do not evaluate the exclusive three-tier
+controller. The isolated layer model studies partial DRAM payload
+residency and I/O overlap, not the integrated policy. The Design pipeline
+reuses existing MiniCPM4-8B calibration with declared transport assumptions;
+its Peer case moves selected objects out of DRAM/storage at equal unique
+coverage. Demand sets and transport rates are explicit analytical assumptions.
+The static value, isolated rental and layer models test distinct mechanisms
+and are not a full-controller run.
+
+U154 heading 4.1
+Experimental Contract and Baselines
+
+U156 heading 
+Deployment.
+
+U157 prose 
+The primary physical experiment uses failure-separated serving replicas
+and independently reachable backing storage. We specify DP=2/4/8 and TP=1/2
+as separate cells; a TP2 host-failure test requires at least two compatible
+two-GPU replicas on separate hosts. GPU-process, whole-replica, host, and
+storage-host failures are distinct experiments. Report surviving capacity
+and execution/staging HBM, rather than assuming that a failover target has
+unlimited memory. Local NVMe, remote NVMe, and shared filesystem backends
+are separate configurations. Same-host SSD does not protect against host
+loss. The physical campaign must pin model weights, attention kernels,
+engine and controller commits, TP layout, block size, drivers, network
+topology, filesystem configuration, and fault-injector version.
+
+U158 heading 
+Workloads and load.
+
+U159 prose 
+Use executable coding-agent and FanOutQA workflows, together with controlled
+sequential, balanced fork/join, and heterogeneous fork/join DAGs. Retain
+the original graph once, with identical workflow IDs and arrival order;
+do not manufacture normal reuse by repeating the DAG. Start with 30
+distinct workflows per family and publish their IDs and input hashes.
+Replay frozen tool responses for the primary comparison; live tool calls
+form a separate validity check. Use supported dense and native-sparse
+model paths, including Qwen3-8B and Qwen2.5-7B-Instruct-1M, and contexts
+32K/128K/512K/1.01M where executable. Unsupported cells remain missing
+with reasons. Arrival traces use 30/60/85\% of one fixed baseline's
+sustainable healthy throughput, with identical absolute arrivals across
+policies. Report the resulting load after losing a replica.
+
+U160 heading 
+Equal-resource baselines.
+
+U161 prose 
+Recompute keeps durable accepted input/output logs but no additional
+fault-safe KV history. Storage-only keeps complete checkpoints in the
+capacity tier. Hierarchical LRU and reuse-only share AegisKV's transport,
+manifest, safety, and checkpoint-frontier implementation. LRU is the main
+same-substrate baseline; reuse-only isolates the benefit of dependency and
+failure information. All policies pay for committed, reserved, retiring,
+metadata, and staging bytes, and for checkpoint and migration traffic.
+The matched online baselines use the same exclusive ownership rule.
+Shared objects consume capacity once in steady state; both physical
+copies are charged during migration. All-DRAM relaxes
+the capacity constraint and is a reference, not an equal-cost competitor.
+An exhaustive feasible oracle is restricted to small candidate sets and
+the same objective; it is not an online-system oracle.
+
+U162 prose 
+External comparisons should use pinned D\'ej\`aVu, GhostServe, and LUMEN
+artifacts when compatible, and a tuned Mooncake/SGLang or Strata-style
+hierarchy~\cite{strati2024dejavu,jayakody2026ghostserve,cao2026lumen,qin2025mooncake,xie2026strata}.
+Count replication/parity capacity, coding work, write traffic, and achieved
+frontier lag. A reproduced mechanism is labeled as a reimplementation;
+none of the present curves is a fabricated result for these named systems.
+TOPAS/KVFlow comparisons require the same failure-safe backing substrate
+before recovery differences can be attributed to workflow policy.
+
+U163 heading 
+Outcomes and cohorts.
+
+U164 prose 
+For policy $p$ and workflow $w$, the paired failure penalty is

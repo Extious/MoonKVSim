@@ -1,0 +1,540 @@
+\section{AegisKV Design}
+\label{sec:design}
+
+AegisKV manages reusable KV checkpoints across shared DRAM and a larger
+SSD or shared-storage tier. GPU HBM holds ordinary execution state and
+bounded recovery workspace. The protected failure domain is a fail-stop
+compute worker; the directory, token log, and advertised backing copies
+must survive that failure. A host-local SSD does not protect against loss
+of the same host. The following is a design specification; the new
+mechanism figures are constructed examples or analytical schedules, not
+measurements of an implemented controller.
+
+\subsection{Design Insights}
+\label{sec:design-insights}
+
+\paragraph{Prioritize workflow exposure, while preserving normal reuse.}
+A faster restore advances a workflow only when its delay exceeds the
+available dependency slack (Figure~\ref{fig:motivation-recovery-exposure}).
+However, a large-slack agent can reuse its history after a tool call.
+Assigning that agent permanently to recomputation would waste serving
+capacity. AegisKV therefore separates \emph{preserving a reusable copy}
+from \emph{retaining it in the faster tier}. Shared immutable objects
+serve both purposes without duplicating their physical byte charge.
+
+\paragraph{Sparse access identifies candidates, not a complete backup.}
+Native sparse attention can use only a subset of historical KV for a
+query, but future selections remain uncertain. Figure~\ref{fig:design-insights}
+shows that causal access history predicts future block demand unevenly
+across models. At a 40\% block budget, past-frequency coverage is 77.8\%
+for NOSA, 53.6\% for MiniCPM4, and 43.0\% for the experimental Seer path.
+The corresponding same-budget oracle means are 93.7\%, 59.0\%, and
+43.3\%. Seer's low absolute coverage is therefore largely a budget limit
+for this future-query union, rather than a large gap to its oracle.
+These observations motivate selective fast-tier retention and a mandatory
+miss path, rather than discarding the remaining checkpoint. The three
+documents per model support this observed contrast, not a population-wide
+prediction guarantee or a measured recovery speedup.
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/retry-kv-prediction.pdf}
+ \caption{Historical access predicts distinct future KV unevenly.
+ Three native PG19 captures/model use 32K history: queries
+ 32,257--32,768 predict blocks needed by 32,769--32,832.
+ Objects are layer/64-token blocks containing all KV heads;
+ mandatory blocks count against the 40\% budget. Seer uses an
+ experimental Qwen3-8B Prefill gate~\cite{song2026seerqwen3}, threshold
+ $10^{-3}$, with final-block dense override disabled.
+ Bars/whiskers are document means/ranges, not recovery runs. Diamonds
+ show offline oracle mean coverage with the same mandatory blocks and
+ capacity; future demand is unavailable to the online predictor.}
+ \label{fig:design-insights}
+ \Description{Held-out native block coverage varies across three models;
+ weak effects remain visible.}
+\end{figure}
+
+\paragraph{Overlap determines the marginal value of fast memory.}
+DRAM-resident KV avoids the SSD read but still requires H2D transfer.
+Early-layer reads can delay the start of replay, whereas later reads may
+overlap with preceding replay computation. Their values also depend on
+the current checkpoint length, uncommitted tail, demand reveal time,
+resource contention, and workspace. A fixed resident layer count cannot
+represent all requests. AegisKV evaluates feasible layer/block plans and
+directly re-evaluates competing placements as their recovery value changes.
+
+\subsection{System Overview}
+\label{sec:system-overview}
+
+Figure~\ref{fig:system-overview} organizes AegisKV into three layers.
+The \emph{Application} layer issues agent requests and exposes workflow
+dependencies and progress. In the \emph{Controller} layer, the Tracker
+estimates remaining durations and slack, the KV Master values placements
+and selects complete replacement plans, and the Recovery-aware Router dispatches
+requests and selects surviving recovery targets. A surviving directory
+records immutable objects, location generations, and checkpoint manifests,
+alongside the token log. Within the Master, layer-I/O profiles feed the
+workflow cost model; current-value revaluation compares DRAM/storage
+candidates together with their victims; a joint DAG check and resource
+reservation authorize the complete plan. The directory supplies manifest versions and physical
+read leases for this check. The \emph{Engine} layer contains interchangeable
+GPU workers, their HBM working sets, and the shared DRAM/storage data path.
+Engine hooks report sealed state and resource pressure, while transfer
+queues apply the Master's decisions. Shared backing resides outside the
+protected compute-worker failure boundary, allowing a compatible healthy
+DP to restore state without a preassigned peer-memory target.
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/system-overview.pdf}
+ \caption{AegisKV's three-layer architecture. Controller exposes its
+ prediction, valuation, replacement, and commit checks. D/S under Revalue
+ denote DRAM/storage placement candidates; the joint DAG check and
+ reservation authorize a complete replacement. Directory state includes manifests,
+ token logs, and leases. Agents A--D illustrate a fork/join workflow.
+ Blue bidirectional links carry KV; dark dashed links carry
+ control/metadata; red dashes illustrate retry. Shared DRAM and
+ SSD/storage sit outside the DP worker boundaries.
+ HBM outlines mark demand candidates, and the last column is the unsealed
+ tail. GPU symbols abstract each DP's GPU/TP group.}
+ \label{fig:system-overview}
+ \Description{Application, Controller, and Engine bands. Tracker applies
+ GBDT and critical-path analysis. KV Master combines layer-I/O and WCT
+ cost, current placement values, joint DAG revaluation and reservation. Router
+ uses load and locality and fences failures. Directory versions and
+ leases guard placement. Symmetric DP GPU/HBM workers share backing.}
+\end{figure}
+
+A physical object contains one layer's KV shard for a sealed token block.
+Identity includes model/weight revision, prefix and position semantics,
+layer, TP shard, format, and token interval. A legal placement group
+includes the objects and selector state required by the native engine;
+logical sparse selections, physical storage blocks, and kernel tiles need
+not coincide. The engine chooses the physical block size; the 64-token
+unit in Figure~\ref{fig:design-insights} is an experimental convention.
+
+Prefill offers newly sealed groups. During decode, a configured,
+block-aligned interval $Z$ triggers backup review. Arrivals, tool handoffs,
+material demand/slack changes, and capacity pressure also trigger review.
+A decision does not imply immediate commitment: if $M$ is the last
+complete checkpoint frontier, the replay tail $N$ may exceed $Z$ when
+copies lag. A checkpoint includes all historical dependencies needed to
+resume native attention; DRAM and storage may jointly hold its objects.
+
+\subsection{Workflow Tracker: Remaining Time and Slack}
+\label{sec:workflow-protection}
+
+The Tracker builds a residual DAG of unfinished execution segments.
+Fork/join boundaries split parent work so child execution is not counted
+again as parent waiting. A gradient-boosted decision-tree model (GBDT)
+predicts remaining duration. Its inputs group three types of causal
+information: role/model and current input length; elapsed execution and
+completed-call count; and completed calls' output lengths, API durations,
+context growth, and inter-call gaps. Tool type and task descriptors can
+be added when the orchestrator exposes them. Current-call output length,
+future tool results, and future call count are unavailable inputs.
+Entry predictions mask missing history; elapsed time is not subtracted
+again from an already remaining-time prediction.
+
+Figure~\ref{fig:tracker-correlations} examines six observable numerical
+inputs in the CC/Weka trace~\cite{semianalysis2026cctraces}. Each of 1,443
+eligible agents contributes one snapshot at its second request, after
+its first call completes. The target is the remaining duration of the
+whole agent, including later calls and gaps. Input-length features are
+64-token hash-prefix proxies; explicit task semantics and tool outcomes
+are not recorded. All six marginal correlations are weak, and their
+workflow-bootstrap intervals cross zero. Thus, a single-feature rule
+is not established by this cohort. These associations neither measure
+GBDT feature importance nor validate its nonlinear predictions or the
+residual-segment target required by the online Tracker.
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/tracker-correlations.pdf}
+ \caption{Tracker evidence at request 2: 1,443 agents in 170 workflows,
+ one snapshot per agent. (a) Spearman associations with whole-agent
+ remaining time; bars are percentile 95\% intervals from 2,000
+ whole-workflow bootstrap samples. Asterisks mark prefix-block length
+ proxies. (b) Empirical absolute-error CDFs from existing five-fold,
+ workflow-disjoint predictions: training-fold median, basic GBDT, and
+ GBDT with call history. All tails are retained; the horizontal scale is
+ logarithmic above 1\,s. Neither panel validates residual-segment Slack.}
+ \label{fig:tracker-correlations}
+ \Description{Six weak feature associations and whole-agent held-out
+ error distributions. GBDT errors remain substantial; history does not
+ uniformly improve the basic model.}
+\end{figure}
+
+Figure~\ref{fig:tracker-correlations}(b) makes prediction error explicit.
+The existing workflow-separated five-fold pilot gives mean absolute
+errors of 438.6, 406.7, and 407.1\,s for median, basic GBDT, and
+history GBDT. Their median absolute percentage errors are 76.2\%,
+67.1\%, and 69.3\%. The basic-minus-median MAE difference has a paired
+workflow-bootstrap 95\% interval of $[-80.9,4.9]$\,s; it does not
+establish a reliable mean-error reduction. Fitted predictions are fixed
+in this bootstrap. Only 36.5\% of basic-GBDT predictions are within 50\%
+of actual remaining time. The cohort comprises completed subagents and
+includes future inter-call gaps, so it cannot validate runtime segment
+predictions. Deployment validation must separate whole workflows and
+time periods and report false-positive slack, not just duration error.
+Published trajectory
+prediction~\cite{zhang2026heddle} motivates feature construction but does
+not establish wall-clock accuracy for AegisKV.
+
+Critical-path analysis~\cite{kelley1959cpm} computes earliest and latest
+finishes; their nonnegative difference is slack $\sigma_r$ inherited by a
+request's segment. Requests on the same segment do not each receive an
+independent copy of that margin. A refresh costs $O(|V|+|E|)$ after
+prediction. Missing dependencies or invalid predictions fall back to
+request recovery cost and normal reuse with zero slack. A new DAG version
+invalidates outstanding valuation snapshots.
+Without validated segment forecasts, the policy uses the zero-slack
+fallback rather than treating the pilot's point estimates as safe
+demotion margins. The current Tracker evidence motivates this guard;
+it does not establish predictive accuracy as a system contribution.
+
+
+
+\subsection{Recovery-aware Router}
+\label{sec:recovery-router}
+
+Normal dispatch balances load and compatible prefix locality, retaining
+Agent affinity when useful. The CC/Weka trace~\cite{semianalysis2026cctraces}
+shows 97.90\% potential same-agent token coverage, with 0.37\% additional
+coverage from other agents; these are potential prefixes, not cache hits. A tool handoff drops
+an execution reference but does not delete the cached history or withdraw
+its recovery claim.
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/agent-prefix-reuse.pdf}
+ \caption{Agent-local prefix reuse in the CC/Weka trace:
+ 98,827 requests, 2,090 agents, and 393 workflows. Coverage uses earlier
+ completed requests with the same recorded model and workflow, measured
+ by prefix-block hashes. Same-agent and other-agent coverage overlap;
+ only the additional cross-agent portion extends same-agent coverage.
+ These are potential token-prefix reuse rates, not runtime cache hits.}
+ \label{fig:agent-prefix-reuse}
+ \Description{Same-agent history covers most observed input tokens;
+ other-agent history adds little overall but helps first subagent calls.}
+\end{figure}
+
+Figure~\ref{fig:agent-prefix-reuse} separates overlapping coverage from
+additional coverage. Cross-agent reuse can still matter on a subagent's
+first call; affinity is therefore a preference, not a prohibition on
+sharing or load balancing.
+
+On a confirmed failure, the Router fences the old source epoch, resolves
+the last complete manifest, and chooses a healthy, layout-compatible
+replica with feasible workspace. Queuing and readmission remain part of
+recovery cost. Before acknowledging output, a surviving ordered log
+records request ID, token position/value, and source epoch; prompt and
+accepted tool inputs are also recoverable. Replay suppresses duplicate
+delivery and rejects stale callbacks. Exactly-once external tool side
+effects remain the orchestrator's responsibility.
+
+\subsection{KV Master: Sparse Recovery Value and Direct Revaluation}
+\label{sec:kv-master}
+
+\subsubsection{Valuing retention and demotion}
+\label{sec:placement-value}
+
+The Master compares complete, achievable placement plans. For an isolated
+interrupted segment, recovery time $R_r$ exposes delay
+$\max(0,R_r-\sigma_r)$. A common worker failure can interrupt several
+branches: if two required branches each finish 10\,s late, accelerating
+only one to 2\,s leaves their join 10\,s late. Thus, isolated block scores
+cannot be added to obtain workflow benefit.
+
+For current plan $P$ and candidate $P'$, we evaluate
+\begin{equation}
+ \Delta J=A(P',P)+\sum_e p_e\sum_w
+       \bigl[T_w(P',e)-T_w(P,e)\bigr].
+ \label{eq:value}
+\end{equation}
+Episodes $e$ cover normal next use and named compute-domain failures over
+a fixed horizon. The weights $p_e$ are declared probabilities or expected
+episode counts, not raw failure rates. A failure includes every request
+interrupted in that domain. Profiles estimate additional segment delays
+from surviving coverage, tail replay, I/O and target queues; a max-plus
+DAG pass yields $T_w$. The transition term $A$ accounts for foreground
+delay from copying and temporary occupancy, excluding costs already in
+the episode terms. All terms have units of time.
+
+Normal reuse remains in this objective even when failure probability is
+zero or slack is large. DRAM demotion is valued against its actual
+storage-backed continuation; last-copy deletion is valued against a
+remaining checkpoint or reconstruction. Every shared owner is considered,
+while each physical replica consumes capacity once. Pending copies help
+only in episodes for which the profile predicts successful commitment.
+No future failure time, prompt, or query is available to the policy.
+
+\paragraph{Why a priority label is insufficient.}
+Slack measures tolerated delay, not how much delay a placement can remove.
+Figure~\ref{fig:retention-value} applies the isolated-fault exposure rule
+to two declared recovery profiles. At zero slack, retaining A saves
+2\,s using two capacity units; at 6\,s slack, retaining B saves 10\,s
+using one. Sorting only by slack reverses their value-per-byte order.
+Recency can likewise miss a valuable checkpoint with no recent normal
+access, while raw saved time ignores how many bytes must remain resident.
+These observations require cost- and size-aware comparison. They do not
+by themselves select a particular replacement algorithm.
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/retention-value.pdf}
+ \caption{An analytical counterexample to slack-only priority.
+ Per-unit saving is $([R_{\mathrm{slow}}-\sigma]^+
+ -[R_{\mathrm{fast}}-\sigma]^+)/b$, conditional on an isolated failure.
+ A occupies two normalized capacity units with restore times 4/2\,s;
+ B occupies one with times 18/8\,s. Marked points compare A at slack 0
+ and B at slack 6. Normal-use value is set to zero to isolate the effect.
+ Inputs are constructed, not hardware measurements or a guarantee of
+ optimal placement.}
+ \label{fig:retention-value}
+ \Description{A zero-slack group can have much lower saved workflow
+ time per unit of capacity than a group with positive slack.}
+\end{figure}
+
+\subsubsection{Sparse candidates and layer overlap}
+\label{sec:sparse-placement}
+
+For each request and layer, a bounded access summary ranks historical
+blocks and includes native mandatory blocks. Candidates comprise legal
+individual groups and small layer-ordered bundles, limited by a configured
+work budget. The retained count $K_{r,l}$ describes the actual committed
+DRAM groups; it can change as context, access, and competitors change.
+There is no common resident depth $L$ or fixed attention-selection budget.
+A sparse adapter predicts data demand without changing the model's native
+selection. A miss reads storage or follows the declared reconstruction
+fallback, as Figure~\ref{fig:sparse-recovery} illustrates.
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/sparse-recovery.pdf}
+ \caption{Sparse retention preserves full recovery semantics.
+ (a) A complete historical checkpoint spans DRAM and SSD; dashed tail
+ blocks still require replay. (b) For layer 1, a constructed prediction selects
+ B0/B3, whereas the native query needs B0/B2. B2 is fetched on demand;
+ B3 is an unused prefetch. Blue and tan consistently denote physical
+ DRAM and SSD residency (D/S); unselected entries are unfilled.}
+ \label{fig:sparse-recovery}
+ \Description{Three layers have a complete mixed-tier history and an
+ uncommitted tail. A predicted-block mismatch triggers storage access.}
+\end{figure}
+
+The profile schedules SSD reads, H2D copies, and layer computation with
+finite buffers. DRAM retention removes only the SSD stage. Only remaining
+replay computation can hide transfers; avoided historical prefill is not
+available overlap time. Figure~\ref{fig:design-pipeline} shows why equal
+bytes at different layers can have different value. Figure~\ref{fig:overlap-frontier}
+shows diminishing returns within each fixed compute profile. Larger
+compute cost hides more later I/O but can increase total recovery time.
+These idealized schedules establish a possible layer-position effect;
+they do not establish its magnitude with predictor misses or contention.
+The runtime evaluates the current $M$, a declared distribution or bound
+for unknown tail $N$, and demand-reveal constraints. It does not infer a
+universal relationship between $Z$ and resident depth.
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/recovery-pipeline.pdf}
+ \caption{Analytical recovery schedules with equal-sized demand groups
+ across four layers: SSD read 4\,ms/group, H2D 1\,ms/group, and replay
+ 3\,ms/layer. All four groups are correctly predicted at time zero;
+ separate transient workspace holds them, and the three resources are
+ independent. Total recovery is 20\,ms with all groups on SSD, 19\,ms
+ with layer 4 retained in DRAM, and 16\,ms with layer 1 retained.
+ These illustrative rates are not hardware measurements.}
+ \label{fig:design-pipeline}
+ \Description{Three resource timelines compare all-storage, late-layer
+ DRAM retention, and early-layer DRAM retention under the same byte budget.}
+\end{figure}
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/overlap-frontier.pdf}
+ \caption{Analytical marginal value of retaining early-layer groups.
+ Each curve fixes replay cost and shares the assumptions of
+ Figure~\ref{fig:design-pipeline}; its zero-retention point is its matched
+ baseline. Flat regions show reads already hidden by replay. The
+ retained depth is an example candidate family, not a system-wide quota.}
+ \label{fig:overlap-frontier}
+ \Description{Recovery latency saturates at different retained group
+ counts for three layer compute costs.}
+\end{figure}
+
+To capture limited complementarity, the candidate budget also permits
+pairs of groups on required branches exposed to the same fault. Every
+candidate is evaluated with its whole victim set through
+Equation~\ref{eq:value}. Bounded search can still miss beneficial bundles;
+we claim neither optimal placement nor submodularity.
+
+\subsubsection{Online admission, direct revaluation, and eviction}
+\label{sec:placement-plan}
+
+\paragraph{Compare current plans, not historical credits.}
+The Master re-evaluates placement at the events described in
+Section~\ref{sec:system-overview}. Each decision uses one versioned snapshot
+of the DAG, demand summaries, committed copies, queues, leases, and byte
+ledgers. A cached estimate is reusable only while these dependencies are
+unchanged. There is no rent level, accumulated credit, or renewal rule.
+Tool waiting alone neither deletes history nor pins a particular tier;
+normal reuse and failure exposure both remain in Equation~\ref{eq:value}.
+
+Direct revaluation is a design choice, not a claim of optimal search.
+The isolated comparison in Section~\ref{sec:eval-rental} retains the
+rejected rental alternative: historical credit screening increased
+modeled miss-plus-movement cost without reducing replacement-value checks.
+That additive example does not validate the complete DAG controller or
+measure its CPU cost. The runtime therefore bounds candidate and victim
+evaluations and reports both decision work and resulting placement regret.
+
+\paragraph{Construct a feasible replacement.}
+Each candidate is a legal promotion or newly sealed checkpoint group,
+including the dependencies needed to advertise its new frontier. The
+safe victim set $Q$ excludes replicas with outstanding physical read
+leases or copy dependencies. Demotion needs a committed lower copy or a
+feasible copy-and-commit schedule; last-copy deletion needs an explicit
+valid fallback. Logical ownership by a running request does not
+permanently pin a physical location. Shared bytes are charged once, while
+the plan's effects on all owners are evaluated together.
+
+For each candidate, the Master constructs a private victim plan. It scans
+a bounded, rotating set of eligible groups in the affected tier, ordered
+by immutable object ID from a persistent cursor. Starting from the current
+placement, it computes each feasible removal's additional cost through
+Equation~\ref{eq:value} per byte released in that tier. It appends the
+least-loss removal, breaking ties by fewer moved bytes and then object ID,
+and re-evaluates subsequent removals against the changed tentative plan.
+This continues until sufficient room exists for the incoming group and
+its transfer workspace, or the configured work budget is exhausted.
+The cursor resumes at the next eligible ID on later decisions; a bounded
+scan can miss better victims and supplies no global optimality guarantee.
+
+A DRAM demotion that lacks storage space first constructs a lower-tier
+relief plan by the same rule, with storage deletion as the final tier.
+It includes those victims, fallback changes, and copy dependencies in
+the same plan. It never assumes an infinite lower tier. A tentative
+removal is eligible only if its transition can be scheduled within the
+physical and reserved byte limits; incoming copies wait for real release.
+If no such plan fits the work budget, this candidate is skipped. The
+ratio only constructs the victim set: the final score is the complete
+candidate-plus-victim cost, not the sum of independent block scores.
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/placement-competition.pdf}
+ \caption{Direct replacement comparison in a constructed additive
+ example with equal-size groups and cost units of seconds. Promoting x
+ saves 6; demoting y or z costs 2 or 5; either transition costs 1.
+ Thus the complete changes are $1+2-6=-3$ and $1+5-6=0$.
+ A leased replica is excluded even if its removal cost is lower.
+ With a margin below 3, the first plan is eligible for reservation;
+ physical release still waits for commit and reader drainage. General
+ common-failure plans use the joint DAG, not this additive shortcut.}
+ \label{fig:placement-competition}
+ \Description{Current values compare two complete candidate and victim
+ plans; a leased object is excluded and only a profitable safe plan proceeds.}
+\end{figure}
+
+\paragraph{Choose and apply one plan.}
+Among the fully evaluated plans, the Master selects the smallest
+$\Delta J$, breaking ties by fewer moved bytes and stable object IDs.
+An optional plan must improve predicted cost by more than the configured
+uncertainty allowance plus migration hysteresis. These allowances are
+heuristic guards unless separately calibrated; they are not statistical
+confidence bounds. Rejected plans change neither placement nor capacity.
+Before acceptance, the Master rechecks snapshot versions and reserves
+the immediately executable destinations and transfer workspace. It queues
+dependent actions in copy--commit--redirect--drain--release order and
+starts incoming copies only when their space is physically available.
+Later completions trigger a new snapshot; tentative plans from an older
+placement are not reused as if nothing had changed.
+
+Required capacity relief has no incoming bidder. The same current-loss
+rule constructs a safe relief plan until the target is met, re-evaluating
+after each tentative removal. It may accept a positive cost to satisfy
+the capacity constraint. Storage deletion considers unowned or superseded
+state first. Further relief may withdraw an active checkpoint claim,
+but must first publish a complete older manifest or a prompt-and-token-log
+fallback that does not depend on the deleted object. All owners' costs
+enter the plan, and old-generation readers must drain before deletion.
+If no executable plan exists within the budget, new admission pauses;
+the old frontier remains valid and a later event resumes the search.
+
+\par\medskip\noindent\begin{minipage}{\columnwidth}
+\raggedright
+ \refstepcounter{designalgorithm}\label{alg:placement}
+ \textbf{Algorithm \thedesignalgorithm: Direct placement revaluation}
+ \par\smallskip
+ \begin{tabularx}{\columnwidth}{@{}r@{\quad}X@{}}
+ \toprule
+ 1 & On a review event, snapshot versions, copies, queues and byte ledgers \\
+ 2 & Refresh causal demand and affected placement values; reuse existing objects \\
+ 3 & If capacity must shrink, construct a safe current-loss relief plan \\
+ 4 & Otherwise, form bounded legal sparse/layer candidates; best $\leftarrow$ none \\
+ 5 & For each candidate within the work budget: \\
+ 6 & \quad Construct safe victims by re-evaluated loss per released byte \\
+ 7 & \quad Include lower-tier victims and fallback changes; skip if infeasible \\
+ 8 & \quad Evaluate the complete plan with Equation~\ref{eq:value} \\
+ 9 & \quad Keep the lowest-cost plan that clears uncertainty and hysteresis \\
+ 10 & If no plan qualifies, retain placement; on pressure, pause new admission \\
+ 11 & Recheck versions; on mismatch, reschedule from a fresh snapshot \\
+ 12 & Reserve executable space and enqueue dependent transitions \\
+ 13 & On completion/failure, reconcile actual state and trigger a fresh review \\
+ \bottomrule
+ \end{tabularx}
+ \par\smallskip\noindent\textit{Predicted release is not free memory; a plan is not a committed copy.}
+ \end{minipage}\par\medskip
+
+Profiles carry model/layout, size, tail, topology, queue load, support
+range, uncertainty, and expiry. Missing or stale profiles freeze optional
+promotions and use bounded LRU for required relief under the same safety
+protocol. Candidate construction, each victim comparison, transfer
+profiling, and complete DAG passes count against the work budget; report
+their counts, decision latency, and the loss from bounded search. The
+isolated model's replacement checks are not measurements of these costs.
+
+\paragraph{Applying a placement decision.}
+Engine hooks report actual tier capacity, sealed blocks, access summaries,
+and execution workspace. The transfer path enforces
+reservations and bounded transfer queues for foreground reuse, demanded
+recovery, and checkpoint/writeback. Configured service shares and bounded
+quanta limit interference; demanded misses precede speculative reads
+within the recovery share. These rules do not promise zero serving cost.
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/checkpoint-lifecycle.pdf}
+ \caption{Checkpoint and location transitions. (a) Pending tokens
+ 129--192 leave frontier $M=128$ unchanged; only dependency-complete
+ commitment advances it to 192. (b) Demotion copies to storage,
+ validates and commits the new location, redirects new readers, drains
+ old leases, and then frees DRAM. (c) Last-copy deletion first publishes a
+ complete older checkpoint or prompt/token-log replay. Numbers are illustrative;
+ the diagram specifies ordering, not a completed fault-injection test.}
+ \label{fig:checkpoint-lifecycle}
+ \Description{A complete manifest frontier differs from an in-flight
+ copy; storage commitment and reader drainage precede DRAM release; last-copy removal explicitly changes the recovery path.}
+\end{figure}
+
+Objects move through pending, committed, and retiring generations
+(Figure~\ref{fig:checkpoint-lifecycle}). Advancing a frontier requires every
+layer, TP shard, selector state, token interval, and matching surviving
+log prefix. It is not the largest individually copied token position.
+DRAM demotion follows copy--verify--commit--redirect--drain--free. The
+backend must meet the claimed fault-domain persistence contract; buffered
+write completion alone does not imply durable storage. Copy failure keeps
+the previous authoritative location and releases only failed reservations.
+Duplicate or stale-epoch callbacks cannot advance coverage.
+
+Recovery acquires a manifest and leases its locations. The transfer path
+prefetches predicted native groups in layer order into bounded transient
+workspace, while the engine replays the acknowledged tail. On-demand
+selection resolves misses before executing the affected operation. Dense
+layers use full demand; unavailable sparse metadata is restored or
+reconstructed before selection. TP ranks obey matching collectives, and
+batched replay is used only when it preserves the engine's native
+semantics. A failure during prefill also starts from the last complete frontier,
+possibly zero. Speculation may improve timing but never defines correctness.

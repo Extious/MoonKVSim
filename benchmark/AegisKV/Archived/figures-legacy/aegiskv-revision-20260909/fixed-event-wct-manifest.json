@@ -1,0 +1,100 @@
+{
+  "figures": [
+    {
+      "name": "eval-fixed-event-wct",
+      "title": "固定追加故障对同一Workflow的WCT影响",
+      "caption": "固定追加故障对同一 Workflow 的 WCT 影响。K1 和 K2 均在 60 s 对 GPU 0 注入一次故障；K2 仅额外在 180 s 对 GPU 2 注入一次故障，每次停机 120 s。每点为同系统、同 ID 的 WCT(K2)−WCT(K1)，不是相对无故障条件的增量；负值完整保留。横轴是三系统在追加故障中直接 active/queued 受害 Workflow 的共同并集，共 7 个对象，按已有 Mooncake 无故障 WCT 顺序排列，三系统均展示同一组对象。实心表示含 active 受害请求，空心表示只有 queued 受害请求，叉号表示该系统无直接受害请求；同时包含 active 和 queued 时采用实心。此并集是事后描述性分组，不是预定义因果 cohort，不代表全部 160 个 Workflow 的效果。每个系统每种日程一次模拟，共复用 6 次执行；7 个对象并非独立重复，连线只帮助按 ID 对照。该图不单独证明 Peer HBM 恢复收益。",
+      "caption_en": "Effect of one fixed added fault on the same workflows. K1 and K2 share the GPU 0 fault at 60 s; K2 adds only a GPU 2 fault at 180 s, with 120 s downtime per fault. Each point is the same-system, same-ID difference WCT(K2) minus WCT(K1), not a fault-free contrast; negative values are retained. All three systems show the same seven-workflow union of directly active or queued victims at the added fault, in the existing Mooncake fault-free WCT order. Filled markers indicate active victims (including workflows also having queued victims), hollow markers queued-only victims, and crosses no direct victim. This is a post-treatment descriptive union, not a prespecified causal cohort or an estimate for all 160 workflows. One simulation per system per schedule, reusing six executions; workflows are not independent repeats, and connecting lines only aid same-ID comparison. The figure alone does not establish a Peer HBM recovery benefit.",
+      "width_in": 7.0,
+      "height_in": 3.4,
+      "evidence": "uncalibrated_frozen_algorithm_external_fault_simulation",
+      "files": {
+        "pdf": "526cdd44056160da7b73959a1423a3183f72a10c2cdf4deae58457e0f6e9c5f9",
+        "svg": "112006da92fd4ef4fd114c67c07158d6a4b2e818044a36fea2d04a353c912c5c",
+        "png": "0953a494116d80f9d765a2d12a7cfd1548e9e08291ac98930e2bf37f19347856",
+        "csv": "c5e050e6b05540f6ce92e0191a65a73b5c94122f508c6070c87c087f570eae83"
+      },
+      "plotted_rows": 21,
+      "workflow_count": 7,
+      "reused_execution_count": 6,
+      "new_experiments_by_renderer": 0,
+      "visual_review": "PASS"
+    }
+  ],
+  "inputs": {
+    "output/aegiskv-revision-20260909/scaling-rate/data/event-pairs.json": "e5657f530f304265244b3659b3b456460b6f1c1ded23fa287e342841d30d082e",
+    "output/pdf/aegiskv-evaluation-20260909/eval-healthy-workflow.csv": "f6eb3f2fdf2d483bbd0c1b17ce792986efff6d9784e25628f9330f0889d33742",
+    "benchmark/AegisKV/experiments/scripts/paper/render_fixed_event_wct.py": "60f5fb4a87a2ed18f0eccccd65118a9d493570032c3ab46253062fbc72362055",
+    "benchmark/AegisKV/experiments/scripts/paper/agent_lease_style.py": "4e3baa235397470b9542eb85ab853710e2a3d2b802c728102d532e1b66508072",
+    "output/pdf/aegiskv-revision-20260909/fixed-event-selected-release-audit.json": "c1fae70174536d59e1f858b4ccc77c1eb1bd851449a99626e26ef0fad7a44c13",
+    "output/aegiskv-revision-20260909/scaling-rate/FIXED_EVENT_PREFIX_AUDIT.json": "ca8e6c079ff1baef8a2d38f936bb20791c74bb3492c28a727bfe579f72f798d8"
+  },
+  "prefix_audit": {
+    "status": "PASS",
+    "path": "output/aegiskv-revision-20260909/scaling-rate/FIXED_EVENT_PREFIX_AUDIT.json",
+    "scope": "All three systems: equality of 32 streams of saved semantic telemetry over [0,180s), with documented crossing-boundary masks and excluded allocation IDs/physical Python CPU. Not serialized DES heap equivalence or within-timestamp cross-stream order equality.",
+    "boundary": {
+      "interval": "[0,180s)",
+      "exclusive_boundary_ns": 180000000000,
+      "at_boundary_events_excluded": "180s injection and 60s-fault repair at180s are outside strict prefix"
+    }
+  },
+  "plot_spec": {
+    "question": "How does adding the fixed 180 s fault change each displayed workflow's WCT?",
+    "cohort": "post-treatment direct-victim union; descriptive only",
+    "ordering": "existing Mooncake fault-free WCT rank",
+    "workflow_ids": [
+      "b6f7c88dbaa18999",
+      "3bd8400a1174f1a0",
+      "0a950dfa942cf3ad",
+      "585ead607ef66fb1",
+      "a6545687ea8228bc",
+      "c91cb8efeedea700",
+      "0ca82c8661605e74"
+    ],
+    "ordinate": "same-system WCT(K2) - WCT(K1), absolute seconds",
+    "victim_state": "active precedence, then queued-only, otherwise no direct victim",
+    "negative_value_count": 4,
+    "zero_value_count": 3,
+    "all_original_event_pair_fields_preserved": true,
+    "overlapping_zero_crosses": "different marker sizes retain both exact coordinates; no jitter",
+    "no_statistics_over_heterogeneous_raw_wct": true
+  },
+  "reference": {
+    "path": "output/pdf/aegiskv-revision-20260909/eval-workflow-delay-pdf-preview.png",
+    "borrowed": "same system colors, line patterns, independent legend band, absolute seconds and zero line"
+  },
+  "review": {
+    "pdf_size_in": [
+      7,
+      3.4
+    ],
+    "minimum_font_pt": 10.0,
+    "all_text_inside_page": true,
+    "status": "PASS",
+    "method": "Actual native PNG plus PyMuPDF-rendered 7-inch PDF at 144 dpi; separate grayscale PDF rendering viewed with view_image.",
+    "actual_viewed_files": {
+      "output/pdf/aegiskv-revision-20260909/eval-fixed-event-wct.png": "0953a494116d80f9d765a2d12a7cfd1548e9e08291ac98930e2bf37f19347856",
+      "output/pdf/aegiskv-revision-20260909/eval-fixed-event-wct-pdf-preview.png": "3092836769acebee5351486c32ee4176acab0cf228160a48fe8dd246f432c060",
+      "output/pdf/aegiskv-revision-20260909/eval-fixed-event-wct-grayscale.png": "97fdd44eefc5c6efc9eae94cf20e3f903895e7e823ed3636de2143bbad785642"
+    },
+    "checks": [
+      "Both legend rows readable and separate from data; full three-system names.",
+      "PDF minimum text size 10 pt; all text stays inside the 7 x 3.4 inch page.",
+      "Complete 21 points on the same seven Workflow IDs and existing Mooncake F0 order.",
+      "Active/queued-only/no-direct flags match source rows; active takes precedence for mixed victims.",
+      "All four negative and three exact-zero differences retained; negative ticks and zero baseline visible.",
+      "Nested exact-zero crosses preserve both DRAM-only and AegisKV at b6f7c88d without jitter.",
+      "Solid/dashed/dash-dot lines remain distinct in grayscale.",
+      "No numerical aggregate across heterogeneous raw WCT and no Peer recovery claim."
+    ],
+    "iteration": "Added explicit negative-axis ticks and longer legend handles after first visual review.",
+    "selected_release_boundary_audit": {
+      "status": "PASS",
+      "path": "output/pdf/aegiskv-revision-20260909/fixed-event-selected-release-audit.json",
+      "all_21_releases_equal": true,
+      "delta_wct_equals_delta_completion": true
+    },
+    "prefix_audit_verified": "PASS: three systems and 32 recorded semantic streams each; scope and exclusions reviewed."
+  }
+}

@@ -1,0 +1,38 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" version="31.1.5">
+  <diagram id="commit-recoverable-prefix" name="commit-recoverable-prefix">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageWidth="1200" pageHeight="290" background="#FFFFFF" math="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="canvas" value="" style="rounded=0;strokeWidth=1.7;strokeColor=#FFFFFF;fillColor=#FFFFFF;fontFamily=Cantarell;fontSize=26;fontColor=#FFFFFF;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="0" y="0" width="1200" height="290" />
+        </mxCell>
+        <mxCell id="Peer HBM" value="Peer HBM" style="rounded=0;strokeWidth=1.7;strokeColor=#0072B2;fillColor=#FFFFFF;fontFamily=Cantarell;fontSize=26;fontColor=#0072B2;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacing=4;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="0" y="30" width="230" height="85" />
+        </mxCell>
+        <mxCell id="0-0" value="Chunk 0&#10;Committed" style="rounded=0;strokeWidth=1.7;strokeColor=#0072B2;fillColor=#F5F8FB;fontFamily=Cantarell;fontSize=26;fontColor=#0072B2;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="250" y="30" width="290" height="85" />
+        </mxCell>
+        <mxCell id="0-1" value="Chunk 1&#10;Committed" style="rounded=0;strokeWidth=1.7;strokeColor=#0072B2;fillColor=#F5F8FB;fontFamily=Cantarell;fontSize=26;fontColor=#0072B2;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="560" y="30" width="290" height="85" />
+        </mxCell>
+        <mxCell id="0-2" value="Chunk 2&#10;Absent" style="rounded=0;strokeWidth=1.7;strokeColor=#59636F;fillColor=#F5F8FB;fontFamily=Cantarell;fontSize=26;fontColor=#59636F;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;dashed=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="870" y="30" width="290" height="85" />
+        </mxCell>
+        <mxCell id="Store DRAM" value="Store DRAM" style="rounded=0;strokeWidth=1.7;strokeColor=#B86B00;fillColor=#FFFFFF;fontFamily=Cantarell;fontSize=26;fontColor=#B86B00;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacing=4;strokeColor=none;fillColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="0" y="170" width="230" height="85" />
+        </mxCell>
+        <mxCell id="1-0" value="Chunk 0&#10;Committed" style="rounded=0;strokeWidth=1.7;strokeColor=#B86B00;fillColor=#F5F8FB;fontFamily=Cantarell;fontSize=26;fontColor=#B86B00;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="250" y="170" width="290" height="85" />
+        </mxCell>
+        <mxCell id="1-1" value="Chunk 1&#10;Aborted" style="rounded=0;strokeWidth=1.7;strokeColor=#B83C46;fillColor=#F5F8FB;fontFamily=Cantarell;fontSize=26;fontColor=#B83C46;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;dashed=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="560" y="170" width="290" height="85" />
+        </mxCell>
+        <mxCell id="1-2" value="Chunk 2&#10;Absent" style="rounded=0;strokeWidth=1.7;strokeColor=#59636F;fillColor=#F5F8FB;fontFamily=Cantarell;fontSize=26;fontColor=#59636F;whiteSpace=wrap;html=0;align=center;verticalAlign=middle;spacing=4;dashed=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="870" y="170" width="290" height="85" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

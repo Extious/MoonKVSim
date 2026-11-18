@@ -1,0 +1,454 @@
+\section{Evaluation}
+\label{sec:evaluation}
+
+The central question is whether workflow-aware protection reduces
+\emph{workflow completion time} (WCT) after a failure without paying a
+larger cost during normal service. We organize the evaluation around
+end-to-end outcomes, recovery-path costs, mechanism contributions,
+prediction quality, and operating limits. The experimental design follows
+three useful precedents: application-level outcomes in workflow-aware
+serving~\cite{lin2024parrot,ni2026topas}; separate interrupted and
+uninterrupted cohorts in failure recovery~\cite{cao2026lumen}; and
+end-to-end measurements followed by restoration, scheduling, and
+resource-pressure ablations in KV-cache systems~\cite{gao2025hcache,qin2025mooncake}.
+
+\paragraph{What is measured.}
+The current artifact contains physical KV-path microbenchmarks,
+held-out predictions on observed agent traces, native sparse-access
+captures, and historical analytical diagnostics. It does not yet contain
+a fault-injection campaign for the current fixed-$L/K/Z$, exclusive
+three-tier controller. We report the available evidence at its actual
+scope and specify the missing experiments below. In particular, an older
+Peer-disabled allocation model and an isolated rental model are
+diagnostics, not implementations of the present policy. The figures
+distinguish physical measurements, trace observations, and models; no
+synthetic curve stands in for an unexecuted system comparison.
+
+\subsection{Methodology and Comparison Contract}
+\label{sec:eval-method}
+
+\paragraph{Deployment and workloads.}
+The primary system experiment requires at least two compatible serving
+replicas in distinct failure domains, independently reachable backing
+storage, and a durable input/output log. GPU-process, replica, host, and
+backing-store failures are separate cells. Record DP and TP independently,
+the surviving compute capacity, physical interconnect, backend, model
+revision, precision, attention kernels, block size, and controller version.
+Local NVMe, remote NVMe, and a shared filesystem are distinct backends;
+a local disk is not host-failure-safe. These deployment fields remain
+unfilled until an executable prototype and hardware allocation are frozen.
+
+Use executable coding, multi-hop question-answering, and controlled
+sequential/fork--join workflows. Preserve the original DAG once, complete
+prompt histories, workflow IDs, and absolute arrival sequence. Frozen
+tool responses provide repeatable primary comparisons; live tools are
+a separate validity experiment. Dense and native-sparse model paths are
+separate cells, with unsupported context lengths explicitly excluded.
+Calibrate one fixed baseline's sustainable healthy load, then apply the
+same open-loop arrivals to every policy. The initial decisive slice uses
+three workload families, two compatible model paths, one load/budget
+setting, four policies, two fault conditions, and ten paired campaigns:
+480 planned run slots, not 480 completed runs. Broader load, context,
+capacity, and fault-position scans follow the decisive slice.
+
+\paragraph{Baselines and resource accounting.}
+Recompute retains accepted tokens and application state but no additional
+recoverable KV; it measures the benefit of checkpointing itself.
+Hierarchical LRU (H-LRU) and reuse-only protection use the same transport,
+checkpoint trigger, recovery scheduler, ownership protocol, and total
+physical resources as AegisKV. H-LRU tests whether the new priorities beat
+a tuned hierarchy; reuse-only isolates recovery urgency from normal
+locality. A zero-slack control isolates workflow urgency while preserving
+normal-reuse value. Peer-off and fixed-total-Peer-cap controls isolate
+Peer acceleration and the Adapter.
+All-DRAM and small-instance offline policies are explicitly labeled
+references with their relaxed assumptions. Compatible external
+D\'ej\`aVu, GhostServe, LUMEN, or Mooncake artifacts provide additional
+system comparisons~\cite{strati2024dejavu,jayakody2026ghostserve,cao2026lumen,qin2025mooncake};
+a reimplemented mechanism is named as such, and an incompatible artifact
+is not assigned invented performance.
+
+All equal-resource policies pay for execution and protection HBM,
+metadata, staging, reserved and retiring bytes, checkpoint writes, and
+migration traffic. Shared objects consume one stable physical allocation;
+both copies count during handoff. The union of Peer, DRAM, and storage
+owners covers a checkpoint. We do not give Peer a free complete lower-tier
+replica. $L$, $K$, and $Z$ are selected on calibration workflows and frozen
+for held-out evaluation. Adaptive per-request depth or hot-set size is
+a separate reference; the current Adapter already varies total Peer
+capacity while keeping the per-request quotas fixed.
+
+\paragraph{Outcomes and statistical unit.}
+For policy $p$ and workflow $w$, use that policy's own fault-free mate:
+\begin{equation}
+ \begin{aligned}
+ D_{w,p}&=\mathrm{WCT}^{F1}_{w,p}-\mathrm{WCT}^{F0}_{w,p},\\
+ G_{w,p}&=D_{w,\mathrm{H\mbox{-}LRU}}-D_{w,p}.
+ \end{aligned}
+ \label{eq:eval-penalty}
+\end{equation}
+$F0$ denotes no injected failure; $F1$ denotes the matched fault condition.
+Positive $G$ indicates a smaller failure penalty. Report absolute WCT,
+completion by a common horizon, SLO goodput, and healthy-service cost as
+well as $D$ and $G$. Separate directly interrupted workflows, workflows
+sharing recovery resources, and an isolated control cohort. Campaigns
+are the independent repetition unit; workflows, requests, and blocks
+within a campaign are not independent runs. Report both object counts
+and campaign counts, and aggregate paired differences within each
+campaign before computing campaign-level uncertainty.
+TTFT starts at the original request arrival, including retries. For
+requests already decoding at failure, report failure-to-first-resumed-token
+latency and the inter-token latency tail. End-to-end TPOT includes recovery
+pauses between the first and last accepted output tokens; decoder-only
+TPOT is a separately labeled diagnostic. Replayed or discarded tokens do
+not enlarge the accepted-output denominator.
+
+\subsection{End-to-End Workflow Completion}
+\label{sec:eval-workflow}
+
+\paragraph{Decisive experiment.}
+The primary fault is triggered when a fixed workflow/Agent/request reaches
+80\% of its frozen logical token progress. Kill the complete source
+replica and include every interrupted request. Sweep 20/50/80/95\%
+progress separately; do not substitute one wall-clock timestamp for
+equal progress. In attribution runs, freeze the pre-fault source mapping
+and committed coverage. In full-system runs, allow routing and achieved
+frontiers to differ, but compare the original arrival cohort and report
+the actual interrupted IDs and wall-clock trigger times. Do not select
+a different interrupted subset for each policy. Routing and trigger-time
+differences remain part of the full-system effect; mechanism attribution
+uses the frozen mapping and coverage control above.
+
+The primary result should pair a WCT distribution with same-ID $G$
+values for each workload family and load. Show completion and timeouts
+alongside latency; use a shared eligible cohort for complete-case
+latency. Failure penalties can be zero or negative, so ratios with $D$
+as the denominator are inappropriate. A convincing result must improve
+over H-LRU or reuse-only, not only over Recompute, and must survive
+accounting for the healthy-service cost.
+
+\paragraph{Available allocation diagnostic.}
+Figure~\ref{fig:eval-placement-pairs} reanalyzes the existing
+36-configuration, four-branch model. It varies state size, branch slack,
+and storage bandwidth while comparing identical configurations. The
+historical workflow-value allocator improves 17 cases and ties 19. In
+the base case, LRU and workflow value add 3.6208 and 1.6125\,s to a
+12\,s residual join, respectively. The 2.0083\,s difference is a
+55.5\% reduction in the \emph{failure penalty}, not in full-workflow WCT.
+This model has no Peer tier, fixed-slot admission, or lazy lower-tier
+controller. It supports the relevance of workflow priorities and the
+choice of a paired metric, but not an end-to-end AegisKV speedup.
+
+\begin{figure}[tb]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/evaluation/eval-placement-pairs.pdf}
+ \caption{Historical allocation model: paired reduction in failure penalty
+ relative to LRU across 36 equally weighted configurations. Positive values
+ favor workflow-value placement; 19 ties remain visible. These are
+ deterministic Peer-disabled scenarios, not measured workflows.}
+ \label{fig:eval-placement-pairs}
+ \Description{Paired LRU minus workflow-value failure penalties over all
+ 36 historical analytical configurations, preserving positive gains and ties.}
+\end{figure}
+
+\subsection{Recovery Paths and Interference}
+
+\paragraph{Available physical calibration.}
+Figure~\ref{fig:eval-recovery-paths} reorganizes the existing path timings
+used in the earlier reconstruction comparison. The configuration is Qwen2.5-7B-Instruct-1M,
+two A100 PCIe 40\,GB GPUs with TP2, BF16, and batch size one. One fixed
+synthetic token stream is evaluated at 8K, 64K, 256K, and approximately
+1.01M tokens. HBM/DRAM reuse use three timing repetitions per input;
+full Prefill and DPC shared-filesystem reuse use one. The endpoint is
+the same input KV ready for continuation, including retrieval and
+required computation. These are path measurements, not independent
+workflow campaigns.
+
+At the longest context, resident HBM, host DRAM, shared filesystem,
+and full reconstruction take 1.3050, 2.6632, 10.1561, and 571.2127\,s.
+The large reconstruction gap motivates retained state; the smaller
+HBM--DRAM gap is the quantity a Peer tier could potentially reduce.
+This measurement does not include a Peer transfer, background serving,
+concurrent recovery, or fault detection. The filesystem server cache is
+uncontrolled, so this is neither cold-SSD latency nor a bandwidth claim.
+
+\begin{figure}[tb]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/evaluation/eval-recovery-paths.pdf}
+ \caption{Measured KV-path latency on one fixed input stream. HBM and
+ DRAM show medians and observed ranges of three timing repetitions;
+ reconstruction and shared-filesystem points each have one observation.
+ HBM is resident reuse, and SharedFS is DPC shared storage. These are
+ calibration measurements, not fault-injected system results.}
+ \label{fig:eval-recovery-paths}
+ \Description{Four measured recovery-related path latencies across four
+ context lengths, with observed timing ranges only where repetitions exist.}
+\end{figure}
+
+\paragraph{Required causal decomposition.}
+Log detection, fencing/rerouting, admission, directory lookup, storage
+read, network transfer, H2D, required replay, request resume, and DAG
+completion. Trace dependency edges and identify the realized critical
+path; adding overlapping component durations would overcount recovery.
+Hold demand and coverage fixed to compare Peer off/on with overlap
+off/on. Separately measure total bytes, unused prefetch, GPU work,
+temporary copies, and recovery-pool busy time. A faster request does not
+necessarily reduce join delay or total recovery work.
+
+Inject bursts affecting 1/2/4/8 workflows with 1/2/4 surviving targets
+under the same foreground arrivals. Plot queue occupancy and
+interrupted/uninterrupted WCT, TTFT, and TPOT over time, with an isolated
+resource control. Shared recovery queues must be identified before
+claiming collateral delay. This follows the cohort separation in
+LUMEN~\cite{cao2026lumen} while retaining WCT as AegisKV's primary outcome.
+
+\subsection{Mechanism Contributions and Credit Cost}
+\label{sec:eval-rental}
+
+Use matched interventions rather than removing several mechanisms at
+once. The main ablations are: zero-slack fallback versus predicted slack;
+reuse-only versus recovery-only versus combined priority; per-Agent
+shares versus creator-only shares with physical deduplication unchanged;
+causal-visibility normalization versus
+raw selection counts; fixed-slot Slack versus FCFS, recency, and
+recovery-cost admission; and fixed Peer capacity versus guarded AIMD.
+For lower tiers, compare the current lazy-credit policy with same-value
+direct revaluation, ordinary cost/size GDS or Landlord, no actual-use
+renewal, and no pressure aging. Preserve the same ownership, leases,
+arrival/fault opportunities, value estimates, and physical budgets.
+
+Lazy versus eager refresh needs both an equal-CPU-budget comparison and
+an unbounded eager reference. Report decision time, candidates examined,
+scan age, stale rankings, differing victims, movement bytes, and paired
+WCT. Fewer scalar checks alone do not establish a faster controller.
+Five factorial experiments expose interactions: Slack $\times$ shared-Agent
+shares, normalized demand $\times$ restoration pipelining, renewable credit
+$\times$ lazy refresh, load-aware routing $\times$ shared-link contention,
+and Peer residency $\times$ pipelining. Each uses all four cells with
+the other features fixed. Campaign-level differences of differences
+distinguish a combined effect from two separately observed improvements.
+
+\paragraph{Available adverse result.}
+The historical additive rental diagnostic has 512 decisions and the
+same 396 value checks for direct revaluation and the original trial-rent
+variant. Their miss-plus-movement costs are 462.96 and 506.39 model units:
+trial rent is 9.38\% worse. Figure~\ref{fig:eval-rental-diagnostic} also
+retains the later repaired variant. A diagnostic repair does not validate
+the current per-Agent lazy-credit controller. This counterexample makes
+the same-value direct baseline necessary; it is not evidence that adding
+rent improves WCT or reduces CPU cost.
+
+\begin{figure}[tb]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/evaluation/eval-rental-diagnostic.pdf}
+ \caption{Historical rental diagnostic. Miss and movement costs are
+ retained for direct revaluation, the original trial-rent variant, and
+ its repaired variant. Lower is better. The original negative result is
+ preserved; model cost and value-check counts are not physical WCT or
+ controller CPU measurements.}
+ \label{fig:eval-rental-diagnostic}
+ \Description{Historical miss-plus-movement cost comparison, preserving
+ the rental regression and the remaining gap after a diagnostic repair.}
+\end{figure}
+
+\subsection{Prediction Quality and Sparse Demand}
+\label{sec:eval-prediction}
+
+\paragraph{Remaining time.}
+Figure~\ref{fig:eval-tracker-errors} uses 1,443 eligible second-request
+agent snapshots from 170 workflows, with one snapshot per Agent and
+five workflow-disjoint folds. The target is whole-Agent remaining wall
+time, not the residual segment duration needed by the current Tracker.
+Mean absolute errors are 438.6\,s for a training-fold median, 406.7\,s
+for basic GBDT, and 407.1\,s for GBDT with history. Basic GBDT's p95
+absolute error is nevertheless worse than the median baseline
+(1113.8 versus 1036.1\,s). The plot preserves
+the complete error tail, including errors above 85,000\,s. A modest
+average reduction does not establish trustworthy slack, and these
+labels cannot validate segment-level predictions.
+
+The current Tracker requires new causal segment labels, workflow-disjoint
+training/calibration/test sets, and later-workload validation. Measure
+remaining-time error, false positive slack on truly critical branches,
+critical-path ranking, fallback frequency, and predictor/update cost.
+Evaluate zero-slack and oracle-duration references. Bootstrap whole
+workflows for prediction diagnostics; do not infer an error CDF from
+aggregate WAPE or feature correlations. Study stale profiles, model
+shifts, missing DAG edges, and delayed tools by recomputing decisions
+against actual outcomes, rather than adding decorative error bars.
+
+\begin{figure}[tb]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/evaluation/eval-tracker-errors.pdf}
+ \caption{Held-out absolute error of whole-Agent remaining-time
+ predictions. The ECDF contains all 1,443 Agent snapshots from 170
+ workflows; folds separate workflows. It is descriptive and has no
+ invented confidence band. Whole-Agent accuracy does not validate
+ residual-segment slack.}
+ \label{fig:eval-tracker-errors}
+ \Description{Complete held-out absolute-error ECDFs for median, basic
+ GBDT, and history-augmented GBDT, including the long error tail.}
+\end{figure}
+
+\paragraph{Native access and horizon sensitivity.}
+Figure~\ref{fig:eval-sparse-demand} compares historical frequency,
+recency, and an offline demand oracle at the same within-model byte
+budget. The captures use 32,768 historical tokens, a preceding
+512-Query ranking window, and the following 64 Queries for evaluation.
+Each object is a layer's 64-token block including all KV heads. The
+budget is 205 of 512 historical blocks per layer, approximately 40\%.
+Coverage is the fraction of distinct future-needed historical bytes
+already selected, with equal document weighting and three documents
+per model. It is neither attention mass nor a GPU hit-rate measurement.
+
+Historical frequency covers 77.82\%, 53.57\%, and 43.02\% for
+NOSA-3B, MiniCPM4-8B, and the experimental SeerAttention/Qwen3 path;
+same-budget oracle coverage is 93.75\%, 58.98\%, and 43.28\%.
+The small Seer oracle gap limits the value of a better ranker at this
+budget. Extending the future window to 512 Queries lowers frequency
+coverage to 58.90\%, 44.08\%, and 40.47\%; the complete horizon sweep
+is retained in the artifact. These historical counts include native
+head/group selection events. They are a baseline for, not a measurement
+of, the current deduplicated, visibility-normalized probability estimate.
+
+The required current-policy experiment compares raw counts, normalized
+counts, recency, and random selection using strictly preceding windows.
+An equal-budget offline oracle may use actual future demand and is
+reported only as a clairvoyant reference. Sweep history length, future horizon,
+budget, and unseen documents/workflows; account for selector state and
+all physical objects. Freeze $L/K/Z$ on calibration workloads and test
+them on held-out workloads. Finally measure exposed wait and WCT under
+misses and foreground contention: high coverage alone does not prove
+net Peer benefit.
+
+\begin{figure}[tb]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/evaluation/eval-sparse-demand.pdf}
+ \caption{Native sparse-access diagnostic at an equal 205-of-512-block
+ budget per layer. Historical frequency and recency select for the
+ following 64 Queries; the offline oracle sees their realized demand.
+ Points and summaries retain the
+ three-document variation; this is observed demand coverage, not a
+ confidence interval or failure-recovery speedup.}
+ \label{fig:eval-sparse-demand}
+ \Description{Same-budget native demand coverage for three models and
+ three placement references, with the individual document variation retained.}
+\end{figure}
+
+\subsection{Healthy Service and Sustained Failures}
+
+\paragraph{Normal-service cost.}
+Run the complete original workloads under $F0$, including first calls,
+tool waits, and follow-up requests. Measure WCT, TTFT, TPOT, SLO
+goodput, GPU-seconds, controller CPU/memory, checkpoint bytes, and
+per-tier request and token hits. Hold absolute arrival traces fixed at
+30/60/85\% of the reference capacity; do not normalize each policy to
+its own throughput. Record execution-HBM loss and migration contention
+when Peer grows. Prefix overlap in a trace is not a runtime cache hit.
+Report conditional recovery gains separately from any amortized benefit
+at a declared failure frequency. A model queueing delay is not measured
+TTFT, and a failure-heavy stress test does not establish production net
+benefit.
+
+\paragraph{Why averages are insufficient.}
+The historical LANL-timing model~\cite{lanlFailureData,schroeder2006failures}
+retains 21,738 cleaned node-outage
+intervals from 22 systems. Each start triggers an assumed four-branch
+recovery in a per-system FIFO spare pool. Figure~\ref{fig:eval-trace-tails}
+shows a lower event-weighted mean for workflow-value allocation
+(9.4673 versus 10.4533\,s) but worse p95 (40.0292 versus 37.0375\,s)
+and p99 (232.1125 versus 204.1208\,s). Its longer pool occupancy can
+hurt subsequent recoveries even when the current join finishes sooner.
+These are modeled outcomes driven by recorded timing, not observed
+LANL agent workflows or measured AegisKV failures.
+
+\begin{figure}[tb]
+ \centering
+ \includegraphics[width=\columnwidth]{figures/evaluation/eval-trace-tails.pdf}
+ \caption{Historical trace-driven recovery model: mean and tail failure
+ penalties under the same recorded event timing. Workflow-value
+ placement reduces the mean while worsening p95 and p99. The outcome
+ combines an assumed workload and spare-pool model with recorded outage
+ starts; it is not measured fleet availability.}
+ \label{fig:eval-trace-tails}
+ \Description{Mean and tail recovery penalties in a historical FIFO
+ model, retaining the adverse p95 and p99 comparison.}
+\end{figure}
+
+For continuous replay, preserve failure clusters, downtime, surviving
+capacity, and non-overlapping calendar blocks; report event-weighted
+and system/window-weighted summaries. The available LANL redistribution
+has 23,739 rows versus 23,741 documented by its original source, an
+unresolved provenance difference. Reflex/ByteDance
+alerts~\cite{ding2026reflex,reflexDataset} are shifted
+within each job and lack reliable down/up pairs, so they cannot define
+a global failure calendar. Modern node-fault traces such as
+InfiniteHBD~\cite{shou2025infinitehbd} also require their original
+node-level semantics and training-cluster scope. Trace provenance and
+explicit resource mapping precede any claim about serving availability.
+
+\subsection{Operating Range and Controller Scaling}
+
+Capacity experiments ask when protection loses its advantage. Independent
+Peer, DRAM, and storage sweeps include Peer-off, full destinations, and
+last-copy pressure under equal physical budgets. Achieved coverage and
+commit lag distinguish insufficient capacity from an overloaded copying
+path: the uncommitted tail $N$ may exceed the checkpoint interval $Z$.
+WCT is therefore interpreted alongside write backlog, migration traffic,
+unused prefetch, and fallback frequency. Separate storage, NIC, and H2D
+bottlenecks reveal whether a gain depends on one favorable transport ratio.
+
+Scaling experiments separate replica count, TP degree, and failure domains
+from controller state size. Increasing DAG size, shared-owner fan-out,
+live objects, and candidate budget exposes the tradeoff between decision
+quality and update cost. Actual decision-time tails, CPU use, metadata,
+and foreground stalls compare bounded lazy refresh with equal-budget
+and unbounded eager controls. Saturation and unsupported cells remain
+visible; multiplying operation counts by an assumed node cost cannot
+substitute for controller timing.
+
+Robustness experiments test whether fallback and capacity control remain
+useful when duration errors correlate across a DAG, profiles become stale,
+or tools and arrivals change abruptly. Step, ramp, and burst loads expose
+Adapter overshoot and settling time. The key capacity outcome is actually
+freed bytes: lowering a quota target does not release memory until the
+Peer-to-DRAM-to-storage cascade and reader drain finish.
+
+\subsection{Recovery Correctness and Reproducibility}
+\label{sec:eval-plan}
+
+Correctness is a prerequisite for interpreting any latency result. The
+state-transition suite checks exclusive coverage, commit-before-redirect,
+and reader-drain-before-free under stale epochs, duplicate events, and
+incomplete restore state. Sole-owner loss must lead to a declared
+older-checkpoint/replay fallback. Pressure and tier-round-trip cases
+check physical occupancy, retained paid rent, and cancellation; Peer
+cases check the specified victim order, tie rules, and physical leases.
+The artifact enumerates the injection points and seeded interleavings.
+
+Faults bracketing copy, commit, ownership switch, and acknowledgement
+test accepted-token durability and complete compatible restore state.
+Next-output equivalence uses a declared numerical tolerance, while
+acknowledged output must never be duplicated. Application tool
+idempotency is a separate requirement. Transition coverage and failed
+randomized schedules accompany the results; earlier replicated-Peer
+examples cannot establish these invariants for exclusive ownership.
+
+Freeze source/model/backend versions, workload and fault IDs, physical
+budgets, and calibration choices before collecting primary results.
+Randomize policy order and start with ten paired campaigns; increase
+repetition based on pilot variance and precision rather than the desired
+sign of an effect. Aggregate by campaign and publish bootstrap method,
+seed, and intervals. Deterministic model scenarios have no experimental
+confidence intervals; the microbenchmark ranges describe repeated
+timings of one input, not independent workflow uncertainty. Preserve
+timeouts in the completion denominator and do not invent finish times.
+
+The artifact contains the complete experiment matrix, per-figure source
+hashes, long-form plotting tables, native-size vector exports, and
+generation commands. All unexecuted system cells remain explicitly
+planned. The execution order is correctness and backend calibration,
+paired single-failure outcomes, healthy overhead and decisive ablations,
+then continuous trace replay and scale/pressure tests. Attractive plots
+and a complete protocol do not close the current gap in end-to-end
+implementation evidence.

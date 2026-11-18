@@ -1,0 +1,78 @@
+{
+  "version": "dram-storage-v1",
+  "evidence": "analytical_scenario",
+  "seed_used": false,
+  "unit": "GiB and seconds; binary bytes",
+  "storage_read_GiB_s": 4.0,
+  "dram_read_GiB_s": 20.0,
+  "shared_link_GiB_s": 12.0,
+  "h2d_GiB_s": 20.0,
+  "floor_s": 0.25,
+  "replay_s": 0.4,
+  "recompute_s_per_GiB": 8.0,
+  "chunk_GiB": 0.25,
+  "recovery_targets": 2,
+  "default_dram_GiB": 16.0,
+  "default_storage_GiB": 160.0,
+  "default_group_GiB": [
+    4,
+    8,
+    12,
+    16
+  ],
+  "default_remaining_s": [
+    12,
+    10,
+    5,
+    1
+  ],
+  "normal_reuse_probability": [
+    0.15,
+    0.35,
+    0.6,
+    0.85
+  ],
+  "default_failure_probability_per_horizon": 0.05,
+  "horizon_s": 60,
+  "storage_write_GiB_s": 3.0,
+  "assumption": "All numbers above are declared generic assumptions, not hardware measurements or calibrated AegisKV profiles.",
+  "main_figure_width_in": 3.33465,
+  "font_pt": 10.5,
+  "phase_Z_tokens": [
+    64,
+    256,
+    1024
+  ],
+  "progress_fraction": [
+    0.2,
+    0.5,
+    0.8,
+    0.95
+  ],
+  "physical_plan": {
+    "engine": "SGLang; record exact pinned commit",
+    "backends": [
+      "remote NVMe-backed storage",
+      "shared filesystem recorded separately"
+    ],
+    "DP": [
+      2,
+      4,
+      8
+    ],
+    "TP": [
+      1,
+      2
+    ],
+    "model_candidates": [
+      "Qwen2.5-7B-Instruct-1M",
+      "Qwen3-8B",
+      "MiniCPM4-8B"
+    ],
+    "repetitions_per_cell": 10,
+    "statistical_unit": "independent paired campaign; workflow is a cluster below campaign"
+  },
+  "schema_version": 1,
+  "reuse_episode_probability": 0.02,
+  "assumed_node_visit_us": 0.2
+}

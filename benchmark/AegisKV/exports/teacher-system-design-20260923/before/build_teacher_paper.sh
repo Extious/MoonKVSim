@@ -1,0 +1,17 @@
+#!/usr/bin/env sh
+# Build only the teacher-provided Background and Motivation chapters.
+# The canonical paper is built separately and is untouched here.
+set -eu
+AEGISKV_TEACHER_SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+AEGISKV_TEACHER_ROOT=$(CDPATH= cd -- "$AEGISKV_TEACHER_SCRIPT_DIR/../../.." && pwd)
+AEGISKV_TEACHER_PAPER="$AEGISKV_TEACHER_ROOT/paper_teacher"
+AEGISKV_TEACHER_BUILD="$AEGISKV_TEACHER_ROOT/exports/latex-build-teacher"
+for AEGISKV_TEACHER_SOURCE in main.tex background.tex motivation.tex references.bib; do
+  test -f "$AEGISKV_TEACHER_PAPER/$AEGISKV_TEACHER_SOURCE"
+done
+mkdir -p "$AEGISKV_TEACHER_BUILD"
+cd "$AEGISKV_TEACHER_PAPER"
+latexmk -pdf -interaction=nonstopmode -halt-on-error \
+  -outdir="$AEGISKV_TEACHER_BUILD" main.tex
+cp "$AEGISKV_TEACHER_BUILD/main.pdf" "$AEGISKV_TEACHER_PAPER/main.pdf"
+printf 'Teacher edition PDF: %s\n' "$AEGISKV_TEACHER_PAPER/main.pdf"

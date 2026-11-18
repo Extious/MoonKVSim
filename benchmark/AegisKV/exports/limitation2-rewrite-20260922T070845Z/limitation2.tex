@@ -1,0 +1,47 @@
+\paragraph{Limitation 2: Workflow-aware caching without a recovery objective.}
+Workflow-aware serving already uses such dependencies to improve normal
+execution. Parrot exposes inter-request dependencies for application-level
+scheduling~\cite{lin2024parrot}. KVFlow guides prefix retention and
+prefetching by upcoming agent invocations~\cite{pan2025kvflow}, while Pythia
+predicts future workflow steps and prompt contents to manage and stage
+KV~\cite{yu2026pythia}. TOPAS jointly selects resident prefixes and admitted
+requests by balancing remaining-path progress, reuse, and movement or
+preemption costs~\cite{ni2026topas}. These objectives capture normal workflow
+progress, but do not explicitly value KV by the WCT increase its retention
+prevents after a serving-worker failure.
+
+The gap first concerns \emph{which state is worth retaining}.
+Normal reuse depends on future requests, whereas recovery can require
+state from an interrupted request even when no later request would reuse
+it. For example, KVFlow protects fixed prompts while assigning varying
+suffixes the highest eviction priority~\cite{pan2025kvflow}.
+Retaining a shared prompt can benefit many future calls, yet leave an
+interrupted agent's accumulated task-specific history to be recomputed.
+Checkpointing this history can avoid that repeated
+work~\cite{strati2024dejavu}. Its protection value therefore depends on
+the reconstruction it avoids and the affected branch's slack, in
+addition to its expected reuse.
+
+The gap also concerns \emph{where retained state can support recovery}.
+CachedAttention and Mooncake already extend KV retention beyond GPU
+memory~\cite{gao2024cachedattention,qin2025mooncake}; Pythia writes
+future-relevant contexts to shared storage accessible by other
+workers~\cite{yu2026pythia}. Such copies can support recovery if they survive
+the failure. However, a shared prefix does not eliminate replay of
+uncopied per-request history, and KV confined to the failed worker's HBM is
+unavailable. Choosing locations for future access alone does not determine
+which ongoing histories to protect outside that worker or how quickly
+the surviving state must be retrieved.
+
+\label{sec:motivation-long-context}
+Figure~\ref{fig:motivation-recompute} shows why this distinction matters
+under a storage budget. A surviving copy in a lower-cost tier can already
+avoid most reconstruction work. If recovery from that tier fits within
+the branch's slack, faster retrieval provides no further WCT benefit
+when other execution is unchanged. For a branch with little slack,
+the same latency reduction can advance workflow completion.
+Meanwhile, normal reuse can justify retaining either branch's KV.
+The missing objective is therefore to allocate protection according to
+the workflow delay avoided after failure while preserving the value of
+KV reuse during normal execution.
+

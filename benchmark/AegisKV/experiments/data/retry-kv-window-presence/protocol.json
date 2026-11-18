@@ -1,0 +1,51 @@
+{
+  "evidence": "Offline scoring of existing native-model selector traces; no new model forward or failure injection",
+  "scope": "Common history-based ranking component only; no trained model-specific prior, online tuning, replacement simulation or latency claim",
+  "history_tokens": 32768,
+  "physical_block_tokens": 64,
+  "physical_object": "request/layer/64-token block containing all physical KV heads",
+  "past_queries": 2048,
+  "past_queries_one_based": [
+    30721,
+    32768
+  ],
+  "target_lengths": [
+    256,
+    512
+  ],
+  "main_target_length": 256,
+  "target_windows_one_based": {
+    "256": [
+      32769,
+      33024
+    ],
+    "512": [
+      32769,
+      33280
+    ]
+  },
+  "statistics_window_queries": "Equal to target length: eight completed 256-query windows or four completed 512-query windows",
+  "window_presence": "A historical block contributes one if selected by any query/group in that completed window, otherwise zero",
+  "decay_per_window": 0.5,
+  "score": "Normalized exponentially weighted window presence; newest window has weight 1, next 0.5, etc. Equivalent ranking to zero-initialized EMA",
+  "parameter_selection": "Fixed before viewing this diagnostic; no sweep, test-set selection, or per-layer fitted decay",
+  "quota_blocks_per_layer": 205,
+  "historical_blocks_per_layer": 512,
+  "realized_budget_fraction": 0.400390625,
+  "mandatory_policy": "Same sealed sink/local blocks in every method, counted inside K; remaining scores tie-break by descending block position",
+  "prediction_update_during_target": false,
+  "baselines": {
+    "frequency_2048": "Selection-event frequency over the same 2048 past queries",
+    "frequency_512": "Original selection-event frequency over the final 512 past queries",
+    "oracle": "Target-aware upper bound with the same mandatory blocks and per-layer quota"
+  },
+  "primary_metric": "Distinct historical layer/block demand coverage; repeated accesses count once and new suffix KV is excluded",
+  "per_layer_aggregation": "Coverage ratio per document/layer, then mean over three documents",
+  "model_macro_aggregation": "Equal mean of all layer ratios within a document, then mean over three documents",
+  "model_weighted_aggregation": "Sum covered blocks across layers / sum needed blocks across layers within a document, then mean over three documents",
+  "interval": "Min/max over three paired documents, not a confidence interval",
+  "sample": "Three reused PG19 documents per model, one checkpoint per document, one existing native capture per model/document",
+  "trace_boundary": "NOSA recorded selectors cover the complete forward; its separate selection-vs-mask equality check covers only [32256,33280). This analysis uses recorded selector outputs before that subrange without claiming a new expanded mask check",
+  "failure_boundary": "Fixed replay targets; not an expectation over failure phases. Review interval does not imply an asynchronously copied checkpoint has committed",
+  "placement_boundary": "Standalone layer-local prediction diagnostic under this task's Peer-residency contract; no manuscript integration"
+}

@@ -1,0 +1,46 @@
+\subsection{Scope and Remaining Validation}
+\label{sec:design-discussion}
+
+\paragraph{Slack error and profile drift.}
+Overestimated slack can place a critical request in Tier R, forcing
+history recomputation after failure. Underestimated slack admits more
+requests to Peer competition without changing their footprints.
+P90 estimation, hysteresis, unknown-successor handling, and event-driven
+replanning mitigate these errors but do not bound them. An opportunistic
+Tier-R DRAM copy helps only after it has committed.
+Hot-set identities are stale predictions from the previous ranking
+window (default 512 decoding steps), whereas union sizing uses a window
+matched to replay length (default 64 queries). Slow profile refreshes
+can track drift, but do not guarantee that admission never changes
+discontinuously. Slack error, ranking-window length, and profile age
+require evaluation under agent workloads.
+
+\paragraph{Selector and execution scope.}
+Integration requires actual selection indices, recoverable selector
+state, and all required attention branches. Token selectors must be
+mapped to physical copy blocks, potentially amplifying transfer bytes;
+compression and local-window branches cannot be omitted.
+Unstable rankings or a poor granularity match can fall back to full-layer
+loading. For dense attention, $h=\widetilde u=1$, and only layer order
+remains. Standalone requests have $\sigma_r=0$ and use stable IDs for ties;
+their recovery is still concurrent. A failure during prefill may lose
+an entire in-flight chunk, requiring a replay-length-specific calibration
+instead of the 64-token decode-tail assumption.
+
+\paragraph{Evidence and limitations.}
+Timing prediction by role remains unvalidated: the available CC
+labels collapse all agents into one role, and the workflow-disjoint
+diagnostic does not demonstrate accurate timing. The sparse-model survey
+documents representative adoption rather than a deployment share.
+Retry-demand coverage, access concentration, and union statistics come from native selector
+traces on three book documents per model. They need not transfer to
+code and tool-heavy agent histories. The retry-demand experiment predicts
+a held-out causal suffix; it does not inject a failure, restore selector
+state, or measure replay time. Larger-context footprints extrapolate
+32K union fractions; the NOSA profile comparison borrows MiniCPM4's
+compute and layer-byte configuration. The pipeline and footprint figures
+are calibrated models, not physical failure-recovery measurements.
+End-to-end validation of the new placement policy, simultaneous retries,
+foreground interference, and runtime overhead remains outstanding.
+Older serial-recovery or previous-policy results do not establish these
+properties. The invariants above specify intended runtime behavior.

@@ -1,0 +1,74 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" version="31.1.5">
+  <diagram id="tracker-slack" name="tracker-slack">
+    <mxGraphModel page="1" pageScale="1" pageWidth="600" pageHeight="432" background="#FFFFFF">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" value="Mechanism" />
+        <mxCell id="canvas" value="" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=21;fontColor=#243746;fillColor=#FFFFFF;strokeColor=none;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="600" height="432" as="geometry" />
+        </mxCell>
+        <mxCell id="features" value="Role / context / elapsed / call history" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=25.8;fontColor=#243746;fillColor=#F1F3F4;strokeColor=#70808A;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="10" y="5" width="580" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="predictor" value="GBDT: remaining segment time" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=25.8;fontColor=#243746;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="55" y="60" width="490" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="features-predictor" style="rounded=0;strokeColor=#243746;strokeWidth=1.7;endArrow=block;endFill=1;endSize=5;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.5;entryY=0;entryPerimeter=0;" edge="1" parent="1" source="features" target="predictor">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="graph-label" value="Residual DAG · version v" style="html=0;whiteSpace=wrap;align=left;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=25.8;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="10" y="113" width="580" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="fork-label" value="Fork" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=25.8;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="5" y="197" width="76" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="fork" value="" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=25.8;fontColor=#243746;fillColor=#70808A;strokeColor=#70808A;strokeWidth=1.4;ellipse;shape=ellipse;" vertex="1" parent="1">
+          <mxGeometry x="34" y="177" width="12" height="12" as="geometry" />
+        </mxCell>
+        <mxCell id="b" value="B: 6 s" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=25.8;fontColor=#243746;fillColor=#DDEBF3;strokeColor=#23688D;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="125" y="151" width="140" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c" value="C: 10 s" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=25.8;fontColor=#243746;fillColor=#FFFFFF;strokeColor=#23688D;strokeWidth=1.4;strokeWidth=3;" vertex="1" parent="1">
+          <mxGeometry x="125" y="226" width="140" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="join" value="" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=25.8;fontColor=#243746;fillColor=#70808A;strokeColor=#70808A;strokeWidth=1.4;ellipse;shape=ellipse;" vertex="1" parent="1">
+          <mxGeometry x="342" y="198" width="12" height="12" as="geometry" />
+        </mxCell>
+        <mxCell id="join-label" value="Join" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=25.8;fontColor=#243746;fillColor=none;strokeColor=none;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="313" y="228" width="72" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="continuation" value="D: 2 s" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=25.8;fontColor=#243746;fillColor=#FFFFFF;strokeColor=#23688D;strokeWidth=1.4;strokeWidth=3;" vertex="1" parent="1">
+          <mxGeometry x="425" y="185" width="140" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="fb" style="rounded=0;strokeColor=#70808A;strokeWidth=1.7;endArrow=block;endFill=1;endSize=5;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" parent="1" source="fork" target="b">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fc" style="rounded=0;strokeColor=#70808A;strokeWidth=1.7;endArrow=block;endFill=1;endSize=5;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" parent="1" source="fork" target="c">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="bj" style="rounded=0;strokeColor=#70808A;strokeWidth=1.7;endArrow=block;endFill=1;endSize=5;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" parent="1" source="b" target="join">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="cj" style="rounded=0;strokeColor=#70808A;strokeWidth=1.7;endArrow=block;endFill=1;endSize=5;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" parent="1" source="c" target="join">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="jd" style="rounded=0;strokeColor=#70808A;strokeWidth=1.7;endArrow=block;endFill=1;endSize=5;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;" edge="1" parent="1" source="join" target="continuation">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="slack" value="CPM → Slack: B = 4 s; C = 0 s" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=25.8;fontColor=#243746;fillColor=#F1F3F4;strokeColor=#70808A;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="10" y="285" width="580" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="refresh" value="Update B → 11 s: Slack B = 0; C = 1 s" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=25.8;fontColor=#243746;fillColor=#DDEBF3;strokeColor=#23688D;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="10" y="334" width="580" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="version" value="Version v + 1 → revalue placement" style="html=0;whiteSpace=wrap;align=center;verticalAlign=middle;spacing=1;fontFamily=Helvetica;fontSize=25.8;fontColor=#243746;fillColor=#E1EEE8;strokeColor=#39756A;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="10" y="388" width="580" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="new-version" style="rounded=0;strokeColor=#243746;strokeWidth=1.7;endArrow=block;endFill=1;endSize=5;exitX=0.5;exitY=1;exitPerimeter=0;entryX=0.5;entryY=0;entryPerimeter=0;" edge="1" parent="1" source="refresh" target="version">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

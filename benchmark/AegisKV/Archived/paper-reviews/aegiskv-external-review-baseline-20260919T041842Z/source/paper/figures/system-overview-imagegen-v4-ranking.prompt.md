@@ -1,0 +1,3 @@
+Apply ONE strictly local correction to the attached image. At the TOP EDGE OF THE "Hotness Counter" box (approximately x=43.0%, y=64.2% of the full image), there is an unwanted DOWNWARD gray triangular arrowhead on the dashed line labeled "Block ranking". Erase only that tiny downward triangle, and continue the gray dashed shaft to the Hotness Counter boundary WITHOUT an arrowhead at this lower endpoint. The line must be unidirectional upward, with its existing upper arrowhead at Placement Planner unchanged. Block ranking is sent FROM Hotness Counter TO Placement Planner.
+
+Do not change any other pixels, layout, text, boxes, colors, arrow tips, or lines. In particular do not add any new arrowheads. Everything except this one unwanted triangle is already correct.

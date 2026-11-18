@@ -1,0 +1,137 @@
+\section{Motivation} \label{sec:motivation} 
+
+
+As described in Section~\ref{sec:background}, a failed agent can recover by reconstructing its KV cache from durable inputs or by restoring a surviving KV checkpoint~\cite{strati2024dejavu,cao2026lumen}. Reconstruction avoids checkpointing overhead during normal execution, but repeats the prefill of the agent's accumulated history. Checkpointing avoids this repeated computation, but continuously consumes memory and I/O resources as the agent's history grows.
+
+This section first quantifies why fully protecting all agent KV states is prohibitively expensive. We then make three observations that shape the design of \system. 
+
+\subsection{Full KV Protection Is Expensive} \label{sec:motivation:cost} 
+
+An agent's KV state grows throughout iterative execution. Later invocations commonly incorporate previous model outputs, tool results, and outputs from other agents. A failure late in the workflow can therefore lose considerably more KV state than a failure near the beginning.
+
+
+We quantify the resulting recovery cost using Qwen2.5-7B-Instruct-1M~\cite{qwen2025qwen25oneM,jiang2024minference} on two A100 PCIe 40\,GB GPUs with TP=2, BF16 weights and KV state, and batch size one. %Figure~\ref{fig:context_recovery} compares
+We compare full KV reconstruction with reuse from HBM, host DRAM, and shared storage. Full reconstruction starts with an empty KV cache and prefills the complete context. Each reuse path starts from the same historical KV state and processes one additional token. 
+%
+At a context length of 1M tokens, full reconstruction takes 571.2\,s. Reusing the historical KV state reduces readiness time to 1.3\,s from HBM, 2.7\,s from host DRAM, and 10.2\,s from shared storage. The corresponding historical KV state occupies 57.9\,GB across the two tensor-parallel ranks. Retaining KV can therefore avoid hundreds of seconds of reconstruction, but one long-running agent can require tens of gigabytes of checkpoint capacity. 
+
+% \begin{figure}[t] \centering 
+% \includegraphics[width=\columnwidth]{figures/context_recovery.pdf} \caption{KV reconstruction and reuse latency as context grows. Reuse starts from the same historical KV state and processes one additional token. HBM and DRAM report the median and range of three runs; shared storage and full reconstruction report one run per context length.} \label{fig:context_recovery} \end{figure}
+
+%Fully protecting all active agents is expensive along three dimensions. First, checkpoint capacity grows with the aggregate histories of all active agents. Second, each iterative turn creates new KV blocks that must be copied and committed, consuming memory and I/O bandwidth during failure-free execution. Third, keeping complete replicas on takeover GPUs competes with foreground inference for HBM that could otherwise support execution state and batching. 
+
+%Lower storage tiers mitigate HBM pressure but do not eliminate this trade-off. Host DRAM has finite capacity, while shared storage increases restoration latency and consumes shared I/O bandwidth. Consequently, the system cannot treat every agent and every KV block as equally valuable. It must determine both \emph{which agents} deserve protection and \emph{which portions} of their KV state deserve fast replication.
+
+\subsection{O1: Agents Have Unequal Recovery Value} \label{sec:motivation:agent} 
+
+
+An agent's KV reconstruction time does not directly determine its effect on workflow completion. Figure~\ref{fig:agent_value}(a) shows a fork--join workflow in which A2 determines the join, while A1 finishes 91.2\,s earlier. A delay shorter than this interval (called slack) does not postpone the downstream stage. 
+
+Such branch heterogeneity is common in our analyzed traces~\cite{semianalysis2026cctraces}. Among 121 workflows containing temporally inferred fan-in groups, the maximum branch-duration gap has a median of 138\,s and a 90th percentile of 1,173\,s. These gaps are not direct measurements of failure-time slack because the trace does not expose explicit dependency edges, but they show that parallel agents can have substantially different timing tolerance. 
+
+Figure~\ref{fig:agent_value}(b) combines the example workflow with measured KV reconstruction times for its four active agents. Similar reconstruction delays do not produce similar workflow delays. Reconstructing A1 takes 33.2\,s, but this delay fits within A1's 91.2\,s slack and does not postpone the join. Reconstructing A2 takes a similar 32.6\,s, but A2 has no slack, so the entire delay postpones the join. The slack of A3 and A4 absorbs part of their reconstruction, leaving 16.3\,s and 18.0\,s added to workflow completion time, respectively.
+
+For an isolated branch $i$, this relationship is \begin{equation} \Delta W_i = \max(0, R_i - \sigma_i), \label{eq:isolated_penalty} \end{equation} where $R_i$ is the recovery delay and $\sigma_i$ is the remaining workflow slack. Therefore, protecting the largest or most expensive KV state does not necessarily provide the greatest workflow benefit. 
+
+One worker failure may also interrupt multiple agents. Their recovery values are not always additive: accelerating one delayed branch may not advance a join if another affected branch remains the bottleneck. Protection decisions should therefore consider both an agent's workflow position and the other agents affected by the same failure. 
+
+\begin{figure}[t] \centering 
+\includegraphics[width=\columnwidth]{figures/agent_value.pdf} \caption{Agents have unequal recovery value. Similar KV reconstruction times produce different workflow delays because parallel agents have different slack. Hatched portions are absorbed before the join; solid portions postpone the join.
+Panel (a) preserves trace timing under an assumed all-branch join.
+Panel (b) reports medians and min--max ranges of three reconstruction
+measurements; WCT increments are conditional calculations with other
+execution fixed (Appendix~\ref{sec:motivation-protocol}).} \label{fig:agent_value}
+\Description{Four trace-derived branches join after A2. A1 has 91.2 seconds
+of slack. Reconstruction costs are measured, while added WCT is calculated
+for four isolated branch interruptions. Hatched time is absorbed by slack;
+solid time adds 0.0, 32.6, 16.3 and 18.0 seconds to workflow completion.}
+\end{figure}
+
+
+
+
+\subsection{O2: KV Regions Have Unequal Recovery Value} \label{sec:motivation:kv} 
+
+Even for an important agent, not all KV state is equally valuable for fast recovery. Figure~\ref{fig:kv_value}(a) shows that historical KV accesses concentrate on a subset of blocks. For the three evaluated sparse-attention models, the hottest approximately 20\% of historical blocks account for 87.64\%, 74.76\%, and 56.54\% of accesses, respectively. 
+
+Access frequency alone is insufficient. During layer-ordered recovery, computation on earlier layers can overlap with transfers for later layers. Replicating a block whose transfer would otherwise be hidden does not shorten recovery. Only KV state whose absence causes exposed waiting directly affects recovery time. Thus, placing an agent's complete KV checkpoint in takeover HBM can consume substantially more capacity than is required for fast recovery. The system should distinguish the complete state needed to avoid full reconstruction from the subset that must be available immediately to reduce recovery stalls. 
+
+\begin{figure}[t] \centering \includegraphics[width=\columnwidth]{figures/kv_value.pdf} \caption{KV regions have unequal recovery value. (a) Historical accesses concentrate on a subset of KV blocks. (b) Only missing KV transfers exposed on the recovery path increase recovery time.
+Models in (a) are NOSA-8B~\cite{huang2026nosav2},
+NSA-8B~\cite{fasa2026minicpm4nsa}, and
+MiniCPM4.1-8B~\cite{openbmb2025minicpm41}.
+Curves use the final 512 queries of 32,704-token prefixes from three PG19
+texts, counting each historical 64-token block once per query across
+heads and averaging all 32 layers and texts. Bands show text min--max;
+ranking is retrospective. Panel (b) is schematic: L1 KV is resident,
+L2 loads during L1, and the late L3 transfer exposes waiting.} \label{fig:kv_value}
+\Description{Native historical access concentration curves for three
+sparse-attention models, followed by a constructed three-layer timeline.
+Layer 2 KV transfer is hidden by computation, while Layer 3 waits for KV.
+The timeline is an illustration, not a measured recovery or policy result.}
+\end{figure}
+
+
+\subsection{O3: Replication Capacity Changes over Time} \label{sec:motivation:adaptation} 
+
+Fast KV replicas share HBM with foreground inference. The HBM available for replication changes as requests arrive and complete, agent histories grow, and active execution consumes different amounts of KV state and temporary workspace. A fixed replication budget can therefore be inefficient. A large budget may displace foreground execution state under high load, while a small budget may leave available HBM unused under low load. Replication must adapt to the capacity safely available without interfering with foreground serving.
+
+
+\paragraph{Summary.}
+Together, these observations suggest that efficient failure recovery requires selectivity at two levels and adaptation over time. The system must distinguish agents by their effect on workflow completion, distinguish KV regions by their effect on exposed recovery delay, and adjust fast-replication capacity as foreground demand changes. Section~\ref{sec:design} describes how \system realizes these three requirements.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\iffalse
+\section{Motivation} \label{sec:motivation} 
+
+Multi-agent applications organize iterative LLM requests as workflow DAGs. During execution, each agent accumulates conversation history, tool outputs, and results from other agents. Reusing the corresponding key-value (KV) cache avoids repeatedly prefilling this growing context. However, when a serving worker fails, the KV states of all agents hosted by that worker can be lost. Recovering these states through recomputation can substantially delay the workflow, while replicating every growing KV state incurs high memory and I/O overhead. 
+
+%This section presents three observations. First, agent KV states grow across iterative turns and become increasingly expensive to reconstruct. Second, the recovery value of a KV checkpoint depends on the agent's position in the workflow rather than its reconstruction cost alone. Third, a worker failure can interrupt multiple dependent agents, making their recovery values non-additive. These observations motivate selective replication both across agents and within each agent's KV state.
+
+
+
+
+\subsection{Growing Agent State Makes Recovery Expensive} \label{sec:motivation:growth} 
+
+
+The cost of recovering an agent increases as its workflow progresses. Later invocations commonly include earlier reasoning, generated code, tool responses, and child-agent outputs. Consequently, both the context length and the corresponding KV state grow across iterative turns. A failure late in the workflow can therefore discard substantially more state than a failure near its beginning. We quantify this cost using Qwen2.5-7B-Instruct-1M on two A100 PCIe 40\,GB GPUs with tensor parallelism of two, BF16 weights and KV state, and batch size one. Figure~\ref{fig:context_recovery} compares four execution paths. Full reconstruction starts with an empty KV cache and prefills the complete context. The other paths reuse the same historical KV state from HBM, host DRAM, or shared storage and then process one additional token. At a context length of 1.01 million tokens, full reconstruction takes 571.21\,s. Reusing the KV state reduces the corresponding readiness time to 1.305\,s from HBM, 2.663\,s from DRAM, and 10.156\,s from shared storage. The historical KV state occupies 57.92\,GB across the two tensor-parallel ranks. Retaining a checkpoint can therefore avoid hundreds of seconds of recomputation, but a single long-running agent may require tens of gigabytes of checkpoint capacity. 
+
+% Recommended figure: % (a) KV growth across iterative agent turns. % (b) Reconstruction and restore latency versus context length. % (c) Aggregate checkpoint footprint for concurrent agents. 
+\begin{figure}[t] \centering 
+\includegraphics[width=\columnwidth]{figures/context_recovery.pdf} \caption{% 
+KV state grows throughout iterative agent execution and becomes increasingly expensive to recover. Reuse starts from the same historical KV state and processes one additional token. HBM and DRAM points report the median and range of three runs; shared-storage and full-reconstruction points report one run per context length. } \label{fig:context_recovery} 
+\end{figure} 
+
+
+Fully replicating every growing KV state is expensive for two reasons. First, complete checkpoints consume capacity proportional to the aggregate contexts of all active agents. Second, each iterative turn creates new KV blocks that must be transferred and committed, consuming checkpoint bandwidth during failure-free execution. Placing every state on a takeover GPU further competes with active inference for scarce HBM. Keeping complete checkpoints in DRAM or shared storage alleviates HBM pressure, but DRAM remains capacity constrained and shared storage introduces longer restoration delays. A practical recovery system must therefore use its checkpoint capacity selectively. However, selecting checkpoints based only on their size, reconstruction time, or recency is insufficient because not every recovery delay affects the completion of the workflow. 
+
+
+\subsection{Recovery Value Depends on Workflow Position} \label{sec:motivation:differentiated} The completion time of an individual agent and that of the entire workflow are different objectives. A workflow stage following a join can begin only after all required predecessors have completed. A delay on the last-finishing branch directly postpones the join, whereas the same delay on an earlier-finishing branch may be absorbed without affecting workflow completion. 
+Figure~\ref{fig:workflow_value}(a) shows a trace-derived workflow with four parallel agents. Agent A2 finishes 151.6\,s after the fork and determines the join. Agent A1 finishes after 60.4\,s and therefore has 91.2\,s of tolerance before its delay becomes visible at the join. We refer to this tolerance as \emph{workflow slack}. Branch-duration heterogeneity is common in the analyzed workflows. We identify temporally overlapping subagent groups followed by a main-agent request after the final subagent completes. Among the 121 workflows containing such groups, the maximum branch-duration gap has a median of 138\,s and a 90th percentile of 1,173\,s. Because the trace does not record explicit result-consumption edges, these values are evidence of branch-duration heterogeneity rather than direct measurements of failure-time slack. Nevertheless, they show that parallel agents can finish at substantially different times and therefore expose different amounts of recovery delay. To illustrate the consequence for failure recovery, we measure full KV reconstruction for the four active agents using context-size proxies derived from the same workflow. Their reconstruction times range from 32.6\,s to 39.9\,s, but the resulting workflow penalties differ substantially. A1's 33.2\,s reconstruction is entirely absorbed by its 91.2\,s slack. A2 has no slack, so its 32.6\,s reconstruction is fully exposed. A3 and A4 expose 16.3\,s and 18.0\,s, respectively, after part of their reconstruction is hidden before the join. For an isolated delayed branch $i$, this relationship can be expressed as \begin{equation} \Delta W_i = \max(0, R_i - \sigma_i), \label{eq:single_branch_penalty} \end{equation} where $R_i$ is the additional recovery delay and $\sigma_i$ is the branch's workflow slack. Equation~\ref{eq:single_branch_penalty} shows that reconstruction cost alone does not determine checkpoint value. A large and expensive KV state can have little immediate recovery value if its delay is hidden by the workflow, whereas a smaller state on the critical path can directly determine workflow completion. 
+
+% Recommended figure: % (a) Four-branch DAG and branch completion times. % (b) Distribution of branch-duration gaps. % (c) Measured reconstruction time split into absorbed and exposed delay. 
+\begin{figure}[t] \centering 
+\includegraphics[width=\columnwidth]{figures/workflow_value.pdf} \caption{% 
+Recovery value depends on workflow position. Although the four agents have similar measured reconstruction costs, their effects on workflow completion differ because their available slack differs. Hatched portions are absorbed before the join, while solid portions extend workflow completion. } \label{fig:workflow_value} 
+\end{figure} 
+
+
+These results imply that checkpoint protection should be allocated according to the reduction in workflow completion time rather than the reduction in standalone request recovery time. We call this reduction the \emph{workflow recovery value} of a protection decision. 
+
+
+
+\subsection{Common Failures Create Non-Additive Recovery Value} \label{sec:motivation:joint} Equation~\ref{eq:single_branch_penalty} considers one delayed branch in isolation. In practice, a worker failure may simultaneously interrupt multiple agents whose KV states reside on that worker. Their recovery delays interact through the workflow DAG and therefore cannot always be evaluated independently. Consider a fork-join region with remaining branch durations $d_i$ and recovery delays $R_i$. Its local workflow penalty is \begin{equation} \Delta W = \max_i \left(d_i + R_i\right) - \max_i d_i. \label{eq:joint_workflow_penalty} \end{equation} The maximum in Equation~\ref{eq:joint_workflow_penalty} makes recovery value non-additive. For example, if two required branches are each delayed by 10\,s, reducing one branch's delay to 2\,s does not advance the join when the other branch remains 10\,s late. Protecting either branch individually can therefore have little value, while protecting both branches together can substantially reduce workflow completion time. This joint effect also means that a per-agent priority score can select the wrong checkpoint set. A policy that ranks agents by reconstruction cost may protect the largest KV state even when its delay is hidden by another branch. A policy that ranks agents by individual slack may fail to recognize a group of co-bottleneck branches whose checkpoints must be accelerated together. The unit of a recovery decision must instead be the complete failure event, including all agents interrupted by the failed worker and their dependencies in the residual workflow DAG. An analytical example illustrates this difference. Four branches have 4, 8, 12, and 16\,GiB checkpoints and join slack of 0, 2, 7, and 11\,s, respectively. Under a 16\,GiB DRAM budget, an LRU policy retains the 16\,GiB state. The workflow-aware policy instead retains the 4 and 8\,GiB states. In the declared analytical model, the LRU placement adds 3.6208\,s to workflow completion, whereas the workflow-aware placement adds 1.6125\,s. The benefit does not arise from retaining more bytes. It arises from placing limited fast-tier capacity on the branches whose recovery delays remain exposed at the join. These observations establish the first level of selectivity required by our system: \emph{inter-agent selection}. Given finite protection capacity, the system must determine which agents, or which jointly valuable groups of agents, should receive faster recovery state. \subsection{Complete Coverage and Fast Recovery Are Distinct} \label{sec:motivation:coverage} Selecting important agents does not imply that their complete KV states must be replicated in takeover HBM. Recovery coverage and recovery acceleration provide different benefits and require different forms of state. A \emph{complete checkpoint} avoids reconstructing an agent's history. It must contain every historical layer and tensor-parallel shard, the required attention metadata, and a token-log prefix consistent with the checkpoint frontier. Missing state cannot be treated as a cache hit without changing execution semantics. Complete checkpoints must therefore reside in fault-safe DRAM or shared storage even when only a subset of their state is placed in a faster tier. A \emph{fast replica}, in contrast, reduces exposed restoration time after takeover. It does not need to contain the entire checkpoint if missing state can be fetched from complete backing storage. Fast-tier capacity should therefore be reserved for the portions of an important agent's KV state that are likely to block recovery progress. Two properties create opportunities for such selective replication. First, native sparse-attention mechanisms repeatedly access only a subset of historical KV blocks. In our measurements using matched 32,704-token prefixes, the hottest approximately 20\% of historical blocks account for 87.64\%, 74.76\%, and 56.54\% of accesses for NOSA-8B, NSA-8B, and MiniCPM4.1-8B, respectively. Although retrospective access concentration does not guarantee future prediction accuracy, it shows that historical KV demand can be substantially nonuniform. Second, not every transferred layer contributes equally to recovery latency. During layer-ordered recovery, computation over earlier layers can overlap with transfers for later layers. Replicating a block whose transfer would otherwise be hidden does not shorten recovery. In contrast, replicating state on the exposed transfer path directly reduces GPU waiting time. Figure~\ref{fig:two_level_replication} illustrates the distinction. A complete checkpoint through frontier $M$ is retained in DRAM or shared storage. The takeover GPU holds only selected blocks from selected layers. During recovery, resident blocks are used directly, while a demanded but unreplicated block is fetched from the complete backing checkpoint. Prediction errors can consequently add transfer stalls, but they cannot compromise recovery correctness. 
+% Recommended figure: % (a) Workflow-level selection among agents. % (b) Complete checkpoint in DRAM/storage. % (c) Selected layers and blocks on takeover HBM. % (d) Peer hit and backing-store miss paths during recovery. 
+\begin{figure}[t] \centering 
+\includegraphics[width=\columnwidth]{figures/two_level_replication.pdf} \caption{% 
+Two-level selective replication. The system first selects agents according to their workflow recovery value. For each selected agent, it places only recovery-critical layers and KV blocks in takeover HBM, while retaining a complete checkpoint in fault-safe DRAM or shared storage. } \label{fig:two_level_replication} \end{figure}
+
+In an analytical layered-recovery example with a 32-layer model, 32K-token history, and a 64-token uncommitted tail, preloading predicted blocks and fetching demand misses yields 136\,ms of recovery time, including 44\,ms of exposed KV waiting. Replicating 147.5\,MiB of selected KV blocks from the first seven layers reduces the modeled recovery time to 112\,ms and exposed waiting to 20\,ms. This example is not an end-to-end failure measurement, but it illustrates why layer/block selection should optimize exposed recovery delay rather than raw cache coverage. These observations establish the second level of selectivity: \emph{intra-agent selection}. After selecting which agents receive fast protection, the system should determine which layers and blocks of each selected checkpoint deserve takeover-HBM capacity. 
+
+\subsection{Design Requirements} \label{sec:motivation:requirements} 
+
+The preceding observations lead to four requirements for workflow-aware KV recovery. \paragraph{R1: Prioritize workflow impact rather than request-local cost.} A protection decision should be valued by its reduction in workflow completion time. KV size, recency, and standalone reconstruction latency are insufficient because branch slack can hide substantial recovery delay. \paragraph{R2: Evaluate agents jointly under a common failure.} A worker failure can interrupt multiple workflow branches simultaneously. The system must evaluate their joint effect through forks, joins, and shared recovery resources instead of independently scoring each interrupted agent. \paragraph{R3: Separate complete coverage from fast recovery.} Every advertised checkpoint must resolve to complete and version-compatible recovery state. Scarce takeover-HBM capacity should be used only for selected layers and blocks that reduce exposed recovery delay. Inaccurate selection may reduce performance, but must not invalidate recovery. \paragraph{R4: Adapt protection as execution evolves.} Agent histories grow across iterative turns, workflow criticality changes as branches progress, and checkpoint transfers can lag behind execution. The system must update its selections online while preserving a valid committed checkpoint during copying, replacement, promotion, and demotion. These requirements motivate \system{}, a workflow-aware KV recovery system based on two-level selective replication. At the workflow level, \system{} selects agents according to their joint effect on workflow completion under a common worker failure. Within each selected agent, \system{} replicates only the layers and historical KV blocks that reduce exposed recovery stalls. Complete checkpoints remain in fault-safe DRAM or shared storage, providing exact recovery for all unreplicated state. Section~\ref{sec:overview} presents the system architecture and explains how these two decisions are integrated.
+
+
+\fi
